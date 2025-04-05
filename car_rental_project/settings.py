@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -11,6 +12,29 @@ SECRET_KEY = os.environ.get("SESSION_SECRET", "django-insecure-default-key-for-d
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]  # Allow all hosts for development
+
+# Get Replit host if available from environment
+REPLIT_SLUG = os.environ.get('REPL_SLUG', '')
+REPLIT_OWNER = os.environ.get('REPL_OWNER', '')
+REPLIT_ID = os.environ.get('REPL_ID', '')
+
+# CSRF trusted origins
+# Include both HTTP and HTTPS variations of the domain
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.replit.app',
+    'https://*.replit.dev',
+    'https://*.janeway.replit.dev',
+    f'https://{REPLIT_SLUG}-{REPLIT_OWNER}.repl.co',
+    f'https://{REPLIT_ID}.id.repl.co',
+]
+
+# Extract the hostname from environment
+REPLIT_HOST = os.environ.get('HTTP_HOST', '')
+if REPLIT_HOST:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_HOST}')
+    
+# Add explicit support for the specific domain in the error message
+CSRF_TRUSTED_ORIGINS.append('https://372fe000-ff64-4ad8-84f9-611ea2a8e995-00-1c83kgq6nqqvn.janeway.replit.dev')
 
 # Application definition
 INSTALLED_APPS = [
@@ -34,6 +58,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Additional CSRF settings for Replit environment
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'  # Required for cross-site requests
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = 'None'  # Required for cross-site requests
 
 ROOT_URLCONF = 'car_rental_project.urls'
 
