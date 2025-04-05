@@ -246,8 +246,14 @@ def my_reservations(request):
         user=request.user
     ).select_related('car').order_by('-created_at')
     
+    # Separate active and completed reservations
+    active_reservations = [r for r in reservations if r.status in ['pending', 'confirmed']]
+    completed_reservations = [r for r in reservations if r.status in ['completed', 'cancelled']]
+    
     return render(request, 'my_reservations.html', {
-        'reservations': reservations
+        'reservations': reservations,
+        'active_reservations': active_reservations,
+        'completed_reservations': completed_reservations
     })
 
 @login_required
