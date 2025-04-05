@@ -98,7 +98,7 @@ def car_listing(request):
         if max_price is not None:
             cars = cars.filter(daily_rate__lte=max_price)
     
-    return render(request, 'cars.html', {'cars': cars, 'form': form})
+    return render(request, 'cars_django.html', {'cars': cars, 'form': form})
 
 def car_detail(request, car_id):
     """Car detail page with reservation form"""
@@ -145,7 +145,7 @@ def car_detail(request, car_id):
         'unavailable_dates': unavailable_dates,
     }
     
-    return render(request, 'car_detail.html', context)
+    return render(request, 'car_detail_django.html', context)
 
 @login_required
 def cart_view(request):
@@ -160,7 +160,7 @@ def cart_view(request):
     # Calculate overall total
     cart_total = sum(item.total for item in cart_items)
     
-    return render(request, 'cart.html', {
+    return render(request, 'cart_django.html', {
         'cart_items': cart_items,
         'cart_total': cart_total
     })

@@ -1,0 +1,200 @@
+{% extends 'layout_django.html' %}
+{% load static %}
+
+{% block title %}{{ car.make }} {{ car.model }} - CarRental{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Car Details -->
+            <div class="card mb-4">
+                <img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
+                <div class="card-body">
+                    <h1 class="card-title">{{ car.make }} {{ car.model }} {{ car.year }}</h1>
+                    <div class="car-meta mb-3">
+                        <span class="badge bg-primary">{{ car.category }}</span>
+                        <span class="badge bg-secondary">{{ car.transmission }}</span>
+                        <span class="badge bg-info text-dark">{{ car.fuel_type }}</span>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-6 col-md-3">
+                            <div class="feature-item text-center">
+                                <i class="fas fa-users feature-icon"></i>
+                                <div class="feature-name">{{ car.seats }} Seats</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="feature-item text-center">
+                                <i class="fas fa-palette feature-icon"></i>
+                                <div class="feature-name">{{ car.color }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="feature-item text-center">
+                                <i class="fas fa-tachometer-alt feature-icon"></i>
+                                <div class="feature-name">{{ car.transmission }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="feature-item text-center">
+                                <i class="fas fa-gas-pump feature-icon"></i>
+                                <div class="feature-name">{{ car.fuel_type }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3>Features</h3>
+                    <ul class="features-list">
+                        {% for feature in car.feature_list %}
+                        <li><i class="fas fa-check-circle me-2"></i>{{ feature }}</li>
+                        {% empty %}
+                        <li>No additional features listed.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Reviews -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Customer Reviews</h3>
+                    <div class="rating-summary">
+                        <span class="avg-rating">{{ avg_rating|floatformat:1 }}</span>
+                        <div class="stars">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= avg_rating|add:0.5|floatformat:"0" %}
+                                <i class="fas fa-star"></i>
+                                {% else %}
+                                <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="review-count">({{ reviews.count }} reviews)</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if reviews %}
+                        {% for review in reviews %}
+                        <div class="review-item">
+                            <div class="review-header d-flex justify-content-between">
+                                <div class="reviewer">
+                                    <i class="fas fa-user-circle me-2"></i>{{ review.user.username }}
+                                </div>
+                                <div class="review-date">{{ review.created_at|date:"F d, Y" }}</div>
+                            </div>
+                            <div class="rating mb-2">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= review.rating %}
+                                    <i class="fas fa-star"></i>
+                                    {% else %}
+                                    <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <p class="review-comment">{{ review.comment }}</p>
+                            {% if not forloop.last %}
+                            <hr>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No reviews yet. Be the first to review this car!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Price and Reservation -->
+            <div class="card price-card mb-4">
+                <div class="card-body">
+                    <h2 class="price">${{ car.daily_rate }}<span class="per-day">/day</span></h2>
+                    <hr>
+                    <h4>Make a Reservation</h4>
+                    <form method="post" id="reservationForm">
+                        {% csrf_token %}
+                        {{ reservation_form.car_id }}
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Pick-up Date</label>
+                            {{ reservation_form.start_date }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">Return Date</label>
+                            {{ reservation_form.end_date }}
+                        </div>
+                        <div class="d-grid">
+                            {% if user.is_authenticated %}
+                            <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
+                            {% else %}
+                            <a href="{% url 'login' %}?next={% url 'car_detail' car_id=car.id %}" class="btn btn-primary btn-lg">Login to Reserve</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Availability Calendar -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Availability</h3>
+                </div>
+                <div class="card-body">
+                    <div id="availability-calendar"></div>
+                    <div class="calendar-legend mt-3">
+                        <div class="legend-item">
+                            <span class="available-day"></span> Available
+                        </div>
+                        <div class="legend-item">
+                            <span class="unavailable-day"></span> Unavailable
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get unavailable dates from the server
+    const unavailableDates = [
+        {% for date in unavailable_dates %}
+            "{{ date|date:'Y-m-d' }}",
+        {% endfor %}
+    ];
+    
+    // Initialize flatpickr for start date
+    const startDatePicker = flatpickr("#id_start_date", {
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        disable: unavailableDates,
+        onChange: function(selectedDates, dateStr) {
+            // Update end date min date
+            endDatePicker.set('minDate', dateStr);
+        }
+    });
+    
+    // Initialize flatpickr for end date
+    const endDatePicker = flatpickr("#id_end_date", {
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        disable: unavailableDates
+    });
+    
+    // Initialize availability calendar
+    flatpickr("#availability-calendar", {
+        inline: true,
+        dateFormat: "Y-m-d",
+        disable: unavailableDates,
+        static: true
+    });
+});
+</script>
+{% endblock %}
