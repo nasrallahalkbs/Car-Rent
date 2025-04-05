@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'layout_django.html' %}
 
 {% block title %}My Profile - CarRental{% endblock %}
 
@@ -26,13 +26,13 @@
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span><i class="fas fa-calendar-alt me-2"></i> Member Since</span>
-                            <span>{{ current_user.created_at.strftime('%b %d, %Y') }}</span>
+                            <span>{{ current_user.created_at|date:"M d, Y" }}</span>
                         </li>
                     </ul>
                 </div>
             </div>
             <div class="mt-4">
-                <a href="{{ url_for('my_reservations') }}" class="btn btn-outline-primary w-100 mb-3">
+                <a href="{% url 'my_reservations' %}" class="btn btn-outline-primary w-100 mb-3">
                     <i class="fas fa-car me-2"></i> My Reservations
                 </a>
             </div>
@@ -44,13 +44,13 @@
                     <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i> Edit Profile</h4>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('profile') }}">
-                        {{ form.hidden_tag() }}
+                    <form method="POST" action="{% url 'profile' %}">
+                        {% csrf_token %}
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="first_name">{{ form.first_name.label }}</label>
-                                    {{ form.first_name(class="form-control") }}
+                                    {{ form.first_name }}
                                     {% if form.first_name.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.first_name.errors %}
@@ -63,7 +63,7 @@
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="last_name">{{ form.last_name.label }}</label>
-                                    {{ form.last_name(class="form-control") }}
+                                    {{ form.last_name }}
                                     {% if form.last_name.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.last_name.errors %}
@@ -76,7 +76,7 @@
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="email">{{ form.email.label }}</label>
-                                    {{ form.email(class="form-control") }}
+                                    {{ form.email }}
                                     {% if form.email.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.email.errors %}
@@ -89,7 +89,7 @@
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label for="phone">{{ form.phone.label }}</label>
-                                    {{ form.phone(class="form-control") }}
+                                    {{ form.phone }}
                                     {% if form.phone.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.phone.errors %}
@@ -101,7 +101,7 @@
                             </div>
                         </div>
                         <div class="form-group mt-4">
-                            {{ form.submit(class="btn btn-primary") }}
+                            {{ form.submit }}
                         </div>
                     </form>
                 </div>
