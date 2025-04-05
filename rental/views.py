@@ -456,7 +456,10 @@ def toggle_dark_mode(request):
 
 def about_us(request):
     """About Us page view"""
-    return render(request, "about_us.html")
+    import os
+    return render(request, "about_us.html", {
+        'GOOGLE_MAPS_API_KEY': os.environ.get('GOOGLE_MAPS_API_KEY')
+    })
 
 def get_unavailable_dates_api(request, car_id):
     """API endpoint to get unavailable dates for a car"""
