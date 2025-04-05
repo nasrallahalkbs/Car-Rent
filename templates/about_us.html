@@ -3,6 +3,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/about_us.css' %}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 {% endblock %}
 {% block title %}About Us - CarRental{% endblock %}
 
@@ -376,6 +377,7 @@
     </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Timeline styles
@@ -407,146 +409,82 @@
             }
         });
         
-        // Initialize the map
-        function initMap() {
-            // New York coordinates
-            const mainOffice = { lat: 40.7128, lng: -74.0060 };
-            
-            // Create map with advanced options
-            const map = new google.maps.Map(document.getElementById("map"), {
-                center: mainOffice,
-                zoom: 13,
-                mapTypeId: google.maps.MapTypeId.ROADMAP,
-                mapTypeControl: true,
-                mapTypeControlOptions: {
-                    style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-                    position: google.maps.ControlPosition.TOP_RIGHT
-                },
-                zoomControl: true,
-                zoomControlOptions: {
-                    position: google.maps.ControlPosition.RIGHT_CENTER
-                },
-                scaleControl: true,
-                streetViewControl: true,
-                streetViewControlOptions: {
-                    position: google.maps.ControlPosition.RIGHT_TOP
-                },
-                fullscreenControl: true,
-                styles: [
-                    {
-                        "featureType": "administrative",
-                        "elementType": "geometry",
-                        "stylers": [{"visibility": "on"}]
-                    },
-                    {
-                        "featureType": "administrative.land_parcel",
-                        "elementType": "labels",
-                        "stylers": [{"visibility": "on"}]
-                    },
-                    {
-                        "featureType": "poi.business",
-                        "stylers": [{"visibility": "on"}]
-                    },
-                    {
-                        "featureType": "poi.park",
-                        "elementType": "labels.text",
-                        "stylers": [{"visibility": "on"}]
-                    },
-                    {
-                        "featureType": "road.local",
-                        "elementType": "labels",
-                        "stylers": [{"visibility": "on"}]
-                    }
-                ]
-            });
-            
-            // Add main office marker with custom icon
-            const mainMarker = new google.maps.Marker({
-                position: mainOffice,
-                map: map,
-                title: "CarRental Main Office",
-                animation: google.maps.Animation.DROP,
-                icon: {
-                    url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-                    scaledSize: new google.maps.Size(40, 40)
-                }
-            });
-            
-            // Add other branch locations
-            const locations = [
-                { 
-                    position: { lat: 40.6413, lng: -73.7781 }, 
-                    title: "JFK Airport Terminal", 
-                    content: "<strong>Airport Terminal</strong><br>Terminal 4, JFK International Airport<br>Jamaica, NY 11430<br>Phone: +1 (555) 987-6543<br>Hours: 24/7",
-                    icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                },
-                { 
-                    position: { lat: 40.7505, lng: -73.9764 }, 
-                    title: "Midtown Branch", 
-                    content: "<strong>Midtown Branch</strong><br>456 Park Avenue<br>New York, NY 10022<br>Phone: +1 (555) 456-7890<br>Hours: Mon-Sun 7:00 AM - 10:00 PM",
-                    icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                },
-                { 
-                    position: { lat: 40.7830, lng: -73.9590 }, 
-                    title: "Uptown Branch", 
-                    content: "<strong>Uptown Branch</strong><br>789 Columbus Circle<br>New York, NY 10023<br>Phone: +1 (555) 789-0123<br>Hours: Mon-Sun 8:00 AM - 9:00 PM",
-                    icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                }
-            ];
-            
-            // Add markers for each location with info windows
-            locations.forEach(location => {
-                const marker = new google.maps.Marker({
-                    position: location.position,
-                    map: map,
-                    title: location.title,
-                    animation: google.maps.Animation.DROP,
-                    icon: {
-                        url: location.icon,
-                        scaledSize: new google.maps.Size(36, 36)
-                    }
-                });
-                
-                const infoWindow = new google.maps.InfoWindow({
-                    content: location.content,
-                    maxWidth: 300
-                });
-                
-                marker.addListener("click", () => {
-                    infoWindow.open(map, marker);
-                });
-            });
-            
-            // Create main info window and open it by default
-            const mainInfoWindow = new google.maps.InfoWindow({
-                content: `
-                    <div style="padding: 5px; max-width: 300px;">
-                        <h5 style="margin-bottom: 8px; color: #0d6efd;">CarRental Main Office</h5>
-                        <p style="margin-bottom: 5px;">123 Rental Avenue, Downtown<br>New York, NY 10001</p>
-                        <p style="margin-bottom: 5px;">Phone: +1 (555) 123-4567</p>
-                        <p style="margin-bottom: 0;">Mon-Fri: 8:00 AM - 8:00 PM<br>Weekends: 9:00 AM - 6:00 PM</p>
-                    </div>
-                `,
-                maxWidth: 300
-            });
-            
-            mainInfoWindow.open(map, mainMarker);
-            
-            // Add traffic layer for real-time traffic data
-            const trafficLayer = new google.maps.TrafficLayer();
-            trafficLayer.setMap(map);
-        }
+        // Initialize OpenStreetMap
+        const map = L.map('map').setView([40.7128, -74.0060], 12);
         
-        // Load the Google Maps script using the API key from environment
-        const script = document.createElement("script");
-        script.src = "https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap";
-        script.async = true;
-        script.defer = true;
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
         
-        // Define the callback globally
-        window.initMap = initMap;
+        // Custom icon for main office
+        const mainOfficeIcon = L.divIcon({
+            className: 'main-office-marker',
+            html: '<div style="background-color: #dc3545; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
         
-        document.head.appendChild(script);
+        // Custom icon for other branches
+        const branchIcon = L.divIcon({
+            className: 'branch-marker',
+            html: '<div style="background-color: #0d6efd; width: 18px; height: 18px; border-radius: 50%; border: 2px solid white;"></div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+        });
+        
+        // Add markers for all locations
+        const locations = [
+            {
+                position: [40.7128, -74.0060],
+                title: "Main Office",
+                content: "<strong>CarRental Main Office</strong><br>123 Rental Avenue, Downtown<br>New York, NY 10001<br>Phone: +1 (555) 123-4567<br>Mon-Fri: 8:00 AM - 8:00 PM<br>Weekends: 9:00 AM - 6:00 PM",
+                icon: mainOfficeIcon
+            },
+            {
+                position: [40.6413, -73.7781],
+                title: "JFK Airport Terminal",
+                content: "<strong>Airport Terminal</strong><br>Terminal 4, JFK International Airport<br>Jamaica, NY 11430<br>Phone: +1 (555) 987-6543<br>Hours: 24/7",
+                icon: branchIcon
+            },
+            {
+                position: [40.7505, -73.9764],
+                title: "Midtown Branch",
+                content: "<strong>Midtown Branch</strong><br>456 Park Avenue<br>New York, NY 10022<br>Phone: +1 (555) 456-7890<br>Hours: Mon-Sun 7:00 AM - 10:00 PM",
+                icon: branchIcon
+            },
+            {
+                position: [40.7830, -73.9590],
+                title: "Uptown Branch",
+                content: "<strong>Uptown Branch</strong><br>789 Columbus Circle<br>New York, NY 10023<br>Phone: +1 (555) 789-0123<br>Hours: Mon-Sun 8:00 AM - 9:00 PM",
+                icon: branchIcon
+            }
+        ];
+        
+        // Add markers to map
+        locations.forEach(location => {
+            const marker = L.marker(location.position, {
+                icon: location.icon,
+                title: location.title
+            }).addTo(map);
+            
+            // Add popup with information
+            marker.bindPopup(location.content);
+            
+            // Open popup for main office by default
+            if (location.title === "Main Office") {
+                marker.openPopup();
+            }
+        });
+        
+        // Add a circle to highlight the service area
+        L.circle([40.7128, -74.0060], {
+            color: '#0d6efd',
+            fillColor: '#0d6efd',
+            fillOpacity: 0.1,
+            radius: 5000 // 5km
+        }).addTo(map);
     });
 </script>
 {% endblock %}
