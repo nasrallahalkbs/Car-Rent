@@ -110,17 +110,35 @@ def car_detail(request, car_id):
     avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
     
     # Initialize reservation form
-    reservation_form = ReservationForm(initial={'car_id': car.id})
+    form = ReservationForm(initial={'car_id': car.id})
     
     # Get unavailable dates for this car
     unavailable_dates = get_unavailable_dates(car.id)
     
+    # Get similar cars (same category, excluding current car)
+    similar_cars = Car.objects.filter(
+        category=car.category, 
+        is_available=True
+    ).exclude(id=car.id).order_by('?')[:3]  # Randomize and limit to 3
+    
+    # Calculate rating distribution
+    rating_distribution = []
+    if reviews.exists():
+        for i in range(5, 0, -1):
+            count = reviews.filter(rating=i).count()
+            percentage = (count / reviews.count()) * 100
+            rating_distribution.append({
+                'rating': i,
+                'count': count,
+                'percentage': percentage
+            })
+    
     if request.method == 'POST' and request.user.is_authenticated:
-        reservation_form = ReservationForm(request.POST)
+        form = ReservationForm(request.POST)
         
-        if reservation_form.is_valid():
-            start_date = reservation_form.cleaned_data['start_date']
-            end_date = reservation_form.cleaned_data['end_date']
+        if form.is_valid():
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
             
             # Check if car is available for these dates
             if get_car_availability(car.id, start_date, end_date):
@@ -142,8 +160,10 @@ def car_detail(request, car_id):
         'car': car,
         'reviews': reviews,
         'avg_rating': avg_rating,
-        'reservation_form': reservation_form,
+        'form': form,
         'unavailable_dates': unavailable_dates,
+        'similar_cars': similar_cars,
+        'rating_distribution': rating_distribution,
     }
     
     return render(request, 'car_detail_django.html', context)
@@ -428,3 +448,32 @@ def toggle_dark_mode(request):
         return redirect(referer)
     else:
         return redirect('index')
+        
+from django.http import JsonResponse
+
+def get_unavailable_dates_api(request, car_id):
+    """API endpoint to get unavailable dates for a car"""
+    try:
+        # Get the car
+        car = get_object_or_404(Car, id=car_id)
+        
+        # Get unavailable dates
+        unavailable_dates = get_unavailable_dates(car_id)
+        
+        # Format dates for JSON response
+        formatted_dates = []
+        for start_date, end_date in unavailable_dates:
+            formatted_dates.append([
+                start_date.isoformat(),
+                end_date.isoformat()
+            ])
+        
+        return JsonResponse({
+            'car_id': car_id,
+            'car_name': f"{car.make} {car.model}",
+            'dates': formatted_dates
+        })
+    except Exception as e:
+        return JsonResponse({
+            'error': str(e)
+        }, status=400)

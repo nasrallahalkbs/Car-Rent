@@ -72,12 +72,8 @@ def get_unavailable_dates(car_id, exclude_reservation=None):
     
     reservations = query.order_by('start_date')
     
-    unavailable_dates = []
+    date_ranges = []
     for reservation in reservations:
-        # Create a date range for each reservation
-        current_date = reservation.start_date
-        while current_date <= reservation.end_date:
-            unavailable_dates.append(current_date)
-            current_date += timedelta(days=1)
+        date_ranges.append((reservation.start_date, reservation.end_date))
     
-    return unavailable_dates
+    return date_ranges
