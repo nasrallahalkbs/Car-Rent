@@ -85,14 +85,80 @@ class ReservationForm(forms.Form):
 class CheckoutForm(forms.Form):
     """Form for checkout and payment"""
     # Generate choices for expiry months and years
-    MONTH_CHOICES = [(str(i), str(i)) for i in range(1, 13)]
+    MONTH_CHOICES = [(str(i), str(i).zfill(2)) for i in range(1, 13)]
     YEAR_CHOICES = [(str(i), str(i)) for i in range(date.today().year, date.today().year + 11)]
     
-    card_number = forms.CharField(max_length=16, min_length=16, required=True)
-    card_name = forms.CharField(max_length=100, required=True)
-    expiry_month = forms.ChoiceField(choices=MONTH_CHOICES, required=True)
-    expiry_year = forms.ChoiceField(choices=YEAR_CHOICES, required=True)
-    cvv = forms.CharField(max_length=4, min_length=3, required=True)
+    # Card type choices
+    CARD_TYPE_CHOICES = [
+        ('visa', 'Visa'),
+        ('mastercard', 'MasterCard'),
+        ('amex', 'American Express'),
+        ('discover', 'Discover')
+    ]
+    
+    card_type = forms.ChoiceField(
+        choices=CARD_TYPE_CHOICES,
+        required=True,
+        widget=forms.RadioSelect(attrs={'class': 'card-type-radio'})
+    )
+    
+    card_number = forms.CharField(
+        max_length=16, 
+        min_length=16, 
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'placeholder': '•••• •••• •••• ••••',
+            'autocomplete': 'cc-number',
+            'data-card-field': 'number'
+        }),
+        label='Card Number'
+    )
+    
+    card_name = forms.CharField(
+        max_length=100, 
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Name on card',
+            'autocomplete': 'cc-name',
+            'data-card-field': 'name'
+        }),
+        label='Cardholder Name'
+    )
+    
+    expiry_month = forms.ChoiceField(
+        choices=MONTH_CHOICES, 
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'data-card-field': 'expiry-month'
+        }),
+        label='Month'
+    )
+    
+    expiry_year = forms.ChoiceField(
+        choices=YEAR_CHOICES, 
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'data-card-field': 'expiry-year'
+        }),
+        label='Year'
+    )
+    
+    cvv = forms.CharField(
+        max_length=4, 
+        min_length=3, 
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'placeholder': '•••',
+            'autocomplete': 'cc-csc',
+            'data-card-field': 'cvv'
+        }),
+        label='CVV'
+    )
 
 class ReviewForm(forms.ModelForm):
     """Form for reviewing a car rental"""

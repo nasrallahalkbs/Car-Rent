@@ -2,23 +2,253 @@
 
 {% block title %}Checkout - CarRental{% endblock %}
 
+{% block extra_css %}
+<style>
+    .credit-card-box {
+        perspective: 1000px;
+        width: 100%;
+        max-width: 400px;
+        height: 240px;
+        position: relative;
+        margin: 0 auto 20px;
+    }
+    
+    .credit-card-box .card-front {
+        border-radius: 15px;
+        background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+        position: relative;
+        width: 100%;
+        height: 100%;
+        padding: 20px;
+        color: white;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .credit-card-box .card-type {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 24px;
+    }
+    
+    .credit-card-box .card-chip {
+        width: 50px;
+        height: 40px;
+        background: linear-gradient(135deg, #ddd, #999);
+        border-radius: 8px;
+        position: absolute;
+        top: 60px;
+        left: 20px;
+    }
+    
+    .credit-card-box .card-number {
+        font-size: 22px;
+        letter-spacing: 2px;
+        position: absolute;
+        top: 110px;
+        left: 20px;
+        right: 20px;
+        text-align: center;
+    }
+    
+    .credit-card-box .card-holder {
+        position: absolute;
+        bottom: 50px;
+        left: 20px;
+        font-size: 14px;
+        text-transform: uppercase;
+    }
+    
+    .credit-card-box .card-expiry {
+        position: absolute;
+        bottom: 50px;
+        right: 20px;
+        font-size: 14px;
+    }
+    
+    .credit-card-box .card-label {
+        font-size: 10px;
+        opacity: 0.8;
+        margin-bottom: 5px;
+    }
+    
+    .card-type-options {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    
+    .card-type-option {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin: 0 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .card-type-option:hover, .card-type-option.active {
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+    
+    .card-type-option i {
+        font-size: 24px;
+        margin-bottom: 5px;
+    }
+    
+    /* Field highlight */
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    /* Secure info styles */
+    .secure-info {
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+        border-left: 5px solid #28a745;
+    }
+    
+    .secure-info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .secure-info-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .cvv-info {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .cvv-tooltip {
+        display: none;
+        position: absolute;
+        top: -80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        border-radius: 5px;
+        width: 200px;
+        z-index: 10;
+    }
+    
+    .cvv-info:hover .cvv-tooltip {
+        display: block;
+    }
+    
+    /* Order summary styles */
+    .order-item {
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+        transition: transform 0.2s;
+    }
+    
+    .order-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-type-radio {
+        display: none;
+    }
+    
+    .checkout-header {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    
+    .checkout-header::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 60px;
+        height: 4px;
+        background-color: #007bff;
+        border-radius: 2px;
+    }
+    
+    .payment-btn {
+        background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+        border: none;
+        padding: 12px 30px;
+        font-weight: bold;
+        transition: all 0.3s;
+    }
+    
+    .payment-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(58, 123, 213, 0.4);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5">
-    <h1 class="mb-4">Checkout</h1>
+    <h1 class="checkout-header">Secure Checkout</h1>
     
     <div class="row">
         <div class="col-lg-8">
             <div class="card shadow mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Payment Information</h4>
+                    <h4 class="mb-0">Payment Method</h4>
                 </div>
                 <div class="card-body">
+                    <!-- Credit Card Visual -->
+                    <div class="credit-card-box mb-4">
+                        <div class="card-front">
+                            <div class="card-type">
+                                <i class="fab fa-cc-visa" id="card-logo"></i>
+                            </div>
+                            <div class="card-chip"></div>
+                            <div class="card-number" id="card-number-display">•••• •••• •••• ••••</div>
+                            <div class="card-holder">
+                                <div class="card-label">Card Holder</div>
+                                <div id="card-name-display">YOUR NAME</div>
+                            </div>
+                            <div class="card-expiry">
+                                <div class="card-label">Expires</div>
+                                <div id="card-expiry-display">MM/YY</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <form method="POST" action="{% url 'checkout' %}" id="payment-form">
                         {% csrf_token %}
+                        
+                        <!-- Card Type Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Card Type</label>
+                            <div class="card-type-options">
+                                {% for value, text in form.card_type.field.choices %}
+                                <label class="card-type-option" id="card-type-{{ value }}">
+                                    <input type="radio" name="card_type" value="{{ value }}" class="card-type-radio" {% if forloop.first %}checked{% endif %}>
+                                    <i class="fab fa-cc-{{ value }}"></i>
+                                    <div>{{ text }}</div>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
                         <div class="row g-3">
+                            <!-- Card Number -->
                             <div class="col-md-12">
                                 <div class="form-group mb-3">
-                                    <label for="card_number">{{ form.card_number.label }}</label>
+                                    <label for="card_number" class="form-label fw-bold">{{ form.card_number.label }}</label>
                                     {{ form.card_number }}
                                     {% if form.card_number.errors %}
                                     <div class="invalid-feedback d-block">
@@ -29,9 +259,11 @@
                                     {% endif %}
                                 </div>
                             </div>
+                            
+                            <!-- Card Name -->
                             <div class="col-md-12">
                                 <div class="form-group mb-3">
-                                    <label for="card_name">{{ form.card_name.label }}</label>
+                                    <label for="card_name" class="form-label fw-bold">{{ form.card_name.label }}</label>
                                     {{ form.card_name }}
                                     {% if form.card_name.errors %}
                                     <div class="invalid-feedback d-block">
@@ -42,35 +274,52 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group mb-3">
-                                    <label for="expiry_month">{{ form.expiry_month.label }}</label>
-                                    {{ form.expiry_month }}
-                                    {% if form.expiry_month.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.expiry_month.errors %}
-                                        <span>{{ error }}</span>
-                                        {% endfor %}
+                            
+                            <!-- Expiry Date -->
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Expiration Date</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-group mb-3">
+                                            <label for="expiry_month" class="visually-hidden">{{ form.expiry_month.label }}</label>
+                                            {{ form.expiry_month }}
+                                            {% if form.expiry_month.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.expiry_month.errors %}
+                                                <span>{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    {% endif %}
+                                    <div class="col-6">
+                                        <div class="form-group mb-3">
+                                            <label for="expiry_year" class="visually-hidden">{{ form.expiry_year.label }}</label>
+                                            {{ form.expiry_year }}
+                                            {% if form.expiry_year.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.expiry_year.errors %}
+                                                <span>{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                            
+                            <!-- CVV -->
                             <div class="col-md-4">
                                 <div class="form-group mb-3">
-                                    <label for="expiry_year">{{ form.expiry_year.label }}</label>
-                                    {{ form.expiry_year }}
-                                    {% if form.expiry_year.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.expiry_year.errors %}
-                                        <span>{{ error }}</span>
-                                        {% endfor %}
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group mb-3">
-                                    <label for="cvv">{{ form.cvv.label }}</label>
+                                    <label for="cvv" class="form-label fw-bold d-flex align-items-center">
+                                        {{ form.cvv.label }}
+                                        <div class="cvv-info ms-2">
+                                            <i class="fas fa-question-circle text-muted"></i>
+                                            <div class="cvv-tooltip">
+                                                The 3 or 4 digit security code on the back of your card.
+                                            </div>
+                                        </div>
+                                    </label>
                                     {{ form.cvv }}
                                     {% if form.cvv.errors %}
                                     <div class="invalid-feedback d-block">
@@ -83,35 +332,26 @@
                             </div>
                         </div>
                         
+                        <!-- Payment Security Section -->
+                        <div class="secure-info">
+                            <div class="secure-info-item">
+                                <i class="fas fa-lock text-success me-3"></i>
+                                <div>
+                                    <strong>Secure Transaction</strong>
+                                    <p class="mb-0 small text-muted">Your payment information is encrypted and processed securely.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'cart' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Back to Cart
                             </a>
-                            {{ form.submit }}
+                            <button type="submit" class="btn btn-primary payment-btn">
+                                <i class="fas fa-lock me-2"></i>Complete Payment
+                            </button>
                         </div>
                     </form>
-                </div>
-            </div>
-            
-            <div class="card shadow mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Secure Payment</h4>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="fas fa-lock text-success me-3 fa-2x"></i>
-                        <div>
-                            <h5 class="mb-1">Secure Transaction</h5>
-                            <p class="mb-0 text-muted">Your payment information is encrypted and processed securely.</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-credit-card text-primary me-3 fa-2x"></i>
-                        <div>
-                            <h5 class="mb-1">Multiple Payment Options</h5>
-                            <p class="mb-0 text-muted">We accept all major credit cards: Visa, MasterCard, American Express, and Discover.</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -123,12 +363,12 @@
                 </div>
                 <div class="card-body">
                     {% for item in cart_items %}
-                    <div class="d-flex mb-3">
-                        <img src="{{ item.car.image_url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="me-3" style="width: 60px; height: 40px; object-fit: cover;">
+                    <div class="order-item d-flex">
+                        <img src="{{ item.car.image_url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="me-3" style="width: 60px; height: 40px; object-fit: cover; border-radius: 5px;">
                         <div>
                             <h6 class="mb-0">{{ item.car.make }} {{ item.car.model }}</h6>
-                            <small class="text-muted">{{ item.days }} days ({{ item.item.start_date|date:"m/d/Y" }} - {{ item.item.end_date|date:"m/d/Y" }})</small>
-                            <div>${{ item.price|floatformat:2 }}</div>
+                            <small class="text-muted">{{ item.days }} days ({{ item.start_date|date:"m/d/Y" }} - {{ item.end_date|date:"m/d/Y" }})</small>
+                            <div class="text-primary">${{ item.total|floatformat:2 }}</div>
                         </div>
                     </div>
                     {% endfor %}
@@ -137,20 +377,131 @@
                     
                     <div class="d-flex justify-content-between mb-2">
                         <span>Subtotal:</span>
-                        <span>${{ total_price|floatformat:2 }}</span>
+                        <span>${{ cart_total|floatformat:2 }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Tax (Included):</span>
                         <span>$0.00</span>
                     </div>
                     <hr>
-                    <div class="d-flex justify-content-between mb-0">
+                    <div class="d-flex justify-content-between mb-3">
                         <span class="fw-bold">Total:</span>
-                        <span class="fw-bold">${{ total_price|floatformat:2 }}</span>
+                        <span class="fw-bold fs-5 text-primary">${{ cart_total|floatformat:2 }}</span>
+                    </div>
+                    
+                    <div class="secure-info-item mt-3">
+                        <i class="fas fa-credit-card text-primary me-3"></i>
+                        <div>
+                            <strong>Accepted Payment Methods</strong>
+                            <div class="mt-2">
+                                <i class="fab fa-cc-visa fa-2x me-2"></i>
+                                <i class="fab fa-cc-mastercard fa-2x me-2"></i>
+                                <i class="fab fa-cc-amex fa-2x me-2"></i>
+                                <i class="fab fa-cc-discover fa-2x"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cardTypeOptions = document.querySelectorAll('.card-type-option');
+        const cardNumberInput = document.querySelector('[data-card-field="number"]');
+        const cardNameInput = document.querySelector('[data-card-field="name"]');
+        const expiryMonthInput = document.querySelector('[data-card-field="expiry-month"]');
+        const expiryYearInput = document.querySelector('[data-card-field="expiry-year"]');
+        
+        const cardNumberDisplay = document.getElementById('card-number-display');
+        const cardNameDisplay = document.getElementById('card-name-display');
+        const cardExpiryDisplay = document.getElementById('card-expiry-display');
+        const cardLogoElement = document.getElementById('card-logo');
+        
+        // Initialize with Visa selected
+        document.getElementById('card-type-visa').classList.add('active');
+        
+        // Handle card type selection
+        cardTypeOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove active class from all options
+                cardTypeOptions.forEach(opt => opt.classList.remove('active'));
+                
+                // Add active class to clicked option
+                this.classList.add('active');
+                
+                // Check the radio button
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+                
+                // Update the card logo
+                const cardType = radio.value;
+                cardLogoElement.className = `fab fa-cc-${cardType}`;
+                
+                // Update card background
+                const cardFront = document.querySelector('.card-front');
+                
+                if (cardType === 'visa') {
+                    cardFront.style.background = 'linear-gradient(135deg, #3a7bd5, #00d2ff)';
+                } else if (cardType === 'mastercard') {
+                    cardFront.style.background = 'linear-gradient(135deg, #f46b45, #eea849)';
+                } else if (cardType === 'amex') {
+                    cardFront.style.background = 'linear-gradient(135deg, #1e3c72, #2a5298)';
+                } else if (cardType === 'discover') {
+                    cardFront.style.background = 'linear-gradient(135deg, #ff7e5f, #feb47b)';
+                }
+            });
+        });
+        
+        // Format card number with spaces for display
+        function formatCardNumber(value) {
+            if (!value) return '•••• •••• •••• ••••';
+            
+            const valueWithoutSpaces = value.replace(/\s+/g, '');
+            const groups = [];
+            
+            for (let i = 0; i < valueWithoutSpaces.length; i += 4) {
+                groups.push(valueWithoutSpaces.substr(i, 4));
+            }
+            
+            return groups.join(' ').padEnd(19, '•');
+        }
+        
+        // Handle card number input
+        cardNumberInput.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            
+            // Limit to 16 digits
+            if (value.length > 16) {
+                value = value.substr(0, 16);
+            }
+            
+            // Format with spaces in input field (every 4 digits)
+            const formattedValue = value.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+            this.value = formattedValue;
+            
+            // Update the display
+            cardNumberDisplay.textContent = formatCardNumber(value);
+        });
+        
+        // Handle card name input
+        cardNameInput.addEventListener('input', function() {
+            cardNameDisplay.textContent = this.value.toUpperCase() || 'YOUR NAME';
+        });
+        
+        // Handle expiry date inputs
+        function updateExpiryDisplay() {
+            const month = expiryMonthInput.value.padStart(2, '0');
+            const year = expiryYearInput.value.slice(-2);
+            cardExpiryDisplay.textContent = month && year ? `${month}/${year}` : 'MM/YY';
+        }
+        
+        expiryMonthInput.addEventListener('change', updateExpiryDisplay);
+        expiryYearInput.addEventListener('change', updateExpiryDisplay);
+    });
+</script>
 {% endblock %}
