@@ -1,0 +1,150 @@
+{% extends 'layout_django.html' %}
+
+{% block title %}Welcome to CarRental{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 d-flex align-items-center">
+                <div class="hero-content">
+                    <h1>Find Your Perfect Ride</h1>
+                    <p class="lead">Choose from our premium selection of vehicles for your next adventure.</p>
+                    <div class="mt-4">
+                        <a href="{% url 'car_listing' %}" class="btn btn-primary btn-lg">Browse Cars</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <img src="https://placehold.jp/800x500.png" alt="Hero Image" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <h2 class="section-title text-center mb-4">Why Choose Us</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card feature-card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <h3 class="card-title">Wide Selection</h3>
+                    <p class="card-text">Choose from our diverse fleet of vehicles to suit your needs, from economy to luxury cars.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <h3 class="card-title">Best Prices</h3>
+                    <p class="card-text">We offer competitive rates with no hidden fees or charges, guaranteed.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3 class="card-title">24/7 Support</h3>
+                    <p class="card-text">Our customer support team is available around the clock to assist you.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if featured_cars %}
+<div class="container mt-5">
+    <h2 class="section-title text-center mb-4">Featured Cars</h2>
+    <div class="row g-4">
+        {% for car in featured_cars %}
+        <div class="col-md-4">
+            <div class="card car-card h-100">
+                <div class="car-image">
+                    {% if car.image_url %}
+                    <img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
+                    {% else %}
+                    <img src="https://placehold.jp/400x300.png" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
+                    {% endif %}
+                    <div class="car-price">${{ car.daily_rate }}/day</div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ car.year }} {{ car.make }} {{ car.model }}</h5>
+                    <div class="car-features">
+                        <span><i class="fas fa-car"></i> {{ car.category }}</span>
+                        <span><i class="fas fa-cog"></i> {{ car.transmission }}</span>
+                        <span><i class="fas fa-gas-pump"></i> {{ car.fuel_type }}</span>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'car_detail' car.id %}" class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="container mt-5">
+    <h2 class="section-title text-center mb-4">How It Works</h2>
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="step-card text-center">
+                <div class="step-number">1</div>
+                <div class="step-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h4>Search & Select</h4>
+                <p>Browse our selection of cars and choose the one that fits your needs.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="step-card text-center">
+                <div class="step-number">2</div>
+                <div class="step-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h4>Pick Dates</h4>
+                <p>Select your preferred pickup and return dates and times.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="step-card text-center">
+                <div class="step-number">3</div>
+                <div class="step-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <h4>Book & Pay</h4>
+                <p>Complete your reservation by making a secure online payment.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="step-card text-center">
+                <div class="step-number">4</div>
+                <div class="step-icon">
+                    <i class="fas fa-car-side"></i>
+                </div>
+                <h4>Enjoy Your Ride</h4>
+                <p>Pick up your car and enjoy your journey with peace of mind.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <div class="cta-section p-5 text-center">
+        <h2>Ready to Start Your Journey?</h2>
+        <p class="lead mb-4">Book a car today and experience the freedom of the open road.</p>
+        <a href="{% url 'car_listing' %}" class="btn btn-primary btn-lg">Reserve Now</a>
+    </div>
+</div>
+{% endblock %}
