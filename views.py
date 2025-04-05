@@ -11,7 +11,7 @@ from utils import calculate_total_price, get_car_availability
 def index():
     # Get featured cars (5 random cars)
     featured_cars = list(cars.values())[:5]
-    return render_template('index.html', featured_cars=featured_cars)
+    return render_template('index_flask.html', featured_cars=featured_cars)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

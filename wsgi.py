@@ -1,13 +1,10 @@
 """
-WSGI config for car_rental_project.
+WSGI configuration for Flask app.
 
-It exposes the WSGI callable as a module-level variable named ``application``.
+It exposes the WSGI callable as a module-level variable named ``app``.
 """
 
-import os
-from django.core.wsgi import get_wsgi_application
+from app import app
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'car_rental_project.settings')
-
-application = get_wsgi_application()
-app = application  # For Gunicorn
+# This is for Gunicorn
+application = app

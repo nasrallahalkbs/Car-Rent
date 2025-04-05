@@ -1,0 +1,215 @@
+{% extends 'layout_flask.html' %}
+
+{% block title %}Home - CarRental{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="hero-title">Find Your Perfect Ride</h1>
+                <p class="hero-subtitle">Explore our wide range of premium vehicles for any occasion at competitive prices.</p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('car_listing') }}" class="btn btn-primary btn-lg">Browse Cars</a>
+                    {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg ms-2">Sign Up Now</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <img src="https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" class="img-fluid rounded hero-image" alt="Car Rental">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Cars Section -->
+<section class="featured-cars py-5">
+    <div class="container">
+        <h2 class="section-title text-center mb-5">Featured Cars</h2>
+        <div class="row">
+            {% for car in featured_cars %}
+            <div class="col-md-4 mb-4">
+                <div class="card car-card h-100">
+                    <img 
+                        src="{{ car.image_url if car.image_url else 'https://via.placeholder.com/300x200?text=No+Image' }}" 
+                        class="card-img-top" 
+                        alt="{{ car.make }} {{ car.model }}"
+                    >
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="card-title mb-0">{{ car.make }} {{ car.model }}</h5>
+                            <span class="badge bg-primary">${{ car.daily_rate }}/day</span>
+                        </div>
+                        <p class="card-text">{{ car.year }} · {{ car.category }} · {{ car.transmission }}</p>
+                        <div class="car-features mb-3">
+                            <span><i class="fas fa-car"></i> {{ car.seats }} seats</span>
+                            <span><i class="fas fa-gas-pump"></i> {{ car.fuel_type }}</span>
+                        </div>
+                        <a href="{{ url_for('car_detail', car_id=car.id) }}" class="btn btn-outline-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('car_listing') }}" class="btn btn-outline-primary">View All Cars</a>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title text-center mb-5">How It Works</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4 mb-md-0">
+                <div class="process-card text-center">
+                    <div class="icon-circle mb-4">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>Find Your Car</h3>
+                    <p>Browse our wide selection of vehicles and choose the perfect car for your needs.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4 mb-md-0">
+                <div class="process-card text-center">
+                    <div class="icon-circle mb-4">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h3>Make a Reservation</h3>
+                    <p>Select your pick-up and return dates, and complete the booking process online.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="process-card text-center">
+                    <div class="icon-circle mb-4">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <h3>Enjoy Your Ride</h3>
+                    <p>Pick up your car at the designated location and enjoy your journey.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials py-5">
+    <div class="container">
+        <h2 class="section-title text-center mb-5">What Our Customers Say</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"Excellent service and a great selection of cars. The booking process was smooth, and the car was in perfect condition."</p>
+                    <div class="testimonial-author">
+                        <img src="https://i.pravatar.cc/300?img=1" alt="Customer" class="avatar">
+                        <div>
+                            <h5>John Smith</h5>
+                            <p>New York</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <p class="testimonial-text">"Very professional staff and competitive prices. The car was clean and well-maintained. Will definitely use their services again!"</p>
+                    <div class="testimonial-author">
+                        <img src="https://i.pravatar.cc/300?img=5" alt="Customer" class="avatar">
+                        <div>
+                            <h5>Sarah Johnson</h5>
+                            <p>Los Angeles</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"Fantastic experience! The online booking system was easy to use, and the car exceeded my expectations. Highly recommended!"</p>
+                    <div class="testimonial-author">
+                        <img src="https://i.pravatar.cc/300?img=8" alt="Customer" class="avatar">
+                        <div>
+                            <h5>David Brown</h5>
+                            <p>Chicago</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why Choose Us Section -->
+<section class="why-choose-us py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title text-center mb-5">Why Choose Us</h2>
+        <div class="row">
+            <div class="col-md-3 mb-4 mb-md-0">
+                <div class="feature-card text-center">
+                    <i class="fas fa-car feature-icon"></i>
+                    <h3>Quality Vehicles</h3>
+                    <p>Our cars are regularly maintained and kept in excellent condition for your safety and comfort.</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4 mb-md-0">
+                <div class="feature-card text-center">
+                    <i class="fas fa-dollar-sign feature-icon"></i>
+                    <h3>Best Rates</h3>
+                    <p>We offer competitive prices and special deals to ensure you get the best value for your money.</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4 mb-md-0">
+                <div class="feature-card text-center">
+                    <i class="fas fa-headset feature-icon"></i>
+                    <h3>24/7 Support</h3>
+                    <p>Our customer support team is available around the clock to assist you with any questions or issues.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card text-center">
+                    <i class="fas fa-thumbs-up feature-icon"></i>
+                    <h3>Satisfaction Guaranteed</h3>
+                    <p>We strive to provide exceptional service and ensure your complete satisfaction with every rental.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="cta-section py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h2 class="cta-title">Ready to Hit the Road?</h2>
+                <p class="cta-text">Explore our wide range of vehicles and book your perfect car today.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <a href="{{ url_for('car_listing') }}" class="btn btn-primary btn-lg">Browse Cars Now</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
