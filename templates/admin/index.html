@@ -1,0 +1,166 @@
+{% extends 'layout.html' %}
+
+{% block title %}Admin Dashboard - CarRental{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Admin Dashboard</h1>
+        <div>
+            <a href="{{ url_for('admin.admin_cars') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-car me-2"></i>Manage Cars
+            </a>
+            <a href="{{ url_for('admin.admin_reservations') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-calendar-alt me-2"></i>Manage Reservations
+            </a>
+            <a href="{{ url_for('admin.admin_users') }}" class="btn btn-outline-primary">
+                <i class="fas fa-users me-2"></i>Manage Users
+            </a>
+        </div>
+    </div>
+    
+    <!-- Dashboard Summary Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow dashboard-card">
+                <div class="card-body">
+                    <div class="icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="count">{{ total_cars }}</div>
+                    <div class="title">Total Cars</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow dashboard-card">
+                <div class="card-body">
+                    <div class="icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="count">{{ total_users }}</div>
+                    <div class="title">Total Users</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow dashboard-card">
+                <div class="card-body">
+                    <div class="icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="count">{{ total_reservations }}</div>
+                    <div class="title">Total Reservations</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow dashboard-card">
+                <div class="card-body">
+                    <div class="icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="count">{{ active_reservations }}</div>
+                    <div class="title">Active Reservations</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Reservations -->
+    <div class="card shadow mb-5">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Recent Reservations</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Car</th>
+                            <th>Dates</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_reservations %}
+                        <tr>
+                            <td>#{{ item.reservation.id }}</td>
+                            <td>{{ item.user.username }}</td>
+                            <td>{{ item.car.make }} {{ item.car.model }}</td>
+                            <td>
+                                <small>{{ item.reservation.start_date.strftime('%m/%d/%Y') }}</small> -
+                                <small>{{ item.reservation.end_date.strftime('%m/%d/%Y') }}</small>
+                            </td>
+                            <td>${{ item.reservation.total_price|round(2) }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if item.reservation.status == 'confirmed' else 'warning' if item.reservation.status == 'pending' else 'info' if item.reservation.status == 'completed' else 'danger' }}">
+                                    {{ item.reservation.status|capitalize }}
+                                </span>
+                            </td>
+                            <td>{{ item.reservation.created_at.strftime('%m/%d/%Y') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-end mt-3">
+                <a href="{{ url_for('admin.admin_reservations') }}" class="btn btn-outline-primary">
+                    View All Reservations
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Quick Actions</h4>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-car-side fa-3x text-primary mb-3"></i>
+                            <h5>Add New Car</h5>
+                            <p>Add a new vehicle to your rental fleet</p>
+                            <a href="{{ url_for('admin.add_car') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Car
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-calendar-alt fa-3x text-primary mb-3"></i>
+                            <h5>Manage Reservations</h5>
+                            <p>View and update reservation statuses</p>
+                            <a href="{{ url_for('admin.admin_reservations') }}" class="btn btn-primary">
+                                <i class="fas fa-cog me-2"></i>Manage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                            <h5>User Management</h5>
+                            <p>View and manage user accounts</p>
+                            <a href="{{ url_for('admin.admin_users') }}" class="btn btn-primary">
+                                <i class="fas fa-user-cog me-2"></i>Users
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

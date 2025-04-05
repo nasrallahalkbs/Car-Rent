@@ -1,0 +1,140 @@
+{% extends 'layout.html' %}
+
+{% block title %}My Reservations - CarRental{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">My Reservations</h1>
+    
+    {% if reservations %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-body p-0">
+                    <ul class="nav nav-tabs" id="reservationTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" aria-controls="active" aria-selected="true">
+                                Active Reservations
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab" aria-controls="completed" aria-selected="false">
+                                Past Reservations
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content p-4" id="reservationTabsContent">
+                        <div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
+                            {% set active_reservations = reservations|selectattr('reservation.status', 'in', ['confirmed', 'pending'])|list %}
+                            {% if active_reservations %}
+                                {% for item in active_reservations %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3 mb-md-0">
+                                                <img src="{{ item.car.image_url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="img-fluid rounded" style="max-height: 120px; width: 100%; object-fit: cover;">
+                                            </div>
+                                            <div class="col-md-6 mb-3 mb-md-0">
+                                                <h5>{{ item.car.make }} {{ item.car.model }} {{ item.car.year }}</h5>
+                                                <p class="mb-1">
+                                                    <strong>Pick-up:</strong> {{ item.reservation.start_date.strftime('%B %d, %Y') }}
+                                                </p>
+                                                <p class="mb-1">
+                                                    <strong>Return:</strong> {{ item.reservation.end_date.strftime('%B %d, %Y') }}
+                                                </p>
+                                                <p class="mb-1">
+                                                    <strong>Duration:</strong> {{ item.days }} days
+                                                </p>
+                                                <p class="mb-0">
+                                                    <strong>Total:</strong> ${{ item.reservation.total_price|round(2) }}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-3 text-md-end">
+                                                <span class="badge bg-{{ 'warning' if item.reservation.status == 'pending' else 'success' }} mb-3 d-inline-block">
+                                                    {{ item.reservation.status|capitalize }}
+                                                </span>
+                                                <div>
+                                                    <a href="{{ url_for('car_detail', car_id=item.car.id) }}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-car me-1"></i> View Car
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>You don't have any active reservations.
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
+                            {% set completed_reservations = reservations|selectattr('reservation.status', 'in', ['completed', 'cancelled'])|list %}
+                            {% if completed_reservations %}
+                                {% for item in completed_reservations %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3 mb-md-0">
+                                                <img src="{{ item.car.image_url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="img-fluid rounded" style="max-height: 120px; width: 100%; object-fit: cover;">
+                                            </div>
+                                            <div class="col-md-6 mb-3 mb-md-0">
+                                                <h5>{{ item.car.make }} {{ item.car.model }} {{ item.car.year }}</h5>
+                                                <p class="mb-1">
+                                                    <strong>Pick-up:</strong> {{ item.reservation.start_date.strftime('%B %d, %Y') }}
+                                                </p>
+                                                <p class="mb-1">
+                                                    <strong>Return:</strong> {{ item.reservation.end_date.strftime('%B %d, %Y') }}
+                                                </p>
+                                                <p class="mb-1">
+                                                    <strong>Duration:</strong> {{ item.days }} days
+                                                </p>
+                                                <p class="mb-0">
+                                                    <strong>Total:</strong> ${{ item.reservation.total_price|round(2) }}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-3 text-md-end">
+                                                <span class="badge bg-{{ 'danger' if item.reservation.status == 'cancelled' else 'info' }} mb-3 d-inline-block">
+                                                    {{ item.reservation.status|capitalize }}
+                                                </span>
+                                                <div>
+                                                    {% if not item.has_review and item.reservation.status == 'completed' %}
+                                                    <a href="{{ url_for('add_review', reservation_id=item.reservation.id) }}" class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-star me-1"></i> Write Review
+                                                    </a>
+                                                    {% endif %}
+                                                    <a href="{{ url_for('car_detail', car_id=item.car.id) }}" class="btn btn-outline-primary btn-sm mt-2">
+                                                        <i class="fas fa-car me-1"></i> View Car
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>You don't have any completed reservations.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow text-center p-5">
+        <div class="card-body">
+            <i class="fas fa-calendar-alt fa-5x text-muted mb-4"></i>
+            <h3>No Reservations Found</h3>
+            <p class="text-muted mb-4">You haven't made any reservations yet.</p>
+            <a href="{{ url_for('car_listing') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-car me-2"></i>Browse Cars
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

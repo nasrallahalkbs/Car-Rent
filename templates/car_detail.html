@@ -1,0 +1,218 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ car.make }} {{ car.model }} - CarRental{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/reservation.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('car_listing') }}">Cars</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ car.make }} {{ car.model }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row mt-4">
+        <!-- Car Images and Details -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-body">
+                    <h1 class="mb-3">{{ car.make }} {{ car.model }} {{ car.year }}</h1>
+                    
+                    <div class="mb-4">
+                        <img src="{{ car.image_url }}" alt="{{ car.make }} {{ car.model }}" class="img-fluid car-detail-img w-100">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h4>Car Details</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="features-list">
+                                    <li><i class="fas fa-tag"></i> Category: {{ car.category }}</li>
+                                    <li><i class="fas fa-users"></i> Seats: {{ car.seats }}</li>
+                                    <li><i class="fas fa-cog"></i> Transmission: {{ car.transmission }}</li>
+                                    <li><i class="fas fa-gas-pump"></i> Fuel Type: {{ car.fuel_type }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="features-list">
+                                    <li><i class="fas fa-palette"></i> Color: {{ car.color }}</li>
+                                    <li><i class="fas fa-id-card"></i> License Plate: {{ car.license_plate }}</li>
+                                    <li><i class="fas fa-calendar-alt"></i> Year: {{ car.year }}</li>
+                                    <li><i class="fas fa-dollar-sign"></i> Daily Rate: ${{ car.daily_rate }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h4>Features</h4>
+                        {% if car.features %}
+                        <div class="row">
+                            {% for feature in car.features %}
+                            <div class="col-md-4 mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>{{ feature }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p>No additional features listed for this vehicle.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Reviews Section -->
+                    <div>
+                        <h4>Customer Reviews</h4>
+                        <div class="mb-3">
+                            <span class="rating me-2">
+                                {% for i in range(5) %}
+                                    {% if i < avg_rating|int %}
+                                    <i class="fas fa-star"></i>
+                                    {% elif avg_rating|int < avg_rating and i == avg_rating|int %}
+                                    <i class="fas fa-star-half-alt"></i>
+                                    {% else %}
+                                    <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                            <span>{{ avg_rating|round(1) }} out of 5 ({{ reviews|length }} reviews)</span>
+                        </div>
+                        
+                        <div class="reviews">
+                            {% if reviews %}
+                                {% for review in reviews %}
+                                <div class="review">
+                                    <div class="review-header">
+                                        <span class="review-user">{{ users[review.user_id].username }}</span>
+                                        <span class="review-date">{{ review.created_at.strftime('%b %d, %Y') }}</span>
+                                    </div>
+                                    <div class="rating mb-2">
+                                        {% for i in range(5) %}
+                                            {% if i < review.rating %}
+                                            <i class="fas fa-star"></i>
+                                            {% else %}
+                                            <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <p>{{ review.comment }}</p>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No reviews yet. Be the first to review this car!</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reservation Form -->
+        <div class="col-lg-4">
+            {% if show_review_form %}
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Submit Your Review</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_review', reservation_id=request.view_args.reservation_id) }}">
+                        {{ form.hidden_tag() }}
+                        <div class="form-group mb-3">
+                            <label>{{ form.rating.label }}</label>
+                            <div>
+                                {{ form.rating(class="form-select") }}
+                            </div>
+                            {% if form.rating.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.rating.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>{{ form.comment.label }}</label>
+                            {{ form.comment(class="form-control", rows=4) }}
+                            {% if form.comment.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.comment.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.submit(class="btn btn-primary w-100") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="card shadow reservation-form">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Book This Car</h4>
+                </div>
+                <div class="card-body">
+                    <div class="price-info mb-4">
+                        <h5>Rental Rate</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Daily Rate:</span>
+                            <span class="fw-bold" id="daily_rate">${{ car.daily_rate }}</span>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('car_detail', car_id=car.id) }}">
+                        {{ form.hidden_tag() }}
+                        {{ form.car_id(value=car.id) }}
+                        
+                        <div class="form-group mb-3">
+                            <label for="start_date">{{ form.start_date.label }}</label>
+                            {{ form.start_date(class="form-control", type="date") }}
+                            {% if form.start_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.start_date.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="end_date">{{ form.end_date.label }}</label>
+                            {{ form.end_date(class="form-control", type="date") }}
+                            {% if form.end_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.end_date.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="calculated-price mb-4">
+                            <h5>Estimated Total</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Total Cost:</span>
+                                <span class="fw-bold text-primary fs-4" id="calculated_price">$0.00</span>
+                            </div>
+                            <small class="text-muted">Final price will be calculated at checkout</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.submit(class="btn btn-primary btn-lg w-100") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

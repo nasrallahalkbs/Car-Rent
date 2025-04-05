@@ -1,0 +1,110 @@
+{% extends 'layout.html' %}
+
+{% block title %}Your Cart - CarRental{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/reservation.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Your Cart</h1>
+    
+    {% if cart_items %}
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Reserved Cars</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Vehicle</th>
+                                    <th>Dates</th>
+                                    <th>Days</th>
+                                    <th>Price</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.car.image_url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="me-3" style="width: 60px; height: 40px; object-fit: cover;">
+                                            <div>
+                                                <h6 class="mb-0">{{ item.car.make }} {{ item.car.model }}</h6>
+                                                <small class="text-muted">{{ item.car.category }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>{{ item.item.start_date.strftime('%m/%d/%Y') }}</div>
+                                        <small class="text-muted">to</small>
+                                        <div>{{ item.item.end_date.strftime('%m/%d/%Y') }}</div>
+                                    </td>
+                                    <td>{{ item.days }}</td>
+                                    <td>${{ item.price|round(2) }}</td>
+                                    <td>
+                                        <a href="{{ url_for('remove_from_cart', item_id=item.item.id) }}" class="btn btn-sm btn-outline-danger remove-from-cart">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('car_listing') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Order Summary</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Subtotal:</span>
+                        <span>${{ total_price|round(2) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Tax (Included):</span>
+                        <span>$0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="fw-bold">Total:</span>
+                        <span class="fw-bold">${{ total_price|round(2) }}</span>
+                    </div>
+                    <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg w-100">
+                        <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow text-center p-5">
+        <div class="card-body">
+            <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
+            <h3>Your cart is empty</h3>
+            <p class="text-muted mb-4">Looks like you haven't added any cars to your cart yet.</p>
+            <a href="{{ url_for('car_listing') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-car me-2"></i>Browse Cars
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

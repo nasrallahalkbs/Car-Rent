@@ -1,0 +1,72 @@
+{% if filtered_reservations %}
+<div class="table-responsive">
+    <table class="table table-hover admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Vehicle</th>
+                <th>Pick-up Date</th>
+                <th>Return Date</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in filtered_reservations %}
+            <tr>
+                <td>{{ item.reservation.id }}</td>
+                <td>
+                    <div>{{ item.user.username }}</div>
+                    <small class="text-muted">{{ item.user.email }}</small>
+                </td>
+                <td>
+                    <div>{{ item.car.make }} {{ item.car.model }}</div>
+                    <small class="text-muted">{{ item.car.license_plate }}</small>
+                </td>
+                <td>{{ item.reservation.start_date.strftime('%m/%d/%Y') }}</td>
+                <td>{{ item.reservation.end_date.strftime('%m/%d/%Y') }}</td>
+                <td>${{ item.reservation.total_price|round(2) }}</td>
+                <td>
+                    <span class="badge bg-{{ 'success' if item.reservation.status == 'confirmed' else 'warning' if item.reservation.status == 'pending' else 'info' if item.reservation.status == 'completed' else 'danger' }}">
+                        {{ item.reservation.status|capitalize }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge bg-{{ 'success' if item.reservation.payment_status == 'paid' else 'warning' if item.reservation.payment_status == 'pending' else 'danger' }}">
+                        {{ item.reservation.payment_status|capitalize }}
+                    </span>
+                </td>
+                <td>{{ item.reservation.created_at.strftime('%m/%d/%Y') }}</td>
+                <td class="action-buttons">
+                    {% if item.reservation.status != 'cancelled' %}
+                        {% if item.reservation.status != 'completed' %}
+                        <a href="{{ url_for('admin.update_reservation_status', reservation_id=item.reservation.id, status='completed') }}" class="btn btn-sm btn-outline-success" title="Mark as Completed">
+                            <i class="fas fa-check"></i>
+                        </a>
+                        {% endif %}
+                        {% if item.reservation.status == 'pending' %}
+                        <a href="{{ url_for('admin.update_reservation_status', reservation_id=item.reservation.id, status='confirmed') }}" class="btn btn-sm btn-outline-primary" title="Confirm">
+                            <i class="fas fa-thumbs-up"></i>
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('admin.update_reservation_status', reservation_id=item.reservation.id, status='cancelled') }}" class="btn btn-sm btn-outline-danger" title="Cancel" onclick="return confirm('Are you sure you want to cancel this reservation?');">
+                            <i class="fas fa-ban"></i>
+                        </a>
+                    {% else %}
+                        <span class="text-muted">No actions available</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>No reservations found with this status.
+</div>
+{% endif %}

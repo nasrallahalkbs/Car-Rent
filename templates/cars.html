@@ -1,0 +1,86 @@
+{% extends 'layout.html' %}
+
+{% block title %}Browse Cars - CarRental{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Browse Our Cars</h1>
+    
+    <!-- Search/Filter Form -->
+    <div class="search-form">
+        <form method="GET" action="{{ url_for('car_listing') }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="category">Car Type</label>
+                        {{ form.category(class="form-select") }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="transmission">Transmission</label>
+                        {{ form.transmission(class="form-select") }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="fuel_type">Fuel Type</label>
+                        {{ form.fuel_type(class="form-select") }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Price Range</label>
+                        <div class="input-group">
+                            {{ form.min_price(class="form-control", placeholder="Min") }}
+                            <span class="input-group-text">-</span>
+                            {{ form.max_price(class="form-control", placeholder="Max") }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-2"></i>Filter Results
+                    </button>
+                    <a href="{{ url_for('car_listing') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo me-2"></i>Clear Filters
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Car Listing -->
+    <div class="row g-4">
+        {% if cars %}
+            {% for car in cars %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card car-card h-100">
+                    <img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
+                    <div class="card-body">
+                        <h3 class="car-title">{{ car.make }} {{ car.model }} {{ car.year }}</h3>
+                        <p class="car-category">{{ car.category }} | {{ car.transmission }} | {{ car.fuel_type }}</p>
+                        <p class="car-features">
+                            <i class="fas fa-users me-2"></i>{{ car.seats }} Seats
+                            {% if car.features %}
+                            <span class="ms-3"><i class="fas fa-cog me-2"></i>{{ car.features|length }} Features</span>
+                            {% endif %}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <p class="car-price mb-0">${{ car.daily_rate }}<small>/day</small></p>
+                            <a href="{{ url_for('car_detail', car_id=car.id) }}" class="btn btn-outline-primary">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No cars found matching your criteria. Please try different filters.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
