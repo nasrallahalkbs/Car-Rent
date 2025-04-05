@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'layout_django.html' %}
 
 {% block title %}Checkout - CarRental{% endblock %}
 
@@ -13,13 +13,13 @@
                     <h4 class="mb-0">Payment Information</h4>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('checkout') }}" id="payment-form">
-                        {{ form.hidden_tag() }}
+                    <form method="POST" action="{% url 'checkout' %}" id="payment-form">
+                        {% csrf_token %}
                         <div class="row g-3">
                             <div class="col-md-12">
                                 <div class="form-group mb-3">
                                     <label for="card_number">{{ form.card_number.label }}</label>
-                                    {{ form.card_number(class="form-control", placeholder="1234 5678 9012 3456") }}
+                                    {{ form.card_number }}
                                     {% if form.card_number.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.card_number.errors %}
@@ -32,7 +32,7 @@
                             <div class="col-md-12">
                                 <div class="form-group mb-3">
                                     <label for="card_name">{{ form.card_name.label }}</label>
-                                    {{ form.card_name(class="form-control", placeholder="John Doe") }}
+                                    {{ form.card_name }}
                                     {% if form.card_name.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.card_name.errors %}
@@ -45,7 +45,7 @@
                             <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label for="expiry_month">{{ form.expiry_month.label }}</label>
-                                    {{ form.expiry_month(class="form-select") }}
+                                    {{ form.expiry_month }}
                                     {% if form.expiry_month.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.expiry_month.errors %}
@@ -58,7 +58,7 @@
                             <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label for="expiry_year">{{ form.expiry_year.label }}</label>
-                                    {{ form.expiry_year(class="form-select") }}
+                                    {{ form.expiry_year }}
                                     {% if form.expiry_year.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.expiry_year.errors %}
@@ -71,7 +71,7 @@
                             <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label for="cvv">{{ form.cvv.label }}</label>
-                                    {{ form.cvv(class="form-control", placeholder="123") }}
+                                    {{ form.cvv }}
                                     {% if form.cvv.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.cvv.errors %}
@@ -84,10 +84,10 @@
                         </div>
                         
                         <div class="d-flex justify-content-between mt-4">
-                            <a href="{{ url_for('cart') }}" class="btn btn-outline-secondary">
+                            <a href="{% url 'cart' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Back to Cart
                             </a>
-                            {{ form.submit(class="btn btn-success") }}
+                            {{ form.submit }}
                         </div>
                     </form>
                 </div>
@@ -127,8 +127,8 @@
                         <img src="{{ item.car.image_url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="me-3" style="width: 60px; height: 40px; object-fit: cover;">
                         <div>
                             <h6 class="mb-0">{{ item.car.make }} {{ item.car.model }}</h6>
-                            <small class="text-muted">{{ item.days }} days ({{ item.item.start_date.strftime('%m/%d/%Y') }} - {{ item.item.end_date.strftime('%m/%d/%Y') }})</small>
-                            <div>${{ item.price|round(2) }}</div>
+                            <small class="text-muted">{{ item.days }} days ({{ item.item.start_date|date:"m/d/Y" }} - {{ item.item.end_date|date:"m/d/Y" }})</small>
+                            <div>${{ item.price|floatformat:2 }}</div>
                         </div>
                     </div>
                     {% endfor %}
@@ -137,7 +137,7 @@
                     
                     <div class="d-flex justify-content-between mb-2">
                         <span>Subtotal:</span>
-                        <span>${{ total_price|round(2) }}</span>
+                        <span>${{ total_price|floatformat:2 }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Tax (Included):</span>
@@ -146,7 +146,7 @@
                     <hr>
                     <div class="d-flex justify-content-between mb-0">
                         <span class="fw-bold">Total:</span>
-                        <span class="fw-bold">${{ total_price|round(2) }}</span>
+                        <span class="fw-bold">${{ total_price|floatformat:2 }}</span>
                     </div>
                 </div>
             </div>
