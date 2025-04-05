@@ -1,0 +1,168 @@
+{% extends "layout_django.html" %}
+{% load static %}
+
+{% block title %}{{ car.make }} {{ car.model }} - Car Details{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/car-detail-animations.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 car-detail-container">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">{{ car.make }} {{ car.model }} ({{ car.year }})</h2>
+                    <div class="mb-4">
+                        <img src="{{ car.image_url|default:'https://via.placeholder.com/800x450?text=Car+Image' }}" 
+                             alt="{{ car.make }} {{ car.model }}" 
+                             class="img-fluid rounded car-detail-image">
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Car Specifications</h5>
+                            <div class="specs">
+                                <p class="car-spec-item"><strong>Category:</strong> {{ car.category }}</p>
+                                <p class="car-spec-item"><strong>Color:</strong> {{ car.color }}</p>
+                                <p class="car-spec-item"><strong>Seats:</strong> {{ car.seats }}</p>
+                                <p class="car-spec-item"><strong>Transmission:</strong> {{ car.transmission }}</p>
+                                <p class="car-spec-item"><strong>Fuel Type:</strong> {{ car.fuel_type }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Features</h5>
+                            <div class="features">
+                                {% for feature in car.feature_list %}
+                                <span class="feature-item"><i class="fas fa-check me-1"></i> {{ feature }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reviews Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Reviews</h4>
+                    {% if reviews %}
+                        {% for review in reviews %}
+                        <div class="review-item mb-3 p-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="mb-0 fw-bold">{{ review.user.username }}</p>
+                                    <div class="star-rating">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                            <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="mt-2">{{ review.comment }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No reviews yet for this car.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 1rem; z-index: 1">
+                <div class="card-body">
+                    <h3 class="price-tag mb-3">${{ car.daily_rate }} <small class="text-muted">per day</small></h3>
+                    
+                    <form method="post" action="{% url 'add_to_cart' car.id %}" class="reservation-form">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" name="start_date" id="start_date" class="form-control date-input" required min="{{ tomorrow|date:'Y-m-d' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" name="end_date" id="end_date" class="form-control date-input" required min="{{ tomorrow|date:'Y-m-d' }}">
+                        </div>
+                        
+                        <div class="mb-3 text-center">
+                            <p>Estimated Total: <span id="total-price" class="fw-bold">$0.00</span></p>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary reserve-button">
+                                <i class="fas fa-shopping-cart me-2"></i> Add to Cart
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Related Cars Section -->
+    {% if related_cars %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-4">Similar Cars You Might Like</h3>
+        </div>
+        
+        {% for related_car in related_cars %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 related-car-item">
+                <img src="{{ related_car.image_url|default:'https://via.placeholder.com/300x200?text=Car+Image' }}" class="card-img-top" alt="{{ related_car.make }} {{ related_car.model }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ related_car.make }} {{ related_car.model }}</h5>
+                    <p class="card-text text-primary fw-bold">${{ related_car.daily_rate }}/day</p>
+                    <div class="d-grid">
+                        <a href="{% url 'car_detail' related_car.id %}" class="btn btn-outline-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/car-detail-animations.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        const totalPriceSpan = document.getElementById('total-price');
+        const dailyRate = {{ car.daily_rate }};
+        
+        // Calculate and update total price
+        function updateTotalPrice() {
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+            
+            if (startDate && endDate && startDate <= endDate) {
+                // Calculate days difference
+                const diffTime = Math.abs(endDate - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                // Calculate total price
+                const totalPrice = diffDays * dailyRate;
+                totalPriceSpan.textContent = '$' + totalPrice.toFixed(2);
+            } else {
+                totalPriceSpan.textContent = '$0.00';
+            }
+        }
+        
+        // Add event listeners
+        startDateInput.addEventListener('change', updateTotalPrice);
+        endDateInput.addEventListener('change', updateTotalPrice);
+    });
+</script>
+{% endblock %}
