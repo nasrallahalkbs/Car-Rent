@@ -1,0 +1,104 @@
+{% extends 'layout_django.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add Review{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow mb-5">
+        <div class="card-header">
+            <h2 class="mb-0">Write a Review</h2>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="car-image-container mb-3">
+                        {% if reservation.car.image_url %}
+                            <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="img-fluid rounded">
+                        {% else %}
+                            <div class="placeholder-image">No Image Available</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h3>{{ reservation.car.make }} {{ reservation.car.model }} ({{ reservation.car.year }})</h3>
+                    <p><strong>Category:</strong> {{ reservation.car.category }}</p>
+                    <p><strong>Rental Period:</strong> {{ reservation.start_date|date:"F d, Y" }} to {{ reservation.end_date|date:"F d, Y" }}</p>
+                    <p><strong>Duration:</strong> {{ reservation.days }} day{{ reservation.days|pluralize }}</p>
+                </div>
+            </div>
+
+            <hr>
+
+            <h4>Your Experience</h4>
+            <p class="text-muted">Please share your experience with this rental. Your feedback helps other customers make informed decisions.</p>
+
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label for="{{ form.rating.id_for_label }}" class="form-label">Rating:</label>
+                    <div class="rating-stars mb-2">
+                        {{ form.rating|as_crispy_field }}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.comment.id_for_label }}" class="form-label">Comment:</label>
+                    {{ form.comment|as_crispy_field }}
+                </div>
+                
+                <div class="d-flex mt-4">
+                    <button type="submit" class="btn btn-primary me-2">Submit Review</button>
+                    <a href="{% url 'reservation_detail' reservation.id %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center mb-5">
+        <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to My Reservations
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .car-image-container {
+        height: 200px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .car-image-container img {
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+    }
+    .placeholder-image {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #6c757d;
+        font-weight: bold;
+    }
+    .rating-stars {
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Enhanced rating input
+    document.addEventListener('DOMContentLoaded', function() {
+        // Additional JavaScript for rating stars visualization if needed
+    });
+</script>
+{% endblock %}

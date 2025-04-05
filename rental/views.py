@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Avg
 from django.contrib import messages
 from django.utils import timezone
+from datetime import date, timedelta
 
 from .models import User, Car, Reservation, Review, CartItem
 from .forms import (RegisterForm, LoginForm, CarSearchForm, ReservationForm, 
@@ -250,10 +251,130 @@ def my_reservations(request):
     active_reservations = [r for r in reservations if r.status in ['pending', 'confirmed']]
     completed_reservations = [r for r in reservations if r.status in ['completed', 'cancelled']]
     
+    # Calculate duration in days for each reservation
+    for reservation in reservations:
+        reservation.days = (reservation.end_date - reservation.start_date).days + 1
+    
     return render(request, 'my_reservations.html', {
         'reservations': reservations,
         'active_reservations': active_reservations,
         'completed_reservations': completed_reservations
+    })
+
+@login_required
+def reservation_detail(request, reservation_id):
+    """Detailed view of a single reservation"""
+    reservation = get_object_or_404(
+        Reservation, 
+        id=reservation_id, 
+        user=request.user
+    )
+    
+    # Calculate duration in days
+    reservation.days = (reservation.end_date - reservation.start_date).days + 1
+    
+    # Get existing review if any
+    review = Review.objects.filter(
+        reservation=reservation,
+        user=request.user
+    ).first()
+    
+    return render(request, 'reservation_detail.html', {
+        'reservation': reservation,
+        'review': review
+    })
+
+@login_required
+def modify_reservation(request, reservation_id):
+    """Modify an existing reservation"""
+    reservation = get_object_or_404(
+        Reservation, 
+        id=reservation_id, 
+        user=request.user
+    )
+    
+    # Only allow modifications for pending or confirmed reservations
+    if reservation.status not in ['pending', 'confirmed']:
+        messages.error(request, "Sorry, you cannot modify a completed or cancelled reservation.")
+        return redirect('reservation_detail', reservation_id=reservation.id)
+    
+    # Check if the car is still available
+    car = reservation.car
+    
+    if request.method == 'POST':
+        form = ReservationForm(request.POST)
+        
+        if form.is_valid():
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
+            
+            # Validate dates
+            if start_date < date.today():
+                messages.error(request, "Pick-up date cannot be in the past.")
+                return redirect('modify_reservation', reservation_id=reservation.id)
+            
+            if end_date < start_date:
+                messages.error(request, "Return date must be after the pick-up date.")
+                return redirect('modify_reservation', reservation_id=reservation.id)
+            
+            # Check availability excluding the current reservation
+            if not get_car_availability(car.id, start_date, end_date, exclude_reservation=reservation.id):
+                messages.error(request, "Sorry, the car is not available for the selected dates.")
+                return redirect('modify_reservation', reservation_id=reservation.id)
+            
+            # Calculate new total price
+            new_total = calculate_total_price(car, start_date, end_date)
+            
+            # Update reservation
+            reservation.start_date = start_date
+            reservation.end_date = end_date
+            reservation.total_price = new_total
+            reservation.save()
+            
+            messages.success(request, "Your reservation has been updated successfully.")
+            return redirect('reservation_detail', reservation_id=reservation.id)
+    else:
+        # Pre-fill the form with current reservation data
+        form = ReservationForm(initial={
+            'car_id': car.id,
+            'start_date': reservation.start_date,
+            'end_date': reservation.end_date
+        })
+    
+    # Get unavailable dates excluding this reservation
+    unavailable_dates = get_unavailable_dates(car.id, exclude_reservation=reservation.id)
+    
+    return render(request, 'modify_reservation.html', {
+        'form': form,
+        'reservation': reservation,
+        'unavailable_dates': unavailable_dates
+    })
+
+@login_required
+def cancel_reservation(request, reservation_id):
+    """Cancel a reservation"""
+    reservation = get_object_or_404(
+        Reservation, 
+        id=reservation_id, 
+        user=request.user
+    )
+    
+    # Only allow cancellation for pending or confirmed reservations
+    if reservation.status not in ['pending', 'confirmed']:
+        messages.error(request, "Sorry, you cannot cancel a completed or already cancelled reservation.")
+        return redirect('reservation_detail', reservation_id=reservation.id)
+    
+    if request.method == 'POST':
+        # Update reservation status
+        reservation.status = 'cancelled'
+        reservation.payment_status = 'refunded'  # In a real app, this would involve payment processing
+        reservation.save()
+        
+        messages.success(request, "Your reservation has been cancelled successfully.")
+        return redirect('my_reservations')
+    
+    return render(request, 'cancel_reservation.html', {
+        'reservation': reservation
     })
 
 @login_required

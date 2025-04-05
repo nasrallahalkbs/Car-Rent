@@ -1,0 +1,136 @@
+{% extends 'layout_django.html' %}
+
+{% block title %}Reservation Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card mb-5 shadow reservation-detail-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Reservation #{{ reservation.id }}</h2>
+            <span class="badge {% if reservation.status == 'confirmed' %}bg-success{% elif reservation.status == 'pending' %}bg-warning{% elif reservation.status == 'cancelled' %}bg-danger{% else %}bg-info{% endif %}">
+                {{ reservation.status|title }}
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="car-image-container mb-3">
+                        {% if reservation.car.image_url %}
+                            <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="img-fluid rounded">
+                        {% else %}
+                            <div class="placeholder-image">No Image Available</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h3>{{ reservation.car.make }} {{ reservation.car.model }} ({{ reservation.car.year }})</h3>
+                    <p><strong>Category:</strong> {{ reservation.car.category }}</p>
+                    <p><strong>Color:</strong> {{ reservation.car.color }}</p>
+                    <p><strong>Transmission:</strong> {{ reservation.car.transmission }}</p>
+                    <p><strong>Fuel Type:</strong> {{ reservation.car.fuel_type }}</p>
+                    <p><strong>Features:</strong> {{ reservation.car.features }}</p>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Pick-up Date:</strong> {{ reservation.start_date|date:"F d, Y" }}</p>
+                            <p><strong>Return Date:</strong> {{ reservation.end_date|date:"F d, Y" }}</p>
+                            <p><strong>Duration:</strong> {{ reservation.days }} day{{ reservation.days|pluralize }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Daily Rate:</strong> ${{ reservation.car.daily_rate|floatformat:2 }}</p>
+                            <p><strong>Total Price:</strong> ${{ reservation.total_price|floatformat:2 }}</p>
+                            <p><strong>Payment Status:</strong> 
+                                <span class="badge {% if reservation.payment_status == 'paid' %}bg-success{% elif reservation.payment_status == 'pending' %}bg-warning{% else %}bg-info{% endif %}">
+                                    {{ reservation.payment_status|title }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    {% if reservation.status in 'pending,confirmed' %}
+                        <div class="d-flex mt-3">
+                            <a href="{% url 'modify_reservation' reservation.id %}" class="btn btn-primary me-2">
+                                <i class="bi bi-pencil"></i> Modify Reservation
+                            </a>
+                            <a href="{% url 'cancel_reservation' reservation.id %}" class="btn btn-danger">
+                                <i class="bi bi-x-circle"></i> Cancel Reservation
+                            </a>
+                        </div>
+                    {% elif reservation.status == 'completed' and not review %}
+                        <a href="{% url 'add_review' reservation.id %}" class="btn btn-primary mt-3">
+                            <i class="bi bi-star"></i> Leave a Review
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if review %}
+            <div class="review-section mt-4 border-top pt-4">
+                <h4>Your Review</h4>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="card-title">Rating: 
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= review.rating %}
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                    {% else %}
+                                        <i class="bi bi-star text-muted"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </h5>
+                            <small class="text-muted">{{ review.created_at|date:"F d, Y" }}</small>
+                        </div>
+                        <p class="card-text">{{ review.comment }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer text-muted">
+            <small>Reservation created on {{ reservation.created_at|date:"F d, Y" }}</small>
+        </div>
+    </div>
+
+    <div class="text-center mb-5">
+        <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to My Reservations
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reservation-detail-card {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .car-image-container {
+        height: 200px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .car-image-container img {
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+    }
+    .placeholder-image {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #6c757d;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

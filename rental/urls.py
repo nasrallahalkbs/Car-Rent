@@ -16,6 +16,9 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('confirmation/', views.confirmation, name='confirmation'),
     path('my-reservations/', views.my_reservations, name='my_reservations'),
+    path('reservations/<int:reservation_id>/', views.reservation_detail, name='reservation_detail'),
+    path('reservations/<int:reservation_id>/modify/', views.modify_reservation, name='modify_reservation'),
+    path('reservations/<int:reservation_id>/cancel/', views.cancel_reservation, name='cancel_reservation'),
     path('review/<int:reservation_id>/', views.add_review, name='add_review'),
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     
