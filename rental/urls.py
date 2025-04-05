@@ -22,6 +22,9 @@ urlpatterns = [
     path('review/<int:reservation_id>/', views.add_review, name='add_review'),
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     
+    # Static pages
+    path('about-us/', views.about_us, name='about_us'),
+    
     # API endpoints
     path('api/car/<int:car_id>/unavailable-dates/', views.get_unavailable_dates_api, name='get_unavailable_dates_api'),
     
