@@ -91,7 +91,7 @@ def add_car(request):
     else:
         form = CarForm()
     
-    return render(request, 'admin/car_form.html', {'form': form, 'title': 'Add New Car'})
+    return render(request, 'car_form.html', {'form': form, 'title': 'Add New Car'})
 
 @login_required
 @admin_required
@@ -108,7 +108,7 @@ def edit_car(request, car_id):
     else:
         form = CarForm(instance=car)
     
-    return render(request, 'admin/car_form.html', {
+    return render(request, 'car_form.html', {
         'form': form,
         'title': f'Edit Car: {car.make} {car.model}',
         'car': car
@@ -132,7 +132,7 @@ def delete_car(request, car_id):
             messages.success(request, f"{car_name} deleted successfully!")
         return redirect('admin_cars')
     
-    return render(request, 'admin/delete_car.html', {
+    return render(request, 'delete_car.html', {
         'car': car,
         'has_reservations': has_reservations
     })

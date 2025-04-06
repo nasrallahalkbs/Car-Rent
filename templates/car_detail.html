@@ -1,17 +1,18 @@
-{% extends 'layout.html' %}
+{% extends 'layout_django.html' %}
+{% load static %}
 
 {% block title %}{{ car.make }} {{ car.model }} - CarRental{% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/reservation.js') }}"></script>
+<script src="{% static 'js/reservation.js' %}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('car_listing') }}">Cars</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'car_listing' %}">Cars</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ car.make }} {{ car.model }}</li>
         </ol>
     </nav>
@@ -122,7 +123,7 @@
                     <h4 class="mb-0">Submit Your Review</h4>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('add_review', reservation_id=request.view_args.reservation_id) }}">
+                    <form method="POST" action="{% url 'add_review' reservation_id=request.resolver_match.kwargs.reservation_id %}">
                         {{ form.hidden_tag() }}
                         <div class="form-group mb-3">
                             <label>{{ form.rating.label }}</label>
@@ -168,7 +169,7 @@
                         </div>
                     </div>
                     
-                    <form method="POST" action="{{ url_for('car_detail', car_id=car.id) }}">
+                    <form method="POST" action="{% url 'car_detail' car_id=car.id %}">
                         {{ form.hidden_tag() }}
                         {{ form.car_id(value=car.id) }}
                         
