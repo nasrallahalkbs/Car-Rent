@@ -1,35 +1,43 @@
-{% extends 'admin/index.html' %}
+{% extends "layout_django.html" %}
 {% load static %}
 
-{% block title %}Add Manual Payment{% endblock %}
+{% block title %}Add Manual Payment | Admin Dashboard{% endblock %}
 
-{% block admin_content %}
-<div class="container-fluid mt-4">
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'admin_payments' %}">Payments</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Add Manual Payment</li>
-        </ol>
-    </nav>
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-3">Add Manual Payment</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'admin_payments' %}">Payments</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Add Manual Payment</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
 
     <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i> Add Manual Payment</h5>
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Add a Manual Payment</h5>
                 </div>
                 <div class="card-body">
-                    <form id="paymentForm" method="post" class="needs-validation" novalidate>
+                    <div class="alert alert-info">
+                        <p><i class="fas fa-info-circle"></i> Use this form to manually add a payment for a user. This can be used for deposits, account credits, or payments made outside the system.</p>
+                    </div>
+                    
+                    <form method="post" id="manualPaymentForm">
                         {% csrf_token %}
                         
                         <!-- Step 1: Select User -->
-                        <div class="mb-4" id="step1">
-                            <h6 class="fw-bold mb-3">Step 1: Select Customer</h6>
+                        <div class="form-step" id="step1">
+                            <h4 class="mb-3">Step 1: Select Customer</h4>
                             <div class="mb-3">
-                                <label for="user_id" class="form-label">Customer</label>
-                                <select class="form-select" id="user_id" name="user_id" required>
+                                <label for="user_id" class="form-label">Customer:</label>
+                                <select name="user_id" id="user_id" class="form-select" required>
                                     <option value="">-- Select Customer --</option>
                                     {% for user in users %}
                                     <option value="{{ user.id }}" {% if selected_user and selected_user.id == user.id %}selected{% endif %}>
@@ -37,119 +45,116 @@
                                     </option>
                                     {% endfor %}
                                 </select>
-                                <div class="invalid-feedback">
-                                    Please select a customer.
-                                </div>
                             </div>
-                            
                             <div class="d-flex justify-content-end">
-                                <button type="button" id="step1Next" class="btn btn-primary" disabled>
-                                    Next <i class="fas fa-arrow-right ms-2"></i>
-                                </button>
+                                <button type="submit" name="action" value="select_user" class="btn btn-primary">Next <i class="fas fa-arrow-right"></i></button>
                             </div>
                         </div>
                         
-                        <!-- Step 2: Select Reservation -->
-                        <div class="mb-4 d-none" id="step2">
-                            <h6 class="fw-bold mb-3">Step 2: Select Reservation</h6>
+                        {% if selected_user %}
+                        <!-- Step 2: Select Reservation or Payment Type -->
+                        <div class="form-step" id="step2">
+                            <h4 class="mb-3">Step 2: Payment Details for {{ selected_user.first_name }} {{ selected_user.last_name }}</h4>
                             
-                            {% if selected_user %}
                             <div class="mb-3">
-                                <label for="reservation_id" class="form-label">Pending Reservation</label>
-                                {% if reservations and reservations.exists %}
-                                <select class="form-select" id="reservation_id" name="reservation_id">
-                                    <option value="">-- Select Reservation --</option>
-                                    {% for res in reservations %}
-                                    <option value="{{ res.id }}">
-                                        #{{ res.id }} - {{ res.car.make }} {{ res.car.model }} ({{ res.start_date|date:"M d, Y" }} - {{ res.end_date|date:"M d, Y" }}) - ${{ res.total_price }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                                <div class="invalid-feedback">
-                                    Please select a reservation.
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_type" id="paymentTypeReservation" value="reservation" checked>
+                                    <label class="form-check-label" for="paymentTypeReservation">
+                                        Payment for Existing Reservation
+                                    </label>
                                 </div>
-                                <div class="form-text">
-                                    Or check the option below to add a payment without a reservation.
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_type" id="paymentTypeManual" value="manual">
+                                    <label class="form-check-label" for="paymentTypeManual">
+                                        Manual Payment (No Reservation)
+                                    </label>
                                 </div>
-                                {% else %}
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i> No pending reservations found for this customer.
+                            </div>
+                            
+                            <div id="reservationSection">
+                                <div class="mb-3">
+                                    <label for="reservation_id" class="form-label">Select Reservation:</label>
+                                    <select name="reservation_id" id="reservation_id" class="form-select">
+                                        <option value="">-- Select Reservation --</option>
+                                        {% if reservations %}
+                                            {% for res in reservations %}
+                                            <option value="{{ res.id }}" data-amount="{{ res.total_price }}">
+                                                #{{ res.id }} - {{ res.car.make }} {{ res.car.model }} 
+                                                ({{ res.start_date|date:"M j, Y" }} - {{ res.end_date|date:"M j, Y" }})
+                                                ${{ res.total_price }}
+                                            </option>
+                                            {% endfor %}
+                                        {% else %}
+                                            <option value="" disabled>No pending reservations found</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div id="manualPaymentSection" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="payment_reason" class="form-label">Payment Reason:</label>
+                                    <select name="payment_reason" id="payment_reason" class="form-select">
+                                        <option value="deposit">Deposit</option>
+                                        <option value="prepayment">Prepayment</option>
+                                        <option value="credit">Account Credit</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <input type="hidden" name="no_reservation" id="no_reservation" value="0">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.amount.id_for_label }}" class="form-label">Amount ($):</label>
+                                {{ form.amount }}
+                                {% if form.amount.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.amount.errors }}
                                 </div>
                                 {% endif %}
                             </div>
                             
-                            <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" id="no_reservation" name="no_reservation" value="1" {% if not reservations or not reservations.exists %}checked{% endif %}>
-                                <label class="form-check-label" for="no_reservation">
-                                    <strong>Add payment without a reservation</strong> (for deposits, prepayments, or credits)
-                                </label>
-                            </div>
-                            {% endif %}
-                            
-                            <div class="d-flex justify-content-between">
-                                <button type="button" id="step2Back" class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left me-2"></i> Back
-                                </button>
-                                <button type="button" id="step2Next" class="btn btn-primary" {% if not reservations or not reservations.exists %}{% endif %}>
-                                    Next <i class="fas fa-arrow-right ms-2"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Step 3: Enter Payment Details -->
-                        <div class="mb-4 d-none" id="step3">
-                            <h6 class="fw-bold mb-3">Step 3: Enter Payment Details</h6>
-                            
                             <div class="mb-3">
-                                <label for="amount" class="form-label">Payment Amount</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    {{ form.amount }}
-                                </div>
-                                <div class="invalid-feedback">
-                                    Please enter a valid amount.
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="payment_method" class="form-label">Payment Method</label>
+                                <label for="{{ form.payment_method.id_for_label }}" class="form-label">Payment Method:</label>
                                 {{ form.payment_method }}
-                                <div class="invalid-feedback">
-                                    Please select a payment method.
+                                {% if form.payment_method.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.payment_method.errors }}
                                 </div>
+                                {% endif %}
                             </div>
                             
                             <div class="mb-3">
-                                <label for="reference_number" class="form-label">Reference Number (Optional)</label>
+                                <label for="{{ form.reference_number.id_for_label }}" class="form-label">Reference Number (Optional):</label>
                                 {{ form.reference_number }}
-                                <div class="form-text">Transaction ID, check number, or other reference.</div>
+                                {% if form.reference_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.reference_number.errors }}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Transaction ID, check number, or other reference</div>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="notes" class="form-label">Notes (Optional)</label>
+                                <label for="{{ form.notes.id_for_label }}" class="form-label">Notes:</label>
                                 {{ form.notes }}
-                            </div>
-                            
-                            <!-- Payment reason field (visible only for payments without reservations) -->
-                            <div id="payment_reason_section" class="mb-3" style="display: none;">
-                                <label for="payment_reason" class="form-label">Payment Reason</label>
-                                <select class="form-select" id="payment_reason" name="payment_reason">
-                                    <option value="deposit">Deposit</option>
-                                    <option value="prepayment">Prepayment</option>
-                                    <option value="credit">Account Credit</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.notes.errors }}
+                                </div>
+                                {% endif %}
                             </div>
                             
                             <div class="d-flex justify-content-between">
-                                <button type="button" id="step3Back" class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left me-2"></i> Back
-                                </button>
-                                <button type="submit" id="submitPayment" class="btn btn-success">
-                                    <i class="fas fa-check-circle me-2"></i> Record Payment
+                                <a href="{% url 'add_manual_payment' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Record Payment
                                 </button>
                             </div>
                         </div>
+                        {% endif %}
                     </form>
                 </div>
             </div>
@@ -157,116 +162,43 @@
     </div>
 </div>
 
-<!-- Add this JavaScript at the end of the file -->
-{% block scripts %}
+{% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Step 1 navigation
-        const userSelect = document.getElementById('user_id');
-        const step1Next = document.getElementById('step1Next');
-        const step1 = document.getElementById('step1');
-        const step2 = document.getElementById('step2');
-        const step2Back = document.getElementById('step2Back');
-        const step2Next = document.getElementById('step2Next');
-        const step3 = document.getElementById('step3');
-        const step3Back = document.getElementById('step3Back');
+        const paymentTypeRadios = document.querySelectorAll('input[name="payment_type"]');
+        const reservationSection = document.getElementById('reservationSection');
+        const manualPaymentSection = document.getElementById('manualPaymentSection');
+        const noReservationField = document.getElementById('no_reservation');
         const reservationSelect = document.getElementById('reservation_id');
-        const noReservationCheckbox = document.getElementById('no_reservation');
-        const paymentReasonSection = document.getElementById('payment_reason_section');
+        const amountField = document.getElementById('{{ form.amount.id_for_label }}');
         
-        // Enable/disable next button based on user selection
-        userSelect.addEventListener('change', function() {
-            step1Next.disabled = !this.value;
-            
-            if (this.value) {
-                // Submit the form to get reservations for this user
-                document.getElementById('paymentForm').submit();
-            }
-        });
+        // Handle payment type change
+        if (paymentTypeRadios) {
+            paymentTypeRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'reservation') {
+                        reservationSection.style.display = 'block';
+                        manualPaymentSection.style.display = 'none';
+                        noReservationField.value = '0';
+                    } else {
+                        reservationSection.style.display = 'none';
+                        manualPaymentSection.style.display = 'block';
+                        noReservationField.value = '1';
+                    }
+                });
+            });
+        }
         
-        // Show step 2 when next is clicked
-        step1Next.addEventListener('click', function() {
-            step1.classList.add('d-none');
-            step2.classList.remove('d-none');
-        });
-        
-        // Go back to step 1
-        step2Back.addEventListener('click', function() {
-            step2.classList.add('d-none');
-            step1.classList.remove('d-none');
-        });
-        
-        // Enable/disable step 2 next button based on reservation selection or no_reservation checkbox
+        // Update amount when reservation is selected
         if (reservationSelect) {
             reservationSelect.addEventListener('change', function() {
-                if (this.value) {
-                    // If a reservation is selected, uncheck the "no reservation" checkbox
-                    if (noReservationCheckbox) {
-                        noReservationCheckbox.checked = false;
-                    }
-                    step2Next.disabled = false;
-                } else if (noReservationCheckbox && !noReservationCheckbox.checked) {
-                    // If no reservation is selected and checkbox is unchecked, disable next button
-                    step2Next.disabled = true;
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption && selectedOption.dataset.amount) {
+                    amountField.value = selectedOption.dataset.amount;
                 }
             });
         }
-        
-        // Handle no_reservation checkbox
-        if (noReservationCheckbox) {
-            noReservationCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    // If checkbox is checked, enable next button
-                    step2Next.disabled = false;
-                    
-                    // If reservation select exists, clear its selection
-                    if (reservationSelect) {
-                        reservationSelect.value = '';
-                    }
-                } else if (!reservationSelect || !reservationSelect.value) {
-                    // If checkbox is unchecked and no reservation is selected, disable next button
-                    step2Next.disabled = true;
-                }
-            });
-        }
-        
-        // Show step 3 when next is clicked
-        step2Next.addEventListener('click', function() {
-            step2.classList.add('d-none');
-            step3.classList.remove('d-none');
-            
-            // Show/hide payment reason section based on noReservationCheckbox
-            if (noReservationCheckbox && noReservationCheckbox.checked) {
-                paymentReasonSection.style.display = 'block';
-            } else {
-                paymentReasonSection.style.display = 'none';
-            }
-        });
-        
-        // Go back to step 2
-        step3Back.addEventListener('click', function() {
-            step3.classList.add('d-none');
-            step2.classList.remove('d-none');
-        });
-        
-        // Form validation
-        const form = document.getElementById('paymentForm');
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            
-            form.classList.add('was-validated');
-        });
-        
-        // If we already have a selected user, show step 2
-        {% if selected_user %}
-        step1.classList.add('d-none');
-        step2.classList.remove('d-none');
-        {% endif %}
     });
 </script>
 {% endblock %}
-
 {% endblock %}

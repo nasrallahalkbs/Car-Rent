@@ -1,0 +1,82 @@
+{% extends "layout_django.html" %}
+{% load static %}
+
+{% block title %}Delete Car | Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">Confirm Deletion</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h4 class="alert-heading">Warning!</h4>
+                        <p>You are about to delete the following car:</p>
+                        <hr>
+                        <p class="mb-0"><strong>{{ car.year }} {{ car.make }} {{ car.model }}</strong> ({{ car.license_plate }})</p>
+                    </div>
+                    
+                    {% if has_reservations %}
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">Important!</h5>
+                        <p>This car has existing reservations. Deleting this car will also delete all associated reservations and may affect customers who have already paid.</p>
+                        <p>It is recommended to mark the car as unavailable instead of deleting it.</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Car Details</h5>
+                                    <p><strong>Make:</strong> {{ car.make }}</p>
+                                    <p><strong>Model:</strong> {{ car.model }}</p>
+                                    <p><strong>Year:</strong> {{ car.year }}</p>
+                                    <p><strong>Color:</strong> {{ car.color }}</p>
+                                    <p><strong>License Plate:</strong> {{ car.license_plate }}</p>
+                                    <p><strong>Daily Rate:</strong> ${{ car.daily_rate }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {% if car.image_url %}
+                            <img src="{{ car.image_url }}" alt="{{ car.make }} {{ car.model }}" class="img-fluid rounded">
+                            {% else %}
+                            <div class="bg-light p-5 text-center rounded">
+                                <i class="fa fa-car fa-3x text-muted"></i>
+                                <p class="mt-2 text-muted">No image available</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        {% if has_reservations %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="confirm" name="confirm" value="yes" required>
+                            <label class="form-check-label" for="confirm">
+                                I understand that this car has reservations and I still want to delete it.
+                            </label>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin_cars' %}" class="btn btn-secondary">
+                                <i class="fa fa-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fa fa-trash"></i> Delete Car
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

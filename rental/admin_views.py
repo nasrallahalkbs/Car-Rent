@@ -92,7 +92,7 @@ def add_car(request):
     else:
         form = CarForm()
     
-    return render(request, 'car_form.html', {'form': form, 'title': 'Add New Car'})
+    return render(request, 'admin/car_form.html', {'form': form, 'title': 'Add New Car'})
 
 @login_required
 @admin_required
@@ -109,7 +109,7 @@ def edit_car(request, car_id):
     else:
         form = CarForm(instance=car)
     
-    return render(request, 'car_form.html', {
+    return render(request, 'admin/car_form.html', {
         'form': form,
         'title': f'Edit Car: {car.make} {car.model}',
         'car': car
@@ -133,7 +133,7 @@ def delete_car(request, car_id):
             messages.success(request, f"{car_name} deleted successfully!")
         return redirect('admin_cars')
     
-    return render(request, 'delete_car.html', {
+    return render(request, 'admin/delete_car.html', {
         'car': car,
         'has_reservations': has_reservations
     })
@@ -322,14 +322,24 @@ def payment_details(request, payment_id):
     
     # Add reservation details
     payment['reservation'].days = days
-    payment['reservation'].subtotal = reservation.car.daily_rate * days
     
     # Add tax calculation (for demo purposes)
     # Convert to Decimal for proper calculation with Decimal subtotal
     from decimal import Decimal
+    
+    # Convert to Decimal before multiplication to avoid type errors
+    days_decimal = Decimal(str(days))
+    payment['reservation'].subtotal = reservation.car.daily_rate * days_decimal
     tax_rate = Decimal('8.5')  # Example tax rate as Decimal
     payment['reservation'].tax_rate = tax_rate
-    payment['reservation'].tax_amount = payment['reservation'].subtotal * (tax_rate / Decimal('100'))
+    
+    # Ensure subtotal is a Decimal before multiplication
+    if not isinstance(payment['reservation'].subtotal, Decimal):
+        subtotal_decimal = Decimal(str(payment['reservation'].subtotal))
+    else:
+        subtotal_decimal = payment['reservation'].subtotal
+        
+    payment['reservation'].tax_amount = subtotal_decimal * (tax_rate / Decimal('100'))
     
     # Get reservation user's stats
     user_reservations_count = Reservation.objects.filter(user=reservation.user).count()
@@ -379,13 +389,23 @@ def print_receipt(request, payment_id):
     # Calculate reservation duration in days
     days = (reservation.end_date - reservation.start_date).days
     payment['reservation'].days = days
-    payment['reservation'].subtotal = reservation.car.daily_rate * days
     
     # Add tax calculation
     from decimal import Decimal
+    
+    # Convert to Decimal before multiplication to avoid type errors
+    days_decimal = Decimal(str(days))
+    payment['reservation'].subtotal = reservation.car.daily_rate * days_decimal
     tax_rate = Decimal('8.5')  # Example tax rate as Decimal
     payment['reservation'].tax_rate = tax_rate
-    payment['reservation'].tax_amount = payment['reservation'].subtotal * (tax_rate / Decimal('100'))
+    
+    # Ensure subtotal is a Decimal before multiplication
+    if not isinstance(payment['reservation'].subtotal, Decimal):
+        subtotal_decimal = Decimal(str(payment['reservation'].subtotal))
+    else:
+        subtotal_decimal = payment['reservation'].subtotal
+        
+    payment['reservation'].tax_amount = subtotal_decimal * (tax_rate / Decimal('100'))
     
     current_datetime = timezone.now()
     
