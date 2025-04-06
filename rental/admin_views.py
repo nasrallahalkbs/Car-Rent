@@ -527,7 +527,7 @@ def add_manual_payment(request):
     else:
         form = ManualPaymentForm()
         
-    return render(request, 'admin/add_payment_django.html', {
+    return render(request, 'admin/add_manual_payment_django.html', {
         'form': form,
         'users': users,
         'reservations': reservations,

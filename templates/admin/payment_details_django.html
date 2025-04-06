@@ -1,0 +1,336 @@
+{% extends 'admin/index.html' %}
+{% load static %}
+
+{% block title %}Payment Details{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'admin_payments' %}">Payments</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Payment Details</li>
+        </ol>
+    </nav>
+    
+    <!-- Payment ID and Status Banner -->
+    <div class="alert {% if payment.status == 'paid' %}alert-success{% elif payment.status == 'pending' %}alert-warning{% elif payment.status == 'refunded' %}alert-info{% else %}alert-danger{% endif %} d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="alert-heading mb-0">Payment #{{ payment.id }}</h4>
+            <div class="text-muted small">
+                {{ payment.date|date:"M d, Y H:i" }}
+            </div>
+        </div>
+        <div class="text-end">
+            <span class="badge {% if payment.status == 'paid' %}bg-success{% elif payment.status == 'pending' %}bg-warning text-dark{% elif payment.status == 'refunded' %}bg-info text-dark{% else %}bg-danger{% endif %} fs-6">
+                {{ payment.status|title }}
+            </span>
+            <div class="fs-4 fw-bold mt-1">${{ payment.amount }}</div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Main Payment Details -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Payment Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tbody>
+                            <tr>
+                                <th class="ps-0" style="width: 180px;">Payment ID:</th>
+                                <td>{{ payment.id }}</td>
+                            </tr>
+                            <tr>
+                                <th class="ps-0">Date:</th>
+                                <td>{{ payment.date|date:"F d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="ps-0">Amount:</th>
+                                <td>${{ payment.amount }}</td>
+                            </tr>
+                            <tr>
+                                <th class="ps-0">Status:</th>
+                                <td>
+                                    <span class="badge {% if payment.status == 'paid' %}bg-success{% elif payment.status == 'pending' %}bg-warning text-dark{% elif payment.status == 'refunded' %}bg-info text-dark{% else %}bg-danger{% endif %}">
+                                        {{ payment.status|title }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="ps-0">Payment Method:</th>
+                                <td>
+                                    <i class="fab fa-cc-{{ payment.payment_method }} me-2"></i>
+                                    {{ payment.payment_method|title }} (•••• {{ payment.card_last4 }})
+                                </td>
+                            </tr>
+                            {% if payment.status == 'refunded' %}
+                            <tr>
+                                <th class="ps-0">Refund Date:</th>
+                                <td>{{ payment.refund_date|date:"F d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="ps-0">Refund Amount:</th>
+                                <td>${{ payment.refund_amount }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'print_receipt' payment_id=payment.id %}" class="btn btn-outline-primary" target="_blank">
+                            <i class="fas fa-print me-2"></i> Print Receipt
+                        </a>
+                        <a href="{% url 'download_receipt' payment_id=payment.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-download me-2"></i> Download PDF
+                        </a>
+                        
+                        {% if payment.status == 'pending' %}
+                        <div class="ms-auto">
+                            <a href="{% url 'mark_as_paid' payment_id=payment.id %}" class="btn btn-success">
+                                <i class="fas fa-check-circle me-2"></i> Mark as Paid
+                            </a>
+                            <a href="{% url 'cancel_payment' payment_id=payment.id %}" class="btn btn-outline-danger">
+                                <i class="fas fa-times-circle me-2"></i> Cancel
+                            </a>
+                        </div>
+                        {% elif payment.status == 'paid' %}
+                        <div class="ms-auto">
+                            <a href="{% url 'process_refund' payment_id=payment.id %}" class="btn btn-warning text-dark">
+                                <i class="fas fa-undo me-2"></i> Process Refund
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reservation Details -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Reservation Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <th class="ps-0">Reservation ID:</th>
+                                        <td>#{{ payment.reservation.id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="ps-0">Start Date:</th>
+                                        <td>{{ payment.reservation.start_date|date:"M d, Y" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="ps-0">End Date:</th>
+                                        <td>{{ payment.reservation.end_date|date:"M d, Y" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="ps-0">Duration:</th>
+                                        <td>{{ payment.reservation.days }} day{% if payment.reservation.days != 1 %}s{% endif %}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <th class="ps-0">Daily Rate:</th>
+                                        <td>${{ payment.reservation.car.daily_rate }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="ps-0">Subtotal:</th>
+                                        <td>${{ payment.reservation.subtotal }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="ps-0">Tax ({{ payment.reservation.tax_rate }}%):</th>
+                                        <td>${{ payment.reservation.tax_amount }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="ps-0">Total:</th>
+                                        <td class="fw-bold">${{ payment.amount }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Car Details -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Vehicle Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center text-md-start mb-3 mb-md-0">
+                            {% if payment.car.image_url %}
+                            <img src="{{ payment.car.image_url }}" alt="{{ payment.car.make }} {{ payment.car.model }}" class="img-fluid rounded" style="max-height: 120px;">
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 120px; width: 100%;">
+                                <i class="fas fa-car fa-3x text-secondary"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h5 class="mb-2">{{ payment.car.year }} {{ payment.car.make }} {{ payment.car.model }}</h5>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <div class="text-muted small">Category</div>
+                                    <div>{{ payment.car.category }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted small">Color</div>
+                                    <div>{{ payment.car.color }}</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="text-muted small">License Plate</div>
+                                    <div>{{ payment.car.license_plate }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted small">Daily Rate</div>
+                                    <div>${{ payment.car.daily_rate }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Customer Info -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                            <i class="fas fa-user text-secondary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">{{ payment.user.first_name }} {{ payment.user.last_name }}</h6>
+                            <div class="text-muted small">Customer #{{ payment.user.id }}</div>
+                        </div>
+                    </div>
+                    
+                    <table class="table table-borderless mb-0">
+                        <tbody>
+                            <tr>
+                                <th class="ps-0" style="width: 100px;">Email:</th>
+                                <td>{{ payment.user.email }}</td>
+                            </tr>
+                            <tr>
+                                <th class="ps-0">Phone:</th>
+                                <td>{{ payment.user.phone }}</td>
+                            </tr>
+                            <tr>
+                                <th class="ps-0">Account:</th>
+                                <td>{{ payment.user.date_joined|date:"M d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="ps-0">Rentals:</th>
+                                <td>{{ payment.user.total_reservations }} reservation{% if payment.user.total_reservations != 1 %}s{% endif %}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Payment Timeline -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Payment Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3 pb-3 border-bottom">
+                            <div class="d-flex">
+                                <div style="width: 24px;" class="me-3 text-center">
+                                    <i class="fas fa-circle text-success small"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Reservation Created</strong>
+                                        <span class="badge bg-light text-dark">{{ payment.reservation.created_at|date:"M d" }}</span>
+                                    </div>
+                                    <div class="text-muted small">
+                                        Initial reservation created with pending payment
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        {% if payment.status != 'pending' %}
+                        <li class="mb-3 pb-3 border-bottom">
+                            <div class="d-flex">
+                                <div style="width: 24px;" class="me-3 text-center">
+                                    <i class="fas fa-circle text-success small"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Payment Completed</strong>
+                                        <span class="badge bg-light text-dark">{{ payment.date|date:"M d" }}</span>
+                                    </div>
+                                    <div class="text-muted small">
+                                        Payment processed successfully
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        {% endif %}
+                        
+                        {% if payment.status == 'refunded' %}
+                        <li class="mb-3 pb-3 border-bottom">
+                            <div class="d-flex">
+                                <div style="width: 24px;" class="me-3 text-center">
+                                    <i class="fas fa-circle text-info small"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Payment Refunded</strong>
+                                        <span class="badge bg-light text-dark">{{ payment.refund_date|date:"M d" }}</span>
+                                    </div>
+                                    <div class="text-muted small">
+                                        Full refund issued to customer
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        {% endif %}
+                        
+                        <li>
+                            <div class="d-flex">
+                                <div style="width: 24px;" class="me-3 text-center">
+                                    <i class="fas fa-circle {% if payment.status == 'completed' %}text-success{% else %}text-secondary{% endif %} small"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Receipt Generated</strong>
+                                        <span class="badge bg-light text-dark">{{ current_datetime|date:"M d" }}</span>
+                                    </div>
+                                    <div class="text-muted small">
+                                        Payment receipt accessed by admin
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
