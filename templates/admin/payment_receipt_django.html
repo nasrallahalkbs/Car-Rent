@@ -1,0 +1,242 @@
+{% extends 'layout_django.html' %}
+{% load static %}
+
+{% block title %}Payment Receipt - {{ payment.id }}{% endblock %}
+
+{% block styles %}
+<style>
+    /* Print-friendly styles */
+    @media print {
+        body {
+            font-size: 12pt;
+            color: #000;
+            background-color: #fff;
+        }
+        .no-print {
+            display: none !important;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+        }
+        .card {
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+        }
+        a[href]:after {
+            content: "" !important;
+        }
+    }
+    .receipt-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .receipt-header {
+        border-bottom: 2px solid #f0f0f0;
+    }
+    .receipt-logo {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    .receipt-footer {
+        border-top: 2px solid #f0f0f0;
+        font-size: 0.85em;
+    }
+    .status-paid {
+        color: #28a745;
+        border: 2px solid #28a745;
+        border-radius: 5px;
+        padding: 5px 15px;
+        display: inline-block;
+        transform: rotate(-5deg);
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+    .status-refunded {
+        color: #dc3545;
+        border: 2px solid #dc3545;
+        border-radius: 5px;
+        padding: 5px 15px;
+        display: inline-block;
+        transform: rotate(-5deg);
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+    .status-pending {
+        color: #ffc107;
+        border: 2px solid #ffc107;
+        border-radius: 5px;
+        padding: 5px 15px;
+        display: inline-block;
+        transform: rotate(-5deg);
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="receipt-wrapper">
+        <!-- Print button -->
+        <div class="text-end mb-4 no-print">
+            <a href="{% url 'payment_details' payment.id %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-2"></i> Back to Details
+            </a>
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print me-2"></i> Print Receipt
+            </button>
+        </div>
+        
+        <!-- Receipt card -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-5">
+                <!-- Header -->
+                <div class="receipt-header d-flex justify-content-between align-items-center pb-4 mb-4">
+                    <div class="receipt-logo text-primary">
+                        <i class="fas fa-car-side me-2"></i> CarRental
+                    </div>
+                    <div class="text-end">
+                        <h4 class="mb-1">RECEIPT</h4>
+                        <p class="text-muted mb-0">#{{ payment.id }}</p>
+                    </div>
+                </div>
+                
+                <!-- Status stamp -->
+                <div class="position-absolute" style="top: 100px; right: 100px; z-index: 100;">
+                    {% if payment.status == 'paid' %}
+                    <div class="status-paid">PAID</div>
+                    {% elif payment.status == 'refunded' %}
+                    <div class="status-refunded">REFUNDED</div>
+                    {% elif payment.status == 'pending' %}
+                    <div class="status-pending">PENDING</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Date and customer info -->
+                <div class="row mb-5">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">ISSUED TO</h6>
+                        <h5>{{ payment.user.first_name }} {{ payment.user.last_name }}</h5>
+                        <p class="mb-1">{{ payment.user.email }}</p>
+                        <p class="mb-1">{{ payment.user.phone }}</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <h6 class="text-muted">RECEIPT DATE</h6>
+                        <h5>{{ current_datetime|date:"F d, Y" }}</h5>
+                        <p class="mb-1">Transaction Date: {{ payment.date|date:"F d, Y" }}</p>
+                        <p class="mb-1">Reservation #{{ payment.reservation.id }}</p>
+                    </div>
+                </div>
+                
+                <!-- Car and rental details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">VEHICLE DETAILS</h6>
+                        <h5>{{ payment.car.make }} {{ payment.car.model }} ({{ payment.car.year }})</h5>
+                        <p class="mb-1">License Plate: {{ payment.car.license_plate }}</p>
+                        <p class="mb-1">Category: {{ payment.car.category }}</p>
+                        <p class="mb-1">Color: {{ payment.car.color }}</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <h6 class="text-muted">RENTAL PERIOD</h6>
+                        <h5>{{ payment.reservation.days }} days</h5>
+                        <p class="mb-1">From: {{ payment.reservation.start_date|date:"F d, Y" }}</p>
+                        <p class="mb-1">To: {{ payment.reservation.end_date|date:"F d, Y" }}</p>
+                    </div>
+                </div>
+                
+                <!-- Payment table -->
+                <div class="table-responsive mb-4">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th class="text-end">Rate</th>
+                                <th class="text-end">Quantity</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <p class="fw-bold mb-1">Car Rental</p>
+                                    <p class="text-muted small mb-0">{{ payment.car.make }} {{ payment.car.model }}</p>
+                                </td>
+                                <td class="text-end">${{ payment.car.daily_rate|floatformat:2 }}</td>
+                                <td class="text-end">{{ payment.reservation.days }} days</td>
+                                <td class="text-end">${{ payment.reservation.subtotal|floatformat:2 }}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end">Subtotal</td>
+                                <td class="text-end">${{ payment.reservation.subtotal|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end">Tax ({{ payment.reservation.tax_rate }}%)</td>
+                                <td class="text-end">${{ payment.reservation.tax_amount|floatformat:2 }}</td>
+                            </tr>
+                            <tr class="border-top border-dark">
+                                <td colspan="3" class="text-end fw-bold">Total</td>
+                                <td class="text-end fw-bold">${{ payment.amount|floatformat:2 }}</td>
+                            </tr>
+                            
+                            {% if payment.status == 'refunded' %}
+                            <tr>
+                                <td colspan="3" class="text-end text-danger">Refund</td>
+                                <td class="text-end text-danger">-${{ payment.refund_amount|floatformat:2 }}</td>
+                            </tr>
+                            <tr class="border-top border-dark">
+                                <td colspan="3" class="text-end fw-bold">Final Amount</td>
+                                <td class="text-end fw-bold">${{ payment.final_amount|floatformat:2 }}</td>
+                            </tr>
+                            {% endif %}
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- Payment method -->
+                <div class="row mb-5">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">PAYMENT METHOD</h6>
+                        <p class="mb-0">
+                            {% if payment.payment_method == 'visa' %}
+                            <i class="fab fa-cc-visa text-primary me-1"></i> Visa
+                            {% elif payment.payment_method == 'mastercard' %}
+                            <i class="fab fa-cc-mastercard text-danger me-1"></i> MasterCard
+                            {% elif payment.payment_method == 'amex' %}
+                            <i class="fab fa-cc-amex text-info me-1"></i> American Express
+                            {% elif payment.payment_method == 'discover' %}
+                            <i class="fab fa-cc-discover text-warning me-1"></i> Discover
+                            {% else %}
+                            <i class="fas fa-credit-card text-secondary me-1"></i> {{ payment.payment_method|title }}
+                            {% endif %}
+                            ending in {{ payment.card_last4 }}
+                        </p>
+                    </div>
+                    {% if payment.status == 'refunded' %}
+                    <div class="col-md-6 text-md-end">
+                        <h6 class="text-muted">REFUND INFORMATION</h6>
+                        <p class="mb-0">
+                            Refunded on {{ payment.refund_date|date:"F d, Y" }}
+                            <br>Transaction ID: {{ payment.refund_transaction_id }}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Footer -->
+                <div class="receipt-footer text-center mt-5 pt-4">
+                    <p class="mb-2">Thank you for choosing CarRental!</p>
+                    <p class="mb-2">If you have any questions regarding this receipt, please contact us at support@carrental.com</p>
+                    <p class="mb-0">
+                        <i class="fas fa-globe me-1"></i> www.carrental.com 
+                        <i class="fas fa-phone ms-3 me-1"></i> +1 (555) 123-4567
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

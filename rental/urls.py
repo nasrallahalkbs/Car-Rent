@@ -38,4 +38,13 @@ urlpatterns = [
     path('admin-dashboard/reservations/<int:reservation_id>/status/<str:status>/', 
          admin_views.update_reservation_status, name='update_reservation_status'),
     path('admin-dashboard/users/', admin_views.admin_users, name='admin_users'),
+    
+    # Payment management
+    path('admin-dashboard/payments/', admin_views.admin_payments, name='admin_payments'),
+    path('admin-dashboard/payments/<str:payment_id>/', admin_views.payment_details, name='payment_details'),
+    path('admin-dashboard/payments/<str:payment_id>/print/', admin_views.print_receipt, name='print_receipt'),
+    path('admin-dashboard/payments/<str:payment_id>/download/', admin_views.download_receipt, name='download_receipt'),
+    path('admin-dashboard/payments/<str:payment_id>/refund/', admin_views.process_refund, name='process_refund'),
+    path('admin-dashboard/payments/<str:payment_id>/mark-as-paid/', admin_views.mark_as_paid, name='mark_as_paid'),
+    path('admin-dashboard/payments/<str:payment_id>/cancel/', admin_views.cancel_payment, name='cancel_payment'),
 ]

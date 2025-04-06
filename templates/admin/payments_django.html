@@ -1,0 +1,212 @@
+{% extends 'admin/index.html' %}
+{% load static %}
+
+{% block title %}Payment Management{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="fas fa-dollar-sign me-2"></i> Payment Management</h2>
+    
+    <!-- Revenue Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="fw-bold text-muted">Today's Revenue</h5>
+                            <h3 class="mb-0">${{ daily_revenue|floatformat:2 }}</h3>
+                        </div>
+                        <div class="bg-light rounded-circle p-3">
+                            <i class="fas fa-calendar-day text-primary fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="fw-bold text-muted">Weekly Revenue</h5>
+                            <h3 class="mb-0">${{ weekly_revenue|floatformat:2 }}</h3>
+                        </div>
+                        <div class="bg-light rounded-circle p-3">
+                            <i class="fas fa-calendar-week text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="fw-bold text-muted">Monthly Revenue</h5>
+                            <h3 class="mb-0">${{ monthly_revenue|floatformat:2 }}</h3>
+                        </div>
+                        <div class="bg-light rounded-circle p-3">
+                            <i class="fas fa-calendar-alt text-warning fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- More Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="fw-bold text-muted">Total Revenue</h5>
+                            <h3 class="text-success mb-0">${{ total_revenue|floatformat:2 }}</h3>
+                        </div>
+                        <div class="bg-light rounded-circle p-3">
+                            <i class="fas fa-chart-line text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="fw-bold text-muted">Total Refunds</h5>
+                            <h3 class="text-danger mb-0">${{ refunded_amount|floatformat:2 }}</h3>
+                        </div>
+                        <div class="bg-light rounded-circle p-3">
+                            <i class="fas fa-undo-alt text-danger fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0 py-2">Payment History</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Car</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Method</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'payment_details' payment.id %}" class="fw-bold text-decoration-none">
+                                    {{ payment.id }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm me-3 bg-primary-light rounded-circle text-center">
+                                        <span class="fw-bold text-primary">{{ payment.user.first_name|slice:":1" }}{{ payment.user.last_name|slice:":1" }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="fw-semibold d-block">{{ payment.user.first_name }} {{ payment.user.last_name }}</span>
+                                        <small class="text-muted">{{ payment.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ payment.car.make }} {{ payment.car.model }}</td>
+                            <td>{{ payment.date|date:"M d, Y" }}</td>
+                            <td>${{ payment.amount|floatformat:2 }}</td>
+                            <td>
+                                {% if payment.status == 'paid' %}
+                                <span class="badge bg-success rounded-pill">Paid</span>
+                                {% elif payment.status == 'refunded' %}
+                                <span class="badge bg-danger rounded-pill">Refunded</span>
+                                {% elif payment.status == 'pending' %}
+                                <span class="badge bg-warning rounded-pill">Pending</span>
+                                {% else %}
+                                <span class="badge bg-secondary rounded-pill">{{ payment.status|title }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if payment.payment_method == 'visa' %}
+                                <i class="fab fa-cc-visa text-primary fs-5" title="Visa"></i>
+                                {% elif payment.payment_method == 'mastercard' %}
+                                <i class="fab fa-cc-mastercard text-danger fs-5" title="MasterCard"></i>
+                                {% elif payment.payment_method == 'amex' %}
+                                <i class="fab fa-cc-amex text-info fs-5" title="American Express"></i>
+                                {% elif payment.payment_method == 'discover' %}
+                                <i class="fab fa-cc-discover text-warning fs-5" title="Discover"></i>
+                                {% else %}
+                                <i class="fas fa-credit-card text-secondary fs-5" title="{{ payment.payment_method|title }}"></i>
+                                {% endif %}
+                                <small class="text-muted ms-1">•••• {{ payment.card_last4 }}</small>
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{% url 'payment_details' payment.id %}">
+                                            <i class="fas fa-info-circle me-2"></i> View Details
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{% url 'print_receipt' payment.id %}">
+                                            <i class="fas fa-print me-2"></i> Print Receipt
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{% url 'download_receipt' payment.id %}">
+                                            <i class="fas fa-download me-2"></i> Download PDF
+                                        </a></li>
+                                        
+                                        {% if payment.status == 'paid' %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'process_refund' payment.id %}" 
+                                               onclick="return confirm('Are you sure you want to process a refund for this payment?')">
+                                            <i class="fas fa-undo-alt me-2"></i> Process Refund
+                                        </a></li>
+                                        {% elif payment.status == 'pending' %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-success" href="{% url 'mark_as_paid' payment.id %}">
+                                            <i class="fas fa-check-circle me-2"></i> Mark as Paid
+                                        </a></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'cancel_payment' payment.id %}"
+                                               onclick="return confirm('Are you sure you want to cancel this payment?')">
+                                            <i class="fas fa-times-circle me-2"></i> Cancel Payment
+                                        </a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-receipt fs-3 mb-3"></i>
+                                    <p>No payment records found.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
