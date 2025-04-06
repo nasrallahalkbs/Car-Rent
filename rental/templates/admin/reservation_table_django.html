@@ -1,33 +1,44 @@
-<table class="table table-hover admin-table">
-    <thead>
+<table class="table table-hover admin-table align-middle" id="reservationsTable">
+    <thead class="bg-light">
         <tr>
-            <th>ID</th>
-            <th>Customer</th>
-            <th>Car</th>
-            <th>Dates</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Payment</th>
-            <th>Actions</th>
+            <th>رقم الحجز</th>
+            <th>العميل</th>
+            <th>السيارة</th>
+            <th>التواريخ</th>
+            <th>الإجمالي</th>
+            <th>حالة الحجز</th>
+            <th>حالة الدفع</th>
+            <th>الإجراءات</th>
         </tr>
     </thead>
     <tbody>
         {% for item in reservations %}
-        <tr>
-            <td>{{ item.reservation.id }}</td>
+        <tr data-status="{{ item.reservation.status }}">
             <td>
-                <div class="fw-bold">{{ item.user.first_name }} {{ item.user.last_name }}</div>
-                <small class="text-muted">{{ item.user.email }}</small>
+                <span class="fw-bold">#{{ item.reservation.id }}</span>
+            </td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-secondary text-white me-2">
+                        {{ item.user.first_name|slice:":1" }}{{ item.user.last_name|slice:":1" }}
+                    </div>
+                    <div>
+                        <div class="fw-bold">{{ item.user.first_name }} {{ item.user.last_name }}</div>
+                        <small class="text-muted">{{ item.user.email }}</small>
+                    </div>
+                </div>
             </td>
             <td>
                 <div class="fw-bold">{{ item.car.make }} {{ item.car.model }}</div>
                 <small class="text-muted">{{ item.car.license_plate }}</small>
             </td>
             <td>
-                <div>{{ item.reservation.start_date|date:"M d, Y" }} &rarr; {{ item.reservation.end_date|date:"M d, Y" }}</div>
-                <small class="text-muted">{{ item.reservation.created_at|date:"M d, Y H:i" }}</small>
+                <div><i class="fas fa-calendar-alt me-1 text-muted"></i>{{ item.reservation.start_date|date:"Y/m/d" }} &rarr; {{ item.reservation.end_date|date:"Y/m/d" }}</div>
+                <small class="text-muted"><i class="fas fa-clock me-1"></i>{{ item.reservation.created_at|date:"Y/m/d H:i" }}</small>
             </td>
-            <td>${{ item.reservation.total_price|floatformat:2 }}</td>
+            <td>
+                <span class="fw-bold">${{ item.reservation.total_price|floatformat:2 }}</span>
+            </td>
             <td>
                 <span class="badge 
                     {% if item.reservation.status == 'pending' %}bg-warning{% endif %}
@@ -45,29 +56,52 @@
                     {{ item.reservation.payment_status|title }}
                 </span>
             </td>
-            <td class="action-buttons">
-                {% if item.reservation.status == 'pending' %}
-                    <a href="{% url 'update_reservation_status' item.reservation.id 'completed' %}" class="btn btn-sm btn-outline-success" title="Mark as Completed">
-                        <i class="fas fa-check"></i>
-                    </a>
-                    <a href="{% url 'update_reservation_status' item.reservation.id 'confirmed' %}" class="btn btn-sm btn-outline-primary" title="Confirm">
-                        <i class="fas fa-thumbs-up"></i>
-                    </a>
-                    <a href="{% url 'update_reservation_status' item.reservation.id 'cancelled' %}" class="btn btn-sm btn-outline-danger" title="Cancel" onclick="return confirm('Are you sure you want to cancel this reservation?');">
-                        <i class="fas fa-ban"></i>
-                    </a>
-                {% elif item.reservation.status == 'confirmed' %}
-                    <a href="{% url 'update_reservation_status' item.reservation.id 'completed' %}" class="btn btn-sm btn-outline-success" title="Mark as Completed">
-                        <i class="fas fa-check"></i>
-                    </a>
-                    <a href="{% url 'update_reservation_status' item.reservation.id 'cancelled' %}" class="btn btn-sm btn-outline-danger" title="Cancel" onclick="return confirm('Are you sure you want to cancel this reservation?');">
-                        <i class="fas fa-ban"></i>
-                    </a>
-                {% else %}
-                    <span class="text-muted">No actions available</span>
-                {% endif %}
+            <td>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton{{ item.reservation.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                        إجراء
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ item.reservation.id }}">
+                        {% if item.reservation.status == 'pending' %}
+                            <li><a class="dropdown-item text-primary" href="{% url 'update_reservation_status' item.reservation.id 'confirmed' %}">
+                                <i class="fas fa-check-circle me-2"></i>تأكيد الحجز
+                            </a></li>
+                            <li><a class="dropdown-item text-success" href="{% url 'update_reservation_status' item.reservation.id 'completed' %}">
+                                <i class="fas fa-flag-checkered me-2"></i>تحديد كمكتمل
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'update_reservation_status' item.reservation.id 'cancelled' %}" onclick="return confirm('هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟');">
+                                <i class="fas fa-ban me-2"></i>إلغاء الحجز
+                            </a></li>
+                        {% elif item.reservation.status == 'confirmed' %}
+                            <li><a class="dropdown-item text-success" href="{% url 'update_reservation_status' item.reservation.id 'completed' %}">
+                                <i class="fas fa-flag-checkered me-2"></i>تحديد كمكتمل
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'update_reservation_status' item.reservation.id 'cancelled' %}" onclick="return confirm('هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟');">
+                                <i class="fas fa-ban me-2"></i>إلغاء الحجز
+                            </a></li>
+                        {% else %}
+                            <li><a class="dropdown-item text-muted" href="#" onclick="return false;">
+                                <i class="fas fa-info-circle me-2"></i>لا توجد إجراءات متاحة
+                            </a></li>
+                        {% endif %}
+                    </ul>
+                </div>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<style>
+.avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+</style>
