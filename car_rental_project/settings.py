@@ -20,23 +20,29 @@ REPLIT_SLUG = os.environ.get('REPL_SLUG', '')
 REPLIT_OWNER = os.environ.get('REPL_OWNER', '')
 REPLIT_ID = os.environ.get('REPL_ID', '')
 
-# CSRF trusted origins
-# Include both HTTP and HTTPS variations of the domain
+# CSRF settings for Replit environment
 CSRF_TRUSTED_ORIGINS = [
     'https://*.replit.app',
     'https://*.replit.dev',
     'https://*.janeway.replit.dev',
     f'https://{REPLIT_SLUG}-{REPLIT_OWNER}.repl.co',
     f'https://{REPLIT_ID}.id.repl.co',
+    'http://*.replit.app',
+    'http://*.replit.dev',
+    'http://*.janeway.replit.dev',
+    f'http://{REPLIT_SLUG}-{REPLIT_OWNER}.repl.co',
+    f'http://{REPLIT_ID}.id.repl.co',
 ]
 
 # Extract the hostname from environment
 REPLIT_HOST = os.environ.get('HTTP_HOST', '')
 if REPLIT_HOST:
     CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_HOST}')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_HOST}')
     
-# Add explicit support for the specific domain in the error message
+# Add explicit support for Janeway development environment
 CSRF_TRUSTED_ORIGINS.append('https://372fe000-ff64-4ad8-84f9-611ea2a8e995-00-1c83kgq6nqqvn.janeway.replit.dev')
+CSRF_TRUSTED_ORIGINS.append('http://372fe000-ff64-4ad8-84f9-611ea2a8e995-00-1c83kgq6nqqvn.janeway.replit.dev')
 
 # Application definition
 INSTALLED_APPS = [
@@ -55,21 +61,19 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # Temporarily disable CSRF middleware for debugging
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Additional CSRF settings for Replit environment
-# These settings are not needed while CSRF middleware is disabled
-# CSRF_COOKIE_SECURE = False  
-# CSRF_COOKIE_SAMESITE = None
-# SESSION_COOKIE_SECURE = False
-# SESSION_COOKIE_SAMESITE = None
-# CSRF_USE_SESSIONS = True
-# CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
+# Additional CSRF cookie settings
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False 
+CSRF_COOKIE_SAMESITE = None
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = None
 
 ROOT_URLCONF = 'car_rental_project.urls'
 

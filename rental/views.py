@@ -32,16 +32,14 @@ def register_view(request):
     
     return render(request, 'register_django.html', {'form': form})
 
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+@ensure_csrf_cookie
 def login_view(request):
     """User login view"""
-    # Force set a CSRF cookie
-    if not request.COOKIES.get('csrftoken'):
-        response = render(request, 'login_django.html', {'form': LoginForm()})
-        # Set CSRF cookie explicitly 
-        from django.middleware.csrf import get_token
-        get_token(request)
-        return response
-        
+    # Import for CSRF token
+    from django.middleware.csrf import get_token
+    
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
@@ -58,7 +56,9 @@ def login_view(request):
     else:
         form = LoginForm()
     
-    return render(request, 'login_django.html', {'form': form})
+    response = render(request, 'login_django.html', {'form': form})
+    response.set_cookie('csrftoken', get_token(request), samesite=None)
+    return response
 
 def logout_view(request):
     """User logout view"""
