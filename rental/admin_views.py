@@ -489,6 +489,8 @@ def add_manual_payment(request):
         form = ManualPaymentForm(request.POST)
         user_id = request.POST.get('user_id')
         reservation_id = request.POST.get('reservation_id')
+        no_reservation = request.POST.get('no_reservation') == '1'
+        payment_reason = request.POST.get('payment_reason')
         
         if user_id:
             selected_user = get_object_or_404(User, id=user_id)
@@ -498,31 +500,94 @@ def add_manual_payment(request):
                 payment_status='pending'
             ).order_by('-created_at')
         
-        # If form is valid and a reservation was selected
-        if form.is_valid() and reservation_id:
-            reservation = get_object_or_404(Reservation, id=reservation_id)
+        # If form is valid
+        if form.is_valid():
+            # Handle payment with reservation
+            if reservation_id and not no_reservation:
+                reservation = get_object_or_404(Reservation, id=reservation_id)
+                
+                # Update reservation payment status
+                reservation.payment_status = 'paid'
+                if reservation.status == 'pending':
+                    reservation.status = 'confirmed'
+                
+                # If the amount is different than the reservation total, update it
+                amount = form.cleaned_data['amount']
+                if amount != reservation.total_price:
+                    reservation.total_price = amount
+                
+                reservation.save()
+                
+                # Add a success message
+                payment_id = f"P{reservation.id:06d}"
+                messages.success(
+                    request, 
+                    f"Manual payment of ${amount} has been recorded for reservation #{reservation.id}"
+                )
+                
+                # Redirect to payment details
+                return redirect('payment_details', payment_id=payment_id)
             
-            # Update reservation payment status
-            reservation.payment_status = 'paid'
-            if reservation.status == 'pending':
-                reservation.status = 'confirmed'
-            
-            # If the amount is different than the reservation total, update it
-            amount = form.cleaned_data['amount']
-            if amount != reservation.total_price:
-                reservation.total_price = amount
-            
-            reservation.save()
-            
-            # Add a success message
-            payment_id = f"P{reservation.id:06d}"
-            messages.success(
-                request, 
-                f"Manual payment of ${amount} has been recorded for reservation #{reservation.id}"
-            )
-            
-            # Redirect to payment details
-            return redirect('payment_details', payment_id=payment_id)
+            # Handle payment without reservation
+            elif no_reservation and selected_user:
+                amount = form.cleaned_data['amount']
+                payment_method = form.cleaned_data['payment_method']
+                reference_number = form.cleaned_data['reference_number']
+                notes = form.cleaned_data['notes']
+                
+                # Create a special reservation to track this payment
+                from datetime import date, timedelta
+                
+                # For payments without reservations, we create a placeholder reservation
+                # with start and end dates in the past
+                today = date.today()
+                yesterday = today - timedelta(days=1)
+                
+                # Create a description based on payment reason
+                reason_display = {
+                    'deposit': 'Deposit',
+                    'prepayment': 'Prepayment',
+                    'credit': 'Account Credit',
+                    'other': 'Other Payment'
+                }
+                
+                description = reason_display.get(payment_reason, 'Manual Payment')
+                if notes:
+                    description += f" - {notes}"
+                
+                # Create a special reservation to track this payment
+                from decimal import Decimal
+                
+                # Get the first available car just as a placeholder
+                placeholder_car = Car.objects.first()
+                if not placeholder_car:
+                    messages.error(request, "Cannot create payment: No cars in system")
+                    return redirect('admin_payments')
+                
+                # Create a special reservation
+                reservation = Reservation.objects.create(
+                    user=selected_user,
+                    car=placeholder_car,
+                    start_date=yesterday,
+                    end_date=today,
+                    total_price=Decimal(str(amount)),
+                    status='completed',
+                    payment_status='paid'
+                )
+                
+                # Store additional info in notes field
+                reservation.notes = description
+                reservation.save()
+                
+                # Add a success message
+                payment_id = f"P{reservation.id:06d}"
+                messages.success(
+                    request, 
+                    f"Manual payment of ${amount} has been recorded for {selected_user.first_name} {selected_user.last_name} ({description})"
+                )
+                
+                # Redirect to payment details
+                return redirect('payment_details', payment_id=payment_id)
             
     else:
         form = ManualPaymentForm()

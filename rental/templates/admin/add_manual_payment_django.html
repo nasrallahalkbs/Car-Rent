@@ -57,7 +57,7 @@
                             <div class="mb-3">
                                 <label for="reservation_id" class="form-label">Pending Reservation</label>
                                 {% if reservations and reservations.exists %}
-                                <select class="form-select" id="reservation_id" name="reservation_id" required>
+                                <select class="form-select" id="reservation_id" name="reservation_id">
                                     <option value="">-- Select Reservation --</option>
                                     {% for res in reservations %}
                                     <option value="{{ res.id }}">
@@ -68,11 +68,21 @@
                                 <div class="invalid-feedback">
                                     Please select a reservation.
                                 </div>
+                                <div class="form-text">
+                                    Or check the option below to add a payment without a reservation.
+                                </div>
                                 {% else %}
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i> No pending reservations found for this customer.
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i> No pending reservations found for this customer.
                                 </div>
                                 {% endif %}
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="no_reservation" name="no_reservation" value="1" {% if not reservations or not reservations.exists %}checked{% endif %}>
+                                <label class="form-check-label" for="no_reservation">
+                                    <strong>Add payment without a reservation</strong> (for deposits, prepayments, or credits)
+                                </label>
                             </div>
                             {% endif %}
                             
@@ -80,7 +90,7 @@
                                 <button type="button" id="step2Back" class="btn btn-outline-secondary">
                                     <i class="fas fa-arrow-left me-2"></i> Back
                                 </button>
-                                <button type="button" id="step2Next" class="btn btn-primary" {% if not reservations or not reservations.exists %}disabled{% endif %}>
+                                <button type="button" id="step2Next" class="btn btn-primary" {% if not reservations or not reservations.exists %}{% endif %}>
                                     Next <i class="fas fa-arrow-right ms-2"></i>
                                 </button>
                             </div>
@@ -120,6 +130,17 @@
                                 {{ form.notes }}
                             </div>
                             
+                            <!-- Payment reason field (visible only for payments without reservations) -->
+                            <div id="payment_reason_section" class="mb-3" style="display: none;">
+                                <label for="payment_reason" class="form-label">Payment Reason</label>
+                                <select class="form-select" id="payment_reason" name="payment_reason">
+                                    <option value="deposit">Deposit</option>
+                                    <option value="prepayment">Prepayment</option>
+                                    <option value="credit">Account Credit</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            
                             <div class="d-flex justify-content-between">
                                 <button type="button" id="step3Back" class="btn btn-outline-secondary">
                                     <i class="fas fa-arrow-left me-2"></i> Back
@@ -150,6 +171,8 @@
         const step3 = document.getElementById('step3');
         const step3Back = document.getElementById('step3Back');
         const reservationSelect = document.getElementById('reservation_id');
+        const noReservationCheckbox = document.getElementById('no_reservation');
+        const paymentReasonSection = document.getElementById('payment_reason_section');
         
         // Enable/disable next button based on user selection
         userSelect.addEventListener('change', function() {
@@ -173,10 +196,37 @@
             step1.classList.remove('d-none');
         });
         
-        // Enable/disable step 2 next button based on reservation selection
+        // Enable/disable step 2 next button based on reservation selection or no_reservation checkbox
         if (reservationSelect) {
             reservationSelect.addEventListener('change', function() {
-                step2Next.disabled = !this.value;
+                if (this.value) {
+                    // If a reservation is selected, uncheck the "no reservation" checkbox
+                    if (noReservationCheckbox) {
+                        noReservationCheckbox.checked = false;
+                    }
+                    step2Next.disabled = false;
+                } else if (noReservationCheckbox && !noReservationCheckbox.checked) {
+                    // If no reservation is selected and checkbox is unchecked, disable next button
+                    step2Next.disabled = true;
+                }
+            });
+        }
+        
+        // Handle no_reservation checkbox
+        if (noReservationCheckbox) {
+            noReservationCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    // If checkbox is checked, enable next button
+                    step2Next.disabled = false;
+                    
+                    // If reservation select exists, clear its selection
+                    if (reservationSelect) {
+                        reservationSelect.value = '';
+                    }
+                } else if (!reservationSelect || !reservationSelect.value) {
+                    // If checkbox is unchecked and no reservation is selected, disable next button
+                    step2Next.disabled = true;
+                }
             });
         }
         
@@ -184,6 +234,13 @@
         step2Next.addEventListener('click', function() {
             step2.classList.add('d-none');
             step3.classList.remove('d-none');
+            
+            // Show/hide payment reason section based on noReservationCheckbox
+            if (noReservationCheckbox && noReservationCheckbox.checked) {
+                paymentReasonSection.style.display = 'block';
+            } else {
+                paymentReasonSection.style.display = 'none';
+            }
         });
         
         // Go back to step 2
