@@ -34,6 +34,14 @@ def register_view(request):
 
 def login_view(request):
     """User login view"""
+    # Force set a CSRF cookie
+    if not request.COOKIES.get('csrftoken'):
+        response = render(request, 'login_django.html', {'form': LoginForm()})
+        # Set CSRF cookie explicitly 
+        from django.middleware.csrf import get_token
+        get_token(request)
+        return response
+        
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
@@ -44,6 +52,9 @@ def login_view(request):
                 login(request, user)
                 messages.success(request, f'Welcome back, {user.first_name if user.first_name else user.username}!')
                 return redirect('index')
+        else:
+            # Print form errors to help debugging
+            print(f"Form errors: {form.errors}")
     else:
         form = LoginForm()
     
