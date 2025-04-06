@@ -590,6 +590,112 @@ def about_us(request):
     """About Us page view"""
     return render(request, "about_us.html")
 
+@login_required
+def book_car(request, car_id):
+    """View for booking a car directly from car detail page"""
+    # Get car details
+    car = get_object_or_404(Car, id=car_id)
+    
+    if not car.is_available:
+        messages.error(request, "عذرًا، هذه السيارة غير متاحة للحجز حاليًا.")
+        return redirect('car_detail', car_id=car_id)
+    
+    # Get dates from the form submission or set default
+    today = date.today()
+    tomorrow = today + timedelta(days=1)
+    next_week = today + timedelta(days=7)
+    
+    start_date = request.GET.get('start_date', today)
+    end_date = request.GET.get('end_date', tomorrow)
+    
+    # Convert string dates to date objects if needed
+    if isinstance(start_date, str):
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        except ValueError:
+            start_date = today
+    
+    if isinstance(end_date, str):
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        except ValueError:
+            end_date = tomorrow
+    
+    # Calculate total price and rental days
+    days = (end_date - start_date).days + 1
+    total_price = calculate_total_price(car, start_date, end_date)
+    
+    return render(request, 'booking.html', {
+        'car': car,
+        'start_date': start_date,
+        'end_date': end_date,
+        'days': days,
+        'total_price': total_price,
+        'today': today
+    })
+
+@login_required
+def process_booking(request):
+    """Process the booking form submission"""
+    if request.method != 'POST':
+        return redirect('car_listing')
+    
+    # Get form data
+    car_id = request.POST.get('car_id')
+    car = get_object_or_404(Car, id=car_id)
+    
+    start_date = request.POST.get('start_date')
+    end_date = request.POST.get('end_date')
+    
+    # Convert string dates to date objects
+    try:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        messages.error(request, "تنسيق التاريخ غير صحيح.")
+        return redirect('book_car', car_id=car_id)
+    
+    # Validate dates
+    if start_date < date.today():
+        messages.error(request, "لا يمكن أن يكون تاريخ البدء في الماضي.")
+        return redirect('book_car', car_id=car_id)
+    
+    if end_date <= start_date:
+        messages.error(request, "يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء.")
+        return redirect('book_car', car_id=car_id)
+    
+    # Check availability
+    if not get_car_availability(car_id, start_date, end_date):
+        messages.error(request, "عذرًا، هذه السيارة غير متاحة في التواريخ المحددة.")
+        return redirect('book_car', car_id=car_id)
+    
+    # Calculate total price
+    total_price = calculate_total_price(car, start_date, end_date)
+    
+    # Get payment details
+    card_type = request.POST.get('card_type')
+    card_number = request.POST.get('card_number')
+    card_name = request.POST.get('card_name')
+    
+    # Create notes for payment details
+    payment_notes = f"طريقة الدفع: {card_type}\nرقم البطاقة: ****{card_number[-4:]}\nاسم حامل البطاقة: {card_name}"
+    
+    # Create a new reservation with pending status
+    reservation = Reservation(
+        user=request.user,
+        car=car,
+        start_date=start_date,
+        end_date=end_date,
+        total_price=total_price,
+        status='pending',
+        payment_status='pending',
+        notes=payment_notes
+    )
+    reservation.save()
+    
+    messages.success(request, "تم إرسال طلب الحجز بنجاح وهو الآن في انتظار موافقة الإدارة.")
+    return redirect('confirmation')
+
 def get_unavailable_dates_api(request, car_id):
     """API endpoint to get unavailable dates for a car"""
     try:

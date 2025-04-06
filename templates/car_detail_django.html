@@ -817,120 +817,40 @@
                 
                 <div class="reservation-card-body">
                     {% if car.is_available %}
-                    <div class="booking-tabs mb-3">
-                        <ul class="nav nav-tabs" id="bookingTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="cart-tab" data-bs-toggle="tab" data-bs-target="#cart-content" type="button" role="tab" aria-controls="cart-content" aria-selected="true">
-                                    <i class="fas fa-shopping-cart ms-1"></i> إضافة للسلة
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="direct-booking-tab" data-bs-toggle="tab" data-bs-target="#direct-booking-content" type="button" role="tab" aria-controls="direct-booking-content" aria-selected="false">
-                                    <i class="fas fa-credit-card ms-1"></i> حجز مباشر
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <div class="tab-content" id="bookingTabsContent">
-                        <!-- إضافة إلى السلة -->
-                        <div class="tab-pane fade show active" id="cart-content" role="tabpanel" aria-labelledby="cart-tab">
-                            <form method="post" action="{% url 'car_detail' car_id=car.id %}" id="reservationForm">
-                                {% csrf_token %}
-                                {{ form.car_id }}
-                                
-                                <div class="date-inputs row">
-                                    <div class="col-6">
-                                        <div class="date-label">تاريخ الاستلام</div>
-                                        {{ form.start_date }}
-                                        {% if form.start_date.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.start_date.errors }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="date-label">تاريخ التسليم</div>
-                                        {{ form.end_date }}
-                                        {% if form.end_date.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.end_date.errors }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                
-                                <div class="price-estimate d-none" id="priceEstimate">
-                                    <div class="estimate-row">
-                                        <div class="estimate-label">السعر اليومي</div>
-                                        <div class="estimate-value">{{ car.daily_rate }} دينار</div>
-                                    </div>
-                                    <div class="estimate-row">
-                                        <div class="estimate-label">عدد الأيام</div>
-                                        <div class="estimate-value" id="totalDays">0</div>
-                                    </div>
-                                    <div class="estimate-row estimate-total">
-                                        <div class="estimate-label">المجموع</div>
-                                        <div class="estimate-value" id="totalPrice">0 دينار</div>
-                                    </div>
-                                </div>
-                                
-                                <button type="submit" class="action-button">
-                                    <i class="fas fa-shopping-cart ms-2"></i> إضافة إلى السلة
-                                </button>
-                            </form>
+                    <form method="get" action="{% url 'book_car' car_id=car.id %}" id="dateSelectionForm">
+                        <div class="date-inputs row mb-4">
+                            <div class="col-6">
+                                <div class="date-label">تاريخ الاستلام</div>
+                                <input type="date" name="start_date" id="start_date" class="form-control" required min="{{ today|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-6">
+                                <div class="date-label">تاريخ التسليم</div>
+                                <input type="date" name="end_date" id="end_date" class="form-control" required min="{{ today|date:'Y-m-d' }}">
+                            </div>
                         </div>
                         
-                        <!-- الحجز المباشر -->
-                        <div class="tab-pane fade" id="direct-booking-content" role="tabpanel" aria-labelledby="direct-booking-tab">
-                            <form method="post" action="{% url 'checkout' %}" id="directBookingForm">
-                                {% csrf_token %}
-                                <input type="hidden" name="car_id" value="{{ car.id }}">
-                                
-                                <div class="date-inputs row mb-4">
-                                    <div class="col-6">
-                                        <div class="date-label">تاريخ الاستلام</div>
-                                        <input type="date" name="start_date" class="form-control" required min="{{ today|date:'Y-m-d' }}">
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="date-label">تاريخ التسليم</div>
-                                        <input type="date" name="end_date" class="form-control" required min="{{ today|date:'Y-m-d' }}">
-                                    </div>
-                                </div>
-                                
-                                <div class="user-info border p-3 rounded mb-4">
-                                    <h5 class="mb-3"><i class="fas fa-user-circle me-2"></i> معلومات المستخدم</h5>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">الاسم الأول</label>
-                                            <input type="text" class="form-control" name="first_name" value="{{ request.user.first_name|default:'' }}" required>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">الاسم الأخير</label>
-                                            <input type="text" class="form-control" name="last_name" value="{{ request.user.last_name|default:'' }}" required>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">البريد الإلكتروني</label>
-                                            <input type="email" class="form-control" name="email" value="{{ request.user.email|default:'' }}" required>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">رقم الهاتف</label>
-                                            <input type="tel" class="form-control" name="phone" value="{{ request.user.phone|default:'' }}" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="payment-info border p-3 rounded mb-4">
-                                    <h5 class="mb-3"><i class="fas fa-credit-card me-2"></i> معلومات الدفع</h5>
-                                    
-                                    <!-- Card Type Selection -->
-                                    <div class="mb-3">
-                                        <label class="form-label">نوع البطاقة</label>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="card_type" id="cardVisa" value="visa" checked>
-                                                <label class="form-check-label" for="cardVisa">
-                                                    <i class="fab fa-cc-visa text-primary me-1"></i> فيزا
+                        <div id="availabilityMessage" class="alert d-none mb-3"></div>
+                        
+                        <div class="price-estimate mb-4">
+                            <div class="estimate-header">تقدير التكلفة</div>
+                            <div class="estimate-row">
+                                <div class="estimate-label">السعر اليومي</div>
+                                <div class="estimate-value">{{ car.daily_rate }} دينار</div>
+                            </div>
+                            <div class="estimate-row">
+                                <div class="estimate-label">عدد الأيام</div>
+                                <div class="estimate-value" id="totalDays">0</div>
+                            </div>
+                            <div class="estimate-row estimate-total">
+                                <div class="estimate-label">المجموع</div>
+                                <div class="estimate-value" id="totalPrice">0 دينار</div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="action-button w-100">
+                            <i class="fas fa-calendar-check ms-2"></i> متابعة الحجز
+                        </button>
+                    </form>
                                                 </label>
                                             </div>
                                             <div class="form-check">

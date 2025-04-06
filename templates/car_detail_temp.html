@@ -1,0 +1,190 @@
+{% extends 'layout_django.html' %}
+{% load static %}
+
+{% block title %}{{ car.make }} {{ car.model }} - كاررنتال{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Car Hero Section -->
+    <div class="car-hero-section">
+        {% if car.image_url %}
+        <img src="{{ car.image_url }}" class="car-hero-image" alt="{{ car.make }} {{ car.model }}">
+        {% else %}
+        <img src="{% static 'images/car-placeholder.svg' %}" class="car-hero-image" alt="{{ car.make }} {{ car.model }}">
+        {% endif %}
+        
+        <div class="car-hero-overlay">
+            <h1 class="car-hero-title">{{ car.make }} {{ car.model }}</h1>
+            <p class="car-hero-subtitle">{{ car.year }} • {{ car.color }}</p>
+            
+            <div class="car-hero-badges">
+                <div class="car-badge badge-category">
+                    <i class="fas fa-car"></i> {{ car.category }}
+                </div>
+                <div class="car-badge badge-transmission">
+                    <i class="fas fa-cog"></i> {{ car.transmission }}
+                </div>
+                <div class="car-badge badge-fuel">
+                    <i class="fas fa-gas-pump"></i> {{ car.fuel_type }}
+                </div>
+                
+                {% if car.is_available %}
+                <div class="car-badge badge-available">
+                    <i class="fas fa-check-circle"></i> متاحة
+                </div>
+                {% else %}
+                <div class="car-badge badge-unavailable">
+                    <i class="fas fa-times-circle"></i> غير متاحة
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Car Information Panels -->
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Reservation Card -->
+            <div class="reservation-card animate-fade-in-up">
+                <div class="reservation-card-header">
+                    <h3>حجز هذه السيارة</h3>
+                    <div class="d-flex align-items-baseline">
+                        <div class="reservation-price">{{ car.daily_rate }}</div>
+                        <div class="price-period ms-2">دينار/يوم</div>
+                    </div>
+                </div>
+                
+                <div class="reservation-card-body">
+                    {% if car.is_available %}
+                    <form method="get" action="{% url 'book_car' car_id=car.id %}" id="dateSelectionForm">
+                        <div class="date-inputs row mb-4">
+                            <div class="col-6">
+                                <div class="date-label">تاريخ الاستلام</div>
+                                <input type="date" name="start_date" id="start_date" class="form-control" required min="{{ today|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-6">
+                                <div class="date-label">تاريخ التسليم</div>
+                                <input type="date" name="end_date" id="end_date" class="form-control" required min="{{ today|date:'Y-m-d' }}">
+                            </div>
+                        </div>
+                        
+                        <div id="availabilityMessage" class="alert d-none mb-3"></div>
+                        
+                        <div class="price-estimate mb-4">
+                            <div class="estimate-header">تقدير التكلفة</div>
+                            <div class="estimate-row">
+                                <div class="estimate-label">السعر اليومي</div>
+                                <div class="estimate-value">{{ car.daily_rate }} دينار</div>
+                            </div>
+                            <div class="estimate-row">
+                                <div class="estimate-label">عدد الأيام</div>
+                                <div class="estimate-value" id="totalDays">0</div>
+                            </div>
+                            <div class="estimate-row estimate-total">
+                                <div class="estimate-label">المجموع</div>
+                                <div class="estimate-value" id="totalPrice">0 دينار</div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="action-button w-100">
+                            <i class="fas fa-calendar-check ms-2"></i> متابعة الحجز
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-triangle ms-2"></i>
+                        عذراً، هذه السيارة غير متاحة للحجز حالياً.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        const totalDaysElement = document.getElementById('totalDays');
+        const totalPriceElement = document.getElementById('totalPrice');
+        const availabilityMessageElement = document.getElementById('availabilityMessage');
+        const dailyRate = {{ car.daily_rate }};
+        
+        // Calculate number of days and total price
+        function calculateTotals() {
+            if (startDateInput.value && endDateInput.value) {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+                
+                // Check if end date is after start date
+                if (endDate < startDate) {
+                    availabilityMessageElement.classList.remove('d-none', 'alert-success');
+                    availabilityMessageElement.classList.add('alert-danger');
+                    availabilityMessageElement.textContent = 'تاريخ التسليم يجب أن يكون بعد تاريخ الاستلام';
+                    return;
+                }
+                
+                // Calculate number of days (inclusive)
+                const timeDiff = endDate.getTime() - startDate.getTime();
+                const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
+                
+                // Update display
+                totalDaysElement.textContent = daysDiff;
+                totalPriceElement.textContent = (dailyRate * daysDiff).toFixed(2) + ' دينار';
+                
+                // Check availability
+                checkAvailability(startDateInput.value, endDateInput.value);
+            }
+        }
+        
+        // Check if car is available for the selected dates
+        function checkAvailability(startDate, endDate) {
+            fetch()
+                .then(response => response.json())
+                .then(data => {
+                    let isAvailable = true;
+                    const selStartDate = new Date(startDate);
+                    const selEndDate = new Date(endDate);
+                    
+                    for (const range of data.unavailable_dates) {
+                        const rangeStartDate = new Date(range.start);
+                        const rangeEndDate = new Date(range.end);
+                        
+                        // Check if dates overlap
+                        if ((selStartDate <= rangeEndDate && selStartDate >= rangeStartDate) ||
+                            (selEndDate <= rangeEndDate && selEndDate >= rangeStartDate) ||
+                            (selStartDate <= rangeStartDate && selEndDate >= rangeEndDate)) {
+                            isAvailable = false;
+                            break;
+                        }
+                    }
+                    
+                    // Update availability message
+                    availabilityMessageElement.classList.remove('d-none');
+                    if (isAvailable) {
+                        availabilityMessageElement.classList.remove('alert-danger');
+                        availabilityMessageElement.classList.add('alert-success');
+                        availabilityMessageElement.textContent = 'السيارة متاحة للحجز في التواريخ المحددة!';
+                    } else {
+                        availabilityMessageElement.classList.remove('alert-success');
+                        availabilityMessageElement.classList.add('alert-danger');
+                        availabilityMessageElement.textContent = 'عذراً، هذه السيارة محجوزة في التواريخ المحددة.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking availability:', error);
+                });
+        }
+        
+        // Event listeners
+        startDateInput.addEventListener('change', calculateTotals);
+        endDateInput.addEventListener('change', calculateTotals);
+    });
+</script>
+{% endblock %}

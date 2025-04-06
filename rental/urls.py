@@ -25,6 +25,10 @@ urlpatterns = [
     # Static pages
     path('about-us/', views.about_us, name='about_us'),
     
+    # Booking views
+    path('cars/<int:car_id>/book/', views.book_car, name='book_car'),
+    path('process-booking/', views.process_booking, name='process_booking'),
+    
     # API endpoints
     path('api/car/<int:car_id>/unavailable-dates/', views.get_unavailable_dates_api, name='get_unavailable_dates_api'),
     
