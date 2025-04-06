@@ -1,151 +1,423 @@
 {% extends 'layout_django.html' %}
 {% load static %}
 
-{% block title %}Welcome to CarRental{% endblock %}
+{% block title %}CarRental - اختر سيارتك المثالية للإيجار{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        position: relative;
+        overflow: hidden;
+        padding: 6rem 0;
+    }
+    
+    .hero-section:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTI4MCAxNDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTMyMCAyOEMxNjAgMjggODAgNDkgMCA3MFYwSDE0ODBWNzBDMTM2MCA0OSAxMjgwIDI4IDEyODAgMjhDMTE2MCAyOCAxMDQwIDI4IDkyMCAyOEM4MDAgMjggNjgwIDI4IDU2MCAyOEM0NDAgMjggMzIwIDI4IDMyMCAyOFoiIGZpbGw9InJnYmEoNTgsIDEzNCwgMjU1LCAwLjEpIi8+PC9zdmc+');
+        background-size: 100% 100%;
+        z-index: -1;
+    }
+    
+    .hero-content {
+        animation: fadeIn 1s ease;
+    }
+    
+    .hero-image {
+        animation: slideUp 1s ease;
+    }
+    
+    .animate-on-scroll {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.8s ease;
+    }
+    
+    .animate-on-scroll.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .feature-icon i {
+        transition: transform 0.5s ease;
+    }
+    
+    .feature-card:hover .feature-icon i {
+        transform: scale(1.2);
+    }
+    
+    /* Added Arabic font */
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+    
+    .arabic-text {
+        font-family: 'Tajawal', 'Poppins', sans-serif;
+    }
+    
+    /* Color scheme for dark mode compatibility */
+    .dark-mode .hero-section:before {
+        background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTI4MCAxNDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTMyMCAyOEMxNjAgMjggODAgNDkgMCA3MFYwSDE0ODBWNzBDMTM2MCA0OSAxMjgwIDI4IDEyODAgMjhDMTE2MCAyOCAxMDQwIDI4IDkyMCAyOEM4MDAgMjggNjgwIDI4IDU2MCAyOEM0NDAgMjggMzIwIDI4IDMyMCAyOFoiIGZpbGw9InJnYmEoNTgsIDEzNCwgMjU1LCAwLjA1KSIvPjwvc3ZnPg==');
+    }
+</style>
+{% endblock %}
 
 {% block content %}
+<!-- Hero Section -->
 <div class="hero-section">
     <div class="container">
-        <div class="row">
-            <div class="col-md-6 d-flex align-items-center">
-                <div class="hero-content">
-                    <h1>Find Your Perfect Ride</h1>
-                    <p class="lead">Choose from our premium selection of vehicles for your next adventure.</p>
-                    <div class="mt-4">
-                        <a href="{% url 'car_listing' %}" class="btn btn-primary btn-lg">Browse Cars</a>
+        <div class="row align-items-center">
+            <div class="col-lg-6 col-md-12 hero-content">
+                <h1 class="display-4 fw-bold mb-4 arabic-text">ابحث عن السيارة المثالية لرحلتك القادمة</h1>
+                <p class="lead mb-4 arabic-text">مجموعة واسعة من السيارات الفاخرة والاقتصادية لتلبية احتياجاتك بأسعار تنافسية وخدمة ممتازة</p>
+                <div class="d-flex gap-3 mt-5">
+                    <a href="{% url 'car_listing' %}" class="btn btn-primary btn-lg">استعرض السيارات</a>
+                    <a href="{% url 'about_us' %}" class="btn btn-outline-secondary btn-lg">تعرف علينا</a>
+                </div>
+                <div class="mt-4 d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-star text-warning me-2"></i>
+                        <span class="fw-bold">4.9/5</span>
                     </div>
+                    <span class="text-muted">تقييم العملاء</span>
+                    <span class="badge bg-success ms-3">24/7 دعم فني</span>
                 </div>
             </div>
-            <div class="col-md-6">
-                <img src="{% static 'images/hero-car.svg' %}" alt="Hero Image" class="img-fluid">
+            <div class="col-lg-6 col-md-12 hero-image text-center">
+                <img src="{% static 'images/hero-car.svg' %}" alt="Car Rental Hero" class="img-fluid">
             </div>
         </div>
     </div>
 </div>
 
-<div class="container mt-5">
-    <h2 class="section-title text-center mb-4">Why Choose Us</h2>
+<!-- Features Section -->
+<div class="container mt-5 pt-5">
+    <div class="text-center mb-5 animate-on-scroll">
+        <h2 class="section-title arabic-text">لماذا تختار خدماتنا؟</h2>
+        <p class="lead text-muted arabic-text">نقدم تجربة تأجير سيارات استثنائية تلبي توقعاتك</p>
+    </div>
     <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card feature-card h-100">
-                <div class="card-body text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-car"></i>
-                    </div>
-                    <h3 class="card-title">Wide Selection</h3>
-                    <p class="card-text">Choose from our diverse fleet of vehicles to suit your needs, from economy to luxury cars.</p>
+        <div class="col-lg-4 col-md-6 animate-on-scroll">
+            <div class="feature-card h-100 p-4">
+                <div class="feature-icon mb-4">
+                    <i class="fas fa-car-side"></i>
                 </div>
+                <h3 class="h4 mb-3 arabic-text">تشكيلة واسعة</h3>
+                <p class="text-muted arabic-text">اختر من بين مجموعة متنوعة من السيارات لتناسب احتياجاتك، من السيارات الاقتصادية إلى الفاخرة.</p>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card feature-card h-100">
-                <div class="card-body text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-money-bill-wave"></i>
-                    </div>
-                    <h3 class="card-title">Best Prices</h3>
-                    <p class="card-text">We offer competitive rates with no hidden fees or charges, guaranteed.</p>
+        <div class="col-lg-4 col-md-6 animate-on-scroll" data-delay="200">
+            <div class="feature-card h-100 p-4">
+                <div class="feature-icon mb-4">
+                    <i class="fas fa-money-bill-wave"></i>
                 </div>
+                <h3 class="h4 mb-3 arabic-text">أفضل الأسعار</h3>
+                <p class="text-muted arabic-text">نقدم أسعارًا تنافسية بدون رسوم خفية أو إضافية، مضمونة.</p>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card feature-card h-100">
-                <div class="card-body text-center">
-                    <div class="feature-icon">
-                        <i class="fas fa-headset"></i>
-                    </div>
-                    <h3 class="card-title">24/7 Support</h3>
-                    <p class="card-text">Our customer support team is available around the clock to assist you.</p>
+        <div class="col-lg-4 col-md-6 animate-on-scroll" data-delay="400">
+            <div class="feature-card h-100 p-4">
+                <div class="feature-icon mb-4">
+                    <i class="fas fa-headset"></i>
                 </div>
+                <h3 class="h4 mb-3 arabic-text">دعم على مدار الساعة</h3>
+                <p class="text-muted arabic-text">فريق دعم العملاء متاح على مدار الساعة لمساعدتك في أي وقت تحتاجه.</p>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Featured Cars Section -->
 {% if featured_cars %}
-<div class="container mt-5">
-    <h2 class="section-title text-center mb-4">Featured Cars</h2>
+<div class="container mt-5 pt-5">
+    <div class="text-center mb-5 animate-on-scroll">
+        <h2 class="section-title arabic-text">السيارات المميزة</h2>
+        <p class="lead text-muted arabic-text">استكشف أفضل السيارات المتاحة للإيجار</p>
+    </div>
     <div class="row g-4">
         {% for car in featured_cars %}
-        <div class="col-md-4">
-            <div class="card car-card h-100">
+        <div class="col-lg-4 col-md-6 animate-on-scroll" data-delay="{{ forloop.counter|add:"2" }}00">
+            <div class="car-card h-100">
                 <div class="car-image">
                     {% if car.image_url %}
                     <img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
                     {% else %}
                     <img src="{% static 'images/car-placeholder.svg' %}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
                     {% endif %}
-                    <div class="car-price">${{ car.daily_rate }}/day</div>
+                    <div class="car-price">${{ car.daily_rate }}/اليوم</div>
                 </div>
-                <div class="card-body">
-                    <h5 class="card-title">{{ car.year }} {{ car.make }} {{ car.model }}</h5>
-                    <div class="car-features">
+                <div class="card-body p-4">
+                    <h3 class="h5 card-title mb-3 arabic-text">{{ car.year }} {{ car.make }} {{ car.model }}</h3>
+                    <div class="car-features mb-3">
                         <span><i class="fas fa-car"></i> {{ car.category }}</span>
                         <span><i class="fas fa-cog"></i> {{ car.transmission }}</span>
                         <span><i class="fas fa-gas-pump"></i> {{ car.fuel_type }}</span>
                     </div>
-                    <div class="text-center mt-3">
-                        <a href="{% url 'car_detail' car.id %}" class="btn btn-primary">View Details</a>
+                    <div class="text-center mt-4">
+                        <a href="{% url 'car_detail' car.id %}" class="btn btn-primary">عرض التفاصيل</a>
                     </div>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+    <div class="text-center mt-4 animate-on-scroll">
+        <a href="{% url 'car_listing' %}" class="btn btn-outline-primary">عرض جميع السيارات <i class="fas fa-arrow-right ms-2"></i></a>
+    </div>
 </div>
 {% endif %}
 
-<div class="container mt-5">
-    <h2 class="section-title text-center mb-4">How It Works</h2>
+<!-- How It Works Section -->
+<div class="container mt-5 pt-5">
+    <div class="text-center mb-5 animate-on-scroll">
+        <h2 class="section-title arabic-text">كيف يعمل النظام</h2>
+        <p class="lead text-muted arabic-text">خطوات بسيطة للحصول على سيارتك المثالية</p>
+    </div>
     <div class="row g-4">
-        <div class="col-md-3">
-            <div class="step-card text-center">
+        <div class="col-lg-3 col-md-6 animate-on-scroll">
+            <div class="step-card position-relative">
                 <div class="step-number">1</div>
                 <div class="step-icon">
                     <i class="fas fa-search"></i>
                 </div>
-                <h4>Search & Select</h4>
-                <p>Browse our selection of cars and choose the one that fits your needs.</p>
+                <h4 class="mb-3 arabic-text">البحث والاختيار</h4>
+                <p class="text-muted arabic-text">تصفح مجموعتنا من السيارات واختر ما يناسب احتياجاتك.</p>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="step-card text-center">
+        <div class="col-lg-3 col-md-6 animate-on-scroll" data-delay="200">
+            <div class="step-card position-relative">
                 <div class="step-number">2</div>
                 <div class="step-icon">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
-                <h4>Pick Dates</h4>
-                <p>Select your preferred pickup and return dates and times.</p>
+                <h4 class="mb-3 arabic-text">اختيار التواريخ</h4>
+                <p class="text-muted arabic-text">حدد تواريخ وأوقات الاستلام والإرجاع المفضلة لديك.</p>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="step-card text-center">
+        <div class="col-lg-3 col-md-6 animate-on-scroll" data-delay="400">
+            <div class="step-card position-relative">
                 <div class="step-number">3</div>
                 <div class="step-icon">
                     <i class="fas fa-credit-card"></i>
                 </div>
-                <h4>Book & Pay</h4>
-                <p>Complete your reservation by making a secure online payment.</p>
+                <h4 class="mb-3 arabic-text">الحجز والدفع</h4>
+                <p class="text-muted arabic-text">أكمل حجزك عن طريق إجراء عملية دفع آمنة عبر الإنترنت.</p>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="step-card text-center">
+        <div class="col-lg-3 col-md-6 animate-on-scroll" data-delay="600">
+            <div class="step-card position-relative">
                 <div class="step-number">4</div>
                 <div class="step-icon">
                     <i class="fas fa-car-side"></i>
                 </div>
-                <h4>Enjoy Your Ride</h4>
-                <p>Pick up your car and enjoy your journey with peace of mind.</p>
+                <h4 class="mb-3 arabic-text">استمتع برحلتك</h4>
+                <p class="text-muted arabic-text">استلم سيارتك واستمتع برحلتك بكل راحة البال.</p>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container mt-5">
-    <div class="cta-section p-5 text-center">
-        <h2>Ready to Start Your Journey?</h2>
-        <p class="lead mb-4">Book a car today and experience the freedom of the open road.</p>
-        <a href="{% url 'car_listing' %}" class="btn btn-primary btn-lg">Reserve Now</a>
+<!-- Testimonials Section -->
+<div class="container mt-5 pt-5">
+    <div class="text-center mb-5 animate-on-scroll">
+        <h2 class="section-title arabic-text">آراء العملاء</h2>
+        <p class="lead text-muted arabic-text">ماذا يقول عملاؤنا عنا</p>
+    </div>
+    <div class="row g-4">
+        <div class="col-lg-4 col-md-6 animate-on-scroll">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="card-text mb-4 arabic-text">"خدمة ممتازة وسيارات بحالة ممتازة. كانت عملية الحجز سهلة للغاية وكان الموظفون ودودين جدًا ومتعاونين."</p>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                <span class="h5 mb-0">أ</span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="card-title mb-0 arabic-text">أحمد محمد</h5>
+                            <p class="text-muted mb-0 arabic-text">عميل منتظم</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 animate-on-scroll" data-delay="200">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="card-text mb-4 arabic-text">"أفضل خدمة تأجير سيارات استخدمتها. الأسعار معقولة والسيارات نظيفة جدًا ومريحة. سأستخدم خدماتهم مرة أخرى بالتأكيد."</p>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                <span class="h5 mb-0">ن</span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="card-title mb-0 arabic-text">نورة العتيبي</h5>
+                            <p class="text-muted mb-0 arabic-text">مسافرة متكررة</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 animate-on-scroll" data-delay="400">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                    </div>
+                    <p class="card-text mb-4 arabic-text">"استأجرت سيارة فاخرة لحفل زفافي. كانت السيارة رائعة والخدمة كانت ممتازة. سعر معقول جدًا مقارنة بالشركات الأخرى."</p>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                <span class="h5 mb-0">خ</span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="card-title mb-0 arabic-text">خالد السعيد</h5>
+                            <p class="text-muted mb-0 arabic-text">رجل أعمال</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- CTA Section -->
+<div class="container mt-5 pt-5">
+    <div class="cta-section p-5 text-center animate-on-scroll">
+        <h2 class="mb-4 arabic-text">جاهز لبدء رحلتك؟</h2>
+        <p class="lead mb-4 arabic-text">احجز سيارة اليوم واستمتع بحرية الطريق المفتوح.</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{% url 'car_listing' %}" class="btn btn-lg px-4 py-2">احجز الآن</a>
+            <a href="{% url 'about_us' %}#contact" class="btn btn-outline-light btn-lg px-4 py-2">تواصل معنا <i class="fas fa-arrow-right ms-2"></i></a>
+        </div>
+    </div>
+</div>
+
+<!-- Counter Stats Section -->
+<div class="container mt-5 pt-5">
+    <div class="row g-4 text-center">
+        <div class="col-lg-3 col-md-6 animate-on-scroll">
+            <div class="p-4">
+                <div class="display-4 fw-bold text-primary mb-2">
+                    <span class="counter">500</span>+
+                </div>
+                <h5 class="arabic-text">سيارات متوفرة</h5>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 animate-on-scroll" data-delay="200">
+            <div class="p-4">
+                <div class="display-4 fw-bold text-primary mb-2">
+                    <span class="counter">15</span>k+
+                </div>
+                <h5 class="arabic-text">عملاء سعداء</h5>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 animate-on-scroll" data-delay="400">
+            <div class="p-4">
+                <div class="display-4 fw-bold text-primary mb-2">
+                    <span class="counter">20</span>+
+                </div>
+                <h5 class="arabic-text">فروع</h5>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 animate-on-scroll" data-delay="600">
+            <div class="p-4">
+                <div class="display-4 fw-bold text-primary mb-2">
+                    <span class="counter">99</span>%
+                </div>
+                <h5 class="arabic-text">رضا العملاء</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Animation on scroll
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate elements when they enter the viewport
+        const animateElements = document.querySelectorAll('.animate-on-scroll');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    // Get delay if any
+                    const delay = entry.target.getAttribute('data-delay') || 0;
+                    setTimeout(() => {
+                        entry.target.classList.add('active');
+                    }, delay);
+                    
+                    // Unobserve the element after it's animated
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        });
+        
+        animateElements.forEach((element) => {
+            observer.observe(element);
+        });
+        
+        // Simple counter animation
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach(counter => {
+            const target = parseInt(counter.innerText);
+            const increment = target / 30;
+            let current = 0;
+            
+            const updateCounter = () => {
+                if (current < target) {
+                    current += increment;
+                    counter.innerText = Math.ceil(current);
+                    setTimeout(updateCounter, 50);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+            
+            const counterObserver = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    updateCounter();
+                    counterObserver.unobserve(counter);
+                }
+            });
+            
+            counterObserver.observe(counter);
+        });
+    });
+</script>
+{% endblock %}
+
 {% endblock %}

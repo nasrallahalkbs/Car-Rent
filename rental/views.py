@@ -15,8 +15,32 @@ from .utils import calculate_total_price, get_car_availability, get_unavailable_
 
 def index(request):
     """Home page view"""
-    # Get featured cars (newest or by some other criteria)
-    featured_cars = Car.objects.filter(is_available=True).order_by('-id')[:6]
+    # Get featured cars based on various criteria
+    # First, try to include some luxury cars if available
+    luxury_cars = Car.objects.filter(is_available=True, category='Luxury').order_by('?')[:2]
+    
+    # Add some economy/compact cars for balance
+    economy_cars = Car.objects.filter(
+        is_available=True, 
+        category__in=['Economy', 'Compact']
+    ).order_by('?')[:2]
+    
+    # Add a few more random cars to complete the selection
+    remaining_count = 6 - (luxury_cars.count() + economy_cars.count())
+    if remaining_count > 0:
+        # Exclude cars already selected
+        excluded_ids = list(luxury_cars.values_list('id', flat=True)) + list(economy_cars.values_list('id', flat=True))
+        remaining_cars = Car.objects.filter(is_available=True).exclude(id__in=excluded_ids).order_by('?')[:remaining_count]
+    else:
+        remaining_cars = Car.objects.none()
+    
+    # Combine the querysets
+    featured_cars = list(luxury_cars) + list(economy_cars) + list(remaining_cars)
+    
+    # If no cars found through this method, fall back to newest cars
+    if not featured_cars:
+        featured_cars = Car.objects.filter(is_available=True).order_by('-id')[:6]
+    
     return render(request, 'django_index.html', {'featured_cars': featured_cars})
 
 def register_view(request):
