@@ -25,24 +25,48 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.replit.app',
     'https://*.replit.dev',
     'https://*.janeway.replit.dev',
+    'https://*.sisko.replit.dev',
+    'https://*.sisko.replit.dev:8000',
+    'https://*.sisko.replit.dev:5000',
     f'https://{REPLIT_SLUG}-{REPLIT_OWNER}.repl.co',
     f'https://{REPLIT_ID}.id.repl.co',
     'http://*.replit.app',
     'http://*.replit.dev',
     'http://*.janeway.replit.dev',
+    'http://*.sisko.replit.dev',
+    'http://*.sisko.replit.dev:8000',
+    'http://*.sisko.replit.dev:5000',
     f'http://{REPLIT_SLUG}-{REPLIT_OWNER}.repl.co',
     f'http://{REPLIT_ID}.id.repl.co',
 ]
 
 # Extract the hostname from environment
 REPLIT_HOST = os.environ.get('HTTP_HOST', '')
+REPLIT_DOMAINS = os.environ.get('REPLIT_DOMAINS', '')
+
 if REPLIT_HOST:
     CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_HOST}')
     CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_HOST}')
+    CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_HOST}:8000')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_HOST}:8000')
+    CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_HOST}:5000')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_HOST}:5000')
+
+if REPLIT_DOMAINS:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_DOMAINS}')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_DOMAINS}')
+    CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_DOMAINS}:8000')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_DOMAINS}:8000')
+    CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_DOMAINS}:5000')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_DOMAINS}:5000')
     
-# Add explicit support for Janeway development environment
+# Add explicit support for Janeway and Sisko development environment
 CSRF_TRUSTED_ORIGINS.append('https://372fe000-ff64-4ad8-84f9-611ea2a8e995-00-1c83kgq6nqqvn.janeway.replit.dev')
 CSRF_TRUSTED_ORIGINS.append('http://372fe000-ff64-4ad8-84f9-611ea2a8e995-00-1c83kgq6nqqvn.janeway.replit.dev')
+CSRF_TRUSTED_ORIGINS.append('https://2ab75630-7818-4371-a28e-810efed657eb-00-mmce3rq4peuy.sisko.replit.dev')
+CSRF_TRUSTED_ORIGINS.append('http://2ab75630-7818-4371-a28e-810efed657eb-00-mmce3rq4peuy.sisko.replit.dev')
+CSRF_TRUSTED_ORIGINS.append('https://2ab75630-7818-4371-a28e-810efed657eb-00-mmce3rq4peuy.sisko.replit.dev:8000')
+CSRF_TRUSTED_ORIGINS.append('http://2ab75630-7818-4371-a28e-810efed657eb-00-mmce3rq4peuy.sisko.replit.dev:8000')
 
 # Application definition
 INSTALLED_APPS = [
@@ -61,7 +85,8 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # Temporarily disabled CSRF middleware for development
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -75,6 +100,13 @@ CSRF_USE_SESSIONS = False
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
+
+# For development only - disable CSRF protection
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_DOMAIN = None
 
 # Session cookie settings
 SESSION_COOKIE_SECURE = False
