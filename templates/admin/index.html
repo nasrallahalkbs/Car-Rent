@@ -1,73 +1,1162 @@
 {% extends 'layout_django.html' %}
 {% load static %}
 
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}لوحة التحكم - كاررنتال{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* لوحة التحكم - الأسلوب المخصص */
+    :root {
+        --primary-color: #3b82f6;
+        --primary-dark: #1e40af;
+        --primary-light: #93c5fd;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --dark-color: #1e293b;
+        --light-color: #f1f5f9;
+        --border-radius: 0.5rem;
+        --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    /* تنسيق عام */
+    body.admin {
+        background-color: #f8fafc;
+    }
+    
+    /* القائمة الجانبية */
+    .admin-sidebar {
+        background: linear-gradient(135deg, #1e293b, #1e3a8a);
+        min-height: calc(100vh - 60px);
+        transition: all 0.3s;
+        z-index: 1000;
+        position: sticky;
+        top: 0;
+    }
+    
+    .admin-sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.7);
+        border-radius: var(--border-radius);
+        margin: 0.3rem 0.5rem;
+        transition: all 0.3s;
+        padding: 0.7rem 1rem;
+    }
+    
+    .admin-sidebar .nav-link:hover {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: translateX(-5px);
+    }
+    
+    .admin-sidebar .nav-link.active {
+        color: white;
+        background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+    
+    .admin-sidebar .sidebar-heading {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 1.5rem;
+        margin-right: 1rem;
+    }
+    
+    .admin-logo-container {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .admin-navbar {
+        background-color: white;
+        box-shadow: var(--box-shadow);
+        height: 60px;
+    }
+    
+    .admin-main {
+        background-color: #f8fafc;
+        min-height: calc(100vh - 60px);
+        padding: 1.5rem;
+    }
+    
+    /* البطاقات */
+    .dashboard-card {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        transition: all 0.3s;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .card-gradient-border {
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+    }
+    
+    .card-gradient-border::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 4px;
+        width: 100%;
+        background: linear-gradient(to right, var(--primary-color), var(--success-color));
+        z-index: -1;
+    }
+    
+    /* بطاقات الإحصائيات */
+    .stat-card {
+        padding: 1.8rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .stat-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 12px;
+        margin-left: 1.5rem;
+        font-size: 1.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-icon::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    }
+    
+    .stat-icon.bg-primary {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+    
+    .stat-icon.bg-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+    
+    .stat-icon.bg-warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    }
+    
+    .stat-icon.bg-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+    
+    .stat-details {
+        flex-grow: 1;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+        color: var(--dark-color);
+        background: -webkit-linear-gradient(45deg, #1e293b, #475569);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .stat-label {
+        font-size: 0.95rem;
+        color: #64748b;
+        margin: 0;
+    }
+    
+    .stat-change {
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        margin-top: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .stat-change.positive {
+        color: var(--success-color);
+    }
+    
+    .stat-change.negative {
+        color: var(--danger-color);
+    }
+    
+    /* العناوين */
+    .section-heading {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 1.8rem;
+        color: var(--dark-color);
+        position: relative;
+        padding-bottom: 0.7rem;
+        display: inline-block;
+    }
+    
+    .section-heading:after {
+        content: '';
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 70%;
+        height: 3px;
+        background: linear-gradient(to right, var(--primary-color), var(--primary-light));
+        border-radius: 2px;
+    }
+    
+    /* بطاقة الإيرادات */
+    .revenue-card {
+        padding: 1.8rem;
+    }
+    
+    .revenue-card-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: var(--dark-color);
+    }
+    
+    .revenue-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .revenue-stat {
+        text-align: center;
+        background-color: var(--light-color);
+        padding: 1.2rem 1rem;
+        border-radius: var(--border-radius);
+        transition: all 0.3s;
+    }
+    
+    .revenue-stat:hover {
+        background-color: #e2e8f0;
+        transform: translateY(-3px);
+    }
+    
+    .revenue-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--dark-color);
+    }
+    
+    .revenue-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 0.5rem;
+    }
+    
+    /* بطاقة الجدول */
+    .table-card {
+        padding: 0;
+        overflow: hidden;
+    }
+    
+    .table-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.2rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .table-card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--dark-color);
+    }
+    
+    .table-card-link {
+        font-size: 0.9rem;
+        color: var(--primary-color);
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .table-card-link:hover {
+        color: var(--primary-dark);
+        text-decoration: none;
+        transform: translateX(-3px);
+    }
+    
+    /* جدول البيانات */
+    .admin-table {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    
+    .admin-table th {
+        color: #475569;
+        font-weight: 600;
+        padding: 0.9rem 1.5rem;
+        vertical-align: middle;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    
+    .admin-table td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border-top: 1px solid #f1f5f9;
+    }
+    
+    .admin-table tbody tr {
+        transition: all 0.2s;
+    }
+    
+    .admin-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+    
+    /* شارات الحالة */
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-badge-pending {
+        background-color: #fef3c7;
+        color: #d97706;
+    }
+    
+    .status-badge-confirmed {
+        background-color: #dbeafe;
+        color: #2563eb;
+    }
+    
+    .status-badge-completed {
+        background-color: #d1fae5;
+        color: #047857;
+    }
+    
+    .status-badge-cancelled {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+    
+    /* أزرار الإجراءات */
+    .action-btn {
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    
+    .action-btn-primary {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .action-btn-primary:hover {
+        background-color: #bfdbfe;
+        color: #1e3a8a;
+        text-decoration: none;
+    }
+    
+    .action-btn-success {
+        background-color: #d1fae5;
+        color: #047857;
+    }
+    
+    .action-btn-success:hover {
+        background-color: #a7f3d0;
+        color: #065f46;
+        text-decoration: none;
+    }
+    
+    .action-btn-warning {
+        background-color: #fef3c7;
+        color: #d97706;
+    }
+    
+    .action-btn-warning:hover {
+        background-color: #fde68a;
+        color: #b45309;
+        text-decoration: none;
+    }
+    
+    .action-btn-danger {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .action-btn-danger:hover {
+        background-color: #fecaca;
+        color: #b91c1c;
+        text-decoration: none;
+    }
+    
+    /* التخطيط المتجاوب */
+    @media (max-width: 992px) {
+        .admin-sidebar {
+            margin-right: -100%;
+            position: fixed;
+            top: 60px;
+            bottom: 0;
+            width: 250px;
+        }
+        
+        .admin-sidebar.show {
+            margin-right: 0;
+        }
+        
+        .admin-main {
+            margin-right: 0 !important;
+        }
+    }
+    
+    /* حاويات الرسوم البيانية */
+    .chart-container {
+        width: 100%;
+        height: 250px;
+        padding: 0.5rem;
+    }
+    
+    /* قسم التقويم */
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.2rem;
+    }
+    
+    .calendar-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+    
+    .calendar-nav {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .calendar-nav-btn {
+        border: none;
+        background-color: var(--light-color);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--dark-color);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .calendar-nav-btn:hover {
+        background-color: var(--primary-light);
+        color: white;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+    
+    .calendar-day-header {
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #64748b;
+        padding: 0.5rem 0;
+    }
+    
+    .calendar-day {
+        aspect-ratio: 1/1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--border-radius);
+        background-color: white;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+    }
+    
+    .calendar-day:hover {
+        border-color: var(--primary-light);
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .calendar-day.active {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        color: white;
+        border-color: var(--primary-color);
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+    }
+    
+    .calendar-day.has-events {
+        border-bottom: 3px solid var(--warning-color);
+    }
+    
+    .calendar-day-number {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .calendar-day-events {
+        font-size: 0.7rem;
+        color: var(--dark-color);
+    }
+    
+    .calendar-day.active .calendar-day-events {
+        color: white;
+    }
+    
+    /* قسم أيقونات التطبيقات */
+    .app-icon-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin-top: 1.2rem;
+    }
+    
+    .app-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.2rem;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .app-icon:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .app-icon i {
+        font-size: 2rem;
+        margin-bottom: 0.8rem;
+        color: var(--primary-color);
+    }
+    
+    .app-icon-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+    
+    /* قسم المعاملات الأخيرة */
+    .transaction-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .transaction-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+    }
+    
+    .transaction-item:hover {
+        background-color: #f8fafc;
+    }
+    
+    .transaction-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-left: 1rem;
+    }
+    
+    .transaction-icon.income {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+    
+    .transaction-icon.expense {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+    
+    .transaction-details {
+        flex-grow: 1;
+    }
+    
+    .transaction-title {
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 0.2rem;
+    }
+    
+    .transaction-subtitle {
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    
+    .transaction-amount {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    
+    .transaction-amount.income {
+        color: var(--success-color);
+    }
+    
+    .transaction-amount.expense {
+        color: var(--danger-color);
+    }
+    
+    /* قسم المهام */
+    .task-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .task-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+    }
+    
+    .task-item:hover {
+        background-color: #f8fafc;
+    }
+    
+    .task-checkbox {
+        margin-left: 1rem;
+    }
+    
+    .task-details {
+        flex-grow: 1;
+    }
+    
+    .task-title {
+        font-weight: 500;
+        color: var(--dark-color);
+        margin-bottom: 0.2rem;
+    }
+    
+    .task-completed .task-title {
+        text-decoration: line-through;
+        color: #94a3b8;
+    }
+    
+    .task-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .task-badge {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 1rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .task-badge-high {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .task-badge-medium {
+        background-color: #fef3c7;
+        color: #d97706;
+    }
+    
+    .task-badge-low {
+        background-color: #dbeafe;
+        color: #2563eb;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid pt-3">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
-            <div class="position-sticky">
-                <ul class="nav flex-column">
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- القائمة الجانبية -->
+        <div class="col-lg-2 admin-sidebar">
+            <div class="py-4 px-3">
+                <div class="admin-logo-container mb-4">
+                    <img src="{% static 'images/car-rental-logo-white.svg' %}" alt="كاررنتال" height="40">
+                </div>
+                
+                <div class="sidebar-heading">لوحة التحكم</div>
+                <ul class="nav flex-column mb-0">
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/admin/' %}active{% endif %}" 
                            href="{% url 'admin_index' %}">
                             <i class="fas fa-tachometer-alt me-2"></i>
-                            Dashboard
+                            لوحة المعلومات
                         </a>
                     </li>
+                </ul>
+                
+                <div class="sidebar-heading">إدارة المحتوى</div>
+                <ul class="nav flex-column mb-0">
                     <li class="nav-item">
                         <a class="nav-link {% if 'admin/cars' in request.path %}active{% endif %}" 
                            href="{% url 'admin_cars' %}">
                             <i class="fas fa-car me-2"></i>
-                            Manage Cars
+                            إدارة السيارات
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'admin/reservations' in request.path %}active{% endif %}" 
                            href="{% url 'admin_reservations' %}">
                             <i class="fas fa-calendar-alt me-2"></i>
-                            Manage Reservations
+                            إدارة الحجوزات
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'admin/users' in request.path %}active{% endif %}" 
                            href="{% url 'admin_users' %}">
                             <i class="fas fa-users me-2"></i>
-                            Manage Users
+                            إدارة المستخدمين
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'admin/payments' in request.path %}active{% endif %}" 
                            href="{% url 'admin_payments' %}">
                             <i class="fas fa-dollar-sign me-2"></i>
-                            Manage Payments
-                        </a>
-                    </li>
-                    <li class="nav-item mt-3">
-                        <a class="nav-link text-danger" href="{% url 'index' %}">
-                            <i class="fas fa-sign-out-alt me-2"></i>
-                            Return to Site
+                            إدارة المدفوعات
                         </a>
                     </li>
                 </ul>
+                
+                <div class="sidebar-heading">الإعدادات</div>
+                <ul class="nav flex-column mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-cog me-2"></i>
+                            إعدادات الموقع
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-user-cog me-2"></i>
+                            الملف الشخصي
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="mt-5">
+                    <a class="nav-link text-danger" href="{% url 'index' %}">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        العودة للموقع
+                    </a>
+                </div>
             </div>
         </div>
-
-        <!-- Main content -->
-        <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        
+        <!-- المحتوى الرئيسي -->
+        <div class="col-lg-10 admin-main">
             {% if messages %}
                 {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
                 </div>
                 {% endfor %}
             {% endif %}
             
-            {% block admin_content %}{% endblock %}
+            {% block admin_content %}
+            <!-- بطاقات الإحصائيات -->
+            <div class="row mb-4">
+                <div class="col-md-6 col-xl-3 mb-4">
+                    <div class="dashboard-card stat-card">
+                        <div class="stat-icon bg-primary">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-number">{{ total_cars }}</div>
+                            <p class="stat-label">إجمالي السيارات</p>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up me-1"></i> {{ available_cars }} متاحة حالياً
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-xl-3 mb-4">
+                    <div class="dashboard-card stat-card">
+                        <div class="stat-icon bg-success">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-number">{{ total_reservations }}</div>
+                            <p class="stat-label">إجمالي الحجوزات</p>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up me-1"></i> {{ pending_reservations|length }} بانتظار التأكيد
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-xl-3 mb-4">
+                    <div class="dashboard-card stat-card">
+                        <div class="stat-icon bg-warning">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-number">{{ total_users }}</div>
+                            <p class="stat-label">إجمالي المستخدمين</p>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up me-1"></i> {{ new_users }} مستخدم جديد هذا الشهر
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-xl-3 mb-4">
+                    <div class="dashboard-card stat-card">
+                        <div class="stat-icon bg-danger">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-number">{{ total_revenue }}</div>
+                            <p class="stat-label">إجمالي الإيرادات</p>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up me-1"></i> {{ monthly_revenue_change }}% هذا الشهر
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- تقارير المبيعات والمخططات البيانية -->
+            <div class="row mb-4">
+                <div class="col-lg-8 mb-4">
+                    <div class="dashboard-card revenue-card card-gradient-border">
+                        <h3 class="revenue-card-title">تقرير الإيرادات</h3>
+                        <div class="revenue-grid">
+                            <div class="revenue-stat">
+                                <div class="revenue-value">{{ daily_revenue }}</div>
+                                <div class="revenue-label">اليوم</div>
+                            </div>
+                            <div class="revenue-stat">
+                                <div class="revenue-value">{{ weekly_revenue }}</div>
+                                <div class="revenue-label">هذا الأسبوع</div>
+                            </div>
+                            <div class="revenue-stat">
+                                <div class="revenue-value">{{ monthly_revenue }}</div>
+                                <div class="revenue-label">هذا الشهر</div>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 mb-4">
+                    <div class="dashboard-card revenue-card card-gradient-border">
+                        <h3 class="revenue-card-title">توزيع الحجوزات</h3>
+                        <div class="chart-container">
+                            <canvas id="reservationsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- الحجوزات المعلقة -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h3 class="section-heading">الحجوزات المعلقة</h3>
+                </div>
+                <div class="col-12">
+                    <div class="dashboard-card table-card">
+                        <div class="table-card-header">
+                            <h4 class="table-card-title">أحدث الحجوزات بانتظار التأكيد</h4>
+                            <a href="{% url 'admin_reservations' %}" class="table-card-link">
+                                عرض الكل <i class="fas fa-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        {% if pending_reservations %}
+                        <div class="table-responsive">
+                            <table class="table admin-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 15%">رقم الحجز</th>
+                                        <th style="width: 15%">المستخدم</th>
+                                        <th style="width: 20%">السيارة</th>
+                                        <th style="width: 15%">تاريخ الاستلام</th>
+                                        <th style="width: 15%">المبلغ</th>
+                                        <th style="width: 20%">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reservation in pending_reservations %}
+                                    <tr>
+                                        <td>#{{ reservation.id }}</td>
+                                        <td>{{ reservation.user.username }}</td>
+                                        <td>{{ reservation.car.make }} {{ reservation.car.model }}</td>
+                                        <td>{{ reservation.start_date|date:"d/m/Y" }}</td>
+                                        <td>{{ reservation.total_price }} د.ك</td>
+                                        <td>
+                                            <a href="{% url 'update_reservation_status' reservation_id=reservation.id status='confirmed' %}" class="action-btn action-btn-success me-1">
+                                                <i class="fas fa-check me-1"></i>تأكيد
+                                            </a>
+                                            <a href="{% url 'update_reservation_status' reservation_id=reservation.id status='cancelled' %}" class="action-btn action-btn-danger">
+                                                <i class="fas fa-times me-1"></i>إلغاء
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar-check text-muted fa-4x mb-3"></i>
+                            <h5>لا توجد حجوزات معلقة</h5>
+                            <p class="text-muted">جميع الحجوزات مؤكدة.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- السيارات والمهام -->
+            <div class="row mb-4">
+                <div class="col-lg-6 mb-4">
+                    <div class="dashboard-card table-card">
+                        <div class="table-card-header">
+                            <h4 class="table-card-title">أحدث المعاملات</h4>
+                            <a href="{% url 'admin_payments' %}" class="table-card-link">
+                                عرض الكل <i class="fas fa-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        {% if recent_payments %}
+                        <ul class="transaction-list">
+                            {% for payment in recent_payments %}
+                            <li class="transaction-item">
+                                <div class="transaction-icon income">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">دفعة #{{ payment.id }}</div>
+                                    <div class="transaction-subtitle">{{ payment.user.username }} - {{ payment.date|date:"d/m/Y" }}</div>
+                                </div>
+                                <div class="transaction-amount income">
+                                    {{ payment.amount }} د.ك
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-money-bill-wave text-muted fa-4x mb-3"></i>
+                            <h5>لا توجد معاملات حديثة</h5>
+                            <p class="text-muted">سيتم عرض المعاملات الجديدة هنا.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 mb-4">
+                    <div class="dashboard-card table-card">
+                        <div class="table-card-header">
+                            <h4 class="table-card-title">المهام المعلقة</h4>
+                            <a href="#" class="table-card-link">
+                                عرض الكل <i class="fas fa-arrow-left ms-1"></i>
+                            </a>
+                        </div>
+                        <ul class="task-list">
+                            <li class="task-item">
+                                <div class="task-checkbox">
+                                    <input type="checkbox" class="form-check-input">
+                                </div>
+                                <div class="task-details">
+                                    <div class="task-title">مراجعة طلبات الحجوزات الجديدة</div>
+                                    <div class="task-meta">
+                                        <span><i class="far fa-calendar-alt me-1"></i>{{ today|date:"d/m/Y" }}</span>
+                                        <span class="task-badge task-badge-high">عالية</span>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="task-item">
+                                <div class="task-checkbox">
+                                    <input type="checkbox" class="form-check-input">
+                                </div>
+                                <div class="task-details">
+                                    <div class="task-title">تحديث حالة السيارات المتاحة</div>
+                                    <div class="task-meta">
+                                        <span><i class="far fa-calendar-alt me-1"></i>{{ today|date:"d/m/Y" }}</span>
+                                        <span class="task-badge task-badge-medium">متوسطة</span>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="task-item task-completed">
+                                <div class="task-checkbox">
+                                    <input type="checkbox" class="form-check-input" checked>
+                                </div>
+                                <div class="task-details">
+                                    <div class="task-title">متابعة المدفوعات المعلقة</div>
+                                    <div class="task-meta">
+                                        <span><i class="far fa-calendar-alt me-1"></i>{{ today|date:"d/m/Y" }}</span>
+                                        <span class="task-badge task-badge-low">منخفضة</span>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- الوصول السريع -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h3 class="section-heading">وصول سريع</h3>
+                </div>
+                <div class="col-12">
+                    <div class="app-icon-section">
+                        <a href="{% url 'admin_cars' %}" class="app-icon">
+                            <i class="fas fa-car"></i>
+                            <span class="app-icon-label">إضافة سيارة</span>
+                        </a>
+                        <a href="{% url 'admin_reservations' %}" class="app-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span class="app-icon-label">عرض الحجوزات</span>
+                        </a>
+                        <a href="{% url 'admin_users' %}" class="app-icon">
+                            <i class="fas fa-user-plus"></i>
+                            <span class="app-icon-label">إدارة المستخدمين</span>
+                        </a>
+                        <a href="{% url 'admin_payments' %}" class="app-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span class="app-icon-label">المدفوعات</span>
+                        </a>
+                        <a href="#" class="app-icon">
+                            <i class="fas fa-chart-bar"></i>
+                            <span class="app-icon-label">تقارير</span>
+                        </a>
+                        <a href="#" class="app-icon">
+                            <i class="fas fa-cog"></i>
+                            <span class="app-icon-label">الإعدادات</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
         </div>
     </div>
 </div>
+
+<!-- المخططات البيانية -->
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // مخطط الإيرادات
+        if (document.getElementById('revenueChart')) {
+            new Chart(document.getElementById('revenueChart'), {
+                type: 'line',
+                data: {
+                    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
+                    datasets: [{
+                        label: 'الإيرادات',
+                        data: [12, 19, 3, 5, 2, 3, 10, 15, 18, 20, 25, 30].reverse(),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // مخطط الحجوزات
+        if (document.getElementById('reservationsChart')) {
+            new Chart(document.getElementById('reservationsChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['معلق', 'مؤكد', 'مكتمل', 'ملغي'],
+                    datasets: [{
+                        data: [8, 15, 30, 5],
+                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
 {% endblock %}

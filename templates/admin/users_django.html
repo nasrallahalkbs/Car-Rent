@@ -4,123 +4,234 @@
 {% block title %}إدارة المستخدمين - لوحة التحكم{% endblock %}
 
 {% block admin_content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 mb-1">إدارة المستخدمين</h1>
-            <p class="text-muted">إجمالي عدد المستخدمين: <span class="badge bg-primary">{{ users|length }}</span></p>
-        </div>
-        <a href="{% url 'admin_index' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>العودة إلى لوحة التحكم
-        </a>
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="section-heading mb-0">إدارة المستخدمين</h2>
+        <p class="text-muted">إدارة حسابات المستخدمين وصلاحياتهم في النظام</p>
     </div>
-    
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">جميع المستخدمين</h4>
-            <div class="input-group input-group-sm" style="width: 300px;">
-                <input type="text" id="userSearch" class="form-control" placeholder="البحث عن مستخدم...">
-                <span class="input-group-text"><i class="fas fa-search"></i></span>
+    <button type="button" class="btn btn-primary px-4 py-2">
+        <i class="fas fa-user-plus me-2"></i>إضافة مستخدم جديد
+    </button>
+</div>
+
+<!-- بطاقات الإحصائيات -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-4">
+        <div class="dashboard-card stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-number">{{ users|length }}</div>
+                <p class="stat-label">إجمالي المستخدمين</p>
             </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle" id="usersTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th>رقم المستخدم</th>
-                            <th>الاسم</th>
-                            <th>اسم المستخدم</th>
-                            <th>البريد الإلكتروني</th>
-                            <th>رقم الهاتف</th>
-                            <th>حالة الحساب</th>
-                            <th>تاريخ التسجيل</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.id }}</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-circle bg-{% if user.is_admin %}primary{% else %}secondary{% endif %} text-white me-2">
-                                        {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold">{{ user.first_name }} {{ user.last_name }}</div>
-                                        <span class="badge bg-{% if user.is_admin %}primary{% else %}secondary{% endif %} text-white">
-                                            {% if user.is_admin %}مدير{% else %}مستخدم{% endif %}
-                                        </span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.phone|default:"غير متوفر" }}</td>
-                            <td>
-                                <span class="badge bg-{% if user.is_active %}success{% else %}danger{% endif %}">
-                                    {{ user.is_active|yesno:"نشط,معطل" }}
-                                </span>
-                            </td>
-                            <td>{{ user.created_at|date:"Y/m/d" }}</td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary view-user-btn" data-userid="{{ user.id }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn btn-outline-danger" data-userid="{{ user.id }}" {% if user.is_admin %}disabled{% endif %}>
-                                        <i class="fas fa-ban"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">
-                                <i class="fas fa-users fa-3x mb-3"></i>
-                                <p>لا يوجد مستخدمين في النظام</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="dashboard-card stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-number">{{ admin_count }}</div>
+                <p class="stat-label">المشرفين</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="dashboard-card stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-number">{{ new_users }}</div>
+                <p class="stat-label">مستخدمين جدد</p>
+                <div class="small text-muted">خلال الشهر الماضي</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="dashboard-card stat-card">
+            <div class="stat-icon bg-danger">
+                <i class="fas fa-user-tag"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-number">{{ active_users }}</div>
+                <p class="stat-label">مستخدمين نشطين</p>
+                <div class="small text-muted">لديهم حجوزات فعالة</div>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    .avatar-circle {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-    }
-</style>
+<!-- فلتر البحث -->
+<div class="dashboard-card mb-4 p-4">
+    <h4 class="mb-3 fw-bold">بحث وفلترة</h4>
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <label for="role" class="form-label">الدور</label>
+            <select name="role" id="role" class="form-select">
+                <option value="">الكل</option>
+                <option value="admin" {% if request.GET.role == 'admin' %}selected{% endif %}>مشرف</option>
+                <option value="user" {% if request.GET.role == 'user' %}selected{% endif %}>مستخدم</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="date_joined" class="form-label">تاريخ التسجيل</label>
+            <select name="date_joined" id="date_joined" class="form-select">
+                <option value="">الكل</option>
+                <option value="today" {% if request.GET.date_joined == 'today' %}selected{% endif %}>اليوم</option>
+                <option value="this_week" {% if request.GET.date_joined == 'this_week' %}selected{% endif %}>هذا الأسبوع</option>
+                <option value="this_month" {% if request.GET.date_joined == 'this_month' %}selected{% endif %}>هذا الشهر</option>
+                <option value="this_year" {% if request.GET.date_joined == 'this_year' %}selected{% endif %}>هذا العام</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="has_reservations" class="form-label">الحجوزات</label>
+            <select name="has_reservations" id="has_reservations" class="form-select">
+                <option value="">الكل</option>
+                <option value="yes" {% if request.GET.has_reservations == 'yes' %}selected{% endif %}>لديه حجوزات</option>
+                <option value="no" {% if request.GET.has_reservations == 'no' %}selected{% endif %}>ليس لديه حجوزات</option>
+            </select>
+        </div>
+        <div class="col-md-8">
+            <label for="search" class="form-label">بحث</label>
+            <input type="text" class="form-control" id="search" name="search" placeholder="بحث بالاسم، البريد الإلكتروني، رقم الهاتف..." 
+                   value="{{ request.GET.search|default:'' }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary me-2">
+                <i class="fas fa-search me-2"></i>بحث
+            </button>
+            <a href="{% url 'admin_users' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-redo me-2"></i>إعادة تعيين
+            </a>
+        </div>
+    </form>
+</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Search functionality
-        const searchInput = document.getElementById('userSearch');
-        const table = document.getElementById('usersTable');
-        const rows = table.querySelectorAll('tbody tr');
-        
-        searchInput.addEventListener('keyup', function() {
-            const searchTerm = searchInput.value.toLowerCase();
-            
-            rows.forEach(row => {
-                const rowData = row.textContent.toLowerCase();
-                if (rowData.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-    });
-</script>
+<!-- جدول المستخدمين -->
+<div class="dashboard-card table-card">
+    <div class="table-card-header">
+        <h4 class="table-card-title"><i class="fas fa-users me-2"></i>قائمة المستخدمين</h4>
+        <div>
+            <span class="text-muted me-3">إجمالي النتائج: {{ users|length }}</span>
+        </div>
+    </div>
+    
+    {% if users %}
+    <div class="table-responsive">
+        <table class="table admin-table">
+            <thead>
+                <tr>
+                    <th>المستخدم</th>
+                    <th>بيانات الاتصال</th>
+                    <th>الحجوزات</th>
+                    <th>تاريخ التسجيل</th>
+                    <th>الدور</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td style="min-width: 200px">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-light rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <span class="fw-bold text-primary">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ user.first_name }} {{ user.last_name }}</div>
+                                <div class="small text-muted">@{{ user.username }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="min-width: 180px">
+                        <div><i class="fas fa-envelope text-muted me-2"></i>{{ user.email }}</div>
+                        {% if user.phone %}
+                        <div><i class="fas fa-phone text-muted me-2"></i>{{ user.phone }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-light rounded px-2 py-1">
+                                <span class="fw-bold">{{ user.reservation_count }}</span>
+                                <span class="text-muted">حجز</span>
+                            </div>
+                            {% if user.reservation_count > 0 %}
+                            <a href="#" class="ms-2 text-primary small">عرض</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div>{{ user.created_at|date:"d/m/Y" }}</div>
+                        <small class="text-muted">{{ user.created_at|time:"H:i" }}</small>
+                    </td>
+                    <td>
+                        {% if user.is_admin %}
+                        <span class="status-badge status-badge-confirmed">مشرف</span>
+                        {% else %}
+                        <span class="status-badge status-badge-pending">مستخدم</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                إجراءات
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-eye me-2"></i>عرض التفاصيل
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-edit me-2"></i>تعديل البيانات
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-history me-2"></i>سجل الحجوزات
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% if not user.is_admin %}
+                                <li>
+                                    <a class="dropdown-item text-primary" href="#">
+                                        <i class="fas fa-user-shield me-2"></i>تعيين كمشرف
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li>
+                                    <a class="dropdown-item text-warning" href="#">
+                                        <i class="fas fa-user me-2"></i>إزالة صلاحيات المشرف
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#" onclick="return confirm('هل أنت متأكد من حظر هذا المستخدم؟');">
+                                        <i class="fas fa-ban me-2"></i>حظر المستخدم
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-users text-muted fa-4x mb-3"></i>
+        <h5>لا يوجد مستخدمين</h5>
+        <p class="text-muted">لم يتم العثور على مستخدمين يطابقون معايير البحث.</p>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

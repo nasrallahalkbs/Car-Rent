@@ -1,217 +1,344 @@
 {% extends 'admin/index.html' %}
 {% load static %}
 
-{% block title %}Payment Management{% endblock %}
+{% block title %}إدارة المدفوعات - لوحة التحكم{% endblock %}
 
 {% block admin_content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-dollar-sign me-2"></i> Payment Management</h2>
-        <a href="{% url 'add_manual_payment' %}" class="btn btn-primary">
-            <i class="fas fa-plus-circle me-2"></i> Add Manual Payment
-        </a>
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="section-heading mb-0">إدارة المدفوعات</h2>
+        <p class="text-muted">إدارة وتتبع مدفوعات حجوزات السيارات</p>
     </div>
-    
-    <!-- Revenue Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="fw-bold text-muted">Today's Revenue</h5>
-                            <h3 class="mb-0">${{ daily_revenue|floatformat:2 }}</h3>
-                        </div>
-                        <div class="bg-light rounded-circle p-3">
-                            <i class="fas fa-calendar-day text-primary fs-4"></i>
-                        </div>
-                    </div>
-                </div>
+    <a href="{% url 'add_manual_payment' %}" class="btn btn-primary px-4 py-2">
+        <i class="fas fa-plus-circle me-2"></i>إضافة دفعة يدوية
+    </a>
+</div>
+
+<!-- بطاقات الإحصائيات -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-4">
+        <div class="dashboard-card stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="fas fa-money-bill-wave"></i>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="fw-bold text-muted">Weekly Revenue</h5>
-                            <h3 class="mb-0">${{ weekly_revenue|floatformat:2 }}</h3>
-                        </div>
-                        <div class="bg-light rounded-circle p-3">
-                            <i class="fas fa-calendar-week text-success fs-4"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="fw-bold text-muted">Monthly Revenue</h5>
-                            <h3 class="mb-0">${{ monthly_revenue|floatformat:2 }}</h3>
-                        </div>
-                        <div class="bg-light rounded-circle p-3">
-                            <i class="fas fa-calendar-alt text-warning fs-4"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="stat-details">
+                <div class="stat-number">{{ total_revenue }} د.ك</div>
+                <p class="stat-label">إجمالي الإيرادات</p>
             </div>
         </div>
     </div>
     
-    <!-- More Statistics -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="fw-bold text-muted">Total Revenue</h5>
-                            <h3 class="text-success mb-0">${{ total_revenue|floatformat:2 }}</h3>
-                        </div>
-                        <div class="bg-light rounded-circle p-3">
-                            <i class="fas fa-chart-line text-success fs-4"></i>
-                        </div>
-                    </div>
-                </div>
+    <div class="col-md-3 mb-4">
+        <div class="dashboard-card stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-calendar-day"></i>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="fw-bold text-muted">Total Refunds</h5>
-                            <h3 class="text-danger mb-0">${{ refunded_amount|floatformat:2 }}</h3>
-                        </div>
-                        <div class="bg-light rounded-circle p-3">
-                            <i class="fas fa-undo-alt text-danger fs-4"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="stat-details">
+                <div class="stat-number">{{ daily_revenue }} د.ك</div>
+                <p class="stat-label">إيرادات اليوم</p>
             </div>
         </div>
     </div>
     
-    <!-- Payment Table -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white">
-            <h5 class="mb-0 py-2">Payment History</h5>
+    <div class="col-md-3 mb-4">
+        <div class="dashboard-card stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-calendar-week"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-number">{{ monthly_revenue }} د.ك</div>
+                <p class="stat-label">إيرادات الشهر</p>
+            </div>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Customer</th>
-                            <th>Car</th>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Method</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for payment in payments %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'payment_details' payment.id %}" class="fw-bold text-decoration-none">
-                                    {{ payment.id }}
-                                </a>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar avatar-sm me-3 bg-primary-light rounded-circle text-center">
-                                        <span class="fw-bold text-primary">{{ payment.user.first_name|slice:":1" }}{{ payment.user.last_name|slice:":1" }}</span>
-                                    </div>
-                                    <div>
-                                        <span class="fw-semibold d-block">{{ payment.user.first_name }} {{ payment.user.last_name }}</span>
-                                        <small class="text-muted">{{ payment.user.email }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ payment.car.make }} {{ payment.car.model }}</td>
-                            <td>{{ payment.date|date:"M d, Y" }}</td>
-                            <td>${{ payment.amount|floatformat:2 }}</td>
-                            <td>
-                                {% if payment.status == 'paid' %}
-                                <span class="badge bg-success rounded-pill">Paid</span>
-                                {% elif payment.status == 'refunded' %}
-                                <span class="badge bg-danger rounded-pill">Refunded</span>
-                                {% elif payment.status == 'pending' %}
-                                <span class="badge bg-warning rounded-pill">Pending</span>
-                                {% else %}
-                                <span class="badge bg-secondary rounded-pill">{{ payment.status|title }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if payment.payment_method == 'visa' %}
-                                <i class="fab fa-cc-visa text-primary fs-5" title="Visa"></i>
-                                {% elif payment.payment_method == 'mastercard' %}
-                                <i class="fab fa-cc-mastercard text-danger fs-5" title="MasterCard"></i>
-                                {% elif payment.payment_method == 'amex' %}
-                                <i class="fab fa-cc-amex text-info fs-5" title="American Express"></i>
-                                {% elif payment.payment_method == 'discover' %}
-                                <i class="fab fa-cc-discover text-warning fs-5" title="Discover"></i>
-                                {% else %}
-                                <i class="fas fa-credit-card text-secondary fs-5" title="{{ payment.payment_method|title }}"></i>
-                                {% endif %}
-                                <small class="text-muted ms-1">•••• {{ payment.card_last4 }}</small>
-                            </td>
-                            <td>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        Actions
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{% url 'payment_details' payment.id %}">
-                                            <i class="fas fa-info-circle me-2"></i> View Details
-                                        </a></li>
-                                        <li><a class="dropdown-item" href="{% url 'print_receipt' payment.id %}">
-                                            <i class="fas fa-print me-2"></i> Print Receipt
-                                        </a></li>
-                                        <li><a class="dropdown-item" href="{% url 'download_receipt' payment.id %}">
-                                            <i class="fas fa-download me-2"></i> Download PDF
-                                        </a></li>
-                                        
-                                        {% if payment.status == 'paid' %}
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="{% url 'process_refund' payment.id %}" 
-                                               onclick="return confirm('Are you sure you want to process a refund for this payment?')">
-                                            <i class="fas fa-undo-alt me-2"></i> Process Refund
-                                        </a></li>
-                                        {% elif payment.status == 'pending' %}
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-success" href="{% url 'mark_as_paid' payment.id %}">
-                                            <i class="fas fa-check-circle me-2"></i> Mark as Paid
-                                        </a></li>
-                                        <li><a class="dropdown-item text-danger" href="{% url 'cancel_payment' payment.id %}"
-                                               onclick="return confirm('Are you sure you want to cancel this payment?')">
-                                            <i class="fas fa-times-circle me-2"></i> Cancel Payment
-                                        </a></li>
-                                        {% endif %}
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="fas fa-receipt fs-3 mb-3"></i>
-                                    <p>No payment records found.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="dashboard-card stat-card">
+            <div class="stat-icon bg-danger">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="stat-details">
+                <div class="stat-number">{{ pending_payments }}</div>
+                <p class="stat-label">دفعات معلقة</p>
             </div>
         </div>
     </div>
 </div>
+
+<!-- مخطط الإيرادات -->
+<div class="row mb-4">
+    <div class="col-lg-8 mb-4">
+        <div class="dashboard-card revenue-card card-gradient-border">
+            <h3 class="revenue-card-title">تحليل الإيرادات</h3>
+            <div class="chart-container">
+                <canvas id="revenueAnalyticsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="dashboard-card revenue-card card-gradient-border">
+            <h3 class="revenue-card-title">توزيع المدفوعات</h3>
+            <div class="chart-container">
+                <canvas id="paymentMethodsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- فلتر البحث -->
+<div class="dashboard-card mb-4 p-4">
+    <h4 class="mb-3 fw-bold">بحث وفلترة المدفوعات</h4>
+    <form method="get" class="row g-3">
+        <div class="col-md-3">
+            <label for="payment_status" class="form-label">حالة الدفع</label>
+            <select name="payment_status" id="payment_status" class="form-select">
+                <option value="">الكل</option>
+                <option value="pending" {% if request.GET.payment_status == 'pending' %}selected{% endif %}>معلق</option>
+                <option value="paid" {% if request.GET.payment_status == 'paid' %}selected{% endif %}>مدفوع</option>
+                <option value="refunded" {% if request.GET.payment_status == 'refunded' %}selected{% endif %}>مسترجع</option>
+                <option value="cancelled" {% if request.GET.payment_status == 'cancelled' %}selected{% endif %}>ملغي</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="payment_method" class="form-label">طريقة الدفع</label>
+            <select name="payment_method" id="payment_method" class="form-select">
+                <option value="">الكل</option>
+                <option value="visa" {% if request.GET.payment_method == 'visa' %}selected{% endif %}>فيزا</option>
+                <option value="mastercard" {% if request.GET.payment_method == 'mastercard' %}selected{% endif %}>ماستركارد</option>
+                <option value="amex" {% if request.GET.payment_method == 'amex' %}selected{% endif %}>أمريكان إكسبرس</option>
+                <option value="cash" {% if request.GET.payment_method == 'cash' %}selected{% endif %}>نقداً</option>
+                <option value="bank_transfer" {% if request.GET.payment_method == 'bank_transfer' %}selected{% endif %}>حوالة بنكية</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="date_from" class="form-label">من تاريخ</label>
+            <input type="date" class="form-control" id="date_from" name="date_from" 
+                   value="{{ request.GET.date_from|default:'' }}">
+        </div>
+        <div class="col-md-3">
+            <label for="date_to" class="form-label">إلى تاريخ</label>
+            <input type="date" class="form-control" id="date_to" name="date_to" 
+                   value="{{ request.GET.date_to|default:'' }}">
+        </div>
+        <div class="col-md-6">
+            <label for="search" class="form-label">بحث</label>
+            <input type="text" class="form-control" id="search" name="search" placeholder="بحث برقم الدفعة، اسم المستخدم..." 
+                   value="{{ request.GET.search|default:'' }}">
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary me-2">
+                <i class="fas fa-search me-2"></i>بحث
+            </button>
+            <a href="{% url 'admin_payments' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-redo me-2"></i>إعادة تعيين
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- جدول المدفوعات -->
+<div class="dashboard-card table-card">
+    <div class="table-card-header">
+        <h4 class="table-card-title"><i class="fas fa-file-invoice-dollar me-2"></i>سجل المدفوعات</h4>
+        <div>
+            <span class="text-muted me-3">إجمالي النتائج: {{ payments|length }}</span>
+        </div>
+    </div>
+    
+    {% if payments %}
+    <div class="table-responsive">
+        <table class="table admin-table">
+            <thead>
+                <tr>
+                    <th>رقم الدفعة</th>
+                    <th>المستخدم</th>
+                    <th>الحجز</th>
+                    <th>المبلغ</th>
+                    <th>التاريخ</th>
+                    <th>طريقة الدفع</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">#{{ payment.id }}</div>
+                        <div class="small text-muted">{{ payment.reference_number|default:"--" }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ payment.reservation.user.username }}</div>
+                        <div class="small text-muted">{{ payment.reservation.user.email }}</div>
+                    </td>
+                    <td>
+                        <a href="#" class="fw-bold text-primary">
+                            #{{ payment.reservation.id }}
+                        </a>
+                        <div class="small text-muted">{{ payment.reservation.car.make }} {{ payment.reservation.car.model }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-primary" style="font-size: 1.1rem;">{{ payment.amount }} د.ك</div>
+                    </td>
+                    <td>
+                        <div>{{ payment.date|date:"d/m/Y" }}</div>
+                        <div class="small text-muted">{{ payment.date|time:"H:i" }}</div>
+                    </td>
+                    <td>
+                        {% if payment.payment_method == 'visa' %}
+                        <div><i class="fab fa-cc-visa text-primary me-1"></i>فيزا</div>
+                        {% elif payment.payment_method == 'mastercard' %}
+                        <div><i class="fab fa-cc-mastercard text-danger me-1"></i>ماستركارد</div>
+                        {% elif payment.payment_method == 'amex' %}
+                        <div><i class="fab fa-cc-amex text-info me-1"></i>أمريكان إكسبرس</div>
+                        {% elif payment.payment_method == 'cash' %}
+                        <div><i class="fas fa-money-bill-wave text-success me-1"></i>نقداً</div>
+                        {% elif payment.payment_method == 'bank_transfer' %}
+                        <div><i class="fas fa-university text-secondary me-1"></i>حوالة بنكية</div>
+                        {% else %}
+                        <div>{{ payment.payment_method }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if payment.status == 'pending' %}
+                        <span class="status-badge status-badge-pending">معلق</span>
+                        {% elif payment.status == 'paid' %}
+                        <span class="status-badge status-badge-completed">مدفوع</span>
+                        {% elif payment.status == 'refunded' %}
+                        <span class="status-badge status-badge-warning">مسترجع</span>
+                        {% elif payment.status == 'cancelled' %}
+                        <span class="status-badge status-badge-cancelled">ملغي</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                إجراءات
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'payment_details' payment_id=payment.id %}">
+                                        <i class="fas fa-eye me-2"></i>عرض التفاصيل
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'print_receipt' payment_id=payment.id %}">
+                                        <i class="fas fa-print me-2"></i>طباعة الإيصال
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'download_receipt' payment_id=payment.id %}">
+                                        <i class="fas fa-file-pdf me-2"></i>تحميل الإيصال
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% if payment.status == 'pending' %}
+                                <li>
+                                    <a class="dropdown-item text-success" href="{% url 'mark_as_paid' payment_id=payment.id %}">
+                                        <i class="fas fa-check me-2"></i>تحديث للمدفوع
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'cancel_payment' payment_id=payment.id %}">
+                                        <i class="fas fa-times me-2"></i>إلغاء الدفعة
+                                    </a>
+                                </li>
+                                {% elif payment.status == 'paid' %}
+                                <li>
+                                    <a class="dropdown-item text-warning" href="{% url 'process_refund' payment_id=payment.id %}">
+                                        <i class="fas fa-undo me-2"></i>رد المبلغ
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-file-invoice-dollar text-muted fa-4x mb-3"></i>
+        <h5>لا توجد مدفوعات</h5>
+        <p class="text-muted">لم يتم العثور على مدفوعات تطابق معايير البحث.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // مخطط تحليل الإيرادات
+        if (document.getElementById('revenueAnalyticsChart')) {
+            new Chart(document.getElementById('revenueAnalyticsChart'), {
+                type: 'line',
+                data: {
+                    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
+                    datasets: [{
+                        label: 'الإيرادات',
+                        data: [120, 190, 300, 250, 220, 340, 360, 400, 450, 380, 520, 550].reverse(),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // مخطط توزيع المدفوعات
+        if (document.getElementById('paymentMethodsChart')) {
+            new Chart(document.getElementById('paymentMethodsChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['فيزا', 'ماستركارد', 'أمريكان إكسبرس', 'نقداً', 'حوالة بنكية'],
+                    datasets: [{
+                        data: [45, 30, 10, 10, 5],
+                        backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#6366f1'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
