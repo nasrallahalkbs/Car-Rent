@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Avg
 from django.contrib import messages
 from django.utils import timezone
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 
@@ -266,60 +266,152 @@ def remove_from_cart(request, item_id):
 def checkout(request):
     """Checkout and payment view"""
     cart_items = CartItem.objects.filter(user=request.user)
-    
-    # Redirect back to cart if empty
-    if not cart_items.exists():
-        messages.warning(request, "Your cart is empty.")
-        return redirect('cart')
-    
-    # Calculate total price
+    direct_booking = False
+    car = None
+    start_date = None
+    end_date = None
     total = 0
-    for item in cart_items:
-        item.total_price = calculate_total_price(item.car, item.start_date, item.end_date)
-        total += item.total_price
+    
+    # Check if this is a direct booking
+    if request.method == 'POST' and 'car_id' in request.POST:
+        direct_booking = True
+        car_id = request.POST.get('car_id')
+        car = get_object_or_404(Car, id=car_id)
+        
+        # Get dates from form
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        
+        # Convert to date objects
+        if start_date and end_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            
+            # Validate dates
+            if end_date < start_date:
+                messages.error(request, "End date must be after start date.")
+                return redirect('car_detail', car_id=car_id)
+            
+            # Check availability
+            if not get_car_availability(car_id, start_date, end_date):
+                messages.error(request, "Sorry, this car is not available for the selected dates.")
+                return redirect('car_detail', car_id=car_id)
+            
+            # Calculate total price
+            total = calculate_total_price(car, start_date, end_date)
+    else:
+        # Regular checkout from cart
+        # Redirect back to cart if empty
+        if not cart_items.exists():
+            messages.warning(request, "Your cart is empty.")
+            return redirect('cart')
+        
+        # Calculate total price for cart items
+        for item in cart_items:
+            item.total_price = calculate_total_price(item.car, item.start_date, item.end_date)
+            total += item.total_price
     
     if request.method == 'POST':
         form = CheckoutForm(request.POST)
         if form.is_valid():
-            # Process each cart item and create reservations
-            for item in cart_items:
+            # Get payment details
+            card_type = form.cleaned_data.get('card_type')
+            card_number = form.cleaned_data.get('card_number')
+            card_name = form.cleaned_data.get('card_name')
+            
+            # Store payment details in the reservation notes
+            payment_notes = f"Payment Method: {card_type}\nCard Number: ****{card_number[-4:]}\nCard Holder: {card_name}"
+            
+            # Handle direct booking
+            if direct_booking and car and start_date and end_date:
+                # Create a new reservation for direct booking
                 reservation = Reservation(
                     user=request.user,
-                    car=item.car,
-                    start_date=item.start_date,
-                    end_date=item.end_date,
-                    total_price=calculate_total_price(item.car, item.start_date, item.end_date),
-                    status='confirmed',
-                    payment_status='paid'
+                    car=car,
+                    start_date=start_date,
+                    end_date=end_date,
+                    total_price=total,
+                    status='pending',  # Set as pending for admin confirmation
+                    payment_status='pending',
+                    notes=payment_notes
                 )
                 reservation.save()
                 
-                # Remove from cart
-                item.delete()
-            
-            messages.success(request, "Your reservation has been confirmed! Thank you for your business.")
-            return redirect('confirmation')
+                # Prepare card image if provided
+                if 'card_image' in request.FILES:
+                    # We would handle saving the card image here, but it's out of scope for this example
+                    reservation.notes += "\nCard image was provided for verification."
+                    reservation.save()
+                
+                messages.success(request, "Your reservation has been submitted and is pending admin confirmation. Thank you!")
+                return redirect('confirmation')
+            else:
+                # Process each cart item and create reservations
+                for item in cart_items:
+                    reservation = Reservation(
+                        user=request.user,
+                        car=item.car,
+                        start_date=item.start_date,
+                        end_date=item.end_date,
+                        total_price=calculate_total_price(item.car, item.start_date, item.end_date),
+                        status='confirmed',
+                        payment_status='paid',
+                        notes=payment_notes
+                    )
+                    reservation.save()
+                    
+                    # Remove from cart
+                    item.delete()
+                
+                messages.success(request, "Your reservation has been confirmed! Thank you for your business.")
+                return redirect('confirmation')
     else:
         form = CheckoutForm()
+    
+    # For direct booking, create a cart-like item for display
+    if direct_booking and car and start_date and end_date:
+        # Calculate days for display
+        delta = (end_date - start_date).days + 1
+        
+        # Create a temporary item (not saved to database)
+        temp_item = {
+            'car': car,
+            'start_date': start_date,
+            'end_date': end_date,
+            'days': delta,
+            'total': total
+        }
+        
+        cart_items = [temp_item]
     
     return render(request, 'checkout.html', {
         'form': form,
         'cart_items': cart_items,
-        'total': total
+        'cart_total': total,
+        'direct_booking': direct_booking
     })
 
 def confirmation(request):
     """Order confirmation page"""
-    # Show the latest confirmed reservation
+    # Show the latest reservation (confirmed or pending)
     if request.user.is_authenticated:
         reservation = Reservation.objects.filter(
-            user=request.user, 
-            status='confirmed'
+            user=request.user,
+            status__in=['confirmed', 'pending']
         ).order_by('-created_at').first()
         
-        return render(request, 'confirmation.html', {
-            'reservation': reservation
-        })
+        if reservation:
+            # Calculate the number of days for this reservation
+            days = (reservation.end_date - reservation.start_date).days + 1
+            
+            return render(request, 'confirmation.html', {
+                'reservation': reservation,
+                'car': reservation.car,
+                'days': days
+            })
+        else:
+            messages.warning(request, "No recent reservations found.")
+            return redirect('index')
     else:
         return redirect('index')
 
