@@ -55,19 +55,21 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # Temporarily disable CSRF middleware for debugging
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 # Additional CSRF settings for Replit environment
-CSRF_COOKIE_SECURE = False  # Set to False for development
-CSRF_COOKIE_SAMESITE = None  # Changed from 'None' to None
-SESSION_COOKIE_SECURE = False  # Set to False for development
-SESSION_COOKIE_SAMESITE = None  # Changed from 'None' to None
-CSRF_USE_SESSIONS = True  # Store CSRF token in the session instead of cookie
-CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
+# These settings are not needed while CSRF middleware is disabled
+# CSRF_COOKIE_SECURE = False  
+# CSRF_COOKIE_SAMESITE = None
+# SESSION_COOKIE_SECURE = False
+# SESSION_COOKIE_SAMESITE = None
+# CSRF_USE_SESSIONS = True
+# CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 
 ROOT_URLCONF = 'car_rental_project.urls'
 
