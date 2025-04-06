@@ -1,35 +1,20 @@
-with open('templates/layout.html', 'r') as file:
-    content = file.read()
+#!/usr/bin/env python3
+# Fix the car detail template
 
-# استبدال عبارات url_for للملفات الثابتة
-content = content.replace("{{ url_for('static', filename='css/style.css') }}", "{% static 'css/style.css' %}")
-content = content.replace("{{ url_for('static', filename='css/dark-mode.css') }}", "{% static 'css/dark-mode.css' %}")
-content = content.replace("{{ url_for('static', filename='js/scripts.js') }}", "{% static 'js/scripts.js' %}")
-content = content.replace("{{ url_for('static', filename='js/dark-mode.js') }}", "{% static 'js/dark-mode.js' %}")
+import re
 
-# استبدال عبارات url_for للروابط
-content = content.replace("{{ url_for('index') }}", "{% url 'index' %}")
-content = content.replace("{{ url_for('car_listing') }}", "{% url 'car_listing' %}")
-content = content.replace("{{ url_for('admin_index') }}", "{% url 'admin_index' %}")
-content = content.replace("{{ url_for('cart') }}", "{% url 'cart' %}")
-content = content.replace("{{ url_for('profile') }}", "{% url 'profile' %}")
-content = content.replace("{{ url_for('my_reservations') }}", "{% url 'my_reservations' %}")
-content = content.replace("{{ url_for('logout') }}", "{% url 'logout' %}")
-content = content.replace("{{ url_for('login') }}", "{% url 'login' %}")
-content = content.replace("{{ url_for('register') }}", "{% url 'register' %}")
-content = content.replace("{{ url_for('toggle_dark_mode') }}", "{% url 'toggle_dark_mode' %}")
+# Read the file
+with open('templates/car_detail_django.html', 'r', encoding='utf-8') as f:
+    content = f.read()
 
-# استبدال current_user بـ user وهو المتغير الذي يحتوي على المستخدم الحالي في Django
-content = content.replace("current_user", "user")
+# Fix the double quotes issue
+fixed = content.replace(
+    'unavailableDatesContainer.innerHTML = "<p class="text-danger mb-0 text-center py-4"><i class="fas fa-exclamation-circle ms-2"></i>حدث خطأ أثناء تحميل التواريخ المحجوزة</p>";',
+    'unavailableDatesContainer.innerHTML = \'<p class="text-danger mb-0 text-center py-4"><i class="fas fa-exclamation-circle ms-2"></i>حدث خطأ أثناء تحميل التواريخ المحجوزة</p>\';'
+)
 
-# استبدال عبارات get_flashed_messages بـ messages وهو المتغير الذي يحتوي على الرسائل في Django
-content = content.replace("{% with messages = get_flashed_messages(with_categories=true) %}", "")
-content = content.replace("{% endwith %}", "")
+# Write the file back
+with open('templates/car_detail_django.html', 'w', encoding='utf-8') as f:
+    f.write(fixed)
 
-# إضافة load static في بداية الملف
-content = "{% load static %}\n" + content
-
-with open('templates/layout.html', 'w') as file:
-    file.write(content)
-
-print("Fixed layout.html")
+print("Template fixed successfully")

@@ -978,43 +978,115 @@
             updatePriceEstimate();
         }
         
-        // Fetch unavailable dates
-        fetch(`/api/car/{{ car.id }}/unavailable-dates/`)
-            .then(response => response.json())
-            .then(data => {
-                const unavailableDatesContainer = document.getElementById('unavailableDates');
-                
-                if (data.dates.length === 0) {
-                    unavailableDatesContainer.innerHTML = '<p class="text-success mb-0 text-center py-4"><i class="fas fa-check-circle ms-2"></i>لا توجد تواريخ محجوزة حالياً!</p>';
-                } else {
-                    let html = '';
+        // Validate form before submission
+        const reservationForm = document.getElementById("reservationForm");
+        if (reservationForm) {
+            reservationForm.addEventListener("submit", function(e) {
+                if (startDateInput && endDateInput) {
+                    if (!startDateInput.value || !endDateInput.value) {
+                        e.preventDefault();
+                        alert("يرجى تحديد تاريخ الاستلام وتاريخ التسليم");
+                        return false;
+                    }
                     
-                    data.dates.forEach(dateRange => {
-                        const startDate = new Date(dateRange[0]);
-                        const endDate = new Date(dateRange[1]);
-                        
-                        const formattedStartDate = startDate.toLocaleDateString('ar-SA', { 
-                            year: 'numeric', month: 'long', day: 'numeric' 
-                        });
-                        const formattedEndDate = endDate.toLocaleDateString('ar-SA', { 
-                            year: 'numeric', month: 'long', day: 'numeric' 
-                        });
-                        
-                        html += `
-                        <div class="date-range-item">
-                            <i class="fas fa-calendar-times date-range-icon"></i>
-                            <div class="date-range-text">${formattedStartDate} - ${formattedEndDate}</div>
-                        </div>`;
-                    });
+                    const startDate = new Date(startDateInput.value);
+                    const endDate = new Date(endDateInput.value);
                     
-                    unavailableDatesContainer.innerHTML = html;
+                    if (endDate < startDate) {
+                        e.preventDefault();
+                        alert("يجب أن يكون تاريخ التسليم بعد تاريخ الاستلام");
+                        return false;
+                    }
                 }
-            })
-            .catch(error => {
-                console.error('Error fetching unavailable dates:', error);
-                const unavailableDatesContainer = document.getElementById('unavailableDates');
-                unavailableDatesContainer.innerHTML = '<p class="text-danger mb-0 text-center py-4"><i class="fas fa-exclamation-circle ms-2"></i>حدث خطأ أثناء تحميل التواريخ المحجوزة</p>';
+                
+                return true;
             });
+        }
+        
+        // Fetch unavailable dates
+        try {
+            fetch(`/api/car/{{ car.id }}/unavailable-dates/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const unavailableDatesContainer = document.getElementById("unavailableDates");
+                    
+                    if (!data.dates || data.dates.length === 0) {
+                        unavailableDatesContainer.innerHTML = '<p class="text-success mb-0 text-center py-4"><i class="fas fa-check-circle ms-2"></i>لا توجد تواريخ محجوزة حالياً!</p>';
+                    } else {
+                        let html = "";
+                        
+                        data.dates.forEach(dateRange => {
+                            const startDate = new Date(dateRange[0]);
+                            const endDate = new Date(dateRange[1]);
+                            
+                            const formattedStartDate = startDate.toLocaleDateString("ar-SA", { 
+                                year: "numeric", month: "long", day: "numeric" 
+                            });
+                            const formattedEndDate = endDate.toLocaleDateString("ar-SA", { 
+                                year: "numeric", month: "long", day: "numeric" 
+                            });
+                            
+                            html += `
+                            <div class="date-range-item">
+                                <i class="fas fa-calendar-times date-range-icon"></i>
+                                <div class="date-range-text">${formattedStartDate} - ${formattedEndDate}</div>
+                            </div>`;
+                        });
+                        
+                        unavailableDatesContainer.innerHTML = html;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching unavailable dates:", error);
+                    const unavailableDatesContainer = document.getElementById("unavailableDates");
+                    unavailableDatesContainer.innerHTML = '<p class="text-danger mb-0 text-center py-4"><i class="fas fa-exclamation-circle ms-2"></i>حدث خطأ أثناء تحميل التواريخ المحجوزة</p>';
+                });
+        } catch (err) {
+            console.error("Error in fetch operation:", err);
+            const unavailableDatesContainer = document.getElementById("unavailableDates");
+            unavailableDatesContainer.innerHTML = '<p class="text-danger mb-0 text-center py-4"><i class="fas fa-exclamation-circle ms-2"></i>حدث خطأ أثناء تحميل التواريخ المحجوزة</p>';
+        }
+                    if (!data.dates || data.dates.length === 0) {
+                        unavailableDatesContainer.innerHTML = '<p class="text-success mb-0 text-center py-4"><i class="fas fa-check-circle ms-2"></i>لا توجد تواريخ محجوزة حالياً!</p>';
+                    } else {
+                        let html = '';
+                        
+                        data.dates.forEach(dateRange => {
+                            const startDate = new Date(dateRange[0]);
+                            const endDate = new Date(dateRange[1]);
+                            
+                            const formattedStartDate = startDate.toLocaleDateString('ar-SA', { 
+                                year: 'numeric', month: 'long', day: 'numeric' 
+                            });
+                            const formattedEndDate = endDate.toLocaleDateString('ar-SA', { 
+                                year: 'numeric', month: 'long', day: 'numeric' 
+                            });
+                            
+                            html += `
+                            <div class="date-range-item">
+                                <i class="fas fa-calendar-times date-range-icon"></i>
+                                <div class="date-range-text">${formattedStartDate} - ${formattedEndDate}</div>
+                            </div>`;
+                        });
+                        
+                        unavailableDatesContainer.innerHTML = html;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching unavailable dates:', error);
+                    const unavailableDatesContainer = document.getElementById('unavailableDates');
+                    unavailableDatesContainer.innerHTML = '<p class="text-danger mb-0 text-center py-4"><i class="fas fa-exclamation-circle ms-2"></i>حدث خطأ أثناء تحميل التواريخ المحجوزة</p>';
+                });
+        } catch (err) {
+            console.error('Error in fetch operation:', err);
+            const unavailableDatesContainer = document.getElementById('unavailableDates');
+            unavailableDatesContainer.innerHTML = '<p class="text-danger mb-0 text-center py-4"><i class="fas fa-exclamation-circle ms-2"></i>حدث خطأ أثناء تحميل التواريخ المحجوزة</p>';
+        }
     });
 </script>
 {% endblock %}
