@@ -233,15 +233,25 @@ def cart_view(request):
     """Shopping cart view"""
     cart_items = CartItem.objects.filter(user=request.user)
     
-    # Calculate total price for each item and overall total
-    total = 0
+    # Calculate total price, days, and enhance cart items with additional information
+    cart_total = 0
+    total_days = 0
+    
     for item in cart_items:
-        item.total_price = calculate_total_price(item.car, item.start_date, item.end_date)
-        total += item.total_price
+        # Calculate days for this rental
+        delta = (item.end_date - item.start_date).days
+        item.days = delta
+        total_days += delta
+        
+        # Calculate total price
+        item.total = calculate_total_price(item.car, item.start_date, item.end_date)
+        cart_total += item.total
     
     return render(request, 'cart_django.html', {
         'cart_items': cart_items,
-        'total': total
+        'cart_total': cart_total,
+        'total_days': total_days,
+        'has_discounts': False  # Set to True if you implement discounts later
     })
 
 @login_required
