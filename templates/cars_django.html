@@ -1,142 +1,625 @@
 {% extends 'layout_django.html' %}
 {% load static %}
 
-{% block title %}Browse Cars - CarRental{% endblock %}
+{% block title %}استعراض السيارات - كاررنتال{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Car listing specific styles */
+    .search-form {
+        background-color: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        padding: 2rem;
+        margin-bottom: 2.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .search-form:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 150px;
+        height: 150px;
+        background-image: url("data:image/svg+xml,%3Csvg width='150' height='150' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%233a86ff' fill-opacity='0.05' d='M0 0h200v200H0z'/%3E%3Cpath d='M100 0C44.8 0 0 44.8 0 100s44.8 100 100 100 100-44.8 100-100S155.2 0 100 0zm0 180c-44.1 0-80-35.9-80-80s35.9-80 80-80 80 35.9 80 80-35.9 80-80 80z' fill='%233a86ff' fill-opacity='0.08'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: top right;
+        z-index: -1;
+        opacity: 0.8;
+    }
+    
+    .search-form h4 {
+        margin-bottom: 1.5rem;
+        color: #212529;
+        font-weight: 600;
+        position: relative;
+    }
+    
+    .search-form h4:after {
+        content: '';
+        display: block;
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(90deg, #3a86ff, #4dabf7);
+        margin-top: 8px;
+    }
+    
+    .car-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .car-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .car-card .card-img-top {
+        height: 200px;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .car-card:hover .card-img-top {
+        transform: scale(1.05);
+    }
+    
+    .car-title {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+    }
+    
+    .car-meta {
+        margin-bottom: 1rem;
+    }
+    
+    .car-meta .badge {
+        margin-left: 5px;
+        padding: 6px 10px;
+        font-weight: 500;
+        border-radius: 50px;
+    }
+    
+    .car-price {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #3a86ff;
+    }
+    
+    .car-price .text-muted {
+        font-size: 0.9rem;
+        font-weight: 400;
+    }
+    
+    .car-features {
+        display: flex;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .car-features span {
+        display: flex;
+        align-items: center;
+    }
+    
+    .car-features i {
+        margin-left: 0.5rem;
+        color: #3a86ff;
+    }
+    
+    .feature-divider {
+        margin: 0 0.75rem;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: #dee2e6;
+    }
+    
+    .availability-indicator {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background-color: rgba(40, 167, 69, 0.9);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        z-index: 1;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .availability-indicator.unavailable {
+        background-color: rgba(220, 53, 69, 0.9);
+    }
+    
+    .empty-state {
+        padding: 3rem;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .empty-state i {
+        color: #dee2e6;
+    }
+    
+    .sort-filter-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .car-filters {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .view-options {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .view-options .btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .fade-in {
+        opacity: 0;
+        animation: fadeInUp 0.6s ease forwards;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+        .sort-filter-bar {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+        
+        .car-filters {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+    
+    /* Enhanced list view */
+    #listView .car-card {
+        height: auto;
+        margin-bottom: 1.5rem;
+    }
+    
+    #listView .col-md-4 {
+        position: relative;
+        min-height: 250px;
+    }
+    
+    #listView .img-fluid {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    /* Filter tags styling */
+    .filter-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-tag {
+        display: inline-flex;
+        align-items: center;
+        background-color: #e9ecef;
+        border-radius: 50px;
+        padding: 0.35rem 1rem;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-tag:hover {
+        background-color: #dee2e6;
+    }
+    
+    .filter-tag i {
+        margin-right: 0.5rem;
+        color: #3a86ff;
+    }
+    
+    .filter-tag .close {
+        margin-right: -0.5rem;
+        margin-left: 0.5rem;
+        font-size: 0.7rem;
+        opacity: 0.7;
+    }
+    
+    .filter-tag .close:hover {
+        opacity: 1;
+    }
+    
+    /* Car card hover effects */
+    .car-card .card-body {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .car-card .btn {
+        transition: all 0.3s ease;
+    }
+    
+    .car-card:hover .btn-outline-primary {
+        background-color: #3a86ff;
+        color: white;
+    }
+    
+    /* Car image badge */
+    .car-image-wrapper {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .car-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: linear-gradient(135deg, #3a86ff 0%, #4dabf7 100%);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        z-index: 1;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Range slider styling */
+    .range-slider {
+        margin-top: 0.5rem;
+    }
+    
+    .range-slider .values {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    /* Rating display */
+    .rating-display {
+        display: flex;
+        align-items: center;
+        margin-top: 0.5rem;
+    }
+    
+    .rating-display .stars {
+        color: #ffc107;
+        margin-left: 0.5rem;
+    }
+    
+    .rating-display .count {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-right: 0.5rem;
+    }
+    
+    /* Category icons styling */
+    .category-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin: 2rem 0;
+        justify-content: center;
+    }
+    
+    .category-filter {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 90px;
+        text-decoration: none;
+        color: #495057;
+        transition: all 0.3s ease;
+        border: none;
+        background: none;
+        cursor: pointer;
+    }
+    
+    .category-filter:hover {
+        transform: translateY(-5px);
+        color: #3a86ff;
+    }
+    
+    .category-filter .icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 0.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+        font-size: 1.5rem;
+    }
+    
+    .category-filter:hover .icon {
+        background-color: #3a86ff;
+        color: white;
+        box-shadow: 0 10px 20px rgba(58, 134, 255, 0.2);
+    }
+    
+    .category-filter .label {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    /* Scrollable horizontal category filters for mobile */
+    @media (max-width: 768px) {
+        .category-filters-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+            padding-bottom: 1rem;
+        }
+        
+        .category-filters-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari */
+        }
+        
+        .category-filters {
+            flex-wrap: nowrap;
+            min-width: min-content;
+            padding: 0 1rem;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <h1 class="mb-4">Find Your Perfect Rental Car</h1>
-    
-    <!-- Search Form -->
-    <div class="search-form mb-5">
-        <form method="get" action="{% url 'car_listing' %}">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label for="{{ form.category.id_for_label }}" class="form-label">Car Type</label>
-                    {{ form.category }}
-                </div>
-                <div class="col-md-4">
-                    <label for="{{ form.transmission.id_for_label }}" class="form-label">Transmission</label>
-                    {{ form.transmission }}
-                </div>
-                <div class="col-md-4">
-                    <label for="{{ form.fuel_type.id_for_label }}" class="form-label">Fuel Type</label>
-                    {{ form.fuel_type }}
-                </div>
-                <div class="col-md-6">
-                    <label for="{{ form.min_price.id_for_label }}" class="form-label">Min Price ($)</label>
-                    {{ form.min_price }}
-                </div>
-                <div class="col-md-6">
-                    <label for="{{ form.max_price.id_for_label }}" class="form-label">Max Price ($)</label>
-                    {{ form.max_price }}
-                </div>
-                <div class="col-12 text-center mt-3">
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="fas fa-search me-2"></i>Search Cars
-                    </button>
-                    <a href="{% url 'car_listing' %}" class="btn btn-outline-secondary px-4 ms-2">Reset</a>
-                </div>
-            </div>
-        </form>
+    <div class="row">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'index' %}">الرئيسية</a></li>
+                <li class="breadcrumb-item active" aria-current="page">استعراض السيارات</li>
+            </ol>
+        </nav>
     </div>
-    
-    <!-- Sort and Filter Bar -->
-    {% if cars %}
-    <div class="sort-filter-bar mb-4">
-        <div class="found-results">
-            <span class="fw-bold">{{ cars|length }}</span> cars found
-        </div>
-        <div class="car-filters">
-            <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-sort me-1"></i> Sort by
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="sortDropdown">
-                    <li><a class="dropdown-item" href="?sort=price_asc">Price: Low to High</a></li>
-                    <li><a class="dropdown-item" href="?sort=price_desc">Price: High to Low</a></li>
-                    <li><a class="dropdown-item" href="?sort=newest">Newest First</a></li>
-                </ul>
-            </div>
-            <div class="view-options d-none d-md-flex">
-                <button class="btn btn-outline-secondary active" id="gridViewBtn">
-                    <i class="fas fa-th"></i>
-                </button>
-                <button class="btn btn-outline-secondary" id="listViewBtn">
-                    <i class="fas fa-list"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
-    <!-- Car Listings - Grid View (default) -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="gridView">
-        {% for car in cars %}
-        <div class="col fade-in" style="animation-delay: {{ forloop.counter0|divisibleby:3 }}00ms">
-            <div class="car-card">
-                {% if car.is_available %}
-                <div class="availability-indicator">
-                    <i class="fas fa-check-circle"></i> Available
-                </div>
-                {% else %}
-                <div class="availability-indicator unavailable">
-                    <i class="fas fa-times-circle"></i> Unavailable
-                </div>
-                {% endif %}
-                {% if car.image_url %}<img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">{% else %}<img src="{% static 'images/car-placeholder.svg' %}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">{% endif %}
+    <!-- Quick category filters -->
+    <div class="category-filters-container">
+        <div class="category-filters">
+            <button class="category-filter" data-category="" data-bs-toggle="tooltip" title="عرض جميع السيارات">
+                <div class="icon"><i class="fas fa-car"></i></div>
+                <span class="label">الكل</span>
+            </button>
+            <button class="category-filter" data-category="Economy" data-bs-toggle="tooltip" title="سيارات اقتصادية">
+                <div class="icon"><i class="fas fa-wallet"></i></div>
+                <span class="label">اقتصادية</span>
+            </button>
+            <button class="category-filter" data-category="Compact" data-bs-toggle="tooltip" title="سيارات مدمجة">
+                <div class="icon"><i class="fas fa-car-side"></i></div>
+                <span class="label">مدمجة</span>
+            </button>
+            <button class="category-filter" data-category="Mid-size" data-bs-toggle="tooltip" title="سيارات متوسطة الحجم">
+                <div class="icon"><i class="fas fa-car-alt"></i></div>
+                <span class="label">متوسطة</span>
+            </button>
+            <button class="category-filter" data-category="Luxury" data-bs-toggle="tooltip" title="سيارات فاخرة">
+                <div class="icon"><i class="fas fa-crown"></i></div>
+                <span class="label">فاخرة</span>
+            </button>
+            <button class="category-filter" data-category="SUV" data-bs-toggle="tooltip" title="سيارات دفع رباعي">
+                <div class="icon"><i class="fas fa-truck-monster"></i></div>
+                <span class="label">دفع رباعي</span>
+            </button>
+            <button class="category-filter" data-category="Truck" data-bs-toggle="tooltip" title="شاحنات خفيفة">
+                <div class="icon"><i class="fas fa-truck-pickup"></i></div>
+                <span class="label">شاحنات</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <!-- Search Form -->
+            <div class="search-form">
+                <h4 class="mb-4">فلترة السيارات</h4>
+                <form method="get" action="{% url 'car_listing' %}">
+                    <div class="mb-3">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">نوع السيارة</label>
+                        {{ form.category }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.transmission.id_for_label }}" class="form-label">ناقل الحركة</label>
+                        {{ form.transmission }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.fuel_type.id_for_label }}" class="form-label">نوع الوقود</label>
+                        {{ form.fuel_type }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">نطاق السعر اليومي (د.ك)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="{{ form.min_price.id_for_label }}" class="form-label small">الحد الأدنى</label>
+                                {{ form.min_price }}
+                            </div>
+                            <div class="col-6">
+                                <label for="{{ form.max_price.id_for_label }}" class="form-label small">الحد الأقصى</label>
+                                {{ form.max_price }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search ms-2"></i>بحث
+                        </button>
+                        <a href="{% url 'car_listing' %}" class="btn btn-outline-secondary">إعادة ضبط الفلتر</a>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Quick tips -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-body">
-                    <h5 class="car-title">{{ car.make }} {{ car.model }} ({{ car.year }})</h5>
-                    <div class="car-meta">
-                        <span class="badge bg-primary">{{ car.category }}</span>
-                        <span class="badge bg-secondary">{{ car.transmission }}</span>
-                        <span class="badge bg-info text-dark">{{ car.fuel_type }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="car-features">
-                            <span><i class="fas fa-users"></i> {{ car.seats }} Seats</span>
-                            <span class="feature-divider"></span>
-                            <span><i class="fas fa-palette"></i> {{ car.color }}</span>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="car-price">${{ car.daily_rate }}<span class="text-muted">/day</span></div>
-                        <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-outline-primary">View Details</a>
-                    </div>
+                    <h5 class="card-title"><i class="fas fa-lightbulb text-warning ms-2"></i>نصائح سريعة</h5>
+                    <ul class="ps-3 mb-0">
+                        <li class="mb-2">يمكنك تصفية السيارات حسب النوع وناقل الحركة ونوع الوقود.</li>
+                        <li class="mb-2">استخدم نطاق السعر للعثور على السيارات التي تناسب ميزانيتك.</li>
+                        <li class="mb-2">انقر على "عرض التفاصيل" لمشاهدة مزيد من المعلومات والميزات.</li>
+                        <li>يمكنك التبديل بين عرض الشبكة والقائمة لتجربة تصفح مختلفة.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Help card -->
+            <div class="card bg-primary text-white border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-headset ms-2"></i>تحتاج مساعدة؟</h5>
+                    <p class="card-text">فريق خدمة العملاء متاح على مدار الساعة لمساعدتك في اختيار السيارة المناسبة لاحتياجاتك.</p>
+                    <a href="{% url 'about_us' %}#contact" class="btn btn-light text-primary">اتصل بنا</a>
                 </div>
             </div>
         </div>
-        {% empty %}
-        <div class="col-12 text-center py-5">
-            <div class="empty-state">
-                <i class="fas fa-car-side fa-4x mb-3 text-muted"></i>
-                <h4>No cars found</h4>
-                <p class="text-muted">We couldn't find any cars matching your search criteria. Please try with different filters.</p>
-                <a href="{% url 'car_listing' %}" class="btn btn-primary mt-3">Clear Filters</a>
+        
+        <div class="col-lg-8">
+            <!-- Results count and filter indicators -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h4 mb-0">
+                    {% if cars %}
+                    <span class="fw-bold text-primary results-count" data-count="{{ cars|length }}">{{ cars|length }}</span> سيارة متوفرة
+                    {% else %}
+                    لا توجد سيارات متطابقة
+                    {% endif %}
+                </h2>
+                
+                <!-- View switching -->
+                <div class="view-options d-none d-md-flex">
+                    <button class="btn btn-outline-secondary active" id="gridViewBtn" title="عرض الشبكة">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" id="listViewBtn" title="عرض القائمة">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
             </div>
-        </div>
-        {% endfor %}
-    </div>
+            
+            <!-- Active filters -->
+            {% if form.is_bound and form.is_valid %}
+            <div class="filter-tags mb-3">
+                {% if form.cleaned_data.category %}
+                <span class="filter-tag">
+                    <i class="fas fa-car-side"></i>
+                    {{ form.cleaned_data.category }}
+                </span>
+                {% endif %}
+                
+                {% if form.cleaned_data.transmission %}
+                <span class="filter-tag">
+                    <i class="fas fa-cog"></i>
+                    {{ form.cleaned_data.transmission }}
+                </span>
+                {% endif %}
+                
+                {% if form.cleaned_data.fuel_type %}
+                <span class="filter-tag">
+                    <i class="fas fa-gas-pump"></i>
+                    {{ form.cleaned_data.fuel_type }}
+                </span>
+                {% endif %}
+                
+                {% if form.cleaned_data.min_price or form.cleaned_data.max_price %}
+                <span class="filter-tag">
+                    <i class="fas fa-dollar-sign"></i>
+                    {% if form.cleaned_data.min_price and form.cleaned_data.max_price %}
+                        {{ form.cleaned_data.min_price }} - {{ form.cleaned_data.max_price }} د.ك
+                    {% elif form.cleaned_data.min_price %}
+                        أكثر من {{ form.cleaned_data.min_price }} د.ك
+                    {% else %}
+                        أقل من {{ form.cleaned_data.max_price }} د.ك
+                    {% endif %}
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Sorting options -->
+            {% if cars %}
+            <div class="sort-filter-bar mb-4">
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-sort ms-1"></i> ترتيب حسب
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                        <li><a class="dropdown-item" href="?sort=price_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.transmission %}&transmission={{ request.GET.transmission }}{% endif %}{% if request.GET.fuel_type %}&fuel_type={{ request.GET.fuel_type }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}">السعر: من الأقل للأعلى</a></li>
+                        <li><a class="dropdown-item" href="?sort=price_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.transmission %}&transmission={{ request.GET.transmission }}{% endif %}{% if request.GET.fuel_type %}&fuel_type={{ request.GET.fuel_type }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}">السعر: من الأعلى للأقل</a></li>
+                        <li><a class="dropdown-item" href="?sort=newest{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.transmission %}&transmission={{ request.GET.transmission }}{% endif %}{% if request.GET.fuel_type %}&fuel_type={{ request.GET.fuel_type }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}">الأحدث أولاً</a></li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
 
-    <!-- Car Listings - List View (hidden by default) -->
-    <div class="row d-none" id="listView">
-        {% for car in cars %}
-        <div class="col-12 mb-4 fade-in" style="animation-delay: {{ forloop.counter0|divisibleby:3 }}00ms">
-            <div class="card car-card">
-                <div class="row g-0">
-                    <div class="col-md-4">
-                        {% if car.is_available %}
-                        <div class="availability-indicator">
-                            <i class="fas fa-check-circle"></i> Available
+            <!-- Car Listings - Grid View (default) -->
+            <div class="row row-cols-1 row-cols-md-2 g-4" id="gridView">
+                {% for car in cars %}
+                <div class="col fade-in" style="animation-delay: {{ forloop.counter0|divisibleby:2 }}00ms">
+                    <div class="car-card h-100">
+                        <div class="car-image-wrapper">
+                            {% if car.is_available %}
+                            <div class="availability-indicator">
+                                <i class="fas fa-check-circle ms-1"></i> متاحة
+                            </div>
+                            {% else %}
+                            <div class="availability-indicator unavailable">
+                                <i class="fas fa-times-circle ms-1"></i> غير متاحة
+                            </div>
+                            {% endif %}
+                            
+                            {% if car.category == 'Luxury' %}
+                            <div class="car-badge">
+                                <i class="fas fa-crown ms-1"></i> فاخرة
+                            </div>
+                            {% endif %}
+                            
+                            {% if car.image_url %}<img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">{% else %}<img src="{% static 'images/car-placeholder.svg' %}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">{% endif %}
                         </div>
-                        {% else %}
-                        <div class="availability-indicator unavailable">
-                            <i class="fas fa-times-circle"></i> Unavailable
-                        </div>
-                        {% endif %}
-                        {% if car.image_url %}<img src="{{ car.image_url }}" class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="{{ car.make }} {{ car.model }}">{% else %}<img src="{% static 'images/car-placeholder.svg' %}" class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="{{ car.make }} {{ car.model }}">{% endif %}
-                    </div>
-                    <div class="col-md-8">
                         <div class="card-body">
                             <h5 class="car-title">{{ car.make }} {{ car.model }} ({{ car.year }})</h5>
                             <div class="car-meta">
@@ -144,86 +627,172 @@
                                 <span class="badge bg-secondary">{{ car.transmission }}</span>
                                 <span class="badge bg-info text-dark">{{ car.fuel_type }}</span>
                             </div>
+                            <div class="car-features d-flex justify-content-between align-items-center mb-3">
+                                <span><i class="fas fa-users"></i> {{ car.seats }} مقاعد</span>
+                                <span class="feature-divider"></span>
+                                <span><i class="fas fa-palette"></i> {{ car.color }}</span>
+                            </div>
                             
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <p class="mb-1"><i class="fas fa-users text-primary me-2"></i> {{ car.seats }} Seats</p>
-                                    <p class="mb-1"><i class="fas fa-palette text-primary me-2"></i> {{ car.color }}</p>
-                                    <p class="mb-1"><i class="fas fa-gas-pump text-primary me-2"></i> {{ car.fuel_type }}</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="mb-1"><i class="fas fa-car text-primary me-2"></i> {{ car.category }}</p>
-                                    <p class="mb-1"><i class="fas fa-cog text-primary me-2"></i> {{ car.transmission }}</p>
-                                    <p class="mb-1"><i class="fas fa-id-card text-primary me-2"></i> {{ car.license_plate }}</p>
+                            <!-- Rating stars (example, you can replace with actual ratings) -->
+                            <div class="rating-display mb-3">
+                                <div class="stars">
+                                    {% if car.avg_rating >= 1 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                    {% if car.avg_rating >= 2 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                    {% if car.avg_rating >= 3 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                    {% if car.avg_rating >= 4 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                    {% if car.avg_rating >= 5 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
                                 </div>
                             </div>
                             
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <div class="car-price">${{ car.daily_rate }}<span class="text-muted">/day</span></div>
-                                <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-outline-primary">View Details</a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="car-price">{{ car.daily_rate }} <span class="text-muted">د.ك/يوم</span></div>
+                                <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-outline-primary">
+                                    عرض التفاصيل <i class="fas fa-arrow-left ms-1"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="empty-state">
+                        <i class="fas fa-car-side fa-4x mb-3 text-muted"></i>
+                        <h4>لم يتم العثور على سيارات</h4>
+                        <p class="text-muted">لم نتمكن من العثور على سيارات تطابق معايير البحث الخاصة بك. الرجاء المحاولة باستخدام مرشحات مختلفة.</p>
+                        <a href="{% url 'car_listing' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-redo-alt ms-2"></i>إعادة تعيين الفلتر
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-        </div>
-        {% empty %}
-        <div class="col-12 text-center py-5">
-            <div class="empty-state">
-                <i class="fas fa-car-side fa-4x mb-3 text-muted"></i>
-                <h4>No cars found</h4>
-                <p class="text-muted">We couldn't find any cars matching your search criteria. Please try with different filters.</p>
-                <a href="{% url 'car_listing' %}" class="btn btn-primary mt-3">Clear Filters</a>
+
+            <!-- Car Listings - List View (hidden by default) -->
+            <div class="d-none" id="listView">
+                {% for car in cars %}
+                <div class="fade-in" style="animation-delay: {{ forloop.counter0|divisibleby:2 }}00ms">
+                    <div class="car-card">
+                        <div class="row g-0">
+                            <div class="col-md-4">
+                                {% if car.is_available %}
+                                <div class="availability-indicator">
+                                    <i class="fas fa-check-circle ms-1"></i> متاحة
+                                </div>
+                                {% else %}
+                                <div class="availability-indicator unavailable">
+                                    <i class="fas fa-times-circle ms-1"></i> غير متاحة
+                                </div>
+                                {% endif %}
+                                
+                                {% if car.category == 'Luxury' %}
+                                <div class="car-badge">
+                                    <i class="fas fa-crown ms-1"></i> فاخرة
+                                </div>
+                                {% endif %}
+                                
+                                {% if car.image_url %}<img src="{{ car.image_url }}" class="img-fluid rounded-start h-100" alt="{{ car.make }} {{ car.model }}">{% else %}<img src="{% static 'images/car-placeholder.svg' %}" class="img-fluid rounded-start h-100" alt="{{ car.make }} {{ car.model }}">{% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <h5 class="car-title">{{ car.make }} {{ car.model }} ({{ car.year }})</h5>
+                                    <div class="car-meta">
+                                        <span class="badge bg-primary">{{ car.category }}</span>
+                                        <span class="badge bg-secondary">{{ car.transmission }}</span>
+                                        <span class="badge bg-info text-dark">{{ car.fuel_type }}</span>
+                                    </div>
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><i class="fas fa-users text-primary ms-2"></i> {{ car.seats }} مقاعد</p>
+                                            <p class="mb-1"><i class="fas fa-palette text-primary ms-2"></i> {{ car.color }}</p>
+                                            <p class="mb-1"><i class="fas fa-gas-pump text-primary ms-2"></i> {{ car.fuel_type }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><i class="fas fa-car text-primary ms-2"></i> {{ car.category }}</p>
+                                            <p class="mb-1"><i class="fas fa-cog text-primary ms-2"></i> {{ car.transmission }}</p>
+                                            <p class="mb-1"><i class="fas fa-id-card text-primary ms-2"></i> {{ car.license_plate }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Rating stars -->
+                                    <div class="rating-display mb-3">
+                                        <div class="stars">
+                                            {% if car.avg_rating >= 1 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                            {% if car.avg_rating >= 2 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                            {% if car.avg_rating >= 3 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                            {% if car.avg_rating >= 4 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                            {% if car.avg_rating >= 5 %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <div class="car-price">{{ car.daily_rate }} <span class="text-muted">د.ك/يوم</span></div>
+                                        <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-outline-primary">
+                                            عرض التفاصيل <i class="fas fa-arrow-left ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-car-side fa-4x mb-3 text-muted"></i>
+                    <h4>لم يتم العثور على سيارات</h4>
+                    <p class="text-muted">لم نتمكن من العثور على سيارات تطابق معايير البحث الخاصة بك. الرجاء المحاولة باستخدام مرشحات مختلفة.</p>
+                    <a href="{% url 'car_listing' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-redo-alt ms-2"></i>إعادة تعيين الفلتر
+                    </a>
+                </div>
+                {% endfor %}
             </div>
+            
+            <!-- Pagination (if needed) -->
+            {% if cars.paginator %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if cars.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.transmission %}&transmission={{ request.GET.transmission }}{% endif %}{% if request.GET.fuel_type %}&fuel_type={{ request.GET.fuel_type }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ cars.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.transmission %}&transmission={{ request.GET.transmission }}{% endif %}{% if request.GET.fuel_type %}&fuel_type={{ request.GET.fuel_type }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in cars.paginator.page_range %}
+                        {% if cars.number == num %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                        {% elif num > cars.number|add:'-3' and num < cars.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.transmission %}&transmission={{ request.GET.transmission }}{% endif %}{% if request.GET.fuel_type %}&fuel_type={{ request.GET.fuel_type }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if cars.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ cars.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.transmission %}&transmission={{ request.GET.transmission }}{% endif %}{% if request.GET.fuel_type %}&fuel_type={{ request.GET.fuel_type }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ cars.paginator.num_pages }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.transmission %}&transmission={{ request.GET.transmission }}{% endif %}{% if request.GET.fuel_type %}&fuel_type={{ request.GET.fuel_type }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // View switching (grid vs list)
-    document.addEventListener('DOMContentLoaded', function() {
-        const gridViewBtn = document.getElementById('gridViewBtn');
-        const listViewBtn = document.getElementById('listViewBtn');
-        const gridView = document.getElementById('gridView');
-        const listView = document.getElementById('listView');
-        
-        if (gridViewBtn && listViewBtn) {
-            gridViewBtn.addEventListener('click', function() {
-                gridView.classList.remove('d-none');
-                listView.classList.add('d-none');
-                gridViewBtn.classList.add('active');
-                listViewBtn.classList.remove('active');
-                localStorage.setItem('carViewPreference', 'grid');
-            });
-            
-            listViewBtn.addEventListener('click', function() {
-                listView.classList.remove('d-none');
-                gridView.classList.add('d-none');
-                listViewBtn.classList.add('active');
-                gridViewBtn.classList.remove('active');
-                localStorage.setItem('carViewPreference', 'list');
-            });
-            
-            // Check if user has a saved preference
-            const viewPreference = localStorage.getItem('carViewPreference');
-            if (viewPreference === 'list') {
-                listViewBtn.click();
-            }
-        }
-        
-        // Style form elements
-        const selects = document.querySelectorAll('select');
-        selects.forEach(function(select) {
-            select.classList.add('form-select');
-        });
-        
-        const inputs = document.querySelectorAll('input[type="number"]');
-        inputs.forEach(function(input) {
-            input.classList.add('form-control');
-        });
-    });
-</script>
+<script src="{% static 'js/car-listing.js' %}"></script>
 {% endblock %}
