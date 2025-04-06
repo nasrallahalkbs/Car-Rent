@@ -76,7 +76,7 @@ def admin_index(request):
 def admin_cars(request):
     """Admin view to manage cars"""
     cars = Car.objects.all().order_by('-id')
-    return render(request, 'admin/cars.html', {'cars': cars})
+    return render(request, 'admin/cars_django.html', {'cars': cars})
 
 @login_required
 @admin_required
@@ -155,7 +155,7 @@ def admin_reservations(request):
             'car': reservation.car
         })
     
-    return render(request, 'admin/reservations.html', {
+    return render(request, 'admin/reservations_django.html', {
         'reservations': reservation_data
     })
 
@@ -188,4 +188,4 @@ def admin_users(request):
     """Admin view to manage users"""
     users = User.objects.all().order_by('-id')
     
-    return render(request, 'admin/users.html', {'users': users})
+    return render(request, 'admin/users_django.html', {'users': users})
