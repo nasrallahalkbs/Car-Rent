@@ -1,0 +1,222 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block title %}Rental History Insights{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 2rem;
+    }
+    
+    .stats-card {
+        border-left: 4px solid;
+        border-radius: 4px;
+        box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15);
+        padding: 1.5rem 1rem;
+        background-color: #fff;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stats-card.primary {
+        border-left-color: #4e73df;
+    }
+    
+    .stats-card.success {
+        border-left-color: #1cc88a;
+    }
+    
+    .stats-card.info {
+        border-left-color: #36b9cc;
+    }
+    
+    .stats-card.warning {
+        border-left-color: #f6c23e;
+    }
+    
+    .stats-card-heading {
+        color: #6e707e;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stats-card-value {
+        color: #5a5c69;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin-bottom: 0;
+    }
+    
+    .dark-mode .stats-card {
+        background-color: #2a2d3a;
+    }
+    
+    .dark-mode .stats-card-heading {
+        color: #a1a4b6;
+    }
+    
+    .dark-mode .stats-card-value {
+        color: #d1d3e2;
+    }
+    
+    .insights-header {
+        margin-bottom: 2rem;
+        border-bottom: 1px solid rgba(0,0,0,.1);
+        padding-bottom: 1rem;
+    }
+    
+    .insights-subheader {
+        font-size: 1.1rem;
+        color: #6e707e;
+        margin-bottom: 1.5rem;
+    }
+    
+    .dark-mode .insights-header {
+        border-bottom-color: rgba(255,255,255,.1);
+    }
+    
+    .dark-mode .insights-subheader {
+        color: #a1a4b6;
+    }
+    
+    @media (max-width: 767.98px) {
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="insights-header">Your Rental History Insights</h1>
+            <p class="insights-subheader">Explore your rental patterns and gain valuable insights about your car rental habits.</p>
+        </div>
+    </div>
+    
+    <!-- Stats Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card primary">
+                <div class="stats-card-heading">Total Rentals</div>
+                <div class="stats-card-value">{{ stats.total_rentals }}</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card success">
+                <div class="stats-card-heading">Total Spent</div>
+                <div class="stats-card-value">${{ stats.total_spent }}</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card info">
+                <div class="stats-card-heading">Avg. Rental Duration</div>
+                <div class="stats-card-value">{{ stats.avg_days }} days</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card warning">
+                <div class="stats-card-heading">Most Rented Category</div>
+                <div class="stats-card-value">{{ stats.favorite_category }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="spendingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="durationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <h3>Rental Tips Based on Your History</h3>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% if tips.favorite_category %}
+                        <li class="list-group-item">You frequently rent {{ tips.favorite_category }} cars. Consider our loyalty program for additional discounts on this category.</li>
+                        {% endif %}
+                        
+                        {% if tips.long_rentals %}
+                        <li class="list-group-item">For longer rentals ({{ tips.long_rental_days }}+ days), you could save up to 15% with our weekly and monthly rates.</li>
+                        {% endif %}
+                        
+                        {% if tips.off_season %}
+                        <li class="list-group-item">You could save by booking during our off-peak season ({{ tips.off_season_months }}).</li>
+                        {% endif %}
+                        
+                        {% if tips.explore_category %}
+                        <li class="list-group-item">Looking for a change? Try our {{ tips.explore_category }} vehicles - they might suit your needs based on your rental patterns.</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/rental-history.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the rental data from Django template
+        const rentalData = {{ rental_data_json|safe }};
+        
+        // Initialize the charts
+        initializeCharts(rentalData);
+    });
+</script>
+{% endblock %}

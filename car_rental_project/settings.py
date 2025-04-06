@@ -70,7 +70,7 @@ MIDDLEWARE = [
 # CSRF cookie settings for Replit environment
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False 
-CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SAMESITE = None
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
@@ -79,7 +79,7 @@ CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 # Session cookie settings
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SAMESITE = None
 
 ROOT_URLCONF = 'car_rental_project.urls'
 

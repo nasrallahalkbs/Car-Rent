@@ -36,9 +36,6 @@ def register_view(request):
 @ensure_csrf_cookie
 def login_view(request):
     """User login view"""
-    # Import for CSRF token
-    from django.middleware.csrf import get_token
-    
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
@@ -47,17 +44,16 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                messages.success(request, f'Welcome back, {user.first_name if user.first_name else user.username}!')
+                messages.success(request, f'مرحباً بعودتك، {user.first_name if user.first_name else user.username}!')
                 return redirect('index')
         else:
             # Print form errors to help debugging
             print(f"Form errors: {form.errors}")
+            messages.error(request, 'فشل تسجيل الدخول. يرجى التحقق من اسم المستخدم وكلمة المرور.')
     else:
         form = LoginForm()
     
-    response = render(request, 'login_django.html', {'form': form})
-    response.set_cookie('csrftoken', get_token(request), samesite=None)
-    return response
+    return render(request, 'login_django.html', {'form': form})
 
 def logout_view(request):
     """User logout view"""
