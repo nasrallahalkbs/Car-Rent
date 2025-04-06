@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import date, timedelta
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 
 from .models import User, Car, Reservation, Review, CartItem
 from .forms import (RegisterForm, LoginForm, CarSearchForm, ReservationForm, 
@@ -31,8 +32,6 @@ def register_view(request):
         form = RegisterForm()
     
     return render(request, 'register_django.html', {'form': form})
-
-from django.views.decorators.csrf import ensure_csrf_cookie
 
 @ensure_csrf_cookie
 def login_view(request):
