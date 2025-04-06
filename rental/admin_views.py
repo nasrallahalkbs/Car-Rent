@@ -325,11 +325,11 @@ def payment_details(request, payment_id):
     payment['reservation'].subtotal = reservation.car.daily_rate * days
     
     # Add tax calculation (for demo purposes)
-    tax_rate = 8.5  # Example tax rate
-    payment['reservation'].tax_rate = tax_rate
     # Convert to Decimal for proper calculation with Decimal subtotal
     from decimal import Decimal
-    payment['reservation'].tax_amount = payment['reservation'].subtotal * (Decimal(str(tax_rate)) / Decimal('100'))
+    tax_rate = Decimal('8.5')  # Example tax rate as Decimal
+    payment['reservation'].tax_rate = tax_rate
+    payment['reservation'].tax_amount = payment['reservation'].subtotal * (tax_rate / Decimal('100'))
     
     # Get reservation user's stats
     user_reservations_count = Reservation.objects.filter(user=reservation.user).count()
@@ -343,7 +343,7 @@ def payment_details(request, payment_id):
         'current_datetime': current_datetime,
     }
     
-    return render(request, 'admin/payment_detail_django.html', context)
+    return render(request, 'admin/payment_details_django.html', context)
 
 @login_required
 @admin_required
@@ -382,11 +382,10 @@ def print_receipt(request, payment_id):
     payment['reservation'].subtotal = reservation.car.daily_rate * days
     
     # Add tax calculation
-    tax_rate = 8.5
-    payment['reservation'].tax_rate = tax_rate
-    # Convert to Decimal for proper calculation with Decimal subtotal
     from decimal import Decimal
-    payment['reservation'].tax_amount = payment['reservation'].subtotal * (Decimal(str(tax_rate)) / Decimal('100'))
+    tax_rate = Decimal('8.5')  # Example tax rate as Decimal
+    payment['reservation'].tax_rate = tax_rate
+    payment['reservation'].tax_amount = payment['reservation'].subtotal * (tax_rate / Decimal('100'))
     
     current_datetime = timezone.now()
     
