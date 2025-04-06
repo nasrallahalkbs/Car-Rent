@@ -1,204 +1,212 @@
-{% extends "layout_django.html" %}
+{% extends 'admin/index.html' %}
 {% load static %}
+{% load crispy_forms_tags %}
 
-{% block title %}Add Manual Payment | Admin Dashboard{% endblock %}
+{% block title %}إضافة دفعة يدوية - كاررنتال{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2 class="mb-3">Add Manual Payment</h2>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'admin_payments' %}">Payments</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Add Manual Payment</li>
-                </ol>
-            </nav>
-        </div>
+{% block admin_content %}
+<div class="container py-4">
+    <!-- فتات الخبز -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">لوحة المعلومات</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'admin_payments' %}">المدفوعات</a></li>
+            <li class="breadcrumb-item active">إضافة دفعة يدوية</li>
+        </ol>
+    </nav>
+
+    <!-- عنوان الصفحة -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="section-heading mb-0">إضافة دفعة يدوية</h2>
+        <a href="{% url 'admin_payments' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-2"></i>العودة للمدفوعات
+        </a>
     </div>
 
     <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Add a Manual Payment</h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        <p><i class="fas fa-info-circle"></i> Use this form to manually add a payment for a user. This can be used for deposits, account credits, or payments made outside the system.</p>
+        <div class="col-lg-12">
+            <div class="dashboard-card p-4">
+                <form method="post" id="paymentForm">
+                    {% csrf_token %}
+                    
+                    <!-- اختيار المستخدم -->
+                    <div class="mb-4">
+                        <h5 class="mb-3 fw-bold">1. اختر المستخدم</h5>
+                        <div class="mb-3">
+                            <label for="user_id" class="form-label required">المستخدم</label>
+                            <select name="user_id" id="user_id" class="form-select" required>
+                                <option value="">-- اختر المستخدم --</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }} ({{ user.email }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                     
-                    <form method="post" id="manualPaymentForm">
-                        {% csrf_token %}
-                        
-                        <!-- Step 1: Select User -->
-                        <div class="form-step" id="step1">
-                            <h4 class="mb-3">Step 1: Select Customer</h4>
-                            <div class="mb-3">
-                                <label for="user_id" class="form-label">Customer:</label>
-                                <select name="user_id" id="user_id" class="form-select" required>
-                                    <option value="">-- Select Customer --</option>
-                                    {% for user in users %}
-                                    <option value="{{ user.id }}" {% if selected_user and selected_user.id == user.id %}selected{% endif %}>
-                                        {{ user.first_name }} {{ user.last_name }} ({{ user.email }})
-                                    </option>
-                                    {% endfor %}
-                                </select>
+                    <!-- اختيار الحجز أو دفعة بدون حجز -->
+                    <div class="mb-4">
+                        <h5 class="mb-3 fw-bold">2. اختر نوع المدفوعات</h5>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="payment_type" id="type_reservation" value="reservation" checked>
+                            <label class="form-check-label" for="type_reservation">
+                                دفع قيمة حجز موجود
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_type" id="type_manual" value="manual">
+                            <label class="form-check-label" for="type_manual">
+                                دفعة يدوية (بدون حجز)
+                            </label>
+                            <input type="hidden" name="no_reservation" id="no_reservation">
+                        </div>
+                    </div>
+                    
+                    <!-- اختيار الحجز (يظهر فقط مع النوع الأول) -->
+                    <div class="mb-4" id="reservation_section">
+                        <h5 class="mb-3 fw-bold">3. اختر الحجز</h5>
+                        <div class="mb-3">
+                            <label for="reservation_id" class="form-label required">حجز العميل</label>
+                            <select name="reservation_id" id="reservation_id" class="form-select" required>
+                                <option value="">-- اختر الحجز --</option>
+                                {% for res in incomplete_reservations %}
+                                <option value="{{ res.id }}" data-price="{{ res.total_price }}" data-user="{{ res.user.id }}">
+                                    حجز #{{ res.id }} - {{ res.car.make }} {{ res.car.model }} ({{ res.total_price }} د.ك)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="text-muted mt-2" id="reservation_info"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- معلومات الدفعة اليدوية (يظهر فقط مع النوع الثاني) -->
+                    <div class="mb-4" id="manual_payment_section" style="display: none;">
+                        <h5 class="mb-3 fw-bold">3. معلومات الدفعة اليدوية</h5>
+                        <div class="mb-3">
+                            <label for="payment_reason" class="form-label required">سبب الدفع</label>
+                            <select name="payment_reason" id="payment_reason" class="form-select">
+                                <option value="deposit">وديعة</option>
+                                <option value="prepayment">دفعة مقدمة</option>
+                                <option value="credit">رصيد حساب</option>
+                                <option value="other">سبب آخر</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- تفاصيل الدفع -->
+                    <div class="mb-4">
+                        <h5 class="mb-3 fw-bold">4. تفاصيل الدفع</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.amount|as_crispy_field }}
                             </div>
-                            <div class="d-flex justify-content-end">
-                                <button type="submit" name="action" value="select_user" class="btn btn-primary">Next <i class="fas fa-arrow-right"></i></button>
+                            <div class="col-md-6">
+                                {{ form.payment_method|as_crispy_field }}
                             </div>
                         </div>
-                        
-                        {% if selected_user %}
-                        <!-- Step 2: Select Reservation or Payment Type -->
-                        <div class="form-step" id="step2">
-                            <h4 class="mb-3">Step 2: Payment Details for {{ selected_user.first_name }} {{ selected_user.last_name }}</h4>
-                            
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="payment_type" id="paymentTypeReservation" value="reservation" checked>
-                                    <label class="form-check-label" for="paymentTypeReservation">
-                                        Payment for Existing Reservation
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="payment_type" id="paymentTypeManual" value="manual">
-                                    <label class="form-check-label" for="paymentTypeManual">
-                                        Manual Payment (No Reservation)
-                                    </label>
-                                </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.reference_number|as_crispy_field }}
                             </div>
-                            
-                            <div id="reservationSection">
-                                <div class="mb-3">
-                                    <label for="reservation_id" class="form-label">Select Reservation:</label>
-                                    <select name="reservation_id" id="reservation_id" class="form-select">
-                                        <option value="">-- Select Reservation --</option>
-                                        {% if reservations %}
-                                            {% for res in reservations %}
-                                            <option value="{{ res.id }}" data-amount="{{ res.total_price }}">
-                                                #{{ res.id }} - {{ res.car.make }} {{ res.car.model }} 
-                                                ({{ res.start_date|date:"M j, Y" }} - {{ res.end_date|date:"M j, Y" }})
-                                                ${{ res.total_price }}
-                                            </option>
-                                            {% endfor %}
-                                        {% else %}
-                                            <option value="" disabled>No pending reservations found</option>
-                                        {% endif %}
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div id="manualPaymentSection" style="display: none;">
-                                <div class="mb-3">
-                                    <label for="payment_reason" class="form-label">Payment Reason:</label>
-                                    <select name="payment_reason" id="payment_reason" class="form-select">
-                                        <option value="deposit">Deposit</option>
-                                        <option value="prepayment">Prepayment</option>
-                                        <option value="credit">Account Credit</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                                <input type="hidden" name="no_reservation" id="no_reservation" value="0">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="{{ form.amount.id_for_label }}" class="form-label">Amount ($):</label>
-                                {{ form.amount }}
-                                {% if form.amount.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.amount.errors }}
-                                </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="{{ form.payment_method.id_for_label }}" class="form-label">Payment Method:</label>
-                                {{ form.payment_method }}
-                                {% if form.payment_method.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.payment_method.errors }}
-                                </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="{{ form.reference_number.id_for_label }}" class="form-label">Reference Number (Optional):</label>
-                                {{ form.reference_number }}
-                                {% if form.reference_number.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.reference_number.errors }}
-                                </div>
-                                {% endif %}
-                                <div class="form-text">Transaction ID, check number, or other reference</div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="{{ form.notes.id_for_label }}" class="form-label">Notes:</label>
-                                {{ form.notes }}
-                                {% if form.notes.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.notes.errors }}
-                                </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="d-flex justify-content-between">
-                                <a href="{% url 'add_manual_payment' %}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left"></i> Back
-                                </a>
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-check"></i> Record Payment
-                                </button>
+                            <div class="col-md-6">
+                                {{ form.notes|as_crispy_field }}
                             </div>
                         </div>
-                        {% endif %}
-                    </form>
-                </div>
+                    </div>
+                    
+                    <!-- أزرار الإجراءات -->
+                    <div class="mt-4 text-end">
+                        <a href="{% url 'admin_payments' %}" class="btn btn-outline-secondary me-2">إلغاء</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>تسجيل الدفعة
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-{% block extra_js %}
+{% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const paymentTypeRadios = document.querySelectorAll('input[name="payment_type"]');
-        const reservationSection = document.getElementById('reservationSection');
-        const manualPaymentSection = document.getElementById('manualPaymentSection');
-        const noReservationField = document.getElementById('no_reservation');
+        const userSelect = document.getElementById('user_id');
+        const paymentTypeReservation = document.getElementById('type_reservation');
+        const paymentTypeManual = document.getElementById('type_manual');
+        const noReservationInput = document.getElementById('no_reservation');
+        const reservationSection = document.getElementById('reservation_section');
+        const manualPaymentSection = document.getElementById('manual_payment_section');
         const reservationSelect = document.getElementById('reservation_id');
-        const amountField = document.getElementById('{{ form.amount.id_for_label }}');
+        const reservationInfo = document.getElementById('reservation_info');
         
-        // Handle payment type change
-        if (paymentTypeRadios) {
-            paymentTypeRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    if (this.value === 'reservation') {
-                        reservationSection.style.display = 'block';
-                        manualPaymentSection.style.display = 'none';
-                        noReservationField.value = '0';
-                    } else {
-                        reservationSection.style.display = 'none';
-                        manualPaymentSection.style.display = 'block';
-                        noReservationField.value = '1';
-                    }
-                });
-            });
-        }
+        // مراقبة تغييرات اختيار المستخدم
+        userSelect.addEventListener('change', function() {
+            if (paymentTypeReservation.checked) {
+                // تحديث قائمة الحجوزات بناءً على المستخدم المختار
+                updateReservationOptions();
+            }
+        });
         
-        // Update amount when reservation is selected
-        if (reservationSelect) {
-            reservationSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption && selectedOption.dataset.amount) {
-                    amountField.value = selectedOption.dataset.amount;
-                }
-            });
+        // مراقبة تغييرات نوع الدفع
+        paymentTypeReservation.addEventListener('change', function() {
+            if (this.checked) {
+                reservationSection.style.display = 'block';
+                manualPaymentSection.style.display = 'none';
+                noReservationInput.value = '';
+                // تحديث قائمة الحجوزات
+                updateReservationOptions();
+            }
+        });
+        
+        paymentTypeManual.addEventListener('change', function() {
+            if (this.checked) {
+                reservationSection.style.display = 'none';
+                manualPaymentSection.style.display = 'block';
+                noReservationInput.value = 'on';
+                reservationSelect.value = '';
+            }
+        });
+        
+        // مراقبة تغييرات اختيار الحجز
+        reservationSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                const price = selectedOption.getAttribute('data-price');
+                document.getElementById('id_amount').value = price;
+            } else {
+                document.getElementById('id_amount').value = '';
+            }
+        });
+        
+        // وظيفة لتحديث خيارات الحجز بناءً على المستخدم المختار
+        function updateReservationOptions() {
+            const userId = userSelect.value;
+            if (!userId) {
+                return;
+            }
+            
+            reservationInfo.textContent = 'جاري تحميل الحجوزات...';
+            
+            // تحديث قائمة الحجوزات
+            reservationSelect.innerHTML = '<option value="">-- اختر الحجز --</option>';
+            
+            {% for res in incomplete_reservations %}
+            if ("{{ res.user.id }}" == userId) {
+                const option = document.createElement('option');
+                option.value = "{{ res.id }}";
+                option.setAttribute('data-price', "{{ res.total_price }}");
+                option.setAttribute('data-user', "{{ res.user.id }}");
+                option.textContent = "حجز #{{ res.id }} - {{ res.car.make }} {{ res.car.model }} ({{ res.total_price }} د.ك)";
+                reservationSelect.appendChild(option);
+            }
+            {% endfor %}
+            
+            if (reservationSelect.options.length <= 1) {
+                reservationInfo.textContent = 'لا توجد حجوزات معلقة لهذا المستخدم';
+            } else {
+                reservationInfo.textContent = `${reservationSelect.options.length - 1} حجوزات متاحة`;
+            }
         }
     });
 </script>
-{% endblock %}
 {% endblock %}
