@@ -187,3 +187,38 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email', 'phone']
+
+class ManualPaymentForm(forms.Form):
+    """Form for entering manual payments"""
+    PAYMENT_METHODS = [
+        ('visa', 'Visa'),
+        ('mastercard', 'MasterCard'),
+        ('amex', 'American Express'),
+        ('discover', 'Discover'),
+        ('cash', 'Cash'),
+        ('bank_transfer', 'Bank Transfer'),
+    ]
+    
+    amount = forms.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+    )
+    
+    payment_method = forms.ChoiceField(
+        choices=PAYMENT_METHODS,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    reference_number = forms.CharField(
+        max_length=50, 
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    
+    notes = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+    )

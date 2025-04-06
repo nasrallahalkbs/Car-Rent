@@ -41,6 +41,7 @@ urlpatterns = [
     
     # Payment management
     path('admin-dashboard/payments/', admin_views.admin_payments, name='admin_payments'),
+    path('admin-dashboard/payments/add/', admin_views.add_manual_payment, name='add_manual_payment'),
     path('admin-dashboard/payments/<str:payment_id>/', admin_views.payment_details, name='payment_details'),
     path('admin-dashboard/payments/<str:payment_id>/print/', admin_views.print_receipt, name='print_receipt'),
     path('admin-dashboard/payments/<str:payment_id>/download/', admin_views.download_receipt, name='download_receipt'),

@@ -4,9 +4,10 @@ from django.contrib import messages
 from django.db.models import Count, Avg, Sum
 from django.utils import timezone
 from datetime import timedelta, date
+from decimal import Decimal
 
 from .models import User, Car, Reservation, Review
-from .forms import CarForm
+from .forms import CarForm, ManualPaymentForm
 
 def admin_required(function):
     """
@@ -326,7 +327,9 @@ def payment_details(request, payment_id):
     # Add tax calculation (for demo purposes)
     tax_rate = 8.5  # Example tax rate
     payment['reservation'].tax_rate = tax_rate
-    payment['reservation'].tax_amount = payment['reservation'].subtotal * (tax_rate / 100)
+    # Convert to Decimal for proper calculation with Decimal subtotal
+    from decimal import Decimal
+    payment['reservation'].tax_amount = payment['reservation'].subtotal * (Decimal(str(tax_rate)) / Decimal('100'))
     
     # Get reservation user's stats
     user_reservations_count = Reservation.objects.filter(user=reservation.user).count()
@@ -381,7 +384,9 @@ def print_receipt(request, payment_id):
     # Add tax calculation
     tax_rate = 8.5
     payment['reservation'].tax_rate = tax_rate
-    payment['reservation'].tax_amount = payment['reservation'].subtotal * (tax_rate / 100)
+    # Convert to Decimal for proper calculation with Decimal subtotal
+    from decimal import Decimal
+    payment['reservation'].tax_amount = payment['reservation'].subtotal * (Decimal(str(tax_rate)) / Decimal('100'))
     
     current_datetime = timezone.now()
     
@@ -470,3 +475,62 @@ def download_receipt(request, payment_id):
     # For this demo, we'll just redirect to the print view
     messages.info(request, "PDF download functionality would be implemented here.")
     return redirect('print_receipt', payment_id=payment_id)
+
+@login_required
+@admin_required
+def add_manual_payment(request):
+    """Add a manual payment entry"""
+    # Get all users for the select dropdown
+    users = User.objects.all().order_by('first_name', 'last_name')
+    reservations = None
+    selected_user = None
+    
+    if request.method == 'POST':
+        # Get the form data
+        form = ManualPaymentForm(request.POST)
+        user_id = request.POST.get('user_id')
+        reservation_id = request.POST.get('reservation_id')
+        
+        if user_id:
+            selected_user = get_object_or_404(User, id=user_id)
+            # Get all pending reservations for this user
+            reservations = Reservation.objects.filter(
+                user=selected_user,
+                payment_status='pending'
+            ).order_by('-created_at')
+        
+        # If form is valid and a reservation was selected
+        if form.is_valid() and reservation_id:
+            reservation = get_object_or_404(Reservation, id=reservation_id)
+            
+            # Update reservation payment status
+            reservation.payment_status = 'paid'
+            if reservation.status == 'pending':
+                reservation.status = 'confirmed'
+            
+            # If the amount is different than the reservation total, update it
+            amount = form.cleaned_data['amount']
+            if amount != reservation.total_price:
+                reservation.total_price = amount
+            
+            reservation.save()
+            
+            # Add a success message
+            payment_id = f"P{reservation.id:06d}"
+            messages.success(
+                request, 
+                f"Manual payment of ${amount} has been recorded for reservation #{reservation.id}"
+            )
+            
+            # Redirect to payment details
+            return redirect('payment_details', payment_id=payment_id)
+            
+    else:
+        form = ManualPaymentForm()
+        
+    return render(request, 'admin/add_payment_django.html', {
+        'form': form,
+        'users': users,
+        'reservations': reservations,
+        'selected_user': selected_user
+    })
