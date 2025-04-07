@@ -50,6 +50,9 @@ def admin_index(request):
     # Recent reservations
     recent_reservations = Reservation.objects.order_by('-created_at')[:5]
     
+    # Pending reservations list for display in dashboard
+    pending_reservations_list = Reservation.objects.filter(status='pending').order_by('-created_at')[:5]
+    
     # Data for charts
     # Monthly reservations for last 6 months
     labels = []
@@ -102,6 +105,7 @@ def admin_index(request):
         'total_users': total_users,
         'total_reservations': total_reservations,
         'pending_reservations': pending_reservations,
+        'pending_reservations_list': pending_reservations_list,
         'confirmed_reservations': confirmed_reservations,
         'completed_reservations': completed_reservations,
         'cancelled_reservations': cancelled_reservations,
