@@ -13,8 +13,30 @@ from .utils import calculate_total_price, get_car_availability, get_unavailable_
 from datetime import datetime, date, timedelta
 import logging
 import json
+import os.path
 
 logger = logging.getLogger(__name__)
+
+def get_template_by_language(request, base_template):
+    """Helper function to choose the appropriate template based on language setting"""
+    language = request.session.get('language', 'ar')
+    
+    # Special cases where we have dedicated Arabic templates
+    if base_template == 'index.html' and language == 'ar':
+        return 'index_arabic.html'
+    
+    # Handle templates with _django suffix for Arabic
+    if language == 'ar':
+        # Remove .html extension if present
+        if base_template.endswith('.html'):
+            base_name = base_template[:-5]
+            # Check if *_django.html exists
+            django_template = f"{base_name}_django.html"
+            if os.path.exists(f"templates/{django_template}"):
+                return django_template
+    
+    # Default case - use the original template
+    return base_template
 
 def index(request):
     """Home page view"""
@@ -33,14 +55,8 @@ def index(request):
         'category_cars': category_cars,
     }
     
-    # Choose template based on language setting
-    language = request.session.get('language', 'ar')
-    
-    # Special case for index - uses 'index_arabic.html' instead of 'index_django.html'
-    if language == 'ar':
-        template = 'index_arabic.html'
-    else:
-        template = 'index.html'
+    # Use our helper function to select the appropriate template
+    template = get_template_by_language(request, 'index.html')
     
     return render(request, template, context)
 
@@ -56,7 +72,8 @@ def register_view(request):
     else:
         form = RegisterForm()
     
-    return render(request, 'register_django.html', {'form': form})
+    template = get_template_by_language(request, 'register.html')
+    return render(request, template, {'form': form})
 
 def login_view(request):
     """User login view"""
@@ -75,7 +92,8 @@ def login_view(request):
     else:
         form = LoginForm()
         
-    return render(request, 'login_django.html', {'form': form})
+    template = get_template_by_language(request, 'login.html')
+    return render(request, template, {'form': form})
 
 def logout_view(request):
     """User logout view"""
@@ -104,7 +122,8 @@ def profile_view(request):
         'reservations': reservations,
         'current_date': timezone.now(),
     }
-    return render(request, 'profile.html', context)
+    template = get_template_by_language(request, 'profile.html')
+    return render(request, template, context)
 
 def car_listing(request):
     """Car listing page with search functionality"""
@@ -152,7 +171,8 @@ def car_listing(request):
         'today': date.today(),
     }
     
-    return render(request, 'cars.html', context)
+    template = get_template_by_language(request, 'cars.html')
+    return render(request, template, context)
 
 def car_detail(request, car_id):
     """Car detail page with reservation form"""
@@ -191,7 +211,8 @@ def car_detail(request, car_id):
         'today': date.today(),
     }
     
-    return render(request, 'car_detail.html', context)
+    template = get_template_by_language(request, 'car_detail.html')
+    return render(request, template, context)
 
 @login_required
 def cart_view(request):
@@ -215,7 +236,8 @@ def cart_view(request):
         'total_days': total_days,   # Add total days to the context
     }
     
-    return render(request, 'cart.html', context)
+    template = get_template_by_language(request, 'cart.html')
+    return render(request, template, context)
 
 @login_required
 def add_to_cart(request):
@@ -324,7 +346,8 @@ def checkout(request):
             'reservation': reservation,
         }
         
-        return render(request, 'checkout.html', context)
+        template = get_template_by_language(request, 'checkout.html')
+        return render(request, template, context)
     else:
         # User is checking out items from cart
         cart_items = CartItem.objects.filter(user=request.user)
@@ -382,7 +405,8 @@ def checkout(request):
             'total_days': sum(item.days for item in cart_items),
         }
         
-        return render(request, 'checkout.html', context)
+        template = get_template_by_language(request, 'checkout.html')
+        return render(request, template, context)
 
 @login_required
 def confirmation(request):
@@ -407,7 +431,8 @@ def confirmation(request):
         'reservation': reservation,
     }
     
-    return render(request, 'confirmation.html', context)
+    template = get_template_by_language(request, 'confirmation.html')
+    return render(request, template, context)
 
 @login_required
 def my_reservations(request):
@@ -418,7 +443,8 @@ def my_reservations(request):
         'reservations': reservations,
     }
     
-    return render(request, 'my_reservations.html', context)
+    template = get_template_by_language(request, 'my_reservations.html')
+    return render(request, template, context)
 
 @login_required
 def reservation_detail(request, reservation_id):
@@ -433,7 +459,8 @@ def reservation_detail(request, reservation_id):
         'has_review': has_review,
     }
     
-    return render(request, 'reservation_detail.html', context)
+    template = get_template_by_language(request, 'reservation_detail.html')
+    return render(request, template, context)
 
 @login_required
 def modify_reservation(request, reservation_id):
@@ -478,7 +505,8 @@ def modify_reservation(request, reservation_id):
         'today': date.today(),
     }
     
-    return render(request, 'modify_reservation.html', context)
+    template = get_template_by_language(request, 'modify_reservation.html')
+    return render(request, template, context)
 
 @login_required
 def cancel_reservation(request, reservation_id):
@@ -501,7 +529,8 @@ def cancel_reservation(request, reservation_id):
         'reservation': reservation,
     }
     
-    return render(request, 'cancel_reservation.html', context)
+    template = get_template_by_language(request, 'cancel_reservation.html')
+    return render(request, template, context)
 
 @login_required
 def add_review(request, reservation_id):
@@ -539,7 +568,8 @@ def add_review(request, reservation_id):
         'reservation': reservation,
     }
     
-    return render(request, 'add_review.html', context)
+    template = get_template_by_language(request, 'add_review.html')
+    return render(request, template, context)
 
 def toggle_dark_mode(request):
     """Toggle dark mode on/off"""
@@ -576,7 +606,8 @@ def toggle_language(request):
     return redirect('index')
 def about_us(request):
     """About Us page view"""
-    return render(request, 'about_us.html')
+    template = get_template_by_language(request, 'about_us.html')
+    return render(request, template)
 
 @login_required
 def book_car(request, car_id):
@@ -618,7 +649,8 @@ def book_car(request, car_id):
         'cart_item': cart_item,  # Pass the cart item to the template
     }
     
-    return render(request, 'booking.html', context)
+    template = get_template_by_language(request, 'booking.html')
+    return render(request, template, context)
 
 @login_required
 def process_booking(request):
