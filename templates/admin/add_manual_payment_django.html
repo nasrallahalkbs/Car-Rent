@@ -72,7 +72,7 @@
                         <h5 class="mb-3 fw-bold">3. اختر الحجز</h5>
                         <div class="mb-3">
                             <label for="reservation_id" class="form-label required">حجز العميل</label>
-                            <select name="reservation_id" id="reservation_id" class="form-select" required>
+                            <select name="reservation_id" id="reservation_id" class="form-select">
                                 <option value="">-- اختر الحجز --</option>
                             </select>
                             <div class="text-muted mt-2" id="reservation_info">اختر مستخدم لعرض الحجوزات المعلقة</div>
@@ -140,6 +140,13 @@
         const reservationSelect = document.getElementById('reservation_id');
         const reservationInfo = document.getElementById('reservation_info');
         
+        // ضبط الإعدادات الأولية بناءً على نوع الدفع المحدد
+        if (paymentTypeReservation.checked) {
+            reservationSelect.setAttribute('required', 'required');
+        } else if (paymentTypeManual.checked) {
+            reservationSelect.removeAttribute('required');
+        }
+        
         // مراقبة تغييرات اختيار المستخدم
         userSelect.addEventListener('change', function() {
             if (paymentTypeReservation.checked) {
@@ -154,6 +161,7 @@
                 reservationSection.style.display = 'block';
                 manualPaymentSection.style.display = 'none';
                 noReservationInput.value = '';
+                reservationSelect.setAttribute('required', 'required');
                 // تحديث قائمة الحجوزات
                 fetchUserReservations();
             }
@@ -164,6 +172,7 @@
                 reservationSection.style.display = 'none';
                 manualPaymentSection.style.display = 'block';
                 noReservationInput.value = 'on';
+                reservationSelect.removeAttribute('required');
                 reservationSelect.value = '';
                 document.getElementById('id_amount').value = '';
             }

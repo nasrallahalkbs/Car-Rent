@@ -660,11 +660,22 @@ def add_manual_payment(request):
     
     if request.method == 'POST':
         form = ManualPaymentForm(request.POST)
+        # Print form validity and data
+        print(f"Form is valid: {form.is_valid()}")
+        if not form.is_valid():
+            print(f"Form errors: {form.errors}")
+        
         if form.is_valid():
             amount = form.cleaned_data['amount']
             payment_method = form.cleaned_data['payment_method']
             reference_number = form.cleaned_data['reference_number']
             notes = form.cleaned_data['notes']
+            
+            # Print the form cleaned data for debugging
+            print(f"Cleaned data: {form.cleaned_data}")
+            print(f"Payment type: {request.POST.get('payment_type')}")
+            print(f"User ID: {request.POST.get('user_id')}")
+            print(f"Reservation ID: {request.POST.get('reservation_id')}")
             
             # Get the user from the form
             user_id = request.POST.get('user_id')
@@ -700,7 +711,7 @@ def add_manual_payment(request):
             payment_type = request.POST.get('payment_type')
             
             # Check if we're processing a reservation payment or a manual payment
-            if payment_type == 'reservation' and reservation_id:
+            if payment_type == 'reservation' and reservation_id and reservation_id.strip():
                 # Update an existing reservation
                 reservation = get_object_or_404(Reservation, id=reservation_id)
                 reservation.payment_status = 'paid'
