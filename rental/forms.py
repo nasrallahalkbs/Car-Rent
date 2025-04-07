@@ -176,10 +176,12 @@ class CarForm(forms.ModelForm):
         model = Car
         fields = ['make', 'model', 'year', 'color', 'license_plate', 'daily_rate', 
                  'category', 'seats', 'transmission', 'fuel_type', 'features', 
-                 'image_url', 'is_available']
+                 'image_url', 'image', 'is_available']
         widgets = {
             'year': forms.NumberInput(attrs={'min': 2000, 'max': date.today().year + 1}),
-            'features': forms.TextInput(attrs={'placeholder': 'e.g., GPS, Bluetooth, Backup Camera'}),
+            'features': forms.TextInput(attrs={'placeholder': 'مثل: GPS، بلوتوث، كاميرا خلفية'}),
+            'image_url': forms.URLInput(attrs={'placeholder': 'رابط الصورة (اختياري إذا قمت بتحميل ملف)'}),
+            'image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
         }
 
 class ProfileForm(forms.ModelForm):

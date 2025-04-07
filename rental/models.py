@@ -46,6 +46,7 @@ class Car(models.Model):
     fuel_type = models.CharField(max_length=20, choices=FUEL_TYPE_CHOICES)
     features = models.TextField(blank=True)  # Stored as comma-separated values
     image_url = models.URLField(blank=True)
+    image = models.ImageField(upload_to='car_images/', blank=True, null=True)
     is_available = models.BooleanField(default=True)
     
     def __str__(self):

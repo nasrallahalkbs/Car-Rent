@@ -192,7 +192,7 @@ def admin_cars(request):
 def add_car(request):
     """Admin view to add a new car"""
     if request.method == 'POST':
-        form = CarForm(request.POST)
+        form = CarForm(request.POST, request.FILES)
         if form.is_valid():
             car = form.save()
             messages.success(request, f"تمت إضافة السيارة {car.make} {car.model} بنجاح!")
@@ -215,7 +215,7 @@ def edit_car(request, car_id):
     car = get_object_or_404(Car, id=car_id)
     
     if request.method == 'POST':
-        form = CarForm(request.POST, instance=car)
+        form = CarForm(request.POST, request.FILES, instance=car)
         if form.is_valid():
             car = form.save()
             messages.success(request, f"تم تحديث السيارة {car.make} {car.model} بنجاح!")
