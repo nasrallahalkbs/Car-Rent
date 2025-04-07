@@ -260,7 +260,7 @@ def add_to_cart(request):
         )
         messages.success(request, "تمت إضافة السيارة إلى سلة التسوق!")
     
-    return redirect('cart')
+    return redirect('book_car', car_id=car_id)
 
 @login_required
 def remove_from_cart(request, item_id):
@@ -551,30 +551,39 @@ def book_car(request, car_id):
     """View for booking a car directly from car detail page"""
     car = get_object_or_404(Car, id=car_id, is_available=True)
     
-    # Get start_date and end_date from query parameters if provided
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
+    # First check if there's a cart item for this car
+    cart_item = CartItem.objects.filter(user=request.user, car=car).order_by('-created_at').first()
     
     start_date = None
     end_date = None
     
-    if start_date_str:
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            pass
-    
-    if end_date_str:
-        try:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            pass
+    # If we have a cart item, use its dates
+    if cart_item:
+        start_date = cart_item.start_date
+        end_date = cart_item.end_date
+    else:
+        # Otherwise look for dates in GET parameters
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        
+        if start_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        if end_date_str:
+            try:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
     
     context = {
         'car': car,
         'start_date': start_date,
         'end_date': end_date,
         'today': date.today(),
+        'cart_item': cart_item,  # Pass the cart item to the template
     }
     
     return render(request, 'booking.html', context)
@@ -627,6 +636,14 @@ def process_booking(request):
         payment_status='pending',
         notes=notes
     )
+    
+    # Remove the item from cart if it exists
+    CartItem.objects.filter(
+        user=request.user,
+        car=car,
+        start_date=start_date,
+        end_date=end_date
+    ).delete()
     
     messages.success(request, "تم إرسال طلب الحجز بنجاح! سيتم إشعارك عند مراجعة طلبك.")
     return redirect('confirmation')
