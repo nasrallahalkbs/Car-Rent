@@ -1,0 +1,84 @@
+old_form = """                    <form id="directBookingForm" method="post" action="{% url 'book_car' car_id=car.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">تاريخ الاستلام</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">تاريخ التسليم</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                        
+                        <div class="booking-summary">
+                            <div class="booking-summary-title">
+                                <i class="fas fa-receipt ms-2"></i> ملخص الحجز
+                            </div>
+                            <div class="summary-item">
+                                <span>المدة</span>
+                                <span id="direct-booking-days">-- يوم</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>سعر اليوم الواحد</span>
+                                <span>{{ car.daily_rate }} د.ك</span>
+                            </div>
+                            <div class="summary-total">
+                                <span>المجموع</span>
+                                <span id="direct-booking-total">-- د.ك</span>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="action-button d-block text-center text-decoration-none mt-3">
+                            <i class="fas fa-shopping-cart ms-2"></i> إضافة إلى سلة التسوق
+                        </button>
+                    </form>"""
+
+new_form = """                    <form id="directBookingForm" method="post" action="{% url 'add_to_cart' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="car_id" value="{{ car.id }}">
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">تاريخ الاستلام</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">تاريخ التسليم</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                        
+                        <div class="booking-summary">
+                            <div class="booking-summary-title">
+                                <i class="fas fa-receipt ms-2"></i> ملخص الحجز
+                            </div>
+                            <div class="summary-item">
+                                <span>المدة</span>
+                                <span id="direct-booking-days">-- يوم</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>سعر اليوم الواحد</span>
+                                <span>{{ car.daily_rate }} د.ك</span>
+                            </div>
+                            <div class="summary-total">
+                                <span>المجموع</span>
+                                <span id="direct-booking-total">-- د.ك</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex">
+                            <button type="submit" class="action-button d-block text-center text-decoration-none mt-3 w-100 me-2">
+                                <i class="fas fa-shopping-cart ms-2"></i> إضافة إلى سلة التسوق
+                            </button>
+                        
+                            <a href="{% url 'book_car' car_id=car.id %}" class="action-button d-block text-center text-decoration-none mt-3 w-100 ms-2" style="background: linear-gradient(45deg, #155e59, #0f766e);">
+                                <i class="fas fa-calendar-check ms-2"></i> حجز مباشر
+                            </a>
+                        </div>
+                    </form>"""
+
+with open('templates/car_detail_django.html', 'r', encoding='utf-8') as file:
+    content = file.read()
+
+updated_content = content.replace(old_form, new_form)
+
+with open('templates/car_detail_django.html', 'w', encoding='utf-8') as file:
+    file.write(updated_content)
+
+print("File updated successfully.")

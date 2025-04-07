@@ -208,6 +208,61 @@ def cart_view(request):
     return render(request, 'cart_django.html', context)
 
 @login_required
+def add_to_cart(request):
+    """Add a car to shopping cart"""
+    if request.method != 'POST':
+        return redirect('cars')
+    
+    car_id = request.POST.get('car_id')
+    car = get_object_or_404(Car, id=car_id, is_available=True)
+    
+    start_date_str = request.POST.get('start_date')
+    end_date_str = request.POST.get('end_date')
+    
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        messages.error(request, "تنسيق التاريخ غير صحيح. يرجى المحاولة مرة أخرى.")
+        return redirect('car_detail', car_id=car_id)
+    
+    # Validate dates
+    if start_date < date.today():
+        messages.error(request, "لا يمكن حجز تاريخ في الماضي.")
+        return redirect('car_detail', car_id=car_id)
+    
+    if end_date < start_date:
+        messages.error(request, "يجب أن يكون تاريخ التسليم بعد تاريخ الاستلام.")
+        return redirect('car_detail', car_id=car_id)
+    
+    # Check car availability
+    if not get_car_availability(car_id, start_date, end_date):
+        messages.error(request, "السيارة غير متاحة في التواريخ المحددة.")
+        return redirect('car_detail', car_id=car_id)
+    
+    # Check if the same car with the same dates is already in cart
+    existing_item = CartItem.objects.filter(
+        user=request.user,
+        car=car,
+        start_date=start_date,
+        end_date=end_date
+    ).first()
+    
+    if existing_item:
+        messages.info(request, "هذه السيارة موجودة بالفعل في سلة التسوق للتواريخ المحددة.")
+    else:
+        # Add to cart
+        CartItem.objects.create(
+            user=request.user,
+            car=car,
+            start_date=start_date,
+            end_date=end_date
+        )
+        messages.success(request, "تمت إضافة السيارة إلى سلة التسوق!")
+    
+    return redirect('cart')
+
+@login_required
 def remove_from_cart(request, item_id):
     """Remove item from cart"""
     item = get_object_or_404(CartItem, id=item_id, user=request.user)
