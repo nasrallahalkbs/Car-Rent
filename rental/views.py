@@ -233,11 +233,20 @@ def checkout(request):
             form = CheckoutForm(request.POST)
             if form.is_valid():
                 # Process payment (in a real app, this would integrate with a payment gateway)
-                # For now, just mark the reservation as paid
+                # For now, just mark the reservation as paid and set status to completed
                 reservation.payment_status = 'paid'
+                
+                # Once paid, update status to completed if it was confirmed
+                if reservation.status == 'confirmed':
+                    reservation.status = 'completed'
+                
                 reservation.save()
                 
                 messages.success(request, "تم إتمام عملية الدفع بنجاح!")
+                
+                # Store reservation ID in session for confirmation page
+                request.session['last_paid_reservation_id'] = reservation.id
+                
                 return redirect('confirmation')
         else:
             form = CheckoutForm()
@@ -309,8 +318,17 @@ def checkout(request):
 @login_required
 def confirmation(request):
     """Order confirmation page"""
-    # Get the most recent reservation for this user
-    reservation = Reservation.objects.filter(user=request.user).order_by('-created_at').first()
+    # Check if there's a specific reservation ID in the session (for payments)
+    paid_reservation_id = request.session.get('last_paid_reservation_id')
+    
+    if paid_reservation_id:
+        # Get the specific reservation that was just paid for
+        reservation = get_object_or_404(Reservation, id=paid_reservation_id, user=request.user)
+        # Clear the session variable
+        del request.session['last_paid_reservation_id']
+    else:
+        # Otherwise get the most recent reservation for this user
+        reservation = Reservation.objects.filter(user=request.user).order_by('-created_at').first()
     
     if not reservation:
         messages.warning(request, "لم يتم العثور على أي حجوزات!")
