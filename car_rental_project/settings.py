@@ -28,6 +28,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.sisko.replit.dev',
     'https://*.sisko.replit.dev:8000',
     'https://*.sisko.replit.dev:5000',
+    'https://*.sisko.replit.dev:4000',
     f'https://{REPLIT_SLUG}-{REPLIT_OWNER}.repl.co',
     f'https://{REPLIT_ID}.id.repl.co',
     'http://*.replit.app',
@@ -36,6 +37,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://*.sisko.replit.dev',
     'http://*.sisko.replit.dev:8000',
     'http://*.sisko.replit.dev:5000',
+    'http://*.sisko.replit.dev:4000',
     f'http://{REPLIT_SLUG}-{REPLIT_OWNER}.repl.co',
     f'http://{REPLIT_ID}.id.repl.co',
 ]
@@ -51,6 +53,8 @@ if REPLIT_HOST:
     CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_HOST}:8000')
     CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_HOST}:5000')
     CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_HOST}:5000')
+    CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_HOST}:4000')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_HOST}:4000')
 
 if REPLIT_DOMAINS:
     CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_DOMAINS}')
@@ -59,6 +63,8 @@ if REPLIT_DOMAINS:
     CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_DOMAINS}:8000')
     CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_DOMAINS}:5000')
     CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_DOMAINS}:5000')
+    CSRF_TRUSTED_ORIGINS.append(f'https://{REPLIT_DOMAINS}:4000')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{REPLIT_DOMAINS}:4000')
     
 # Add explicit support for Janeway and Sisko development environment
 CSRF_TRUSTED_ORIGINS.append('https://372fe000-ff64-4ad8-84f9-611ea2a8e995-00-1c83kgq6nqqvn.janeway.replit.dev')

@@ -1,2 +1,2 @@
 #!/bin/bash
-python manage.py runserver 0.0.0.0:5000
+gunicorn --bind 0.0.0.0:8000 --reuse-port --reload main:app
