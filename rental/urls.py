@@ -36,6 +36,7 @@ urlpatterns = [
     path('dashboard/reservations/', admin_views.admin_reservations, name='admin_reservations'),
     path('dashboard/reservations/<int:reservation_id>/<str:status>/', admin_views.update_reservation_status, name='update_reservation_status'),
     path('dashboard/users/', admin_views.admin_users, name='admin_users'),
+    path('dashboard/users/add/', admin_views.add_user, name='add_user'),
     path('dashboard/payments/', admin_views.admin_payments, name='admin_payments'),
     path('dashboard/payments/<str:payment_id>/', admin_views.payment_details, name='payment_details'),
     path('dashboard/payments/<str:payment_id>/receipt/', admin_views.print_receipt, name='print_receipt'),

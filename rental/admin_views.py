@@ -6,7 +6,7 @@ from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from .models import User, Car, Reservation, CartItem
-from .forms import CarForm, ManualPaymentForm
+from .forms import CarForm, ManualPaymentForm, RegisterForm
 from functools import wraps
 from datetime import datetime, date, timedelta
 import uuid
@@ -640,6 +640,24 @@ def add_manual_payment(request):
 
 @login_required
 @admin_required
+def add_user(request):
+    """Admin view to add a new user"""
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, f"تمت إضافة المستخدم {user.first_name} {user.last_name} بنجاح!")
+            return redirect('admin_users')
+    else:
+        form = RegisterForm()
+    
+    context = {
+        'form': form,
+        'title': 'إضافة مستخدم جديد',
+    }
+    
+    return render(request, 'admin/add_user_form.html', context)
+
 def get_user_reservations(request):
     """API to get reservations for a specific user"""
     user_id = request.GET.get('user_id')
