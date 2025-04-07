@@ -14,6 +14,23 @@ from datetime import datetime, date, timedelta
 import logging
 import json
 
+def get_template_for_language(base_template, language=None):
+    """
+    Helper function to get the correct template name based on language.
+    For Arabic, appends '_django' to the template name (before the extension).
+    
+    Example: 
+        get_template_for_language('index.html', 'ar') -> 'index_django.html'
+        get_template_for_language('car_detail.html', 'en') -> 'car_detail.html'
+    """
+    if language == 'ar':
+        # Split the name and extension
+        name_parts = base_template.split('.')
+        if len(name_parts) == 2:
+            # Add _django to the name and join again
+            return f"{name_parts[0]}_django.{name_parts[1]}"
+    return base_template
+
 logger = logging.getLogger(__name__)
 
 def index(request):
@@ -35,7 +52,12 @@ def index(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = 'index.html' if language == 'en' else 'index_arabic.html'
+    
+    # Special case for index - uses 'index_arabic.html' instead of 'index_django.html'
+    if language == 'ar':
+        template = 'index_arabic.html'
+    else:
+        template = 'index.html'
     
     return render(request, template, context)
 
@@ -149,7 +171,7 @@ def car_listing(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = 'cars.html' if language == 'en' else 'cars_django.html'
+    template = get_template_for_language('cars.html', language)
     
     return render(request, template, context)
 
@@ -192,7 +214,7 @@ def car_detail(request, car_id):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = 'car_detail.html' if language == 'en' else 'car_detail_django.html'
+    template = get_template_for_language('car_detail.html', language)
     
     return render(request, template, context)
 
@@ -220,7 +242,7 @@ def cart_view(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = 'cart.html' if language == 'en' else 'cart_django.html'
+    template = get_template_for_language('cart.html', language)
     
     return render(request, template, context)
 
@@ -416,7 +438,7 @@ def confirmation(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = 'confirmation.html' if language == 'en' else 'confirmation_django.html'
+    template = get_template_for_language('confirmation.html', language)
     
     return render(request, template, context)
 
@@ -431,7 +453,7 @@ def my_reservations(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = 'my_reservations.html' if language == 'en' else 'my_reservations_django.html'
+    template = get_template_for_language('my_reservations.html', language)
     
     return render(request, template, context)
 
@@ -590,9 +612,12 @@ def toggle_language(request):
     path = request.META.get('PATH_INFO', '')
     print(f"Current path: {path}")  # Debug log
     
+    # Get referer if available for better redirects
+    referer = request.META.get('HTTP_REFERER')
+    
     # Try to get a proper redirect based on the current path
-    if path == "/" or path.startswith("/index"):
-        # This is the homepage - always redirect to index
+    if path == "/" or path.startswith("/index") or path == "/toggle-language/":
+        # This is the homepage or language toggle - always redirect to index
         return redirect('index')
     
     # Check if we're on one of the pages with special templates
@@ -602,7 +627,10 @@ def toggle_language(request):
         '/cart': 'cart_view',
         '/my-reservations': 'my_reservations',
         '/about-us': 'about_us',
-        '/profile': 'profile_view'
+        '/profile': 'profile_view',
+        '/checkout': 'checkout',
+        '/reservations/': 'reservation_detail',  # Will need special handling
+        '/search': 'car_listing'
     }
     
     # Find a matching path
@@ -616,7 +644,20 @@ def toggle_language(request):
                 except:
                     # If there's any error, fall back to index
                     return redirect('index')
+            # Special case for reservation detail
+            elif path_prefix == '/reservations/' and len(path.split('/')) >= 3:
+                try:
+                    reservation_id = path.split('/')[2]  # Extract reservation_id
+                    return redirect('reservation_detail', reservation_id=reservation_id)
+                except:
+                    return redirect('my_reservations')
             return redirect(view_name)
+    
+    # If we have a referer and couldn't match a path, try to go back
+    if referer:
+        # Only use referer if it's from the same site
+        if request.get_host() in referer:
+            return redirect(referer)
     
     # If no matching path found, fall back to index
     return redirect('index')
@@ -625,7 +666,7 @@ def about_us(request):
     """About Us page view"""
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = 'about_us.html' if language == 'en' else 'about_us_django.html'
+    template = get_template_for_language('about_us.html', language)
     
     return render(request, template)
 
