@@ -591,6 +591,15 @@ def add_manual_payment(request):
     print(f"Is AJAX request: {'X-Requested-With' in request.headers}")
     print(f"Request method: {request.method}")
     print(f"POST data: {request.POST if request.method == 'POST' else 'No POST data'}")
+    
+    # Get all regular users (non-admin) for the dropdown - moved to top level
+    all_users = User.objects.filter(is_admin=False).order_by('first_name', 'last_name')
+    
+    # Debug users
+    print(f"Debug - Found {len(all_users)} non-admin users:")
+    for user in all_users:
+        print(f"  User ID: {user.id}, Username: {user.username}, Name: {user.first_name} {user.last_name}")
+    
     if request.method == 'POST':
         form = ManualPaymentForm(request.POST)
         if form.is_valid():
@@ -603,14 +612,14 @@ def add_manual_payment(request):
             user_id = request.POST.get('user_id')
             if not user_id:
                 messages.error(request, "يجب اختيار مستخدم!")
-                # Get all regular users and reservations again for the form
-                all_users = User.objects.filter(is_admin=False).order_by('first_name', 'last_name')
+                # Get reservations again for the form
                 incomplete_reservations = Reservation.objects.filter(
                     payment_status='pending'
                 ).select_related('user', 'car')
                 return render(request, 'admin/add_manual_payment_django.html', {
                     'form': form,
                     'users': all_users,
+                    'all_users': all_users,  # Add all users for debugging
                     'incomplete_reservations': incomplete_reservations,
                 })
             
@@ -729,6 +738,7 @@ def add_manual_payment(request):
         'user': user,
         'reservation': reservation,
         'users': all_users,
+        'all_users': all_users,  # Add all_users explicitly for debugging
         'incomplete_reservations': incomplete_reservations,
     }
     
