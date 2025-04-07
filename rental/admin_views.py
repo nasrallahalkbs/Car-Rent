@@ -603,8 +603,8 @@ def add_manual_payment(request):
             user_id = request.POST.get('user_id')
             if not user_id:
                 messages.error(request, "يجب اختيار مستخدم!")
-                # Get all users and reservations again for the form
-                all_users = User.objects.all().order_by('first_name', 'last_name')
+                # Get all regular users and reservations again for the form
+                all_users = User.objects.filter(is_admin=False).order_by('first_name', 'last_name')
                 incomplete_reservations = Reservation.objects.filter(
                     payment_status='pending'
                 ).select_related('user', 'car')
@@ -614,8 +614,19 @@ def add_manual_payment(request):
                     'incomplete_reservations': incomplete_reservations,
                 })
             
-            # Get the user object
+            # Get the user object and verify that it's not an admin
             user = get_object_or_404(User, id=user_id)
+            if user.is_admin:
+                messages.error(request, "لا يمكن إضافة دفعة لحساب مسؤول!")
+                all_users = User.objects.filter(is_admin=False).order_by('first_name', 'last_name')
+                incomplete_reservations = Reservation.objects.filter(
+                    payment_status='pending'
+                ).select_related('user', 'car')
+                return render(request, 'admin/add_manual_payment_django.html', {
+                    'form': form,
+                    'users': all_users,
+                    'incomplete_reservations': incomplete_reservations,
+                })
             
             # Get the reservation if specified
             reservation_id = request.POST.get('reservation_id')
@@ -666,8 +677,8 @@ def add_manual_payment(request):
         # Pre-fill form with reservation amount
         form.fields['amount'].initial = reservation.total_price
     
-    # Get all users for the dropdown
-    all_users = User.objects.all().order_by('first_name', 'last_name')
+    # Get all regular users (non-admin) for the dropdown
+    all_users = User.objects.filter(is_admin=False).order_by('first_name', 'last_name')
     
     # Get all incomplete reservations (pending payments)
     incomplete_reservations = Reservation.objects.filter(
