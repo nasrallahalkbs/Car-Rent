@@ -32,7 +32,12 @@ def index(request):
         'featured_cars': featured_cars,
         'category_cars': category_cars,
     }
-    return render(request, 'index.html', context)
+    
+    # Choose template based on language setting
+    language = request.session.get('language', 'ar')
+    template = 'index.html' if language == 'en' else 'index_django.html'
+    
+    return render(request, template, context)
 
 def register_view(request):
     """User registration view"""
@@ -142,7 +147,11 @@ def car_listing(request):
         'today': date.today(),
     }
     
-    return render(request, 'cars_django.html', context)
+    # Choose template based on language setting
+    language = request.session.get('language', 'ar')
+    template = 'cars.html' if language == 'en' else 'cars_django.html'
+    
+    return render(request, template, context)
 
 def car_detail(request, car_id):
     """Car detail page with reservation form"""
@@ -181,7 +190,11 @@ def car_detail(request, car_id):
         'today': date.today(),
     }
     
-    return render(request, 'car_detail_django.html', context)
+    # Choose template based on language setting
+    language = request.session.get('language', 'ar')
+    template = 'car_detail.html' if language == 'en' else 'car_detail_django.html'
+    
+    return render(request, template, context)
 
 @login_required
 def cart_view(request):
@@ -205,7 +218,11 @@ def cart_view(request):
         'total_days': total_days,   # Add total days to the context
     }
     
-    return render(request, 'cart_django.html', context)
+    # Choose template based on language setting
+    language = request.session.get('language', 'ar')
+    template = 'cart.html' if language == 'en' else 'cart_django.html'
+    
+    return render(request, template, context)
 
 @login_required
 def add_to_cart(request):
@@ -397,7 +414,11 @@ def confirmation(request):
         'reservation': reservation,
     }
     
-    return render(request, 'confirmation.html', context)
+    # Choose template based on language setting
+    language = request.session.get('language', 'ar')
+    template = 'confirmation.html' if language == 'en' else 'confirmation_django.html'
+    
+    return render(request, template, context)
 
 @login_required
 def my_reservations(request):
@@ -408,7 +429,11 @@ def my_reservations(request):
         'reservations': reservations,
     }
     
-    return render(request, 'my_reservations.html', context)
+    # Choose template based on language setting
+    language = request.session.get('language', 'ar')
+    template = 'my_reservations.html' if language == 'en' else 'my_reservations_django.html'
+    
+    return render(request, template, context)
 
 @login_required
 def reservation_detail(request, reservation_id):
@@ -542,9 +567,25 @@ def toggle_dark_mode(request):
         return redirect(referer)
     return redirect('index')
 
+def toggle_language(request):
+    """Toggle between Arabic and English languages"""
+    current_language = request.session.get('language', 'ar')  # Default to Arabic if not set
+    # Toggle between 'ar' and 'en'
+    request.session['language'] = 'en' if current_language == 'ar' else 'ar'
+    
+    # Go back to the previous page
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    return redirect('index')
+
 def about_us(request):
     """About Us page view"""
-    return render(request, 'about_us.html')
+    # Choose template based on language setting
+    language = request.session.get('language', 'ar')
+    template = 'about_us.html' if language == 'en' else 'about_us_django.html'
+    
+    return render(request, template)
 
 @login_required
 def book_car(request, car_id):
