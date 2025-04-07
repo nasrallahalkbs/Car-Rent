@@ -14,23 +14,6 @@ from datetime import datetime, date, timedelta
 import logging
 import json
 
-def get_template_for_language(base_template, language=None):
-    """
-    Helper function to get the correct template name based on language.
-    For Arabic, appends '_django' to the template name (before the extension).
-    
-    Example: 
-        get_template_for_language('index.html', 'ar') -> 'index_django.html'
-        get_template_for_language('car_detail.html', 'en') -> 'car_detail.html'
-    """
-    if language == 'ar':
-        # Split the name and extension
-        name_parts = base_template.split('.')
-        if len(name_parts) == 2:
-            # Add _django to the name and join again
-            return f"{name_parts[0]}_django.{name_parts[1]}"
-    return base_template
-
 logger = logging.getLogger(__name__)
 
 def index(request):
@@ -171,7 +154,7 @@ def car_listing(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = get_template_for_language('cars.html', language)
+    template = 'cars.html' if language == 'en' else 'cars_django.html'
     
     return render(request, template, context)
 
@@ -214,7 +197,7 @@ def car_detail(request, car_id):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = get_template_for_language('car_detail.html', language)
+    template = 'car_detail.html' if language == 'en' else 'car_detail_django.html'
     
     return render(request, template, context)
 
@@ -242,7 +225,7 @@ def cart_view(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = get_template_for_language('cart.html', language)
+    template = 'cart.html' if language == 'en' else 'cart_django.html'
     
     return render(request, template, context)
 
@@ -438,7 +421,7 @@ def confirmation(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = get_template_for_language('confirmation.html', language)
+    template = 'confirmation.html' if language == 'en' else 'confirmation_django.html'
     
     return render(request, template, context)
 
@@ -453,7 +436,7 @@ def my_reservations(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = get_template_for_language('my_reservations.html', language)
+    template = 'my_reservations.html' if language == 'en' else 'my_reservations_django.html'
     
     return render(request, template, context)
 
@@ -666,7 +649,7 @@ def about_us(request):
     """About Us page view"""
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = get_template_for_language('about_us.html', language)
+    template = 'about_us.html' if language == 'en' else 'about_us_django.html'
     
     return render(request, template)
 
