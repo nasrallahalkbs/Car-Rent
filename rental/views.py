@@ -580,6 +580,12 @@ def toggle_language(request):
     request.session.modified = True
     print(f"New language set to: {new_language}")  # Debug log
     
+    # Add success message
+    if new_language == 'ar':
+        messages.success(request, "تم تغيير اللغة إلى العربية")
+    else:
+        messages.success(request, "Language changed to English successfully")
+    
     # Go back to the previous page
     referer = request.META.get('HTTP_REFERER')
     print(f"Referer: {referer}")  # Debug log
