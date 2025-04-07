@@ -203,9 +203,10 @@ def add_car(request):
     context = {
         'form': form,
         'action': 'add',
+        'title': 'إضافة سيارة جديدة',
     }
     
-    return render(request, 'admin/car_form.html', context)
+    return render(request, 'admin/car_form_django.html', context)
 
 @login_required
 @admin_required
@@ -226,9 +227,10 @@ def edit_car(request, car_id):
         'form': form,
         'car': car,
         'action': 'edit',
+        'title': f'تعديل السيارة - {car.make} {car.model}',
     }
     
-    return render(request, 'admin/car_form.html', context)
+    return render(request, 'admin/car_form_django.html', context)
 
 @login_required
 @admin_required
