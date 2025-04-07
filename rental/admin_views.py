@@ -587,11 +587,28 @@ def add_manual_payment(request):
             
             # Get the user from the form
             user_id = request.POST.get('user_id')
+            if not user_id:
+                messages.error(request, "يجب اختيار مستخدم!")
+                # Get all users and reservations again for the form
+                all_users = User.objects.all().order_by('first_name', 'last_name')
+                incomplete_reservations = Reservation.objects.filter(
+                    payment_status='pending'
+                ).select_related('user', 'car')
+                return render(request, 'admin/add_manual_payment_django.html', {
+                    'form': form,
+                    'users': all_users,
+                    'incomplete_reservations': incomplete_reservations,
+                })
+            
+            # Get the user object
+            user = get_object_or_404(User, id=user_id)
             
             # Get the reservation if specified
             reservation_id = request.POST.get('reservation_id')
+            payment_type = request.POST.get('payment_type')
             
-            if reservation_id:
+            # Check if we're processing a reservation payment or a manual payment
+            if payment_type == 'reservation' and reservation_id:
                 # Update an existing reservation
                 reservation = get_object_or_404(Reservation, id=reservation_id)
                 reservation.payment_status = 'paid'
@@ -611,7 +628,12 @@ def add_manual_payment(request):
                 return redirect('payment_details', payment_id=reservation.id)
             else:
                 # Creating a payment without a reservation (e.g., deposit, refund, etc.)
-                messages.success(request, f"تم تسجيل الدفعة بقيمة {amount} دينار بنجاح!")
+                payment_reason = request.POST.get('payment_reason', 'other')
+                note_text = f"سبب الدفع: {payment_reason}\n"
+                if notes:
+                    note_text += notes
+                
+                messages.success(request, f"تم تسجيل الدفعة بقيمة {amount} دينار بنجاح للمستخدم {user.first_name} {user.last_name}!")
                 return redirect('admin_payments')
     else:
         form = ManualPaymentForm()
