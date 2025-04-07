@@ -820,13 +820,8 @@ def edit_user(request, user_id):
 
 @login_required
 @admin_required
-def get_user_reservations(request):
+def get_user_reservations(request, user_id):
     """API to get reservations for a specific user"""
-    user_id = request.GET.get('user_id')
-    
-    if not user_id:
-        return JsonResponse({'error': 'No user ID provided'}, status=400)
-    
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
