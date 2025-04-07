@@ -188,7 +188,7 @@ class ProfileForm(forms.ModelForm):
     """Form for updating user profile"""
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone']
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone']
 
 class ManualPaymentForm(forms.Form):
     """Form for entering manual payments"""
