@@ -575,7 +575,6 @@ def toggle_dark_mode(request):
 def toggle_language(request):
     """Toggle between Arabic and English languages"""
     current_language = request.session.get('language', 'ar')  # Default to Arabic if not set
-    print(f"Current language: {current_language}")  # Debug log
     
     # Toggle between 'ar' and 'en'
     new_language = 'en' if current_language == 'ar' else 'ar'
@@ -583,7 +582,6 @@ def toggle_language(request):
     
     # Force save session to ensure changes are persisted
     request.session.modified = True
-    print(f"New language set to: {new_language}")  # Debug log
     
     # Add success message
     if new_language == 'ar':
@@ -591,60 +589,11 @@ def toggle_language(request):
     else:
         messages.success(request, "Language changed to English successfully")
     
-    # Get current URL path to determine which page to redirect to
-    path = request.META.get('PATH_INFO', '')
-    print(f"Current path: {path}")  # Debug log
-    
-    # Get referer if available for better redirects
+    # Go back to the previous page
     referer = request.META.get('HTTP_REFERER')
-    
-    # Try to get a proper redirect based on the current path
-    if path == "/" or path.startswith("/index") or path == "/toggle-language/":
-        # This is the homepage or language toggle - always redirect to index
-        return redirect('index')
-    
-    # Check if we're on one of the pages with special templates
-    path_maps = {
-        '/cars': 'car_listing',
-        '/car/': 'car_detail',  # Will need special handling for car_id
-        '/cart': 'cart_view',
-        '/my-reservations': 'my_reservations',
-        '/about-us': 'about_us',
-        '/profile': 'profile_view',
-        '/checkout': 'checkout',
-        '/reservations/': 'reservation_detail',  # Will need special handling
-        '/search': 'car_listing'
-    }
-    
-    # Find a matching path
-    for path_prefix, view_name in path_maps.items():
-        if path.startswith(path_prefix):
-            # Special case for car detail page which needs the car_id
-            if path_prefix == '/car/' and len(path.split('/')) >= 3:
-                try:
-                    car_id = path.split('/')[2]  # Extract car_id from path
-                    return redirect(view_name, car_id=car_id)
-                except:
-                    # If there's any error, fall back to index
-                    return redirect('index')
-            # Special case for reservation detail
-            elif path_prefix == '/reservations/' and len(path.split('/')) >= 3:
-                try:
-                    reservation_id = path.split('/')[2]  # Extract reservation_id
-                    return redirect('reservation_detail', reservation_id=reservation_id)
-                except:
-                    return redirect('my_reservations')
-            return redirect(view_name)
-    
-    # If we have a referer and couldn't match a path, try to go back
     if referer:
-        # Only use referer if it's from the same site
-        if request.get_host() in referer:
-            return redirect(referer)
-    
-    # If no matching path found, fall back to index
+        return redirect(referer)
     return redirect('index')
-
 def about_us(request):
     """About Us page view"""
     # Choose template based on language setting
