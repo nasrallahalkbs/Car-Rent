@@ -12,9 +12,11 @@
                     <h4 class="mb-0">معلومات الدفع</h4>
                 </div>
                 <div class="card-body p-4">
-                    <form method="post" action="{% url 'checkout' %}" id="payment-form">
+                    <form method="post" action="{% url 'checkout' %}{% if reservation %}?reservation_id={{ reservation.id }}{% endif %}" id="payment-form">
                         {% csrf_token %}
-                        <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+                        {% if reservation %}
+                        {%if reservation %}<input type="hidden" name="reservation_id" value="{{ reservation.id }}">{%endif%}
+                        {% endif %}
                         
                         <!-- Payment Method Selection -->
                         <h5 class="mb-3">اختر طريقة الدفع</h5>

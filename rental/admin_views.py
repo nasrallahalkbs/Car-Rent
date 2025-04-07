@@ -454,11 +454,16 @@ def payment_details(request, payment_id):
     """Admin view to show payment details"""
     payment = get_object_or_404(Reservation, id=payment_id)
     
+    # Calculate the number of days between start_date and end_date
+    delta = (payment.end_date - payment.start_date).days + 1
+    
     context = {
         'payment': payment,
+        'days': delta,
+        'amount': payment.total_price,
     }
     
-    return render(request, 'admin/payment_details_django.html', context)
+    return render(request, 'admin/payment_detail_django.html', context)
 
 @login_required
 @admin_required
@@ -471,10 +476,15 @@ def print_receipt(request, payment_id):
         messages.error(request, "لا يمكن طباعة إيصال للمدفوعات غير المدفوعة!")
         return redirect('payment_details', payment_id=payment_id)
     
+    # Calculate the number of days between start_date and end_date
+    delta = (payment.end_date - payment.start_date).days + 1
+    
     context = {
         'payment': payment,
         'receipt_id': f'R{payment.id:06d}',
         'print_date': timezone.now(),
+        'days': delta,
+        'amount': payment.total_price,
     }
     
     return render(request, 'admin/payment_receipt_django.html', context)
