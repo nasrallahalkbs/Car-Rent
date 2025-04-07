@@ -40,12 +40,12 @@ urlpatterns = [
     path('dashboard/users/<int:user_id>/', admin_views.user_details, name='user_details'),
     path('dashboard/users/<int:user_id>/edit/', admin_views.edit_user, name='edit_user'),
     path('dashboard/payments/', admin_views.admin_payments, name='admin_payments'),
+    path('dashboard/payments/add-manual/', admin_views.add_manual_payment, name='add_manual_payment'),
     path('dashboard/payments/<str:payment_id>/', admin_views.payment_details, name='payment_details'),
     path('dashboard/payments/<str:payment_id>/receipt/', admin_views.print_receipt, name='print_receipt'),
     path('dashboard/payments/<str:payment_id>/refund/', admin_views.process_refund, name='process_refund'),
     path('dashboard/payments/<str:payment_id>/mark-paid/', admin_views.mark_as_paid, name='mark_as_paid'),
     path('dashboard/payments/<str:payment_id>/cancel/', admin_views.cancel_payment, name='cancel_payment'),
     path('dashboard/payments/<str:payment_id>/download/', admin_views.download_receipt, name='download_receipt'),
-    path('dashboard/payments/add-manual/', admin_views.add_manual_payment, name='add_manual_payment'),
     path('api/users/<int:user_id>/reservations/', admin_views.get_user_reservations, name='get_user_reservations'),
 ]

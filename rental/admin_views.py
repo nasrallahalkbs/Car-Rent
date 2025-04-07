@@ -630,10 +630,20 @@ def add_manual_payment(request):
         # Pre-fill form with reservation amount
         form.fields['amount'].initial = reservation.total_price
     
+    # Get all users for the dropdown
+    all_users = User.objects.all().order_by('first_name', 'last_name')
+    
+    # Get all incomplete reservations (pending payments)
+    incomplete_reservations = Reservation.objects.filter(
+        payment_status='pending'
+    ).select_related('user', 'car')
+    
     context = {
         'form': form,
         'user': user,
         'reservation': reservation,
+        'users': all_users,
+        'incomplete_reservations': incomplete_reservations,
     }
     
     return render(request, 'admin/add_manual_payment_django.html', context)
