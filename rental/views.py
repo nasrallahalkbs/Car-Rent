@@ -33,12 +33,8 @@ def index(request):
         'category_cars': category_cars,
     }
     
-    # Use the appropriate template based on language
-    language = request.session.get('language', 'ar')
-    if language == 'ar':
-        return render(request, 'index_django.html', context)
-    else:
-        return render(request, 'index.html', context)
+    # Always use index.html regardless of language
+    return render(request, 'index.html', context)
 
 def register_view(request):
     """User registration view"""
