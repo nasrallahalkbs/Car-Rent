@@ -32,6 +32,9 @@ def admin_required(function):
         elif not request.user.is_admin:
             messages.error(request, "غير مصرح لك بالوصول إلى هذه الصفحة!")
             return redirect('index')
+        
+        # Set a global current_user variable for admin templates
+        request.current_user = request.user
         return function(request, *args, **kwargs)
     return wrapper
 
