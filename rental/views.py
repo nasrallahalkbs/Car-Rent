@@ -35,7 +35,7 @@ def index(request):
     
     # Choose template based on language setting
     language = request.session.get('language', 'ar')
-    template = 'index.html' if language == 'en' else 'index_django.html'
+    template = 'index.html' if language == 'en' else 'index_arabic.html'
     
     return render(request, template, context)
 
@@ -586,11 +586,12 @@ def toggle_language(request):
     else:
         messages.success(request, "Language changed to English successfully")
     
-    # Go back to the previous page
-    referer = request.META.get('HTTP_REFERER')
-    print(f"Referer: {referer}")  # Debug log
-    if referer:
-        return redirect(referer)
+    # Get current URL path to determine which page to redirect to
+    path = request.META.get('PATH_INFO', '')
+    print(f"Current path: {path}")  # Debug log
+    
+    # Always redirect to the index page to ensure proper language loading
+    # This ensures that all templates get properly reloaded with the new language
     return redirect('index')
 
 def about_us(request):
