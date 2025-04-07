@@ -822,19 +822,27 @@ def edit_user(request, user_id):
 @admin_required
 def get_user_reservations(request, user_id):
     """API to get reservations for a specific user"""
+    # Print debugging information
+    print(f"get_user_reservations called with user_id: {user_id}")
+    
     try:
         user = User.objects.get(id=user_id)
+        print(f"Found user: {user.username} (ID: {user.id})")
     except User.DoesNotExist:
+        print(f"User with ID {user_id} not found")
         return JsonResponse({'error': 'User not found'}, status=404)
     
-    # Get incomplete reservations (pending payments) for this user
+    # Get all incomplete reservations (pending payments) for this user
     reservations = Reservation.objects.filter(
         user=user,
         payment_status='pending'
     ).select_related('car').order_by('-created_at')
     
+    print(f"Found {reservations.count()} pending reservations for user {user.username}")
+    
     reservations_data = []
     for reservation in reservations:
+        print(f"Processing reservation #{reservation.id}: {reservation.car.make} {reservation.car.model}, total: {reservation.total_price}")
         reservations_data.append({
             'id': reservation.id,
             'car': f"{reservation.car.make} {reservation.car.model}",
@@ -844,4 +852,6 @@ def get_user_reservations(request, user_id):
             'payment_status': reservation.payment_status,
         })
     
-    return JsonResponse({'reservations': reservations_data})
+    result = {'reservations': reservations_data}
+    print(f"Returning data: {result}")
+    return JsonResponse(result)

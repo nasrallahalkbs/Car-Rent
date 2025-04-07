@@ -170,7 +170,17 @@
         });
         
         // مراقبة تغييرات اختيار الحجز
-        reservationSelect.addEventListener('change', function() {
+        reservationSelect.addEventListener("change", function() {
+            console.log("Reservation selected: " + this.value);
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                const price = selectedOption.getAttribute("data-price");
+                console.log("Selected reservation price: " + price);
+                document.getElementById("id_amount").value = price;
+            } else {
+                document.getElementById("id_amount").value = "";
+            }
+        });
             const selectedOption = this.options[this.selectedIndex];
             if (selectedOption.value) {
                 const price = selectedOption.getAttribute('data-price');
@@ -208,8 +218,11 @@
                         data.reservations.forEach(res => {
                             const option = document.createElement('option');
                             option.value = res.id;
+                            option.setAttribute("data-price", res.amount);
+                            console.log(`Adding reservation option: ID=${res.id}, Amount=${res.amount}`);
                             option.setAttribute('data-price', res.amount);
                             option.textContent = `حجز #${res.id} - ${res.car} (${res.amount} د.ك)`;
+                            console.log(`Adding reservation option: ID=${res.id}, Amount=${res.amount}`);
                             reservationSelect.appendChild(option);
                         });
                         
