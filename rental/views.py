@@ -590,8 +590,35 @@ def toggle_language(request):
     path = request.META.get('PATH_INFO', '')
     print(f"Current path: {path}")  # Debug log
     
-    # Always redirect to the index page to ensure proper language loading
-    # This ensures that all templates get properly reloaded with the new language
+    # Try to get a proper redirect based on the current path
+    if path == "/" or path.startswith("/index"):
+        # This is the homepage - always redirect to index
+        return redirect('index')
+    
+    # Check if we're on one of the pages with special templates
+    path_maps = {
+        '/cars': 'car_listing',
+        '/car/': 'car_detail',  # Will need special handling for car_id
+        '/cart': 'cart_view',
+        '/my-reservations': 'my_reservations',
+        '/about-us': 'about_us',
+        '/profile': 'profile_view'
+    }
+    
+    # Find a matching path
+    for path_prefix, view_name in path_maps.items():
+        if path.startswith(path_prefix):
+            # Special case for car detail page which needs the car_id
+            if path_prefix == '/car/' and len(path.split('/')) >= 3:
+                try:
+                    car_id = path.split('/')[2]  # Extract car_id from path
+                    return redirect(view_name, car_id=car_id)
+                except:
+                    # If there's any error, fall back to index
+                    return redirect('index')
+            return redirect(view_name)
+    
+    # If no matching path found, fall back to index
     return redirect('index')
 
 def about_us(request):
