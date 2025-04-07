@@ -532,21 +532,23 @@
 <script src="{% static 'js/reservation.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        
-        );
+        // Validate main booking form before submit
+        const bookNowForm = document.getElementById('bookNowForm');
+        if (bookNowForm) {
+            const startDate = bookNowForm.querySelector('#start_date');
+            const endDate = bookNowForm.querySelector('#end_date');
             
-            // Validate form before submit
-            quickBookingForm.addEventListener('submit', function(e) {
-                if (!quickStartDate.value || !quickEndDate.value) {
+            bookNowForm.addEventListener('submit', function(e) {
+                if (!startDate.value || !endDate.value) {
                     e.preventDefault();
                     alert("يرجى تحديد تاريخ الاستلام وتاريخ التسليم");
                     return false;
                 }
                 
                 // Check that end date is not before start date
-                const startDate = new Date(quickStartDate.value);
-                const endDate = new Date(quickEndDate.value);
-                if (endDate < startDate) {
+                const startDateValue = new Date(startDate.value);
+                const endDateValue = new Date(endDate.value);
+                if (endDateValue < startDateValue) {
                     e.preventDefault();
                     alert("يجب أن يكون تاريخ التسليم بعد تاريخ الاستلام");
                     return false;
@@ -554,21 +556,9 @@
                 
                 return true;
             });
-                }
-            });
-            
-            // When end date changes, calculate price
-            directEndDate.addEventListener('change', function() {
-                if (directEndDate.value) {
-                    updateDirectBookingSummary();
-                }
-            });
-            
-            // Calculate on page load if both dates already set
-            if (directStartDate.value && directEndDate.value) {
-                updateDirectBookingSummary();
-            }
-        }// Fetch unavailable dates
+        }
+        
+        // Fetch unavailable dates
         const carId = {{ car.id |escapejs }};
         const dailyRate = {{ car.daily_rate |escapejs }};
         const unavailableDatesContainer = document.getElementById('unavailableDates');
@@ -612,111 +602,5 @@
             const unavailableDatesContainer = document.getElementById("unavailableDates");
             unavailableDatesContainer.innerHTML = '<p class="text-danger mb-0 text-center py-4"><i class="fas fa-exclamation-circle ms-2"></i> حدث خطأ أثناء تحميل التواريخ المحجوزة</p>';
         }
-        
-        // Direct booking form functionality
-        const directBookingForm = document.getElementById("directBookingForm");
-        if (directBookingForm) {
-            const directStartDate = directBookingForm.querySelector('input[name="start_date"]');
-            const directEndDate = directBookingForm.querySelector('input[name="end_date"]');
-            const directBookingDays = document.getElementById("direct-booking-days");
-            const directBookingTotal = document.getElementById("direct-booking-total");
-            
-            function updateDirectBookingSummary() {
-                if (directStartDate.value && directEndDate.value) {
-                    const startDate = new Date(directStartDate.value);
-                    const endDate = new Date(directEndDate.value);
-                    
-                    if (endDate >= startDate) {
-                        // Calculate days difference
-                        const diffTime = Math.abs(endDate - startDate);
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                        
-                        // Update UI
-                        directBookingDays.textContent = diffDays + " أيام";
-                        directBookingTotal.textContent = (diffDays * dailyRate).toFixed(2) + " د.ك";
-                    } else {
-                        directBookingDays.textContent = "-- أيام";
-                        directBookingTotal.textContent = "-- د.ك";
-                    }
-                } else {
-                    directBookingDays.textContent = "-- أيام";
-                    directBookingTotal.textContent = "-- د.ك";
-                }
-            }
-            
-            directStartDate.addEventListener('change', updateDirectBookingSummary);
-            directEndDate.addEventListener('change', updateDirectBookingSummary);
-            
-            // Card image preview
-            const cardImageInput = directBookingForm.querySelector('input[name="card_image"]');
-            if (cardImageInput) {
-                cardImageInput.addEventListener('change', function(e) {
-                    if (this.files && this.files[0]) {
-                        // Create preview if doesn't exist
-                        let previewContainer = directBookingForm.querySelector('.card-image-preview');
-                        
-                        if (!previewContainer) {
-                            previewContainer = document.createElement('div');
-                            previewContainer.className = 'card-image-preview mt-2 text-center';
-                            previewContainer.innerHTML = '<p class="mb-1 text-success"><i class="fas fa-check-circle ms-2"></i> تم تحميل الصورة بنجاح</p>';
-                            
-                            const imagePreview = document.createElement('img');
-                            imagePreview.className = 'img-thumbnail';
-                            imagePreview.style.maxHeight = '150px';
-                            previewContainer.appendChild(imagePreview);
-                            
-                            cardImageInput.parentNode.appendChild(previewContainer);
-                        }
-                        
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            previewContainer.querySelector('img').src = e.target.result;
-                        }
-                        reader.readAsDataURL(this.files[0]);
-                    }
-                });
-            }
-            
-            // Form validation
-            directBookingForm.addEventListener('submit', function(e) {
-                if (!directStartDate.value || !directEndDate.value) {
-                    e.preventDefault();
-                    alert("يرجى تحديد تاريخ الاستلام وتاريخ التسليم");
-                    return false;
-                }
-                
-                const startDate = new Date(directStartDate.value);
-                const endDate = new Date(directEndDate.value);
-                
-                if (endDate < startDate) {
-                    e.preventDefault();
-                    alert("يجب أن يكون تاريخ التسليم بعد تاريخ الاستلام");
-                    return false;
-                }
-                
-                const cardNumber = directBookingForm.querySelector('input[name="card_number"]')?.value;
-                const cardName = directBookingForm.querySelector('input[name="card_name"]')?.value;
-                const expiryMonth = directBookingForm.querySelector('select[name="expiry_month"]')?.value;
-                const expiryYear = directBookingForm.querySelector('select[name="expiry_year"]')?.value;
-                const cvv = directBookingForm.querySelector('input[name="cvv"]')?.value;
-                
-                if (cardNumber && cardName && expiryMonth && expiryYear && cvv) {
-                    if (!/^\d{16}$/.test(cardNumber.replace(/\s/g, ''))) {
-                        e.preventDefault();
-                        alert("يرجى إدخال رقم بطاقة صحيح (16 رقم)");
-                        return false;
-                    }
-                    
-                    if (!/^\d{3,4}$/.test(cvv)) {
-                        e.preventDefault();
-                        alert("يرجى إدخال رمز أمان صحيح (3-4 أرقام)");
-                        return false;
-                    }
-                }
-                
-                return true;
-            });
-        }
     });
-</script>
-{% endblock %}
+</script>{% endblock %}

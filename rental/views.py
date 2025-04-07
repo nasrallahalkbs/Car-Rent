@@ -368,7 +368,8 @@ def checkout(request):
         context = {
             'form': form,
             'cart_items': cart_items,
-            'grand_total': grand_total,
+            'cart_total': grand_total,
+            'total_days': sum(item.days for item in cart_items),
         }
         
         return render(request, 'checkout.html', context)
