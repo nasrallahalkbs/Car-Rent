@@ -33,16 +33,8 @@ def index(request):
         'category_cars': category_cars,
     }
     
-    # Choose template based on language setting
-    language = request.session.get('language', 'ar')
-    
-    # Special case for index - uses 'index_arabic.html' instead of 'index_django.html'
-    if language == 'ar':
-        template = 'index_arabic.html'
-    else:
-        template = 'index.html'
-    
-    return render(request, template, context)
+    # Always use index.html regardless of language
+    return render(request, 'index.html', context)
 
 def register_view(request):
     """User registration view"""
@@ -152,11 +144,7 @@ def car_listing(request):
         'today': date.today(),
     }
     
-    # Choose template based on language setting
-    language = request.session.get('language', 'ar')
-    template = 'cars.html' if language == 'en' else 'cars_django.html'
-    
-    return render(request, template, context)
+    return render(request, 'cars.html', context)
 
 def car_detail(request, car_id):
     """Car detail page with reservation form"""
@@ -195,11 +183,7 @@ def car_detail(request, car_id):
         'today': date.today(),
     }
     
-    # Choose template based on language setting
-    language = request.session.get('language', 'ar')
-    template = 'car_detail.html' if language == 'en' else 'car_detail_django.html'
-    
-    return render(request, template, context)
+    return render(request, 'car_detail.html', context)
 
 @login_required
 def cart_view(request):
@@ -223,11 +207,7 @@ def cart_view(request):
         'total_days': total_days,   # Add total days to the context
     }
     
-    # Choose template based on language setting
-    language = request.session.get('language', 'ar')
-    template = 'cart.html' if language == 'en' else 'cart_django.html'
-    
-    return render(request, template, context)
+    return render(request, 'cart.html', context)
 
 @login_required
 def add_to_cart(request):
@@ -419,11 +399,7 @@ def confirmation(request):
         'reservation': reservation,
     }
     
-    # Choose template based on language setting
-    language = request.session.get('language', 'ar')
-    template = 'confirmation.html' if language == 'en' else 'confirmation_django.html'
-    
-    return render(request, template, context)
+    return render(request, 'confirmation.html', context)
 
 @login_required
 def my_reservations(request):
@@ -434,11 +410,7 @@ def my_reservations(request):
         'reservations': reservations,
     }
     
-    # Choose template based on language setting
-    language = request.session.get('language', 'ar')
-    template = 'my_reservations.html' if language == 'en' else 'my_reservations_django.html'
-    
-    return render(request, template, context)
+    return render(request, 'my_reservations.html', context)
 
 @login_required
 def reservation_detail(request, reservation_id):
@@ -573,34 +545,19 @@ def toggle_dark_mode(request):
     return redirect('index')
 
 def toggle_language(request):
-    """Toggle between Arabic and English languages"""
-    current_language = request.session.get('language', 'ar')  # Default to Arabic if not set
+    """Toggle language settings"""
+    # Toggle language in session
+    language = request.session.get('language', 'ar')
+    request.session['language'] = 'en' if language == 'ar' else 'ar'
     
-    # Toggle between 'ar' and 'en'
-    new_language = 'en' if current_language == 'ar' else 'ar'
-    request.session['language'] = new_language
-    
-    # Force save session to ensure changes are persisted
-    request.session.modified = True
-    
-    # Add success message
-    if new_language == 'ar':
-        messages.success(request, "تم تغيير اللغة إلى العربية")
-    else:
-        messages.success(request, "Language changed to English successfully")
-    
-    # Go back to the previous page
+    # Redirect back to the same page
     referer = request.META.get('HTTP_REFERER')
     if referer:
         return redirect(referer)
     return redirect('index')
 def about_us(request):
     """About Us page view"""
-    # Choose template based on language setting
-    language = request.session.get('language', 'ar')
-    template = 'about_us.html' if language == 'en' else 'about_us_django.html'
-    
-    return render(request, template)
+    return render(request, 'about_us.html')
 
 @login_required
 def book_car(request, car_id):
