@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.urls import reverse
 from .models import User, Car, Reservation, CartItem
 from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm
 from functools import wraps
@@ -21,9 +22,16 @@ def admin_required(function):
     """
     @wraps(function)
     def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated or not request.user.is_admin:
+        # Debug output for admin_required
+        print(f"Admin check for {request.user}, authenticated: {request.user.is_authenticated}")
+        if not request.user.is_authenticated:
+            messages.error(request, "يرجى تسجيل الدخول للوصول إلى لوحة التحكم")
+            next_url = request.path
+            login_url = reverse('login')
+            return redirect(f"{login_url}?next={next_url}")
+        elif not request.user.is_admin:
             messages.error(request, "غير مصرح لك بالوصول إلى هذه الصفحة!")
-            return redirect('login')
+            return redirect('index')
         return function(request, *args, **kwargs)
     return wrapper
 
@@ -577,6 +585,12 @@ def download_receipt(request, payment_id):
 @admin_required
 def add_manual_payment(request):
     """Add a manual payment entry"""
+    # Add debugging output
+    print(f"Processing add_manual_payment for user: {request.user}, authenticated: {request.user.is_authenticated}")
+    print(f"Session ID: {request.session.session_key}")
+    print(f"Is AJAX request: {'X-Requested-With' in request.headers}")
+    print(f"Request method: {request.method}")
+    print(f"POST data: {request.POST if request.method == 'POST' else 'No POST data'}")
     if request.method == 'POST':
         form = ManualPaymentForm(request.POST)
         if form.is_valid():
