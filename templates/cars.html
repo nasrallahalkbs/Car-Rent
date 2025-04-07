@@ -1,87 +1,246 @@
-{% extends 'layout_django.html' %}
+{% extends 'layout.html' %}
 {% load static %}
 
-{% block title %}Browse Cars - CarRental{% endblock %}
+{% block title %}Our Cars{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <h1 class="mb-4">Browse Our Cars</h1>
+    <h1 class="mb-4">Our Car Collection</h1>
     
-    <!-- Search/Filter Form -->
-    <div class="search-form">
-        <form method="GET" action="{{ {% url 'car_listing' %} }}">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="category">Car Type</label>
-                        {{ form.category(class="form-select") }}
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Find Your Perfect Car</h5>
+            <form method="GET" action="{% url 'cars' %}">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">All Types</option>
+                            {% for choice in form.category.field.choices %}
+                                {% if choice.0 %}
+                                <option value="{{ choice.0 }}" {% if form.category.value == choice.0 %}selected{% endif %}>
+                                    {{ choice.1 }}
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="transmission" class="form-label">Transmission</label>
+                        <select class="form-select" id="transmission" name="transmission">
+                            <option value="">Any</option>
+                            {% for choice in form.transmission.field.choices %}
+                                {% if choice.0 %}
+                                <option value="{{ choice.0 }}" {% if form.transmission.value == choice.0 %}selected{% endif %}>
+                                    {{ choice.1 }}
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fuel_type" class="form-label">Fuel Type</label>
+                        <select class="form-select" id="fuel_type" name="fuel_type">
+                            <option value="">Any</option>
+                            {% for choice in form.fuel_type.field.choices %}
+                                {% if choice.0 %}
+                                <option value="{{ choice.0 }}" {% if form.fuel_type.value == choice.0 %}selected{% endif %}>
+                                    {{ choice.1 }}
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-end h-100">
+                            <div class="d-grid w-100">
+                                <button type="submit" class="btn btn-primary">Search</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="transmission">Transmission</label>
-                        {{ form.transmission(class="form-select") }}
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="fuel_type">Fuel Type</label>
-                        {{ form.fuel_type(class="form-select") }}
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Price Range</label>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3">
+                        <label for="min_price" class="form-label">Min Price</label>
                         <div class="input-group">
-                            {{ form.min_price(class="form-control", placeholder="Min") }}
-                            <span class="input-group-text">-</span>
-                            {{ form.max_price(class="form-control", placeholder="Max") }}
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="min_price" name="min_price" placeholder="Min" 
+                                  value="{{ form.min_price.value|default:'' }}" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="max_price" class="form-label">Max Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="max_price" name="max_price" placeholder="Max" 
+                                  value="{{ form.max_price.value|default:'' }}" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-end h-100">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'cars' %}" class="btn btn-outline-secondary">
+                                    Clear Filters
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter me-2"></i>Filter Results
-                    </button>
-                    <a href="{{ {% url 'car_listing' %} }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-redo me-2"></i>Clear Filters
-                    </a>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
     
-    <!-- Car Listing -->
-    <div class="row g-4">
-        {% if cars %}
-            {% for car in cars %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card car-card h-100">
-                    <img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
-                    <div class="card-body">
-                        <h3 class="car-title">{{ car.make }} {{ car.model }} {{ car.year }}</h3>
-                        <p class="car-category">{{ car.category }} | {{ car.transmission }} | {{ car.fuel_type }}</p>
-                        <p class="car-features">
-                            <i class="fas fa-users me-2"></i>{{ car.seats }} Seats
-                            {% if car.features %}
-                            <span class="ms-3"><i class="fas fa-cog me-2"></i>{{ car.features|length }} Features</span>
-                            {% endif %}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <p class="car-price mb-0">${{ car.daily_rate }}<small>/day</small></p>
-                            <a href="{{ {% url 'car_detail' car.id %} }}" class="btn btn-outline-primary">View Details</a>
-                        </div>
+    <!-- Car Listings -->
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for car in cars %}
+        <div class="col">
+            <div class="card h-100 car-card">
+                {% if car.image_url %}
+                <img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <img src="{% static 'images/car-placeholder.svg' %}" class="card-img-top" alt="{{ car.make }} {{ car.model }}" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ car.make }} {{ car.model }} <span class="text-muted">{{ car.year }}</span></h5>
+                    <div class="car-specs mb-3">
+                        <span class="badge bg-info me-1">{{ car.category }}</span>
+                        <span class="badge bg-secondary me-1">{{ car.transmission }}</span>
+                        <span class="badge bg-success">{{ car.fuel_type }}</span>
+                    </div>
+                    <div class="car-features mb-3">
+                        <div><i class="fas fa-user me-2"></i>{{ car.seats }} Seats</div>
+                        <div><i class="fas fa-palette me-2"></i>{{ car.color }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="car-price"><strong>${{ car.daily_rate }}</strong><small>/day</small></div>
+                        <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-primary">View Details</a>
                     </div>
                 </div>
             </div>
-            {% endfor %}
-        {% else %}
-            <div class="col-12">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>No cars found matching your criteria. Please try different filters.
-                </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No cars found matching your criteria. Try adjusting your filters.
             </div>
-        {% endif %}
+            <div class="text-center mt-4">
+                <a href="{% url 'cars' %}" class="btn btn-primary">
+                    <i class="fas fa-sync-alt me-2"></i>View All Cars
+                </a>
+            </div>
+        </div>
+        {% endfor %}
     </div>
+    
+    <!-- Pagination -->
+    {% if cars.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if cars.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ cars.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for i in cars.paginator.page_range %}
+                {% if cars.number == i %}
+                <li class="page-item active">
+                    <a class="page-link" href="#">{{ i }}</a>
+                </li>
+                {% elif i > cars.number|add:'-3' and i < cars.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if cars.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ cars.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ cars.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
+
+<style>
+    .car-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .car-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .car-features div {
+        margin-bottom: 5px;
+        color: #666;
+    }
+    
+    .car-price {
+        font-size: 1.25rem;
+    }
+    
+    .car-price small {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all filter dropdowns
+        const categoryDropdown = document.getElementById('category');
+        const transmissionDropdown = document.getElementById('transmission');
+        const fuelTypeDropdown = document.getElementById('fuel_type');
+        
+        // Add change event listeners to dropdowns
+        categoryDropdown.addEventListener('change', function() {
+            // Update query parameter in URL
+            const category = this.value;
+            window.location.href = '{% url 'cars' %}' + (category ? '?category=' + category : '');
+        });
+    });
+</script>
 {% endblock %}

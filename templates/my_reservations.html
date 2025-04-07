@@ -1,154 +1,118 @@
 {% extends 'layout_django.html' %}
 {% load static %}
 
-{% block title %}My Reservations - CarRental{% endblock %}
+{% block title %}حجوزاتي{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <h1 class="mb-4">My Reservations</h1>
+    <h1 class="mb-4">حجوزاتي</h1>
     
     {% if reservations %}
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card shadow">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
                 <div class="card-body p-0">
-                    <ul class="nav nav-tabs" id="reservationTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" aria-controls="active" aria-selected="true">
-                                Active Reservations
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab" aria-controls="completed" aria-selected="false">
-                                Past Reservations
-                            </button>
-                        </li>
-                    </ul>
-                    <div class="tab-content p-4" id="reservationTabsContent">
-                        <div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
-                            {% if active_reservations %}
-                                {% for item in active_reservations %}
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-3 mb-3 mb-md-0">
-                                                <img src="{{ item.car.image_url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="img-fluid rounded" style="max-height: 120px; width: 100%; object-fit: cover;">
-                                            </div>
-                                            <div class="col-md-6 mb-3 mb-md-0">
-                                                <h5>{{ item.car.make }} {{ item.car.model }} {{ item.car.year }}</h5>
-                                                <p class="mb-1">
-                                                    <strong>Pick-up:</strong> {{ item.start_date|date:"F d, Y" }}
-                                                </p>
-                                                <p class="mb-1">
-                                                    <strong>Return:</strong> {{ item.end_date|date:"F d, Y" }}
-                                                </p>
-                                                <p class="mb-1">
-                                                    <strong>Duration:</strong> {{ item.days }} days
-                                                </p>
-                                                <p class="mb-0">
-                                                    <strong>Total:</strong> ${{ item.total_price }}
-                                                </p>
-                                            </div>
-                                            <div class="col-md-3 text-md-end">
-                                                <span class="badge {% if item.status == 'pending' %}bg-warning{% else %}bg-success{% endif %} mb-3 d-inline-block">
-                                                    {{ item.status|title }}
-                                                </span>
-                                                <div>
-                                                    <a href="{% url 'reservation_detail' reservation_id=item.id %}" class="btn btn-primary btn-sm mb-2">
-                                                        <i class="fas fa-info-circle me-1"></i> View Details
-                                                <div>
-                                                    <a href="{% url 'reservation_detail' reservation_id=item.id %}" class="btn btn-primary btn-sm mb-2">
-                                                        <i class="fas fa-info-circle me-1"></i> View Details
-                                                    </a>
-                                                    <a href="{% url 'car_detail' car_id=item.car.id %}" class="btn btn-outline-primary btn-sm">
-                                                        <i class="fas fa-car me-1"></i> View Car
-                                                    </a>
-                                                </div>
-                                                    </a>
-                                                </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th scope="col">رقم الحجز</th>
+                                    <th scope="col">السيارة</th>
+                                    <th scope="col">التواريخ</th>
+                                    <th scope="col">المجموع</th>
+                                    <th scope="col">حالة الحجز</th>
+                                    <th scope="col">حالة الدفع</th>
+                                    <th scope="col">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in reservations %}
+                                <tr>
+                                    <td><strong>#{{ reservation.id }}</strong></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if reservation.car.image_url %}
+                                            <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="rounded me-2" width="50">
+                                            {% else %}
+                                            <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="rounded me-2" width="50">
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-semibold">{{ reservation.car.make }} {{ reservation.car.model }}</div>
+                                                <small class="text-muted">{{ reservation.car.year }}</small>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="alert alert-info mb-0">
-                                    <i class="fas fa-info-circle me-2"></i>You don't have any active reservations.
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
-                            {% if completed_reservations %}
-                                {% for item in completed_reservations %}
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-3 mb-3 mb-md-0">
-                                                <img src="{{ item.car.image_url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="img-fluid rounded" style="max-height: 120px; width: 100%; object-fit: cover;">
-                                            </div>
-                                            <div class="col-md-6 mb-3 mb-md-0">
-                                                <h5>{{ item.car.make }} {{ item.car.model }} {{ item.car.year }}</h5>
-                                                <p class="mb-1">
-                                                    <strong>Pick-up:</strong> {{ item.start_date|date:"F d, Y" }}
-                                                </p>
-                                                <p class="mb-1">
-                                                    <strong>Return:</strong> {{ item.end_date|date:"F d, Y" }}
-                                                </p>
-                                                <p class="mb-1">
-                                                    <strong>Duration:</strong> {{ item.days }} days
-                                                </p>
-                                                <p class="mb-0">
-                                                    <strong>Total:</strong> ${{ item.total_price }}
-                                                </p>
-                                            </div>
-                                            <div class="col-md-3 text-md-end">
-                                                <span class="badge {% if item.status == 'cancelled' %}bg-danger{% else %}bg-info{% endif %} mb-3 d-inline-block">
-                                                <div>
-                                                    <a href="{% url 'reservation_detail' reservation_id=item.id %}" class="btn btn-primary btn-sm mb-2">
-                                                        <i class="fas fa-info-circle me-1"></i> View Details
-                                                    </a>
-                                                    {% if not item.has_review and item.status == 'completed' %}
-                                                    <a href="{% url 'add_review' reservation_id=item.id %}" class="btn btn-success btn-sm mb-2">
-                                                        <i class="fas fa-star me-1"></i> Write Review
-                                                    </a>
-                                                    {% endif %}
-                                                    <a href="{% url 'car_detail' car_id=item.car.id %}" class="btn btn-outline-primary btn-sm">
-                                                        <i class="fas fa-car me-1"></i> View Car
-                                                    </a>
-                                                </div>
-                                                    {% if not item.has_review and item.status == 'completed' %}
-                                                    <a href="{% url 'add_review' reservation_id=item.id %}" class="btn btn-primary btn-sm">
-                                                        <i class="fas fa-star me-1"></i> Write Review
-                                                    </a>
-                                                    {% endif %}
-                                                    <a href="{% url 'car_detail' car_id=item.car.id %}" class="btn btn-outline-primary btn-sm mt-2">
-                                                        <i class="fas fa-car me-1"></i> View Car
-                                                    </a>
-                                                </div>
-                                            </div>
+                                    </td>
+                                    <td>
+                                        <div>{{ reservation.start_date|date:"d/m/Y" }} - {{ reservation.end_date|date:"d/m/Y" }}</div>
+                                        <small class="text-muted">
+                                            {{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} يوم
+                                        </small>
+                                    </td>
+                                    <td>{{ reservation.total_price }} دينار</td>
+                                    <td>
+                                        {% if reservation.status == 'pending' %}
+                                        <span class="badge bg-warning">قيد المراجعة</span>
+                                        {% elif reservation.status == 'confirmed' %}
+                                        <span class="badge bg-success">تمت الموافقة</span>
+                                        {% elif reservation.status == 'completed' %}
+                                        <span class="badge bg-info">مكتمل</span>
+                                        {% elif reservation.status == 'cancelled' %}
+                                        <span class="badge bg-danger">ملغي</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if reservation.payment_status == 'pending' %}
+                                        <span class="badge bg-secondary">في انتظار الدفع</span>
+                                        {% elif reservation.payment_status == 'paid' %}
+                                        <span class="badge bg-success">مدفوع</span>
+                                        {% elif reservation.payment_status == 'refunded' %}
+                                        <span class="badge bg-danger">مسترجع</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'reservation_detail' reservation_id=reservation.id %}" class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                                            <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success">
+                                                <i class="fas fa-credit-card"></i>
+                                            </a>
+                                            {% endif %}
+                                            
+                                            {% if reservation.status == 'pending' %}
+                                            <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-outline-danger">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                            {% endif %}
                                         </div>
-                                    </div>
-                                </div>
+                                    </td>
+                                </tr>
                                 {% endfor %}
-                            {% else %}
-                                <div class="alert alert-info mb-0">
-                                    <i class="fas fa-info-circle me-2"></i>You don't have any completed reservations.
-                                </div>
-                            {% endif %}
-                        </div>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <a href="{% url 'cars' %}" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>البحث عن المزيد من السيارات
+                </a>
             </div>
         </div>
     </div>
     {% else %}
-    <div class="card shadow text-center p-5">
-        <div class="card-body">
-            <i class="fas fa-calendar-alt fa-5x text-muted mb-4"></i>
-            <h3>No Reservations Found</h3>
-            <p class="text-muted mb-4">You haven't made any reservations yet.</p>
-            <a href="{% url 'car_listing' %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-car me-2"></i>Browse Cars
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center p-5">
+            <div class="mb-4">
+                <i class="fas fa-calendar-alt fa-4x text-muted"></i>
+            </div>
+            <h3>لا توجد حجوزات</h3>
+            <p class="text-muted mb-4">لم تقم بإجراء أي حجوزات بعد. ابدأ باستكشاف السيارات المتاحة للإيجار.</p>
+            <a href="{% url 'cars' %}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>استكشاف السيارات
             </a>
         </div>
     </div>

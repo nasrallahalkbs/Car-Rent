@@ -1,112 +1,224 @@
 {% extends 'layout_django.html' %}
+{% load static %}
 
-{% block title %}Reservation Confirmation - CarRental{% endblock %}
+{% block title %}تأكيد الحجز{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <div class="card shadow mb-5">
-        <div class="card-body text-center p-5">
-            <div class="mb-4">
-                {% if reservation.status == 'pending' %}
-                <i class="fas fa-clock text-warning fa-5x"></i>
-                {% else %}
-                <i class="fas fa-check-circle text-success fa-5x"></i>
-                {% endif %}
-            </div>
-            
-            <h1 class="mb-4">Thank You for Your Reservation!</h1>
-            
-            {% if reservation.status == 'pending' %}
-            <p class="lead mb-4">Your reservation is pending approval. Our admin team will review your request shortly. We'll send a confirmation email once approved.</p>
-            <div class="alert alert-info mb-4">
-                <i class="fas fa-info-circle me-2"></i>
-                <span>For direct bookings with credit card information, our team needs to verify your payment details before confirming the reservation.</span>
-            </div>
-            {% else %}
-            <p class="lead mb-4">Your reservation has been confirmed. We've sent a confirmation email to your registered email address.</p>
-            {% endif %}
-            
-            <div class="d-flex justify-content-center">
-                <a href="{% url 'my_reservations' %}" class="btn btn-primary btn-lg me-3">
-                    <i class="fas fa-list-alt me-2"></i>View My Reservations
-                </a>
-                <a href="{% url 'index' %}" class="btn btn-outline-primary btn-lg">
-                    <i class="fas fa-home me-2"></i>Return to Home
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Reservation Details</h4>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Reservation Information</h5>
-                    <table class="table table-borderless">
-                        <tr>
-                            <th>Reservation ID:</th>
-                            <td>#{{ reservation.id }}</td>
-                        </tr>
-                        <tr>
-                            <th>Status:</th>
-                            <td>
-                                {% if reservation.status == 'pending' %}
-                                <span class="badge bg-warning text-dark">{{ reservation.status|title }}</span>
-                                {% else %}
-                                <span class="badge bg-success">{{ reservation.status|title }}</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Payment Status:</th>
-                            <td>
-                                {% if reservation.payment_status == 'pending' %}
-                                <span class="badge bg-warning text-dark">{{ reservation.payment_status|title }}</span>
-                                {% else %}
-                                <span class="badge bg-success">{{ reservation.payment_status|title }}</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Pick-up Date:</th>
-                            <td>{{ reservation.start_date|date:"F d, Y" }}</td>
-                        </tr>
-                        <tr>
-                            <th>Return Date:</th>
-                            <td>{{ reservation.end_date|date:"F d, Y" }}</td>
-                        </tr>
-                        <tr>
-                            <th>Duration:</th>
-                            <td>{{ days }} days</td>
-                        </tr>
-                        <tr>
-                            <th>Total Price:</th>
-                            <td>${{ reservation.total_price|floatformat:2 }}</td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="col-md-6">
-                    <h5>Vehicle Information</h5>
-                    <div class="d-flex mb-3">
-                        <img src="{{ car.image_url }}" alt="{{ car.make }} {{ car.model }}" class="me-3" style="width: 120px; height: 80px; object-fit: cover;">
-                        <div>
-                            <h5 class="mb-1">{{ car.make }} {{ car.model }} {{ car.year }}</h5>
-                            <p class="mb-1">{{ car.category }} | {{ car.transmission }} | {{ car.fuel_type }}</p>
-                            <p class="mb-0">Color: {{ car.color }} | License Plate: {{ car.license_plate }}</p>
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow border-0">
+                <div class="card-body p-5 text-center">
+                    {% if reservation.status == 'pending' %}
+                    <!-- Pending Reservation -->
+                    <div class="icon-circle icon-circle-warning mb-4">
+                        <i class="fas fa-clock fa-4x text-warning"></i>
+                    </div>
+                    <h2 class="mb-4">تم استلام طلب الحجز!</h2>
+                    <p class="lead mb-4">
+                        شكراً لك، تم استلام طلب حجزك وهو قيد المراجعة الآن. سيتم إشعارك عند الموافقة على طلبك.
+                    </p>
+                    <div class="reservation-details p-4 mb-4 bg-light rounded text-start">
+                        <h5 class="border-bottom pb-2 mb-3">تفاصيل الحجز</h5>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">رقم الحجز:</div>
+                            <div class="col-sm-8">{{ reservation.id }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">السيارة:</div>
+                            <div class="col-sm-8">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">تاريخ الاستلام:</div>
+                            <div class="col-sm-8">{{ reservation.start_date }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">تاريخ التسليم:</div>
+                            <div class="col-sm-8">{{ reservation.end_date }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">المجموع:</div>
+                            <div class="col-sm-8">{{ reservation.total_price }} دينار</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">حالة الحجز:</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-warning">قيد المراجعة</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 fw-bold">حالة الدفع:</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-secondary">في انتظار الموافقة</span>
+                            </div>
                         </div>
                     </div>
-                    <h5 class="mt-4">Pick-up & Return Information</h5>
-                    <p>
-                        <strong>Location:</strong> 123 Car Rental Street, City, Country<br>
-                        <strong>Hours:</strong> 9:00 AM - 6:00 PM, Monday to Friday<br>
-                        <strong>Contact:</strong> (555) 123-4567
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        سيتم إشعارك عبر البريد الإلكتروني عند الموافقة على طلب الحجز. يمكنك أيضاً متابعة حالة الحجز من خلال صفحة "حجوزاتي".
+                    </div>
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+                        <a href="{% url 'my_reservations' %}" class="btn btn-primary btn-lg px-4 gap-3">
+                            <i class="fas fa-list ms-2"></i>عرض حجوزاتي
+                        </a>
+                        <a href="{% url 'cars' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-car ms-2"></i>متابعة التصفح
+                        </a>
+                    </div>
+                    {% elif reservation.status == 'confirmed' %}
+                    <!-- Confirmed Reservation -->
+                    <div class="icon-circle icon-circle-success mb-4">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h2 class="mb-4">تمت الموافقة على الحجز!</h2>
+                    <p class="lead mb-4">
+                        تمت الموافقة على حجزك بنجاح! يمكنك الآن إكمال عملية الدفع لتأكيد الحجز.
                     </p>
+                    <div class="reservation-details p-4 mb-4 bg-light rounded text-start">
+                        <h5 class="border-bottom pb-2 mb-3">تفاصيل الحجز</h5>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">رقم الحجز:</div>
+                            <div class="col-sm-8">{{ reservation.id }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">السيارة:</div>
+                            <div class="col-sm-8">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">تاريخ الاستلام:</div>
+                            <div class="col-sm-8">{{ reservation.start_date }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">تاريخ التسليم:</div>
+                            <div class="col-sm-8">{{ reservation.end_date }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">المجموع:</div>
+                            <div class="col-sm-8">{{ reservation.total_price }} دينار</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">حالة الحجز:</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-success">تمت الموافقة</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 fw-bold">حالة الدفع:</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-warning">في انتظار الدفع</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+                        <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-primary btn-lg px-4 gap-3">
+                            <i class="fas fa-credit-card ms-2"></i>إكمال الدفع
+                        </a>
+                        <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-list ms-2"></i>عرض حجوزاتي
+                        </a>
+                    </div>
+                    {% elif reservation.status == 'completed' and reservation.payment_status == 'paid' %}
+                    <!-- Paid and Completed Reservation -->
+                    <div class="icon-circle icon-circle-success mb-4">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h2 class="mb-4">تم الحجز بنجاح!</h2>
+                    <p class="lead mb-4">
+                        شكراً لك! تم تأكيد حجزك ودفع القيمة بنجاح. سيارتك جاهزة للاستلام في التاريخ المحدد.
+                    </p>
+                    <div class="reservation-details p-4 mb-4 bg-light rounded text-start">
+                        <h5 class="border-bottom pb-2 mb-3">تفاصيل الحجز</h5>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">رقم الحجز:</div>
+                            <div class="col-sm-8">{{ reservation.id }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">السيارة:</div>
+                            <div class="col-sm-8">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">تاريخ الاستلام:</div>
+                            <div class="col-sm-8">{{ reservation.start_date }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">تاريخ التسليم:</div>
+                            <div class="col-sm-8">{{ reservation.end_date }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">المجموع:</div>
+                            <div class="col-sm-8">{{ reservation.total_price }} دينار</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">حالة الحجز:</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-success">مكتمل</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 fw-bold">حالة الدفع:</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-success">مدفوع</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-success">
+                        <i class="fas fa-info-circle me-2"></i>
+                        تم إرسال تفاصيل الحجز والفاتورة إلى بريدك الإلكتروني.
+                    </div>
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+                        <a href="{% url 'my_reservations' %}" class="btn btn-primary btn-lg px-4 gap-3">
+                            <i class="fas fa-list ms-2"></i>عرض حجوزاتي
+                        </a>
+                        <a href="{% url 'cars' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-car ms-2"></i>متابعة التصفح
+                        </a>
+                    </div>
+                    {% else %}
+                    <!-- Default/Error State -->
+                    <div class="icon-circle icon-circle-info mb-4">
+                        <i class="fas fa-info-circle fa-4x text-primary"></i>
+                    </div>
+                    <h2 class="mb-4">معالجة الحجز</h2>
+                    <p class="lead mb-4">
+                        تم استلام طلب حجزك. يمكنك متابعة حالة الحجز من خلال صفحة "حجوزاتي".
+                    </p>
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+                        <a href="{% url 'my_reservations' %}" class="btn btn-primary btn-lg px-4 gap-3">
+                            <i class="fas fa-list ms-2"></i>عرض حجوزاتي
+                        </a>
+                        <a href="{% url 'cars' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-car ms-2"></i>متابعة التصفح
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Custom CSS for icons and styling -->
+<style>
+    .icon-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    
+    .icon-circle-success {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
+    
+    .icon-circle-warning {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    
+    .icon-circle-info {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+</style>
 {% endblock %}

@@ -1,47 +1,38 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Avg
 from django.contrib import messages
+from django.urls import reverse
 from django.utils import timezone
-from datetime import date, timedelta, datetime
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-
+from django.db.models import Q, Avg, Count
+from django.core.paginator import Paginator
+from .forms import LoginForm, RegisterForm, CarSearchForm, ReservationForm, CheckoutForm, ReviewForm, ProfileForm
 from .models import User, Car, Reservation, Review, CartItem
-from .forms import (RegisterForm, LoginForm, CarSearchForm, ReservationForm, 
-                   CheckoutForm, ReviewForm, ProfileForm)
 from .utils import calculate_total_price, get_car_availability, get_unavailable_dates
+from datetime import datetime, date, timedelta
+import logging
+import json
+
+logger = logging.getLogger(__name__)
 
 def index(request):
     """Home page view"""
-    # Get featured cars based on various criteria
-    # First, try to include some luxury cars if available
-    luxury_cars = Car.objects.filter(is_available=True, category='Luxury').order_by('?')[:2]
+    # Get featured cars (newest 6 cars)
+    featured_cars = Car.objects.filter(is_available=True).order_by('-id')[:6]
     
-    # Add some economy/compact cars for balance
-    economy_cars = Car.objects.filter(
-        is_available=True, 
-        category__in=['Economy', 'Compact']
-    ).order_by('?')[:2]
+    # Get cars by category
+    categories = Car.CATEGORY_CHOICES
+    category_cars = {}
+    for category_tuple in categories:
+        category = category_tuple[0]
+        category_cars[category] = Car.objects.filter(category=category, is_available=True)[:4]
     
-    # Add a few more random cars to complete the selection
-    remaining_count = 6 - (luxury_cars.count() + economy_cars.count())
-    if remaining_count > 0:
-        # Exclude cars already selected
-        excluded_ids = list(luxury_cars.values_list('id', flat=True)) + list(economy_cars.values_list('id', flat=True))
-        remaining_cars = Car.objects.filter(is_available=True).exclude(id__in=excluded_ids).order_by('?')[:remaining_count]
-    else:
-        remaining_cars = Car.objects.none()
-    
-    # Combine the querysets
-    featured_cars = list(luxury_cars) + list(economy_cars) + list(remaining_cars)
-    
-    # If no cars found through this method, fall back to newest cars
-    if not featured_cars:
-        featured_cars = Car.objects.filter(is_available=True).order_by('-id')[:6]
-    
-    return render(request, 'django_index.html', {'featured_cars': featured_cars})
+    context = {
+        'featured_cars': featured_cars,
+        'category_cars': category_cars,
+    }
+    return render(request, 'index.html', context)
 
 def register_view(request):
     """User registration view"""
@@ -50,14 +41,13 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            messages.success(request, 'Account created successfully!')
+            messages.success(request, "تم التسجيل بنجاح!")
             return redirect('index')
     else:
         form = RegisterForm()
     
     return render(request, 'register_django.html', {'form': form})
 
-@ensure_csrf_cookie
 def login_view(request):
     """User login view"""
     if request.method == 'POST':
@@ -68,51 +58,53 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                messages.success(request, f'مرحباً بعودتك، {user.first_name if user.first_name else user.username}!')
+                messages.success(request, "تم تسجيل الدخول بنجاح!")
                 return redirect('index')
         else:
-            # Print form errors to help debugging
-            print(f"Form errors: {form.errors}")
-            messages.error(request, 'فشل تسجيل الدخول. يرجى التحقق من اسم المستخدم وكلمة المرور.')
+            messages.error(request, "خطأ في اسم المستخدم أو كلمة المرور!")
     else:
         form = LoginForm()
-    
+        
     return render(request, 'login_django.html', {'form': form})
 
 def logout_view(request):
     """User logout view"""
     logout(request)
-    messages.success(request, 'You have been logged out.')
+    messages.info(request, "تم تسجيل الخروج!")
     return redirect('index')
 
 @login_required
 def profile_view(request):
     """User profile view"""
-    user = request.user
     if request.method == 'POST':
-        form = ProfileForm(request.POST, instance=user)
+        form = ProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Profile updated successfully!')
+            messages.success(request, "تم تحديث الملف الشخصي بنجاح!")
             return redirect('profile')
     else:
-        form = ProfileForm(instance=user)
+        form = ProfileForm(instance=request.user)
     
-    # Get user's reservations for display
-    reservations = Reservation.objects.filter(user=user).order_by('-created_at')[:5]
+    # Get reservation history
+    reservations = Reservation.objects.filter(user=request.user).order_by('-created_at')[:5]
     
-    return render(request, 'profile.html', {
+    context = {
         'form': form,
-        'user': user,
-        'reservations': reservations
-    })
+        'user': request.user,
+        'reservations': reservations,
+        'current_date': timezone.now(),
+    }
+    return render(request, 'profile.html', context)
 
 def car_listing(request):
     """Car listing page with search functionality"""
-    form = CarSearchForm(request.GET or None)
+    # Initialize search form
+    form = CarSearchForm(request.GET)
+    
+    # Get all available cars by default
     cars = Car.objects.filter(is_available=True)
     
-    # Apply filters if provided
+    # Filter based on search criteria if form is valid
     if form.is_valid():
         # Category filter
         category = form.cleaned_data.get('category')
@@ -131,428 +123,315 @@ def car_listing(request):
         
         # Price range filter
         min_price = form.cleaned_data.get('min_price')
+        max_price = form.cleaned_data.get('max_price')
+        
         if min_price is not None:
             cars = cars.filter(daily_rate__gte=min_price)
         
-        max_price = form.cleaned_data.get('max_price')
         if max_price is not None:
             cars = cars.filter(daily_rate__lte=max_price)
     
-    # Get average rating for each car
-    for car in cars:
-        avg_rating = Review.objects.filter(car=car).aggregate(Avg('rating'))['rating__avg']
-        car.avg_rating = round(avg_rating) if avg_rating else 0
+    # Pagination
+    paginator = Paginator(cars, 9)  # Show 9 cars per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
-    return render(request, 'cars_django.html', {
-        'cars': cars,
-        'form': form
-    })
+    context = {
+        'form': form,
+        'cars': page_obj,
+        'today': date.today(),
+    }
+    
+    return render(request, 'cars_django.html', context)
 
 def car_detail(request, car_id):
     """Car detail page with reservation form"""
     car = get_object_or_404(Car, id=car_id)
     
-    # Get average rating
-    avg_rating = Review.objects.filter(car=car).aggregate(Avg('rating'))['rating__avg']
-    car.avg_rating = round(avg_rating) if avg_rating else 0
-    
     # Get reviews for this car
     reviews = Review.objects.filter(car=car).order_by('-created_at')
     
-    # Get rating distribution
-    rating_distribution = {
-        1: Review.objects.filter(car=car, rating=1).count(),
-        2: Review.objects.filter(car=car, rating=2).count(),
-        3: Review.objects.filter(car=car, rating=3).count(),
-        4: Review.objects.filter(car=car, rating=4).count(),
-        5: Review.objects.filter(car=car, rating=5).count(),
-    }
-    # Calculate total reviews for percentage
-    total_reviews = sum(rating_distribution.values())
+    # Calculate average rating
+    avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+    avg_rating = round(avg_rating, 1)
+    
+    # Calculate rating distribution (percentage for each star level)
+    total_reviews = reviews.count()
+    rating_distribution = {}
+    
     if total_reviews > 0:
-        for rating in rating_distribution:
-            rating_distribution[rating] = (rating_distribution[rating] / total_reviews) * 100
-    
-    # Get similar cars (same category, different car)
-    similar_cars = Car.objects.filter(
-        category=car.category, 
-        is_available=True
-    ).exclude(id=car_id)[:3]
-    
-    # Calculate average rating for similar cars
-    for similar_car in similar_cars:
-        similar_avg_rating = Review.objects.filter(car=similar_car).aggregate(Avg('rating'))['rating__avg']
-        similar_car.avg_rating = round(similar_avg_rating) if similar_avg_rating else 0
-    
-    if request.method == 'POST':
-        # Handle reservation request
-        form = ReservationForm(request.POST)
-        if form.is_valid():
-            # Check if user is authenticated
-            if not request.user.is_authenticated:
-                messages.warning(request, 'Please login to make a reservation.')
-                return redirect('login')
-            
-            # Get form data
-            start_date = form.cleaned_data['start_date']
-            end_date = form.cleaned_data['end_date']
-            
-            # Check if car is available for the requested dates
-            if get_car_availability(car_id, start_date, end_date):
-                # Calculate total price
-                total_price = calculate_total_price(car, start_date, end_date)
-                
-                # Add to cart
-                cart_item = CartItem(
-                    user=request.user,
-                    car=car,
-                    start_date=start_date,
-                    end_date=end_date
-                )
-                cart_item.save()
-                
-                messages.success(request, f"{car.make} {car.model} added to cart!")
-                return redirect('cart')
-            else:
-                messages.error(request, "Sorry, this car is not available for the selected dates.")
+        for i in range(1, 6):
+            count = reviews.filter(rating=i).count()
+            percentage = (count / total_reviews) * 100
+            rating_distribution[i] = percentage
     else:
-        form = ReservationForm(initial={'car_id': car_id})
+        for i in range(1, 6):
+            rating_distribution[i] = 0
     
-    return render(request, 'car_detail_django.html', {
+    # Get similar cars (same category, exclude current car)
+    similar_cars = Car.objects.filter(category=car.category).exclude(id=car.id)[:3]
+    
+    context = {
         'car': car,
-        'form': form,
         'reviews': reviews,
-        'avg_rating': car.avg_rating,
+        'avg_rating': avg_rating,
+        'total_reviews': total_reviews,
         'rating_distribution': rating_distribution,
         'similar_cars': similar_cars,
-        'total_reviews': total_reviews
-    })
+        'today': date.today(),
+    }
+    
+    return render(request, 'car_detail_django.html', context)
 
 @login_required
 def cart_view(request):
     """Shopping cart view"""
     cart_items = CartItem.objects.filter(user=request.user)
     
-    # Calculate total price, days, and enhance cart items with additional information
-    cart_total = 0
-    total_days = 0
-    
+    # Calculate total for each item and the grand total
+    grand_total = 0
     for item in cart_items:
-        # Calculate days for this rental
-        delta = (item.end_date - item.start_date).days
+        # Calculate days (inclusive)
+        delta = (item.end_date - item.start_date).days + 1
         item.days = delta
-        total_days += delta
-        
-        # Calculate total price
-        item.total = calculate_total_price(item.car, item.start_date, item.end_date)
-        cart_total += item.total
+        item.total = item.car.daily_rate * delta
+        grand_total += item.total
     
-    return render(request, 'cart_django.html', {
+    context = {
         'cart_items': cart_items,
-        'cart_total': cart_total,
-        'total_days': total_days,
-        'has_discounts': False  # Set to True if you implement discounts later
-    })
+        'grand_total': grand_total,
+    }
+    
+    return render(request, 'cart_django.html', context)
 
 @login_required
 def remove_from_cart(request, item_id):
     """Remove item from cart"""
     item = get_object_or_404(CartItem, id=item_id, user=request.user)
     item.delete()
-    messages.success(request, "Item removed from cart.")
+    messages.success(request, "تمت إزالة العنصر من السلة!")
     return redirect('cart')
 
 @login_required
 def checkout(request):
     """Checkout and payment view"""
-    cart_items = CartItem.objects.filter(user=request.user)
-    direct_booking = False
-    car = None
-    start_date = None
-    end_date = None
-    total = 0
+    # Check if coming from a specific reservation (direct payment)
+    reservation_id = request.GET.get('reservation_id')
     
-    # Check if this is a direct booking
-    if request.method == 'POST' and 'car_id' in request.POST:
-        direct_booking = True
-        car_id = request.POST.get('car_id')
-        car = get_object_or_404(Car, id=car_id)
+    if reservation_id:
+        # User is paying for a specific reservation
+        reservation = get_object_or_404(
+            Reservation, 
+            id=reservation_id, 
+            user=request.user, 
+            status='confirmed', 
+            payment_status='pending'
+        )
         
-        # Get dates from form
-        start_date = request.POST.get('start_date')
-        end_date = request.POST.get('end_date')
-        
-        # Convert to date objects
-        if start_date and end_date:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            
-            # Validate dates
-            if end_date < start_date:
-                messages.error(request, "End date must be after start date.")
-                return redirect('car_detail', car_id=car_id)
-            
-            # Check availability
-            if not get_car_availability(car_id, start_date, end_date):
-                messages.error(request, "Sorry, this car is not available for the selected dates.")
-                return redirect('car_detail', car_id=car_id)
-            
-            # Calculate total price
-            total = calculate_total_price(car, start_date, end_date)
-    else:
-        # Regular checkout from cart
-        # Redirect back to cart if empty
-        if not cart_items.exists():
-            messages.warning(request, "Your cart is empty.")
-            return redirect('cart')
-        
-        # Calculate total price for cart items
-        for item in cart_items:
-            item.total_price = calculate_total_price(item.car, item.start_date, item.end_date)
-            total += item.total_price
-    
-    if request.method == 'POST':
-        form = CheckoutForm(request.POST)
-        if form.is_valid():
-            # Get payment details
-            card_type = form.cleaned_data.get('card_type')
-            card_number = form.cleaned_data.get('card_number')
-            card_name = form.cleaned_data.get('card_name')
-            
-            # Store payment details in the reservation notes
-            payment_notes = f"Payment Method: {card_type}\nCard Number: ****{card_number[-4:]}\nCard Holder: {card_name}"
-            
-            # Handle direct booking
-            if direct_booking and car and start_date and end_date:
-                # Create a new reservation for direct booking
-                reservation = Reservation(
-                    user=request.user,
-                    car=car,
-                    start_date=start_date,
-                    end_date=end_date,
-                    total_price=total,
-                    status='pending',  # Set as pending for admin confirmation
-                    payment_status='pending',
-                    notes=payment_notes
-                )
+        # Create form for the payment
+        if request.method == 'POST':
+            form = CheckoutForm(request.POST)
+            if form.is_valid():
+                # Process payment (in a real app, this would integrate with a payment gateway)
+                # For now, just mark the reservation as paid
+                reservation.payment_status = 'paid'
                 reservation.save()
                 
-                # Prepare card image if provided
-                if 'card_image' in request.FILES:
-                    # We would handle saving the card image here, but it's out of scope for this example
-                    reservation.notes += "\nCard image was provided for verification."
-                    reservation.save()
-                
-                messages.success(request, "Your reservation has been submitted and is pending admin confirmation. Thank you!")
+                messages.success(request, "تم إتمام عملية الدفع بنجاح!")
                 return redirect('confirmation')
-            else:
-                # Process each cart item and create reservations
-                for item in cart_items:
-                    reservation = Reservation(
-                        user=request.user,
-                        car=item.car,
-                        start_date=item.start_date,
-                        end_date=item.end_date,
-                        total_price=calculate_total_price(item.car, item.start_date, item.end_date),
-                        status='confirmed',
-                        payment_status='paid',
-                        notes=payment_notes
-                    )
-                    reservation.save()
-                    
-                    # Remove from cart
-                    item.delete()
-                
-                messages.success(request, "Your reservation has been confirmed! Thank you for your business.")
-                return redirect('confirmation')
-    else:
-        form = CheckoutForm()
-    
-    # For direct booking, create a cart-like item for display
-    if direct_booking and car and start_date and end_date:
-        # Calculate days for display
-        delta = (end_date - start_date).days + 1
+        else:
+            form = CheckoutForm()
         
-        # Create a temporary item (not saved to database)
-        temp_item = {
-            'car': car,
-            'start_date': start_date,
-            'end_date': end_date,
-            'days': delta,
-            'total': total
+        context = {
+            'form': form,
+            'reservation': reservation,
         }
         
-        cart_items = [temp_item]
-    
-    return render(request, 'checkout.html', {
-        'form': form,
-        'cart_items': cart_items,
-        'cart_total': total,
-        'direct_booking': direct_booking
-    })
+        return render(request, 'checkout.html', context)
+    else:
+        # User is checking out items from cart
+        cart_items = CartItem.objects.filter(user=request.user)
+        
+        if not cart_items:
+            messages.warning(request, "السلة فارغة!")
+            return redirect('cart')
+        
+        # Calculate totals
+        grand_total = 0
+        for item in cart_items:
+            delta = (item.end_date - item.start_date).days + 1
+            item.days = delta
+            item.total = item.car.daily_rate * delta
+            grand_total += item.total
+        
+        if request.method == 'POST':
+            form = CheckoutForm(request.POST)
+            if form.is_valid():
+                # Create reservations for all cart items
+                for item in cart_items:
+                    # Check again if car is available (in case someone else booked it)
+                    if get_car_availability(item.car.id, item.start_date, item.end_date):
+                        total_price = calculate_total_price(item.car, item.start_date, item.end_date)
+                        
+                        # Create reservation with pending status initially
+                        reservation = Reservation.objects.create(
+                            user=request.user,
+                            car=item.car,
+                            start_date=item.start_date,
+                            end_date=item.end_date,
+                            total_price=total_price,
+                            status='pending',  # All reservations start as pending
+                            payment_status='pending'
+                        )
+                    else:
+                        messages.error(
+                            request, 
+                            f"عذرًا، السيارة {item.car.make} {item.car.model} لم تعد متاحة في التواريخ المحددة."
+                        )
+                        return redirect('cart')
+                
+                # Clear the cart
+                cart_items.delete()
+                
+                messages.success(request, "تم إرسال طلب الحجز بنجاح! يرجى انتظار موافقة المسؤول.")
+                return redirect('confirmation')
+        else:
+            form = CheckoutForm()
+        
+        context = {
+            'form': form,
+            'cart_items': cart_items,
+            'grand_total': grand_total,
+        }
+        
+        return render(request, 'checkout.html', context)
 
+@login_required
 def confirmation(request):
     """Order confirmation page"""
-    # Show the latest reservation (confirmed or pending)
-    if request.user.is_authenticated:
-        reservation = Reservation.objects.filter(
-            user=request.user,
-            status__in=['confirmed', 'pending']
-        ).order_by('-created_at').first()
-        
-        if reservation:
-            # Calculate the number of days for this reservation
-            days = (reservation.end_date - reservation.start_date).days + 1
-            
-            return render(request, 'confirmation.html', {
-                'reservation': reservation,
-                'car': reservation.car,
-                'days': days
-            })
-        else:
-            messages.warning(request, "No recent reservations found.")
-            return redirect('index')
-    else:
+    # Get the most recent reservation for this user
+    reservation = Reservation.objects.filter(user=request.user).order_by('-created_at').first()
+    
+    if not reservation:
+        messages.warning(request, "لم يتم العثور على أي حجوزات!")
         return redirect('index')
+    
+    context = {
+        'reservation': reservation,
+    }
+    
+    return render(request, 'confirmation.html', context)
 
 @login_required
 def my_reservations(request):
     """User's reservations page"""
-    # Get all reservations for the user
     reservations = Reservation.objects.filter(user=request.user).order_by('-created_at')
     
-    # Group by status
-    upcoming = reservations.filter(start_date__gte=date.today(), status__in=['confirmed', 'pending'])
-    past = reservations.filter(Q(end_date__lt=date.today()) | Q(status='completed'))
-    cancelled = reservations.filter(status='cancelled')
+    context = {
+        'reservations': reservations,
+    }
     
-    return render(request, 'my_reservations.html', {
-        'upcoming': upcoming,
-        'past': past,
-        'cancelled': cancelled
-    })
+    return render(request, 'my_reservations.html', context)
 
 @login_required
 def reservation_detail(request, reservation_id):
     """Detailed view of a single reservation"""
     reservation = get_object_or_404(Reservation, id=reservation_id, user=request.user)
     
-    # Check if the user has left a review for this reservation
-    has_reviewed = Review.objects.filter(user=request.user, reservation=reservation).exists()
+    # Check if user has already reviewed this reservation
+    has_review = Review.objects.filter(reservation=reservation, user=request.user).exists()
     
-    # Calculate the number of days for this reservation
-    days = (reservation.end_date - reservation.start_date).days
-    
-    return render(request, 'reservation_detail.html', {
+    context = {
         'reservation': reservation,
-        'days': days,
-        'has_reviewed': has_reviewed
-    })
+        'has_review': has_review,
+    }
+    
+    return render(request, 'reservation_detail.html', context)
 
 @login_required
 def modify_reservation(request, reservation_id):
     """Modify an existing reservation"""
-    reservation = get_object_or_404(Reservation, id=reservation_id, user=request.user)
-    
-    # Only allow modification of pending or confirmed reservations
-    if reservation.status not in ['pending', 'confirmed']:
-        messages.error(request, "This reservation cannot be modified.")
-        return redirect('reservation_detail', reservation_id=reservation_id)
-    
-    # Check if the reservation start date is in the past
-    if reservation.start_date < date.today():
-        messages.error(request, "Reservations that have already started cannot be modified.")
-        return redirect('reservation_detail', reservation_id=reservation_id)
+    reservation = get_object_or_404(
+        Reservation, 
+        id=reservation_id, 
+        user=request.user, 
+        status='pending'  # Only pending reservations can be modified
+    )
     
     if request.method == 'POST':
         form = ReservationForm(request.POST)
         if form.is_valid():
-            # Get new dates
-            new_start_date = form.cleaned_data['start_date']
-            new_end_date = form.cleaned_data['end_date']
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
             
-            # Check if the dates are valid
-            if new_start_date < date.today():
-                messages.error(request, "Start date cannot be in the past.")
-                return redirect('modify_reservation', reservation_id=reservation_id)
-            
-            if new_end_date <= new_start_date:
-                messages.error(request, "End date must be after start date.")
-                return redirect('modify_reservation', reservation_id=reservation_id)
-            
-            # Check if car is available for the new dates (excluding this reservation)
-            if get_car_availability(reservation.car.id, new_start_date, new_end_date, exclude_reservation=reservation_id):
-                # Calculate new total price
-                new_total_price = calculate_total_price(reservation.car, new_start_date, new_end_date)
-                
+            # Check if the new dates are available
+            if get_car_availability(reservation.car.id, start_date, end_date, exclude_reservation=reservation.id):
                 # Update reservation
-                reservation.start_date = new_start_date
-                reservation.end_date = new_end_date
-                reservation.total_price = new_total_price
+                reservation.start_date = start_date
+                reservation.end_date = end_date
+                reservation.total_price = calculate_total_price(reservation.car, start_date, end_date)
                 reservation.save()
                 
-                messages.success(request, "Reservation modified successfully!")
-                return redirect('reservation_detail', reservation_id=reservation_id)
+                messages.success(request, "تم تعديل الحجز بنجاح!")
+                return redirect('reservation_detail', reservation_id=reservation.id)
             else:
-                messages.error(request, "Car is not available for the selected dates.")
-        else:
-            messages.error(request, "Invalid form submission. Please check the dates.")
+                messages.error(request, "السيارة غير متاحة في التواريخ المحددة!")
     else:
         # Pre-fill form with current reservation data
-        form = ReservationForm(initial={
+        initial_data = {
             'car_id': reservation.car.id,
             'start_date': reservation.start_date,
-            'end_date': reservation.end_date
-        })
+            'end_date': reservation.end_date,
+        }
+        form = ReservationForm(initial=initial_data)
     
-    return render(request, 'modify_reservation.html', {
+    context = {
         'form': form,
-        'reservation': reservation
-    })
+        'reservation': reservation,
+        'today': date.today(),
+    }
+    
+    return render(request, 'modify_reservation.html', context)
 
 @login_required
 def cancel_reservation(request, reservation_id):
     """Cancel a reservation"""
-    reservation = get_object_or_404(Reservation, id=reservation_id, user=request.user)
-    
-    # Only allow cancellation of pending or confirmed reservations
-    if reservation.status not in ['pending', 'confirmed']:
-        messages.error(request, "This reservation cannot be cancelled.")
-        return redirect('reservation_detail', reservation_id=reservation_id)
-    
-    # Check if the reservation start date is in the past
-    if reservation.start_date < date.today():
-        messages.error(request, "Reservations that have already started cannot be cancelled.")
-        return redirect('reservation_detail', reservation_id=reservation_id)
+    reservation = get_object_or_404(
+        Reservation, 
+        id=reservation_id, 
+        user=request.user, 
+        status__in=['pending', 'confirmed']  # Only pending or confirmed reservations can be cancelled
+    )
     
     if request.method == 'POST':
-        # Update status to cancelled
         reservation.status = 'cancelled'
-        reservation.payment_status = 'refunded'
         reservation.save()
         
-        messages.success(request, "Reservation cancelled successfully. Any payment will be refunded.")
+        messages.success(request, "تم إلغاء الحجز بنجاح!")
         return redirect('my_reservations')
     
-    return render(request, 'cancel_reservation.html', {
-        'reservation': reservation
-    })
+    context = {
+        'reservation': reservation,
+    }
+    
+    return render(request, 'cancel_reservation.html', context)
 
 @login_required
 def add_review(request, reservation_id):
     """Add review for a completed reservation"""
-    reservation = get_object_or_404(Reservation, id=reservation_id, user=request.user)
+    reservation = get_object_or_404(
+        Reservation, 
+        id=reservation_id, 
+        user=request.user, 
+        status='completed',
+        payment_status='paid'
+    )
     
-    # Check if the reservation is eligible for review
-    if reservation.status != 'completed':
-        messages.error(request, "You can only review completed reservations.")
-        return redirect('reservation_detail', reservation_id=reservation_id)
-    
-    # Check if a review already exists
-    existing_review = Review.objects.filter(user=request.user, reservation=reservation).first()
+    # Check if user has already reviewed this reservation
+    existing_review = Review.objects.filter(reservation=reservation, user=request.user).first()
     if existing_review:
-        messages.warning(request, "You have already reviewed this reservation.")
-        return redirect('reservation_detail', reservation_id=reservation_id)
+        messages.warning(request, "لقد قمت بتقييم هذه الرحلة بالفعل!")
+        return redirect('reservation_detail', reservation_id=reservation.id)
     
     if request.method == 'POST':
         form = ReviewForm(request.POST)
@@ -563,125 +442,105 @@ def add_review(request, reservation_id):
             review.reservation = reservation
             review.save()
             
-            messages.success(request, "Thank you for your review!")
-            return redirect('reservation_detail', reservation_id=reservation_id)
+            messages.success(request, "شكراً لتقييمك!")
+            return redirect('car_detail', car_id=reservation.car.id)
     else:
         form = ReviewForm()
     
-    return render(request, 'add_review.html', {
+    context = {
         'form': form,
         'reservation': reservation,
-        'car': reservation.car
-    })
+    }
+    
+    return render(request, 'add_review.html', context)
 
 def toggle_dark_mode(request):
     """Toggle dark mode on/off"""
-    dark_mode = request.session.get('dark_mode', False)
-    request.session['dark_mode'] = not dark_mode
+    current_mode = request.session.get('dark_mode', False)
+    request.session['dark_mode'] = not current_mode
     
-    # Return to previous page if available
+    # Go back to the previous page
     referer = request.META.get('HTTP_REFERER')
     if referer:
         return redirect(referer)
-    else:
-        return redirect('index')
+    return redirect('index')
 
 def about_us(request):
     """About Us page view"""
-    return render(request, "about_us.html")
+    return render(request, 'about_us.html')
 
 @login_required
 def book_car(request, car_id):
     """View for booking a car directly from car detail page"""
-    # Get car details
-    car = get_object_or_404(Car, id=car_id)
+    car = get_object_or_404(Car, id=car_id, is_available=True)
     
-    if not car.is_available:
-        messages.error(request, "عذرًا، هذه السيارة غير متاحة للحجز حاليًا.")
-        return redirect('car_detail', car_id=car_id)
+    # Get start_date and end_date from query parameters if provided
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
     
-    # Get dates from the form submission or set default
-    today = date.today()
-    tomorrow = today + timedelta(days=1)
-    next_week = today + timedelta(days=7)
+    start_date = None
+    end_date = None
     
-    start_date = request.GET.get('start_date', today)
-    end_date = request.GET.get('end_date', tomorrow)
-    
-    # Convert string dates to date objects if needed
-    if isinstance(start_date, str):
+    if start_date_str:
         try:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
         except ValueError:
-            start_date = today
+            pass
     
-    if isinstance(end_date, str):
+    if end_date_str:
         try:
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
         except ValueError:
-            end_date = tomorrow
+            pass
     
-    # Calculate total price and rental days
-    days = (end_date - start_date).days + 1
-    total_price = calculate_total_price(car, start_date, end_date)
-    
-    return render(request, 'booking.html', {
+    context = {
         'car': car,
         'start_date': start_date,
         'end_date': end_date,
-        'days': days,
-        'total_price': total_price,
-        'today': today
-    })
+        'today': date.today(),
+    }
+    
+    return render(request, 'booking.html', context)
 
 @login_required
 def process_booking(request):
     """Process the booking form submission"""
     if request.method != 'POST':
-        return redirect('car_listing')
+        return redirect('cars')
     
-    # Get form data
     car_id = request.POST.get('car_id')
-    car = get_object_or_404(Car, id=car_id)
+    car = get_object_or_404(Car, id=car_id, is_available=True)
     
-    start_date = request.POST.get('start_date')
-    end_date = request.POST.get('end_date')
+    start_date_str = request.POST.get('start_date')
+    end_date_str = request.POST.get('end_date')
+    notes = request.POST.get('notes', '')
     
-    # Convert string dates to date objects
     try:
-        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
     except ValueError:
-        messages.error(request, "تنسيق التاريخ غير صحيح.")
+        messages.error(request, "تنسيق التاريخ غير صحيح. يرجى المحاولة مرة أخرى.")
         return redirect('book_car', car_id=car_id)
     
     # Validate dates
     if start_date < date.today():
-        messages.error(request, "لا يمكن أن يكون تاريخ البدء في الماضي.")
+        messages.error(request, "لا يمكن حجز تاريخ في الماضي.")
         return redirect('book_car', car_id=car_id)
     
-    if end_date <= start_date:
-        messages.error(request, "يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء.")
+    if end_date < start_date:
+        messages.error(request, "يجب أن يكون تاريخ التسليم بعد تاريخ الاستلام.")
         return redirect('book_car', car_id=car_id)
     
-    # Check availability
+    # Check car availability
     if not get_car_availability(car_id, start_date, end_date):
-        messages.error(request, "عذرًا، هذه السيارة غير متاحة في التواريخ المحددة.")
+        messages.error(request, "السيارة غير متاحة في التواريخ المحددة.")
         return redirect('book_car', car_id=car_id)
     
     # Calculate total price
     total_price = calculate_total_price(car, start_date, end_date)
     
-    # Get payment details
-    card_type = request.POST.get('card_type')
-    card_number = request.POST.get('card_number')
-    card_name = request.POST.get('card_name')
-    
-    # Create notes for payment details
-    payment_notes = f"طريقة الدفع: {card_type}\nرقم البطاقة: ****{card_number[-4:]}\nاسم حامل البطاقة: {card_name}"
-    
-    # Create a new reservation with pending status
-    reservation = Reservation(
+    # Create reservation with pending status (awaiting admin approval)
+    reservation = Reservation.objects.create(
         user=request.user,
         car=car,
         start_date=start_date,
@@ -689,33 +548,22 @@ def process_booking(request):
         total_price=total_price,
         status='pending',
         payment_status='pending',
-        notes=payment_notes
+        notes=notes
     )
-    reservation.save()
     
-    messages.success(request, "تم إرسال طلب الحجز بنجاح وهو الآن في انتظار موافقة الإدارة.")
+    messages.success(request, "تم إرسال طلب الحجز بنجاح! سيتم إشعارك عند مراجعة طلبك.")
     return redirect('confirmation')
 
 def get_unavailable_dates_api(request, car_id):
     """API endpoint to get unavailable dates for a car"""
-    try:
-        # Get the car
-        car = get_object_or_404(Car, id=car_id)
-        
-        # Get unavailable dates
-        unavailable_dates = get_unavailable_dates(car_id)
-        
-        # Format data for response
-        data = {
-            'unavailable_dates': [
-                {
-                    'start': start_date.strftime('%Y-%m-%d'),
-                    'end': end_date.strftime('%Y-%m-%d')
-                }
-                for start_date, end_date in unavailable_dates
-            ]
-        }
-        
-        return JsonResponse(data)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+    unavailable_ranges = get_unavailable_dates(car_id)
+    
+    # Format the data for API response
+    unavailable_dates = []
+    for start_date, end_date in unavailable_ranges:
+        unavailable_dates.append({
+            'start': start_date.strftime('%Y-%m-%d'),
+            'end': end_date.strftime('%Y-%m-%d')
+        })
+    
+    return JsonResponse({'unavailable_dates': unavailable_dates})

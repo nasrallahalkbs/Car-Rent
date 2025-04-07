@@ -1,24 +1,29 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Count, Avg, Sum
+from django.http import JsonResponse, HttpResponse
+from django.db.models import Sum, Count, Q
+from django.core.paginator import Paginator
 from django.utils import timezone
-from datetime import timedelta, date
-from decimal import Decimal
-from django.http import HttpResponse
-import json
-
-from .models import User, Car, Reservation, Review
+from .models import User, Car, Reservation, CartItem
 from .forms import CarForm, ManualPaymentForm
+from functools import wraps
+from datetime import datetime, date, timedelta
+import uuid
+import csv
+import logging
+
+logger = logging.getLogger(__name__)
 
 def admin_required(function):
     """
     Decorator for views that checks if the user is an admin.
     """
+    @wraps(function)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated or not request.user.is_admin:
-            messages.error(request, "لا تملك صلاحية الوصول لهذه الصفحة.")
-            return redirect('index')
+            messages.error(request, "غير مصرح لك بالوصول إلى هذه الصفحة!")
+            return redirect('login')
         return function(request, *args, **kwargs)
     return wrapper
 
@@ -26,82 +31,90 @@ def admin_required(function):
 @admin_required
 def admin_index(request):
     """Admin dashboard home page"""
-    # Get today's date for context
-    today = timezone.now().date()
-    
-    # Get statistics for the dashboard
-    total_users = User.objects.count()
+    # Get summary statistics
     total_cars = Car.objects.count()
     available_cars = Car.objects.filter(is_available=True).count()
+    total_users = User.objects.filter(is_admin=False).count()
+    
+    # Reservation stats
     total_reservations = Reservation.objects.count()
+    pending_reservations = Reservation.objects.filter(status='pending').count()
+    confirmed_reservations = Reservation.objects.filter(status='confirmed').count()
+    completed_reservations = Reservation.objects.filter(status='completed').count()
+    cancelled_reservations = Reservation.objects.filter(status='cancelled').count()
     
-    # Get user stats
-    month_ago = today - timedelta(days=30)
-    new_users = User.objects.filter(created_at__gte=month_ago).count()
-    active_users = User.objects.filter(reservation__status__in=['confirmed', 'pending']).distinct().count()
+    # Payment stats
+    paid_total = Reservation.objects.filter(payment_status='paid').aggregate(Sum('total_price'))['total_price__sum'] or 0
+    pending_payment_total = Reservation.objects.filter(payment_status='pending').aggregate(Sum('total_price'))['total_price__sum'] or 0
     
-    # Get pending reservations that need attention
-    pending_reservations = Reservation.objects.filter(status='pending').select_related('user', 'car')
+    # Recent reservations
+    recent_reservations = Reservation.objects.order_by('-created_at')[:5]
     
-    # Get recent payments
-    recent_payments = Reservation.objects.filter(
-        payment_status='paid'
-    ).select_related('user', 'car').order_by('-created_at')[:5]
+    # Data for charts
+    # Monthly reservations for last 6 months
+    labels = []
+    reservation_data = []
+    revenue_data = []
     
-    # Get revenue data
-    # Today's revenue
-    daily_revenue = Reservation.objects.filter(
-        created_at__date=today,
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
+    now = timezone.now()
+    for i in range(5, -1, -1):
+        month = now.month - i
+        year = now.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        
+        month_start = date(year, month, 1)
+        if month == 12:
+            next_month_start = date(year + 1, 1, 1)
+        else:
+            next_month_start = date(year, month + 1, 1)
+        
+        month_reservations = Reservation.objects.filter(
+            created_at__gte=month_start,
+            created_at__lt=next_month_start
+        )
+        
+        month_count = month_reservations.count()
+        month_revenue = month_reservations.filter(payment_status='paid').aggregate(Sum('total_price'))['total_price__sum'] or 0
+        
+        labels.append(f"{month_start.strftime('%b')} {year}")
+        reservation_data.append(month_count)
+        revenue_data.append(float(month_revenue))
     
-    # Weekly revenue
-    week_ago = today - timedelta(days=7)
-    weekly_revenue = Reservation.objects.filter(
-        created_at__date__gte=week_ago,
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
+    # Reservation status distribution
+    status_labels = ['قيد المراجعة', 'تمت الموافقة', 'مكتمل', 'ملغي']
+    status_data = [pending_reservations, confirmed_reservations, completed_reservations, cancelled_reservations]
     
-    # Monthly revenue
-    monthly_revenue = Reservation.objects.filter(
-        created_at__date__gte=month_ago,
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
-    
-    # Total revenue
-    total_revenue = Reservation.objects.filter(
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
-    
-    # Calculate monthly change percentage
-    two_months_ago = today - timedelta(days=60)
-    prev_month_revenue = Reservation.objects.filter(
-        created_at__date__gte=two_months_ago,
-        created_at__date__lt=month_ago,
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
-    
-    if prev_month_revenue > 0:
-        monthly_revenue_change = ((monthly_revenue - prev_month_revenue) / prev_month_revenue) * 100
-        monthly_revenue_change = round(monthly_revenue_change)
-    else:
-        monthly_revenue_change = 100  # If there was no revenue in the previous month
+    # Car category distribution
+    category_data = []
+    category_labels = []
+    for category_choice in Car.CATEGORY_CHOICES:
+        category = category_choice[0]
+        count = Car.objects.filter(category=category).count()
+        if count > 0:
+            category_labels.append(category)
+            category_data.append(count)
     
     context = {
-        'today': today,
-        'total_users': total_users,
         'total_cars': total_cars,
         'available_cars': available_cars,
+        'total_users': total_users,
         'total_reservations': total_reservations,
         'pending_reservations': pending_reservations,
-        'recent_payments': recent_payments,
-        'daily_revenue': daily_revenue,
-        'weekly_revenue': weekly_revenue,
-        'monthly_revenue': monthly_revenue,
-        'total_revenue': total_revenue,
-        'new_users': new_users,
-        'active_users': active_users,
-        'monthly_revenue_change': monthly_revenue_change,
+        'confirmed_reservations': confirmed_reservations,
+        'completed_reservations': completed_reservations,
+        'cancelled_reservations': cancelled_reservations,
+        'paid_total': paid_total,
+        'pending_payment_total': pending_payment_total,
+        'recent_reservations': recent_reservations,
+        'chart_labels': labels,
+        'reservation_data': reservation_data,
+        'revenue_data': revenue_data,
+        'status_labels': status_labels,
+        'status_data': status_data,
+        'category_labels': category_labels,
+        'category_data': category_data,
     }
     
     return render(request, 'admin/index.html', context)
@@ -110,33 +123,22 @@ def admin_index(request):
 @admin_required
 def admin_cars(request):
     """Admin view to manage cars"""
-    # Apply filters if provided in request
+    # Get filter values from query parameters
+    category = request.GET.get('category', '')
+    availability = request.GET.get('availability', '')
+    search = request.GET.get('search', '')
+    
+    # Start with all cars
     cars = Car.objects.all()
     
-    # Filter by category if provided
-    category = request.GET.get('category')
+    # Apply filters
     if category:
         cars = cars.filter(category=category)
     
-    # Filter by transmission if provided
-    transmission = request.GET.get('transmission')
-    if transmission:
-        cars = cars.filter(transmission=transmission)
+    if availability:
+        is_available = availability == 'available'
+        cars = cars.filter(is_available=is_available)
     
-    # Filter by fuel type if provided
-    fuel_type = request.GET.get('fuel_type')
-    if fuel_type:
-        cars = cars.filter(fuel_type=fuel_type)
-    
-    # Filter by availability if provided
-    availability = request.GET.get('availability')
-    if availability == 'available':
-        cars = cars.filter(is_available=True)
-    elif availability == 'unavailable':
-        cars = cars.filter(is_available=False)
-    
-    # Search by make, model, or license plate if provided
-    search = request.GET.get('search')
     if search:
         cars = cars.filter(
             Q(make__icontains=search) | 
@@ -144,23 +146,39 @@ def admin_cars(request):
             Q(license_plate__icontains=search)
         )
     
-    # Count available cars
-    available_cars = Car.objects.filter(is_available=True).count()
-    
-    # Calculate average daily rate
-    avg_daily_rate = Car.objects.aggregate(Avg('daily_rate'))['daily_rate__avg'] or 0
-    
-    # Count reservations
-    reservations_count = Reservation.objects.count()
-    
-    # Order by id descending for newest first
+    # Order by ID descending (newest first)
     cars = cars.order_by('-id')
     
+    # Pagination
+    paginator = Paginator(cars, 10)  # Show 10 cars per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get counts for status summary
+    total_count = Car.objects.count()
+    available_count = Car.objects.filter(is_available=True).count()
+    unavailable_count = total_count - available_count
+    
+    # Get category distribution
+    categories = []
+    for category_choice in Car.CATEGORY_CHOICES:
+        category_name = category_choice[0]
+        category_count = Car.objects.filter(category=category_name).count()
+        categories.append({
+            'name': category_name,
+            'count': category_count,
+        })
+    
     context = {
-        'cars': cars,
-        'available_cars': available_cars,
-        'avg_daily_rate': avg_daily_rate,
-        'reservations_count': reservations_count,
+        'cars': page_obj,
+        'total_count': total_count,
+        'available_count': available_count,
+        'unavailable_count': unavailable_count,
+        'categories': categories,
+        'category_filter': category,
+        'availability_filter': availability,
+        'search_filter': search,
+        'category_choices': Car.CATEGORY_CHOICES,
     }
     
     return render(request, 'admin/cars_django.html', context)
@@ -173,12 +191,17 @@ def add_car(request):
         form = CarForm(request.POST)
         if form.is_valid():
             car = form.save()
-            messages.success(request, f"تمت إضافة {car.make} {car.model} بنجاح!")
+            messages.success(request, f"تمت إضافة السيارة {car.make} {car.model} بنجاح!")
             return redirect('admin_cars')
     else:
         form = CarForm()
     
-    return render(request, 'admin/car_form.html', {'form': form, 'title': 'إضافة سيارة جديدة'})
+    context = {
+        'form': form,
+        'action': 'add',
+    }
+    
+    return render(request, 'admin/car_form.html', context)
 
 @login_required
 @admin_required
@@ -190,96 +213,88 @@ def edit_car(request, car_id):
         form = CarForm(request.POST, instance=car)
         if form.is_valid():
             car = form.save()
-            messages.success(request, f"تم تحديث {car.make} {car.model} بنجاح!")
+            messages.success(request, f"تم تحديث السيارة {car.make} {car.model} بنجاح!")
             return redirect('admin_cars')
     else:
         form = CarForm(instance=car)
     
-    return render(request, 'admin/car_form.html', {
+    context = {
         'form': form,
-        'title': f'تعديل: {car.make} {car.model}',
-        'car': car
-    })
+        'car': car,
+        'action': 'edit',
+    }
+    
+    return render(request, 'admin/car_form.html', context)
 
 @login_required
 @admin_required
 def delete_car(request, car_id):
     """Admin view to delete a car"""
     car = get_object_or_404(Car, id=car_id)
-    car_name = f"{car.make} {car.model}"
-    
-    # Check if car has any reservations
-    has_reservations = Reservation.objects.filter(car=car).exists()
     
     if request.method == 'POST':
-        if has_reservations and request.POST.get('confirm') != 'yes':
-            messages.error(request, f"لا يمكن حذف {car_name} لأنها مرتبطة بحجوزات.")
-        else:
-            car.delete()
-            messages.success(request, f"تم حذف {car_name} بنجاح!")
+        car_name = f"{car.make} {car.model}"
+        car.delete()
+        messages.success(request, f"تم حذف السيارة {car_name} بنجاح!")
         return redirect('admin_cars')
     
-    return render(request, 'admin/delete_car.html', {
+    context = {
         'car': car,
-        'has_reservations': has_reservations
-    })
+    }
+    
+    return render(request, 'admin/delete_car.html', context)
 
 @login_required
 @admin_required
 def admin_reservations(request):
     """Admin view to manage reservations"""
-    # Get all reservations with related user and car data
-    reservations = Reservation.objects.all().select_related(
-        'user', 'car'
-    ).order_by('-created_at')
+    # Get filter values from query parameters
+    status = request.GET.get('status', '')
+    payment_status = request.GET.get('payment_status', '')
+    search = request.GET.get('search', '')
     
-    # Apply filters if provided
-    status = request.GET.get('status')
+    # Start with all reservations
+    reservations = Reservation.objects.all()
+    
+    # Apply filters
     if status:
         reservations = reservations.filter(status=status)
     
-    payment_status = request.GET.get('payment_status')
     if payment_status:
         reservations = reservations.filter(payment_status=payment_status)
     
-    date_from = request.GET.get('date_from')
-    if date_from:
-        try:
-            date_from = timezone.datetime.strptime(date_from, '%Y-%m-%d').date()
-            reservations = reservations.filter(start_date__gte=date_from)
-        except ValueError:
-            pass
-    
-    date_to = request.GET.get('date_to')
-    if date_to:
-        try:
-            date_to = timezone.datetime.strptime(date_to, '%Y-%m-%d').date()
-            reservations = reservations.filter(end_date__lte=date_to)
-        except ValueError:
-            pass
-    
-    search = request.GET.get('search')
     if search:
         reservations = reservations.filter(
-            Q(user__username__icontains=search) |
-            Q(user__first_name__icontains=search) |
-            Q(user__last_name__icontains=search) |
-            Q(car__make__icontains=search) |
+            Q(user__first_name__icontains=search) | 
+            Q(user__last_name__icontains=search) | 
+            Q(user__email__icontains=search) | 
+            Q(car__make__icontains=search) | 
             Q(car__model__icontains=search)
         )
     
-    # Count reservations by status
-    total_reservations = Reservation.objects.count()
+    # Order by creation date descending (newest first)
+    reservations = reservations.order_by('-created_at')
+    
+    # Pagination
+    paginator = Paginator(reservations, 10)  # Show 10 reservations per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get counts for status summary
     pending_count = Reservation.objects.filter(status='pending').count()
-    active_count = Reservation.objects.filter(status__in=['confirmed', 'pending']).count()
+    confirmed_count = Reservation.objects.filter(status='confirmed').count()
+    completed_count = Reservation.objects.filter(status='completed').count()
     cancelled_count = Reservation.objects.filter(status='cancelled').count()
     
     context = {
-        'reservations': reservations,
-        'total_reservations': total_reservations,
+        'reservations': page_obj,
         'pending_count': pending_count,
-        'active_count': active_count,
+        'confirmed_count': confirmed_count,
+        'completed_count': completed_count,
         'cancelled_count': cancelled_count,
+        'status': status,
+        'payment_status': payment_status,
+        'search': search,
     }
     
     return render(request, 'admin/reservations_django.html', context)
@@ -288,83 +303,79 @@ def admin_reservations(request):
 @admin_required
 def update_reservation_status(request, reservation_id, status):
     """Admin view to update reservation status"""
-    valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled']
+    reservation = get_object_or_404(Reservation, id=reservation_id)
     
+    valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled']
     if status not in valid_statuses:
-        messages.error(request, "الحالة غير صالحة")
+        messages.error(request, "حالة الحجز غير صالحة!")
         return redirect('admin_reservations')
     
-    reservation = get_object_or_404(Reservation, id=reservation_id)
-    old_status = reservation.status
+    # Update reservation status
     reservation.status = status
     
-    # Update payment status if needed
-    if status == 'cancelled' and reservation.payment_status == 'paid':
-        reservation.payment_status = 'refunded'
+    # If cancelling, handle special case
+    if status == 'cancelled':
+        reservation.payment_status = 'pending'  # Reset payment status
     
     reservation.save()
     
-    messages.success(request, f"تم تحديث الحجز #{reservation_id} من '{old_status}' إلى '{status}'")
+    # Generate status messages
+    status_messages = {
+        'pending': "تم تعيين حالة الحجز إلى قيد المراجعة!",
+        'confirmed': "تم تأكيد الحجز بنجاح!",
+        'completed': "تم إكمال الحجز بنجاح!",
+        'cancelled': "تم إلغاء الحجز!"
+    }
+    
+    messages.success(request, status_messages[status])
     return redirect('admin_reservations')
 
 @login_required
 @admin_required
 def admin_users(request):
     """Admin view to manage users"""
-    users = User.objects.all()
+    # Get filter values from query parameters
+    user_type = request.GET.get('user_type', '')
+    search = request.GET.get('search', '')
     
-    # Apply filters if provided
-    role = request.GET.get('role')
-    if role == 'admin':
-        users = users.filter(is_admin=True)
-    elif role == 'user':
-        users = users.filter(is_admin=False)
+    # Start with all non-admin users
+    users = User.objects.filter(is_admin=False)
     
-    date_joined = request.GET.get('date_joined')
-    today = timezone.now().date()
-    if date_joined == 'today':
-        users = users.filter(created_at__date=today)
-    elif date_joined == 'this_week':
-        week_ago = today - timedelta(days=7)
-        users = users.filter(created_at__date__gte=week_ago)
-    elif date_joined == 'this_month':
-        month_ago = today - timedelta(days=30)
-        users = users.filter(created_at__date__gte=month_ago)
-    elif date_joined == 'this_year':
-        year_ago = today - timedelta(days=365)
-        users = users.filter(created_at__date__gte=year_ago)
-    
-    has_reservations = request.GET.get('has_reservations')
-    if has_reservations == 'yes':
-        users = users.filter(reservation__isnull=False).distinct()
-    elif has_reservations == 'no':
-        users = users.exclude(reservation__isnull=False)
-    
-    search = request.GET.get('search')
+    # Apply filters
     if search:
         users = users.filter(
-            Q(username__icontains=search) |
-            Q(first_name__icontains=search) |
-            Q(last_name__icontains=search) |
-            Q(email__icontains=search) |
-            Q(phone__icontains=search)
+            Q(username__icontains=search) | 
+            Q(first_name__icontains=search) | 
+            Q(last_name__icontains=search) | 
+            Q(email__icontains=search)
         )
     
-    # Add reservation count to each user
+    # Order by creation date descending (newest first)
+    users = users.order_by('-created_at')
+    
+    # For each user, get count of reservations
     for user in users:
         user.reservation_count = Reservation.objects.filter(user=user).count()
     
-    # Get user stats
-    admin_count = User.objects.filter(is_admin=True).count()
-    month_ago = today - timedelta(days=30)
-    new_users = User.objects.filter(created_at__gte=month_ago).count()
-    active_users = User.objects.filter(reservation__status__in=['confirmed', 'pending']).distinct().count()
+    # Pagination
+    paginator = Paginator(users, 10)  # Show 10 users per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get user statistics
+    total_users = User.objects.filter(is_admin=False).count()
+    user_with_reservations = User.objects.filter(reservation__isnull=False).distinct().count()
+    new_users_last_month = User.objects.filter(
+        is_admin=False,
+        created_at__gte=timezone.now() - timedelta(days=30)
+    ).count()
     
     context = {
-        'users': users,
-        'admin_count': admin_count,
-        'new_users': new_users,
-        'active_users': active_users,
+        'users': page_obj,
+        'total_users': total_users,
+        'user_with_reservations': user_with_reservations,
+        'new_users_last_month': new_users_last_month,
+        'search': search,
     }
     
     return render(request, 'admin/users_django.html', context)
@@ -373,107 +384,62 @@ def admin_users(request):
 @admin_required
 def admin_payments(request):
     """Admin view to manage payments"""
-    # Get all reservations with payment status of 'paid' or 'refunded'
-    reservations = Reservation.objects.filter(
-        payment_status__in=['paid', 'refunded', 'pending']
-    ).select_related('user', 'car').order_by('-created_at')
+    # Get filter values from query parameters
+    payment_status = request.GET.get('payment_status', '')
+    date_range = request.GET.get('date_range', '')
+    search = request.GET.get('search', '')
     
-    # Apply filters if provided
-    payment_status = request.GET.get('payment_status')
+    # Start with all reservations that have payment information
+    payments = Reservation.objects.all()
+    
+    # Apply filters
     if payment_status:
-        reservations = reservations.filter(payment_status=payment_status)
+        payments = payments.filter(payment_status=payment_status)
     
-    payment_method = request.GET.get('payment_method')
-    if payment_method:
-        # This would require a payment method field in the model
-        # Filter by notes field containing payment method as a workaround
-        reservations = reservations.filter(notes__icontains=payment_method)
+    if date_range:
+        if date_range == 'today':
+            today = timezone.now().date()
+            payments = payments.filter(created_at__date=today)
+        elif date_range == 'week':
+            week_ago = timezone.now() - timedelta(days=7)
+            payments = payments.filter(created_at__gte=week_ago)
+        elif date_range == 'month':
+            month_ago = timezone.now() - timedelta(days=30)
+            payments = payments.filter(created_at__gte=month_ago)
     
-    date_from = request.GET.get('date_from')
-    if date_from:
-        try:
-            date_from = timezone.datetime.strptime(date_from, '%Y-%m-%d').date()
-            reservations = reservations.filter(created_at__date__gte=date_from)
-        except ValueError:
-            pass
-    
-    date_to = request.GET.get('date_to')
-    if date_to:
-        try:
-            date_to = timezone.datetime.strptime(date_to, '%Y-%m-%d').date()
-            reservations = reservations.filter(created_at__date__lte=date_to)
-        except ValueError:
-            pass
-    
-    search = request.GET.get('search')
     if search:
-        reservations = reservations.filter(
-            Q(user__username__icontains=search) |
-            Q(user__first_name__icontains=search) |
-            Q(user__last_name__icontains=search) |
-            Q(notes__icontains=search)
+        payments = payments.filter(
+            Q(user__first_name__icontains=search) | 
+            Q(user__last_name__icontains=search) | 
+            Q(user__email__icontains=search) |
+            Q(id__icontains=search)
         )
     
-    # Get revenue statistics
-    today = timezone.now().date()
+    # Order by creation date descending (newest first)
+    payments = payments.order_by('-created_at')
     
-    # Daily revenue
-    daily_revenue = Reservation.objects.filter(
-        created_at__date=today,
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
+    # Pagination
+    paginator = Paginator(payments, 10)  # Show 10 payments per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
-    # Weekly revenue
-    week_ago = today - timedelta(days=7)
-    weekly_revenue = Reservation.objects.filter(
-        created_at__date__gte=week_ago,
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
-    
-    # Monthly revenue
-    month_ago = today - timedelta(days=30)
-    monthly_revenue = Reservation.objects.filter(
-        created_at__date__gte=month_ago,
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
-    
-    # Total revenue (all time)
-    total_revenue = Reservation.objects.filter(
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
-    
-    # Pending payments count
-    pending_payments = Reservation.objects.filter(payment_status='pending').count()
-    
-    # Create a list of payment data for the template
-    payments = []
-    for reservation in reservations:
-        # Convert reservation to payment object for the template
-        payment = {
-            'id': f"P{reservation.id:06d}",  # Format as P000001, P000002, etc.
-            'reservation': reservation,
-            'user': reservation.user,
-            'car': reservation.car,
-            'date': reservation.created_at,
-            'amount': reservation.total_price,
-            'status': reservation.payment_status,
-            'payment_method': 'visa',  # Default method
-            'reference_number': f"REF-{reservation.id}-{reservation.created_at.strftime('%Y%m%d')}",
-        }
-        
-        # Add different payment methods based on reservation id remainder
-        methods = ['visa', 'mastercard', 'amex', 'cash', 'bank_transfer']
-        payment['payment_method'] = methods[reservation.id % len(methods)]
-            
-        payments.append(payment)
+    # Get payment statistics
+    total_revenue = Reservation.objects.filter(payment_status='paid').aggregate(Sum('total_price'))['total_price__sum'] or 0
+    pending_revenue = Reservation.objects.filter(payment_status='pending', status='confirmed').aggregate(Sum('total_price'))['total_price__sum'] or 0
+    paid_count = Reservation.objects.filter(payment_status='paid').count()
+    pending_count = Reservation.objects.filter(payment_status='pending').count()
+    refunded_count = Reservation.objects.filter(payment_status='refunded').count()
     
     context = {
-        'payments': payments,
-        'daily_revenue': daily_revenue,
-        'weekly_revenue': weekly_revenue,
-        'monthly_revenue': monthly_revenue,
+        'payments': page_obj,
         'total_revenue': total_revenue,
-        'pending_payments': pending_payments,
+        'pending_revenue': pending_revenue,
+        'paid_count': paid_count,
+        'pending_count': pending_count,
+        'refunded_count': refunded_count,
+        'payment_status': payment_status,
+        'date_range': date_range,
+        'search': search,
     }
     
     return render(request, 'admin/payments_django.html', context)
@@ -482,54 +448,7 @@ def admin_payments(request):
 @admin_required
 def payment_details(request, payment_id):
     """Admin view to show payment details"""
-    # Extract the numeric part from payment_id (remove the 'P' prefix)
-    if payment_id.startswith('P'):
-        reservation_id = int(payment_id[1:])
-    else:
-        reservation_id = int(payment_id)
-    
-    # Get the reservation
-    reservation = get_object_or_404(Reservation, id=reservation_id)
-    
-    # Create a payment object with additional details
-    payment = {
-        'id': f"P{reservation.id:06d}",
-        'reservation': reservation,
-        'user': reservation.user,
-        'car': reservation.car,
-        'date': reservation.created_at,
-        'amount': reservation.total_price,
-        'status': reservation.payment_status,
-        'payment_method': 'visa',  # Default method
-        'masked_card_number': '•••• •••• •••• 1234',
-        'card_name': f"{reservation.user.first_name} {reservation.user.last_name}",
-        'expiry_date': '12/2025',
-        'reference_number': f"REF-{reservation.id}-{reservation.created_at.strftime('%Y%m%d')}",
-        'notes': reservation.notes or '',
-    }
-    
-    # Add different payment methods based on reservation id remainder
-    methods = ['visa', 'mastercard', 'amex', 'cash', 'bank_transfer']
-    payment['payment_method'] = methods[reservation.id % len(methods)]
-    
-    # Add refund details if applicable
-    if payment['status'] == 'refunded':
-        payment['refund_date'] = reservation.created_at + timedelta(days=2)  # Placeholder
-        payment['refund_amount'] = payment['amount']
-        payment['refund_transaction_id'] = f"R{reservation.id:06d}"
-        payment['refund_reason'] = "طلب العميل الإلغاء"
-    
-    # Calculate reservation duration in days
-    days = (reservation.end_date - reservation.start_date).days
-    payment['days'] = days
-    
-    # Add tax calculation (for demo purposes)
-    # Convert to Decimal for proper calculation with Decimal subtotal
-    days_decimal = Decimal(str(days))
-    payment['subtotal'] = reservation.car.daily_rate * days_decimal
-    tax_rate = Decimal('5')  # Tax rate as Decimal
-    payment['tax_rate'] = tax_rate
-    payment['tax_amount'] = payment['subtotal'] * (tax_rate / Decimal('100'))
+    payment = get_object_or_404(Reservation, id=payment_id)
     
     context = {
         'payment': payment,
@@ -541,53 +460,17 @@ def payment_details(request, payment_id):
 @admin_required
 def print_receipt(request, payment_id):
     """View to print a payment receipt"""
-    # Reuse the payment_details logic but render a different template
-    if payment_id.startswith('P'):
-        reservation_id = int(payment_id[1:])
-    else:
-        reservation_id = int(payment_id)
+    payment = get_object_or_404(Reservation, id=payment_id)
     
-    reservation = get_object_or_404(Reservation, id=reservation_id)
-    
-    # Create payment object (same as in payment_details)
-    payment = {
-        'id': f"P{reservation.id:06d}",
-        'reservation': reservation,
-        'user': reservation.user,
-        'car': reservation.car,
-        'date': reservation.created_at,
-        'amount': reservation.total_price,
-        'status': reservation.payment_status,
-        'payment_method': 'visa',
-        'masked_card_number': '•••• •••• •••• 1234',
-        'reference_number': f"REF-{reservation.id}-{reservation.created_at.strftime('%Y%m%d')}",
-    }
-    
-    # Add different payment methods based on reservation id remainder
-    methods = ['visa', 'mastercard', 'amex', 'cash', 'bank_transfer']
-    payment['payment_method'] = methods[reservation.id % len(methods)]
-    
-    # Add refund details if applicable
-    if payment['status'] == 'refunded':
-        payment['refund_date'] = reservation.created_at + timedelta(days=2)
-        payment['refund_amount'] = payment['amount']
-    
-    # Calculate reservation duration in days
-    days = (reservation.end_date - reservation.start_date).days
-    payment['days'] = days
-    
-    # Add tax calculation
-    days_decimal = Decimal(str(days))
-    payment['subtotal'] = reservation.car.daily_rate * days_decimal
-    tax_rate = Decimal('5')  # Tax rate as Decimal
-    payment['tax_rate'] = tax_rate
-    payment['tax_amount'] = payment['subtotal'] * (tax_rate / Decimal('100'))
-    
-    current_datetime = timezone.now()
+    # Only allow printing receipts for paid reservations
+    if payment.payment_status != 'paid':
+        messages.error(request, "لا يمكن طباعة إيصال للمدفوعات غير المدفوعة!")
+        return redirect('payment_details', payment_id=payment_id)
     
     context = {
         'payment': payment,
-        'current_datetime': current_datetime,
+        'receipt_id': f'R{payment.id:06d}',
+        'print_date': timezone.now(),
     }
     
     return render(request, 'admin/payment_receipt_django.html', context)
@@ -596,231 +479,174 @@ def print_receipt(request, payment_id):
 @admin_required
 def process_refund(request, payment_id):
     """Process a refund for a payment"""
-    if payment_id.startswith('P'):
-        reservation_id = int(payment_id[1:])
-    else:
-        reservation_id = int(payment_id)
+    payment = get_object_or_404(Reservation, id=payment_id)
     
-    reservation = get_object_or_404(Reservation, id=reservation_id)
-    
-    if reservation.payment_status != 'paid':
-        messages.error(request, "يمكن رد المبلغ فقط للمدفوعات المكتملة.")
+    # Only allow refunding paid reservations
+    if payment.payment_status != 'paid':
+        messages.error(request, "لا يمكن استرداد المدفوعات غير المدفوعة!")
         return redirect('payment_details', payment_id=payment_id)
     
-    # Process the refund
-    reservation.payment_status = 'refunded'
-    reservation.status = 'cancelled'
-    reservation.save()
+    # Update payment status
+    payment.payment_status = 'refunded'
+    payment.save()
     
-    messages.success(request, f"تم رد مبلغ الدفعة رقم {payment_id} بنجاح.")
+    messages.success(request, f"تم استرداد المبلغ {payment.total_price} دينار بنجاح!")
     return redirect('payment_details', payment_id=payment_id)
 
 @login_required
 @admin_required
 def mark_as_paid(request, payment_id):
     """Mark a pending payment as paid"""
-    if payment_id.startswith('P'):
-        reservation_id = int(payment_id[1:])
-    else:
-        reservation_id = int(payment_id)
+    payment = get_object_or_404(Reservation, id=payment_id)
     
-    reservation = get_object_or_404(Reservation, id=reservation_id)
-    
-    if reservation.payment_status != 'pending':
-        messages.error(request, "يمكن تحديث حالة المدفوعات المعلقة فقط.")
+    # Only allow marking pending payments as paid
+    if payment.payment_status != 'pending':
+        messages.error(request, "لا يمكن تعيين حالة هذا الدفع إلى مدفوع!")
         return redirect('payment_details', payment_id=payment_id)
     
-    # Mark as paid
-    reservation.payment_status = 'paid'
-    if reservation.status == 'pending':
-        reservation.status = 'confirmed'
-    reservation.save()
+    # Update payment status
+    payment.payment_status = 'paid'
+    payment.save()
     
-    messages.success(request, f"تم تحديث حالة الدفعة رقم {payment_id} إلى 'مدفوع' بنجاح.")
+    messages.success(request, f"تم تعيين حالة الدفع إلى مدفوع بنجاح!")
     return redirect('payment_details', payment_id=payment_id)
 
 @login_required
 @admin_required
 def cancel_payment(request, payment_id):
     """Cancel a pending payment"""
-    if payment_id.startswith('P'):
-        reservation_id = int(payment_id[1:])
-    else:
-        reservation_id = int(payment_id)
+    payment = get_object_or_404(Reservation, id=payment_id)
     
-    reservation = get_object_or_404(Reservation, id=reservation_id)
-    
-    if reservation.payment_status != 'pending':
-        messages.error(request, "يمكن إلغاء المدفوعات المعلقة فقط.")
+    # Only allow cancelling pending payments
+    if payment.payment_status != 'pending':
+        messages.error(request, "لا يمكن إلغاء الدفعات التي تم معالجتها بالفعل!")
         return redirect('payment_details', payment_id=payment_id)
     
-    # Cancel payment and reservation
-    reservation.payment_status = 'cancelled'
-    reservation.status = 'cancelled'
-    reservation.save()
+    # Cancel the reservation
+    payment.status = 'cancelled'
+    payment.save()
     
-    messages.success(request, f"تم إلغاء الدفعة {payment_id} بنجاح.")
+    messages.success(request, "تم إلغاء الدفع والحجز بنجاح!")
     return redirect('payment_details', payment_id=payment_id)
 
 @login_required
 @admin_required
 def download_receipt(request, payment_id):
     """Download a payment receipt as PDF"""
-    # For now, just render the receipt view
-    # In a real implementation, this would generate a PDF
-    return redirect('print_receipt', payment_id=payment_id)
+    payment = get_object_or_404(Reservation, id=payment_id)
+    
+    # Only allow downloading receipts for paid reservations
+    if payment.payment_status != 'paid':
+        messages.error(request, "لا يمكن تنزيل إيصال للمدفوعات غير المدفوعة!")
+        return redirect('payment_details', payment_id=payment_id)
+    
+    # In a real app, you would generate a PDF here
+    # For this demo, we'll generate a CSV file instead
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="receipt_{payment.id}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Receipt ID', f'R{payment.id:06d}'])
+    writer.writerow(['Date', payment.created_at.strftime('%Y-%m-%d %H:%M')])
+    writer.writerow(['Customer', f'{payment.user.first_name} {payment.user.last_name}'])
+    writer.writerow(['Email', payment.user.email])
+    writer.writerow(['Car', f'{payment.car.make} {payment.car.model} ({payment.car.year})'])
+    writer.writerow(['Rental Period', f'{payment.start_date} to {payment.end_date}'])
+    writer.writerow(['Amount', f'{payment.total_price} دينار'])
+    writer.writerow(['Status', 'Paid'])
+    
+    return response
 
 @login_required
 @admin_required
 def add_manual_payment(request):
     """Add a manual payment entry"""
-    # Get all users for selection
-    users = User.objects.all().order_by('first_name', 'last_name')
-    
-    # Get incomplete reservations for selection
-    incomplete_reservations = Reservation.objects.filter(
-        payment_status='pending'
-    ).select_related('user', 'car').order_by('-created_at')
-    
-    # Process form submission
     if request.method == 'POST':
         form = ManualPaymentForm(request.POST)
-        
-        # Get selected user and reservation
-        selected_user_id = request.POST.get('user_id')
-        selected_user = None
-        if selected_user_id:
-            selected_user = get_object_or_404(User, id=selected_user_id)
-        
-        reservation_id = request.POST.get('reservation_id')
-        no_reservation = request.POST.get('no_reservation') == 'on'
-        payment_reason = request.POST.get('payment_reason')
-        
-        # Get existing reservations for this user
-        user_reservations = []
-        if selected_user:
-            user_reservations = Reservation.objects.filter(
-                user=selected_user,
-                payment_status='pending'
-            ).order_by('-created_at')
-        
-        # If form is valid
         if form.is_valid():
-            # Handle payment with reservation
-            if reservation_id and not no_reservation:
+            amount = form.cleaned_data['amount']
+            payment_method = form.cleaned_data['payment_method']
+            reference_number = form.cleaned_data['reference_number']
+            notes = form.cleaned_data['notes']
+            
+            # Get the user from the form
+            user_id = request.POST.get('user_id')
+            
+            # Get the reservation if specified
+            reservation_id = request.POST.get('reservation_id')
+            
+            if reservation_id:
+                # Update an existing reservation
                 reservation = get_object_or_404(Reservation, id=reservation_id)
-                
-                # Update reservation payment status
                 reservation.payment_status = 'paid'
+                
+                # Update notes if provided
+                if notes:
+                    existing_notes = reservation.notes or ""
+                    reservation.notes = existing_notes + f"\n\nManual Payment: {notes}"
+                
+                # Update status to confirmed if it was pending
                 if reservation.status == 'pending':
                     reservation.status = 'confirmed'
                 
-                # If the amount is different than the reservation total, update it
-                amount = form.cleaned_data['amount']
-                if amount != reservation.total_price:
-                    reservation.total_price = amount
-                
-                # Save notes
-                notes = form.cleaned_data['notes']
-                if notes:
-                    reservation.notes = notes
-                
                 reservation.save()
                 
-                # Add a success message
-                payment_id = f"P{reservation.id:06d}"
-                messages.success(
-                    request, 
-                    f"تم تسجيل دفعة يدوية بقيمة {amount} د.ك للحجز رقم {reservation.id}"
-                )
-                
-                # Redirect to payment details
-                return redirect('payment_details', payment_id=payment_id)
-            
-            # Handle payment without reservation
-            elif no_reservation and selected_user:
-                amount = form.cleaned_data['amount']
-                payment_method = form.cleaned_data['payment_method']
-                reference_number = form.cleaned_data['reference_number']
-                notes = form.cleaned_data['notes']
-                
-                # For payments without reservations, we create a placeholder reservation
-                today = date.today()
-                yesterday = today - timedelta(days=1)
-                
-                # Create a description based on payment reason
-                reason_display = {
-                    'deposit': 'وديعة',
-                    'prepayment': 'دفعة مقدمة',
-                    'credit': 'رصيد حساب',
-                    'other': 'دفعة أخرى'
-                }
-                
-                description = reason_display.get(payment_reason, 'دفعة يدوية')
-                if notes:
-                    description += f" - {notes}"
-                
-                # Get the first available car just as a placeholder
-                placeholder_car = Car.objects.first()
-                if not placeholder_car:
-                    messages.error(request, "لا يمكن إنشاء دفعة: لا توجد سيارات في النظام")
-                    return redirect('admin_payments')
-                
-                # Create a special reservation
-                reservation = Reservation.objects.create(
-                    user=selected_user,
-                    car=placeholder_car,
-                    start_date=yesterday,
-                    end_date=today,
-                    total_price=Decimal(str(amount)),
-                    status='completed',
-                    payment_status='paid',
-                    notes=description
-                )
-                
-                # Add a success message
-                payment_id = f"P{reservation.id:06d}"
-                messages.success(
-                    request, 
-                    f"تم تسجيل دفعة يدوية بقيمة {amount} د.ك للمستخدم {selected_user.first_name} {selected_user.last_name} ({description})"
-                )
-                
-                # Redirect to payment details
-                return redirect('payment_details', payment_id=payment_id)
-            
+                messages.success(request, f"تم تسجيل دفعة بقيمة {amount} دينار للحجز #{reservation.id} بنجاح!")
+                return redirect('payment_details', payment_id=reservation.id)
             else:
-                messages.error(request, "يرجى تحديد مستخدم أو حجز للدفعة.")
+                # Creating a payment without a reservation (e.g., deposit, refund, etc.)
+                messages.success(request, f"تم تسجيل الدفعة بقيمة {amount} دينار بنجاح!")
+                return redirect('admin_payments')
     else:
         form = ManualPaymentForm()
-        
-    return render(request, 'admin/add_manual_payment_django.html', {
+    
+    # Get user ID from query parameter if provided
+    user_id = request.GET.get('user_id')
+    user = None
+    if user_id:
+        user = get_object_or_404(User, id=user_id)
+    
+    # Get reservation ID from query parameter if provided
+    reservation_id = request.GET.get('reservation_id')
+    reservation = None
+    if reservation_id:
+        reservation = get_object_or_404(Reservation, id=reservation_id)
+        # Pre-fill form with reservation amount
+        form.fields['amount'].initial = reservation.total_price
+    
+    context = {
         'form': form,
-        'users': users,
-        'incomplete_reservations': incomplete_reservations,
-    })
+        'user': user,
+        'reservation': reservation,
+    }
+    
+    return render(request, 'admin/add_manual_payment_django.html', context)
 
 @login_required
 @admin_required
 def get_user_reservations(request):
     """API to get reservations for a specific user"""
     user_id = request.GET.get('user_id')
+    
     if not user_id:
-        return HttpResponse(json.dumps({'error': 'User ID is required'}), content_type='application/json')
+        return JsonResponse({'error': 'No user ID provided'}, status=400)
     
-    user = get_object_or_404(User, id=user_id)
-    reservations = Reservation.objects.filter(
-        user=user,
-        payment_status='pending'
-    ).select_related('car').order_by('-created_at')
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
     
-    reservation_data = []
-    for res in reservations:
-        reservation_data.append({
-            'id': res.id,
-            'car': f"{res.car.make} {res.car.model}",
-            'start_date': res.start_date.strftime('%Y-%m-%d'),
-            'end_date': res.end_date.strftime('%Y-%m-%d'),
-            'total_price': float(res.total_price),
+    reservations = Reservation.objects.filter(user=user).order_by('-created_at')
+    
+    reservations_data = []
+    for reservation in reservations:
+        reservations_data.append({
+            'id': reservation.id,
+            'car': f"{reservation.car.make} {reservation.car.model}",
+            'dates': f"{reservation.start_date} to {reservation.end_date}",
+            'amount': str(reservation.total_price),
+            'status': reservation.status,
+            'payment_status': reservation.payment_status,
         })
     
-    return HttpResponse(json.dumps({'reservations': reservation_data}), content_type='application/json')
+    return JsonResponse({'reservations': reservations_data})
