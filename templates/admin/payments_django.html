@@ -167,46 +167,52 @@
                 <tr>
                     <td>
                         <div class="fw-bold">#{{ payment.id }}</div>
-                        <div class="small text-muted">{{ payment.reference_number|default:"--" }}</div>
+                        <div class="small text-muted">
+                            {% if payment.notes and "رقم المرجع" in payment.notes %}
+                                {{ payment.notes|linebreaksbr|safe|truncatechars:20 }}
+                            {% else %}
+                                --
+                            {% endif %}
+                        </div>
                     </td>
                     <td>
-                        <div class="fw-bold">{{ payment.reservation.user.username }}</div>
-                        <div class="small text-muted">{{ payment.reservation.user.email }}</div>
+                        <div class="fw-bold">{{ payment.user.username }}</div>
+                        <div class="small text-muted">{{ payment.user.email }}</div>
                     </td>
                     <td>
                         <a href="#" class="fw-bold text-primary">
-                            #{{ payment.reservation.id }}
+                            #{{ payment.id }}
                         </a>
-                        <div class="small text-muted">{{ payment.reservation.car.make }} {{ payment.reservation.car.model }}</div>
+                        <div class="small text-muted">{{ payment.car.make }} {{ payment.car.model }}</div>
                     </td>
                     <td>
-                        <div class="fw-bold text-primary" style="font-size: 1.1rem;">{{ payment.amount }} د.ك</div>
+                        <div class="fw-bold text-primary" style="font-size: 1.1rem;">{{ payment.total_price }} د.ك</div>
                     </td>
                     <td>
-                        <div>{{ payment.date|date:"d/m/Y" }}</div>
-                        <div class="small text-muted">{{ payment.date|time:"H:i" }}</div>
+                        <div>{{ payment.created_at|date:"d/m/Y" }}</div>
+                        <div class="small text-muted">{{ payment.created_at|time:"H:i" }}</div>
                     </td>
                     <td>
-                        {% if payment.payment_method == 'visa' %}
+                        {% if payment.notes and "طريقة الدفع: visa" in payment.notes %}
                         <div><i class="fab fa-cc-visa text-primary me-1"></i>فيزا</div>
-                        {% elif payment.payment_method == 'mastercard' %}
+                        {% elif payment.notes and "طريقة الدفع: mastercard" in payment.notes %}
                         <div><i class="fab fa-cc-mastercard text-danger me-1"></i>ماستركارد</div>
-                        {% elif payment.payment_method == 'amex' %}
+                        {% elif payment.notes and "طريقة الدفع: amex" in payment.notes %}
                         <div><i class="fab fa-cc-amex text-info me-1"></i>أمريكان إكسبرس</div>
-                        {% elif payment.payment_method == 'cash' %}
+                        {% elif payment.notes and "طريقة الدفع: cash" in payment.notes %}
                         <div><i class="fas fa-money-bill-wave text-success me-1"></i>نقداً</div>
-                        {% elif payment.payment_method == 'bank_transfer' %}
+                        {% elif payment.notes and "طريقة الدفع: bank_transfer" in payment.notes %}
                         <div><i class="fas fa-university text-secondary me-1"></i>حوالة بنكية</div>
                         {% else %}
-                        <div>{{ payment.payment_method }}</div>
+                        <div><i class="fas fa-credit-card me-1"></i>بطاقة ائتمان</div>
                         {% endif %}
                     </td>
                     <td>
-                        {% if payment.status == 'pending' %}
+                        {% if payment.payment_status == 'pending' %}
                         <span class="status-badge status-badge-pending">معلق</span>
-                        {% elif payment.status == 'paid' %}
+                        {% elif payment.payment_status == 'paid' %}
                         <span class="status-badge status-badge-completed">مدفوع</span>
-                        {% elif payment.status == 'refunded' %}
+                        {% elif payment.payment_status == 'refunded' %}
                         <span class="status-badge status-badge-warning">مسترجع</span>
                         {% elif payment.status == 'cancelled' %}
                         <span class="status-badge status-badge-cancelled">ملغي</span>
@@ -234,7 +240,7 @@
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
-                                {% if payment.status == 'pending' %}
+                                {% if payment.payment_status == 'pending' %}
                                 <li>
                                     <a class="dropdown-item text-success" href="{% url 'mark_as_paid' payment_id=payment.id %}">
                                         <i class="fas fa-check me-2"></i>تحديث للمدفوع
@@ -245,7 +251,7 @@
                                         <i class="fas fa-times me-2"></i>إلغاء الدفعة
                                     </a>
                                 </li>
-                                {% elif payment.status == 'paid' %}
+                                {% elif payment.payment_status == 'paid' %}
                                 <li>
                                     <a class="dropdown-item text-warning" href="{% url 'process_refund' payment_id=payment.id %}">
                                         <i class="fas fa-undo me-2"></i>رد المبلغ

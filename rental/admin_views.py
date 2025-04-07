@@ -412,7 +412,7 @@ def admin_payments(request):
     search = request.GET.get('search', '')
     
     # Start with all reservations that have payment information
-    payments = Reservation.objects.all()
+    payments = Reservation.objects.all().select_related('user', 'car')
     
     # Apply filters
     if payment_status:
@@ -452,16 +452,26 @@ def admin_payments(request):
     pending_count = Reservation.objects.filter(payment_status='pending').count()
     refunded_count = Reservation.objects.filter(payment_status='refunded').count()
     
+    # Calculate daily and monthly revenue for statistics cards
+    today = timezone.now().date()
+    daily_revenue = Reservation.objects.filter(payment_status='paid', created_at__date=today).aggregate(Sum('total_price'))['total_price__sum'] or 0
+    
+    month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    monthly_revenue = Reservation.objects.filter(payment_status='paid', created_at__gte=month_start).aggregate(Sum('total_price'))['total_price__sum'] or 0
+    
     context = {
         'payments': page_obj,
         'total_revenue': total_revenue,
         'pending_revenue': pending_revenue,
+        'daily_revenue': daily_revenue,
+        'monthly_revenue': monthly_revenue,
         'paid_count': paid_count,
         'pending_count': pending_count,
         'refunded_count': refunded_count,
         'payment_status': payment_status,
         'date_range': date_range,
         'search': search,
+        'pending_payments': pending_count,  # For the stats card
     }
     
     return render(request, 'admin/payments_django.html', context)
