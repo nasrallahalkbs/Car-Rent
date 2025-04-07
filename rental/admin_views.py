@@ -658,6 +658,45 @@ def add_manual_payment(request):
                 if notes:
                     note_text += notes
                 
+                # Create a manual reservation to record the payment
+                # Check if there are any cars available to use as a placeholder
+                placeholder_car = None
+                try:
+                    placeholder_car = Car.objects.first()
+                    if not placeholder_car:
+                        # If no cars exist, create a placeholder dummy car for manual payments
+                        placeholder_car = Car.objects.create(
+                            make="Manual Payment",
+                            model="System Car",
+                            year=2025,
+                            color="Black",
+                            license_plate="MANUAL-PAY",
+                            daily_rate=0,
+                            category="Economy",
+                            seats=4,
+                            transmission="Automatic",
+                            fuel_type="Gas",
+                            features="For manual payments",
+                            is_available=False
+                        )
+                except Exception as e:
+                    print(f"Error creating placeholder car: {e}")
+                    messages.error(request, "حدث خطأ أثناء معالجة الدفعة. الرجاء إضافة سيارة إلى النظام أولاً.")
+                    return redirect('admin_payments')
+                
+                # Now create the reservation
+                manual_reservation = Reservation(
+                    user=user,
+                    car=placeholder_car,
+                    start_date=timezone.now().date(),
+                    end_date=timezone.now().date(),
+                    total_price=amount,
+                    status='completed',
+                    payment_status='paid',
+                    notes=f"دفعة يدوية: {note_text}\nطريقة الدفع: {payment_method}\nرقم المرجع: {reference_number}"
+                )
+                manual_reservation.save()
+                
                 messages.success(request, f"تم تسجيل الدفعة بقيمة {amount} دينار بنجاح للمستخدم {user.first_name} {user.last_name}!")
                 return redirect('admin_payments')
     else:
