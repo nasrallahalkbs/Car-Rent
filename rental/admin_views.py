@@ -127,6 +127,7 @@ def admin_index(request):
         'status_data': status_data,
         'category_labels': category_labels,
         'category_data': category_data,
+        'current_user': request.user,  # Add current user to context
     }
     
     return render(request, 'admin/index.html', context)
@@ -191,6 +192,7 @@ def admin_cars(request):
         'availability_filter': availability,
         'search_filter': search,
         'category_choices': Car.CATEGORY_CHOICES,
+        'current_user': request.user,  # Add current user for template
     }
     
     return render(request, 'admin/cars_django.html', context)
@@ -735,7 +737,8 @@ def add_manual_payment(request):
     
     context = {
         'form': form,
-        'user': user,
+        'selected_user': user,  # Rename to avoid conflict with request.user
+        'current_user': request.user,  # Add current_user for template access
         'reservation': reservation,
         'users': all_users,
         'all_users': all_users,  # Add all_users explicitly for debugging
@@ -775,6 +778,7 @@ def user_details(request, user_id):
     
     context = {
         'user_details': user,
+        'current_user': request.user,  # Add current user for template access
         'reservations': reservations,
         'title': f'تفاصيل المستخدم: {user.first_name} {user.last_name}',
     }
@@ -800,6 +804,7 @@ def edit_user(request, user_id):
     context = {
         'form': form,
         'user_obj': user,
+        'current_user': request.user,  # Add current user for template access
         'title': f'تعديل بيانات المستخدم: {user.first_name} {user.last_name}',
     }
     
