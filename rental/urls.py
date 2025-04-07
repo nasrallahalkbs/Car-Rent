@@ -26,7 +26,6 @@ urlpatterns = [
     
     # API endpoints
     path('api/car/<int:car_id>/unavailable-dates/', views.get_unavailable_dates_api, name='get_unavailable_dates_api'),
-    
     # Admin views
     path('dashboard/', admin_views.admin_index, name='admin_index'),
     path('dashboard/cars/', admin_views.admin_cars, name='admin_cars'),

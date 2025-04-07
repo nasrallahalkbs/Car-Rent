@@ -1,25 +1,11 @@
-{% extends 'admin/index.html' %}
+{% extends 'admin_layout.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
-
-<!-- Debug information: Total users: {{ all_users|length }} -->
-<!-- Users available: {% for u in all_users %}[{{ u.id }}. {{ u.first_name }} {{ u.last_name }}]{% endfor %} -->
 {% load admin_extras %}
-<div class="alert alert-info mb-4" style="font-family: monospace; font-size: 0.9em;">
-    <h5>Debug Information:</h5>
-    <div>Total users in database: {{ all_users|length }}</div>
-    <div>Users:
-    {% for u in all_users %}
-        <pre>[{{ u.id }}] {{ u.username }} - {{ u.first_name }} {{ u.last_name }} - {{ u.email }}</pre>
-    {% empty %}
-        <strong>No users found!</strong>
-    {% endfor %}
-    </div>
-</div>
 
 {% block title %}إضافة دفعة يدوية - كاررنتال{% endblock %}
 
-{% block admin_content %}
+{% block content %}
 <div class="container py-4">
     <!-- فتات الخبز -->
     <nav aria-label="breadcrumb" class="mb-4">
@@ -88,13 +74,8 @@
                             <label for="reservation_id" class="form-label required">حجز العميل</label>
                             <select name="reservation_id" id="reservation_id" class="form-select" required>
                                 <option value="">-- اختر الحجز --</option>
-                                {% for res in incomplete_reservations %}
-                                <option value="{{ res.id }}" data-price="{{ res.total_price }}" data-user="{{ res.user.id }}">
-                                    حجز #{{ res.id }} - {{ res.car.make }} {{ res.car.model }} ({{ res.total_price }} د.ك)
-                                </option>
-                                {% endfor %}
                             </select>
-                            <div class="text-muted mt-2" id="reservation_info"></div>
+                            <div class="text-muted mt-2" id="reservation_info">اختر مستخدم لعرض الحجوزات المعلقة</div>
                         </div>
                     </div>
                     
@@ -163,7 +144,7 @@
         userSelect.addEventListener('change', function() {
             if (paymentTypeReservation.checked) {
                 // تحديث قائمة الحجوزات بناءً على المستخدم المختار
-                updateReservationOptions();
+                fetchUserReservations();
             }
         });
         
@@ -174,7 +155,7 @@
                 manualPaymentSection.style.display = 'none';
                 noReservationInput.value = '';
                 // تحديث قائمة الحجوزات
-                updateReservationOptions();
+                fetchUserReservations();
             }
         });
         
@@ -184,6 +165,7 @@
                 manualPaymentSection.style.display = 'block';
                 noReservationInput.value = 'on';
                 reservationSelect.value = '';
+                document.getElementById('id_amount').value = '';
             }
         });
         
@@ -198,34 +180,48 @@
             }
         });
         
-        // وظيفة لتحديث خيارات الحجز بناءً على المستخدم المختار
-        function updateReservationOptions() {
+        // وظيفة لجلب حجوزات المستخدم عبر AJAX
+        function fetchUserReservations() {
             const userId = userSelect.value;
             if (!userId) {
+                reservationSelect.innerHTML = '<option value="">-- اختر الحجز --</option>';
+                reservationInfo.textContent = 'اختر مستخدم لعرض الحجوزات المعلقة';
                 return;
             }
             
             reservationInfo.textContent = 'جاري تحميل الحجوزات...';
             
-            // تحديث قائمة الحجوزات
+            // إعادة تعيين قائمة الحجوزات
             reservationSelect.innerHTML = '<option value="">-- اختر الحجز --</option>';
             
-            {% for res in incomplete_reservations %}
-            if ("{{ res.user.id }}" == userId) {
-                const option = document.createElement('option');
-                option.value = "{{ res.id }}";
-                option.setAttribute('data-price', "{{ res.total_price }}");
-                option.setAttribute('data-user', "{{ res.user.id }}");
-                option.textContent = "حجز #{{ res.id }} - {{ res.car.make }} {{ res.car.model }} ({{ res.total_price }} د.ك)";
-                reservationSelect.appendChild(option);
-            }
-            {% endfor %}
-            
-            if (reservationSelect.options.length <= 1) {
-                reservationInfo.textContent = 'لا توجد حجوزات معلقة لهذا المستخدم';
-            } else {
-                reservationInfo.textContent = `${reservationSelect.options.length - 1} حجوزات متاحة`;
-            }
+            // استدعاء واجهة برمجة التطبيقات للحصول على حجوزات المستخدم
+            fetch(`/api/users/${userId}/reservations/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        reservationInfo.textContent = `خطأ: ${data.error}`;
+                        return;
+                    }
+                    
+                    if (data.reservations && data.reservations.length > 0) {
+                        // إضافة الحجوزات إلى القائمة المنسدلة
+                        data.reservations.forEach(res => {
+                            const option = document.createElement('option');
+                            option.value = res.id;
+                            option.setAttribute('data-price', res.amount);
+                            option.textContent = `حجز #${res.id} - ${res.car} (${res.amount} د.ك)`;
+                            reservationSelect.appendChild(option);
+                        });
+                        
+                        reservationInfo.textContent = `${data.reservations.length} حجوزات معلقة متاحة`;
+                    } else {
+                        reservationInfo.textContent = 'لا توجد حجوزات معلقة لهذا المستخدم';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching reservations:', error);
+                    reservationInfo.textContent = 'حدث خطأ أثناء تحميل الحجوزات';
+                });
         }
     });
 </script>
