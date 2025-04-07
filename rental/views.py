@@ -545,12 +545,23 @@ def toggle_dark_mode(request):
     return redirect('index')
 
 def toggle_language(request):
-    """Toggle language settings"""
-    # Toggle language in session
-    language = request.session.get('language', 'ar')
-    request.session['language'] = 'en' if language == 'ar' else 'ar'
+    """Toggle between Arabic and English languages"""
+    current_language = request.session.get('language', 'ar')  # Default to Arabic if not set
     
-    # Redirect back to the same page
+    # Toggle between 'ar' and 'en'
+    new_language = 'en' if current_language == 'ar' else 'ar'
+    request.session['language'] = new_language
+    
+    # Force save session to ensure changes are persisted
+    request.session.modified = True
+    
+    # Add success message
+    if new_language == 'ar':
+        messages.success(request, "تم تغيير اللغة إلى العربية")
+    else:
+        messages.success(request, "Language changed to English successfully")
+    
+    # Go back to the previous page
     referer = request.META.get('HTTP_REFERER')
     if referer:
         return redirect(referer)
