@@ -6,7 +6,7 @@ from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from .models import User, Car, Reservation, CartItem
-from .forms import CarForm, ManualPaymentForm, RegisterForm
+from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm
 from functools import wraps
 from datetime import datetime, date, timedelta
 import uuid
@@ -658,6 +658,49 @@ def add_user(request):
     
     return render(request, 'admin/add_user_form.html', context)
 
+@login_required
+@admin_required
+def user_details(request, user_id):
+    """Admin view to show user details"""
+    user = get_object_or_404(User, id=user_id)
+    
+    # Get user's reservations
+    reservations = Reservation.objects.filter(user=user).order_by('-created_at')
+    
+    context = {
+        'user_details': user,
+        'reservations': reservations,
+        'title': f'تفاصيل المستخدم: {user.first_name} {user.last_name}',
+    }
+    
+    return render(request, 'admin/user_details.html', context)
+
+@login_required
+@admin_required
+def edit_user(request, user_id):
+    """Admin view to edit a user"""
+    user = get_object_or_404(User, id=user_id)
+    
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"تم تحديث بيانات المستخدم {user.first_name} {user.last_name} بنجاح!")
+            return redirect('admin_users')
+    else:
+        # Prefill the form with user data
+        form = ProfileForm(instance=user)
+    
+    context = {
+        'form': form,
+        'user_obj': user,
+        'title': f'تعديل بيانات المستخدم: {user.first_name} {user.last_name}',
+    }
+    
+    return render(request, 'admin/edit_user_form.html', context)
+
+@login_required
+@admin_required
 def get_user_reservations(request):
     """API to get reservations for a specific user"""
     user_id = request.GET.get('user_id')

@@ -1,0 +1,154 @@
+{% extends 'admin/index.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - لوحة التحكم{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="section-heading mb-0">{{ title }}</h2>
+        <p class="text-muted">عرض معلومات المستخدم والحجوزات</p>
+    </div>
+    <div>
+        <a href="{% url 'edit_user' user_details.id %}" class="btn btn-primary me-2">
+            <i class="fas fa-edit me-2"></i>تعديل البيانات
+        </a>
+        <a href="{% url 'admin_users' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-2"></i>العودة إلى قائمة المستخدمين
+        </a>
+    </div>
+</div>
+
+<!-- بطاقة معلومات المستخدم -->
+<div class="dashboard-card mb-4">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-user-circle me-2"></i>معلومات المستخدم</h4>
+    </div>
+    <div class="card-body p-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="user-detail-item">
+                    <span class="detail-label">اسم المستخدم:</span>
+                    <span class="detail-value">{{ user_details.username }}</span>
+                </div>
+                <div class="user-detail-item mt-3">
+                    <span class="detail-label">الاسم الكامل:</span>
+                    <span class="detail-value">{{ user_details.first_name }} {{ user_details.last_name }}</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="user-detail-item">
+                    <span class="detail-label">البريد الإلكتروني:</span>
+                    <span class="detail-value">{{ user_details.email }}</span>
+                </div>
+                <div class="user-detail-item mt-3">
+                    <span class="detail-label">رقم الهاتف:</span>
+                    <span class="detail-value">{{ user_details.phone|default:"غير متوفر" }}</span>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="user-detail-item">
+                    <span class="detail-label">تاريخ التسجيل:</span>
+                    <span class="detail-value">{{ user_details.created_at|date:"Y-m-d" }}</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="user-detail-item">
+                    <span class="detail-label">نوع الحساب:</span>
+                    <span class="detail-value">
+                        {% if user_details.is_admin %}
+                            <span class="badge bg-primary">مشرف</span>
+                        {% else %}
+                            <span class="badge bg-secondary">مستخدم عادي</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- جدول الحجوزات -->
+<div class="dashboard-card table-card">
+    <div class="table-card-header">
+        <h4 class="table-card-title"><i class="fas fa-history me-2"></i>سجل الحجوزات</h4>
+        <div>
+            <span class="text-muted me-3">إجمالي الحجوزات: {{ reservations|length }}</span>
+        </div>
+    </div>
+    
+    {% if reservations %}
+    <div class="table-responsive">
+        <table class="table admin-table">
+            <thead>
+                <tr>
+                    <th>رقم الحجز</th>
+                    <th>السيارة</th>
+                    <th>التاريخ</th>
+                    <th>المبلغ</th>
+                    <th>الحالة</th>
+                    <th>حالة الدفع</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">{{ reservation.id }}</div>
+                        <div class="small text-muted">{{ reservation.created_at|date:"Y-m-d" }}</div>
+                    </td>
+                    <td>
+                        <div>{{ reservation.car.make }} {{ reservation.car.model }}</div>
+                        <div class="small text-muted">{{ reservation.car.year }}</div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-alt text-muted me-2"></i>
+                            <div>
+                                <div>{{ reservation.start_date|date:"Y-m-d" }}</div>
+                                <div>{{ reservation.end_date|date:"Y-m-d" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ reservation.total_price }} ريال</div>
+                    </td>
+                    <td>
+                        {% if reservation.status == 'pending' %}
+                            <span class="badge bg-warning">قيد الانتظار</span>
+                        {% elif reservation.status == 'confirmed' %}
+                            <span class="badge bg-success">مؤكد</span>
+                        {% elif reservation.status == 'completed' %}
+                            <span class="badge bg-primary">مكتمل</span>
+                        {% elif reservation.status == 'cancelled' %}
+                            <span class="badge bg-danger">ملغي</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if reservation.payment_status == 'pending' %}
+                            <span class="badge bg-warning">قيد الانتظار</span>
+                        {% elif reservation.payment_status == 'paid' %}
+                            <span class="badge bg-success">مدفوع</span>
+                        {% elif reservation.payment_status == 'refunded' %}
+                            <span class="badge bg-secondary">مسترجع</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="p-4 text-center">
+        <div class="empty-state">
+            <i class="fas fa-calendar-times empty-icon"></i>
+            <h5>لا يوجد حجوزات</h5>
+            <p class="text-muted">لم يقم هذا المستخدم بأي حجوزات حتى الآن</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
