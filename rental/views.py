@@ -190,16 +190,19 @@ def cart_view(request):
     
     # Calculate total for each item and the grand total
     grand_total = 0
+    total_days = 0
     for item in cart_items:
         # Calculate days (inclusive)
         delta = (item.end_date - item.start_date).days + 1
         item.days = delta
+        total_days += delta
         item.total = item.car.daily_rate * delta
         grand_total += item.total
     
     context = {
         'cart_items': cart_items,
-        'grand_total': grand_total,
+        'cart_total': grand_total,  # Make sure the key matches what's in the template
+        'total_days': total_days,   # Add total days to the context
     }
     
     return render(request, 'cart_django.html', context)
