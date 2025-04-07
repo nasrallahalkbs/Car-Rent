@@ -101,8 +101,8 @@ def car_listing(request):
     # Initialize search form
     form = CarSearchForm(request.GET)
     
-    # Get all available cars by default
-    cars = Car.objects.filter(is_available=True)
+    # Get all available cars by default, ordered by id for consistent pagination
+    cars = Car.objects.filter(is_available=True).order_by('id')
     
     # Filter based on search criteria if form is valid
     if form.is_valid():
