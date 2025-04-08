@@ -13,39 +13,56 @@ def dark_mode(request):
     return {'dark_mode': dark_mode}
 
 def language_context(request):
-    """Add language context to all templates"""
-    # التحقق أولاً من الكوكيز ثم الجلسة
-    language = 'en'  # اللغة الافتراضية هي الإنجليزية
+    """
+    إضافة سياق اللغة لجميع القوالب
     
-    # الحصول على اللغة من الكوكيز
+    تقوم هذه الدالة بتحديد اللغة الحالية وتوفير متغيرات السياق اللازمة
+    للقوالب للتكيف مع اللغة المناسبة (العربية أو الإنجليزية).
+    
+    ترتيب أولوية تحديد اللغة:
+    1. الكوكيز (django_language)
+    2. جلسة المستخدم (django_language)
+    3. القيمة الافتراضية (الإنجليزية)
+    """
+    # 1. تحديد اللغة الحالية (القيمة الافتراضية هي الإنجليزية)
+    language = 'en'
+    
+    # 2. محاولة الحصول على اللغة من الكوكيز (الأولوية الأولى)
     if hasattr(request, 'COOKIES') and 'django_language' in request.COOKIES:
-        language = request.COOKIES.get('django_language')
-    # الحصول على اللغة من الجلسة كاحتياطي
+        cookie_lang = request.COOKIES.get('django_language')
+        if cookie_lang in ['ar', 'en']:
+            language = cookie_lang
+    
+    # 3. محاولة الحصول على اللغة من جلسة المستخدم (الأولوية الثانية)
     elif hasattr(request, 'session') and 'django_language' in request.session:
-        language = request.session.get('django_language')
+        session_lang = request.session.get('django_language')
+        if session_lang in ['ar', 'en']:
+            language = session_lang
     
-    # تأكد من أن القيمة هي إما 'ar' أو 'en'
-    if language not in ['ar', 'en']:
-        language = 'en'
-    
-    # تعيين العلامات المنطقية للاستخدام في القوالب
+    # 4. تعيين العلامات المنطقية للاستخدام في القوالب
     is_arabic = (language == 'ar')
     is_english = (language == 'en')
     
-    # معلومات تصحيح
-    print(f"Context Processor - Language: {language}, is_arabic: {is_arabic}, is_english: {is_english}")
-    
-    # متغيرات سياق إضافية لتكييف التخطيط
-    return {
+    # 5. متغيرات سياق لدعم تكييف القوالب مع اتجاه اللغة
+    context_data = {
+        # المتغيرات الأساسية للغة
         'current_language': language,
         'LANGUAGE_CODE': language,  # اسم متغير السياق الافتراضي لـ Django
         'is_arabic': is_arabic,
         'is_english': is_english,
+        
+        # متغيرات اتجاه النص والتنسيق
         'html_dir': 'rtl' if is_arabic else 'ltr',
         'html_lang': 'ar' if is_arabic else 'en',
+        'text_align': 'right' if is_arabic else 'left',
+        
+        # متغيرات هوامش Bootstrap المعتمدة على اللغة
         'margin_right_class': 'ms' if is_arabic else 'me',
         'margin_left_class': 'me' if is_arabic else 'ms',
-        'text_align': 'right' if is_arabic else 'left',
+        
+        # متغيرات الخط والتنسيق
         'font_family': "'Tajawal', sans-serif" if is_arabic else "'Roboto', sans-serif",
         'bootstrap_css': 'bootstrap.rtl.min.css' if is_arabic else 'bootstrap.min.css'
     }
+    
+    return context_data

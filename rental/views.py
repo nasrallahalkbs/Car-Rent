@@ -19,13 +19,18 @@ import os.path
 logger = logging.getLogger(__name__)
 
 def get_template_by_language(request, base_template):
-    """Helper function to choose the appropriate template based on language setting"""
-    # Always use the Arabic design template with layout_django.html for consistency
-    # This ensures we use the same layout template for all pages
+    """
+    Helper function to choose the appropriate template based on language setting
     
-    # Map all templates to their _django versions for consistency
+    الدالة المساعدة لاختيار القالب المناسب بناء على إعداد اللغة.
+    في هذا النظام، نستخدم دائما نفس القالب للغتين العربية والإنجليزية،
+    ولكن نضبط اتجاه العرض وتفاصيل أخرى عبر متغيرات السياق.
+    """
+    # لدينا الآن آلية واحدة فقط - استخدام القوالب المنتهية بـ _django.html
+    
+    # قاموس لتحويل القوالب الأساسية إلى نسخها المحسنة
     template_mappings = {
-        # Main navigation templates
+        # قوالب التنقل الرئيسية
         'index.html': 'index_django.html',
         'cars.html': 'cars_django.html',
         'profile.html': 'profile_django.html',
@@ -37,33 +42,29 @@ def get_template_by_language(request, base_template):
         'login.html': 'login_django.html',
         'register.html': 'register_django.html',
         'my_reservations.html': 'my_reservations_django.html',
+        'booking.html': 'booking_django.html',
         
-        # For completeness, include the following templates that may be used elsewhere
+        # للاكتمال، نتضمن القوالب التالية التي قد تكون مستخدمة في أماكن أخرى
         'reservation_detail.html': 'reservation_detail_django.html',
         'error.html': 'error_django.html',
         'admin_dashboard.html': 'admin_dashboard_django.html',
     }
     
-    # Special case for index_arabic.html - redirect to index_django.html
+    # حالة خاصة للقالب index_arabic.html - توجيه إلى index_django.html
     if base_template == 'index_arabic.html':
         return 'index_django.html'
     
-    # If we have a direct mapping, use it
+    # إذا كان لدينا تعيين مباشر، استخدمه
     if base_template in template_mappings:
         return template_mappings[base_template]
     
-    # For templates that might already have _django suffix
+    # للقوالب التي قد تنتهي بالفعل بـ _django.html
     if base_template.endswith('.html') and not base_template.endswith('_django.html'):
         base_name = base_template[:-5]
         django_template = f"{base_name}_django.html"
-        
-        # Try to use the _django version if it's available
-        import os.path
-        if os.path.exists(f"templates/{django_template}"):
-            return django_template
+        return django_template
     
-    # Default fallback - if the template is already in _django form or doesn't have a mapping
-    # Don't add a suffix to templates that don't have a _django version
+    # التعامل الافتراضي
     return base_template
 
 def index(request):
@@ -622,26 +623,52 @@ def toggle_dark_mode(request):
     return redirect('index')
 
 def toggle_language(request):
-    """Toggle between Arabic and English languages"""
-    # نهج مباشر وبسيط لتبديل اللغة
-
-    # التحقق من اللغة الحالية في جلسة المستخدم
-    current_language = request.session.get('django_language', 'en')
+    """
+    تبديل اللغة بين العربية والإنجليزية
     
-    # تبديل اللغة 
+    تقوم هذه الدالة بتنفيذ:
+    1. تخزين اللغة في جلسة المستخدم
+    2. تخزين اللغة في الكوكيز
+    3. فرض تحديث جميع الصفحات لإظهار اللغة الجديدة
+    
+    تستخدم هذه الدالة نهجًا مباشرًا وشاملاً لضمان تطبيق تغيير اللغة
+    على جميع أجزاء التطبيق بشكل متسق.
+    """
+    # الحصول على رابط الصفحة الحالية للعودة إليها بعد تغيير اللغة
+    referer = request.META.get('HTTP_REFERER', '/')
+    
+    # 1. الحصول على اللغة الحالية من الكوكيز أو الجلسة
+    current_language = 'en'  # افتراضياً الإنجليزية
+    if 'django_language' in request.COOKIES:
+        current_language = request.COOKIES.get('django_language')
+    elif 'django_language' in request.session:
+        current_language = request.session.get('django_language')
+        
+    # تأكد من أن القيمة هي إما 'ar' أو 'en'
+    if current_language not in ['ar', 'en']:
+        current_language = 'en'
+    
+    # 2. تبديل اللغة
     new_language = 'ar' if current_language == 'en' else 'en'
     
     # طباعة معلومات التصحيح
-    print(f"Language Toggle: {current_language} -> {new_language}")
+    print(f"**Language Toggle: {current_language} -> {new_language}**")
     
-    # تخزين اللغة الجديدة في الجلسة
+    # 3. حفظ اللغة الجديدة في جلسة المستخدم
     request.session['django_language'] = new_language
     
-    # تخزين اللغة في الكوكيز
-    response = redirect(request.META.get('HTTP_REFERER', '/'))
-    response.set_cookie('django_language', new_language, max_age=86400*365)
+    # 4. إنشاء استجابة HTTP وتعيين الكوكيز
+    response = redirect(referer)
+    response.set_cookie(
+        'django_language',
+        new_language,
+        max_age=86400*365,  # صالحة لمدة سنة
+        path='/',           # متاحة في جميع مسارات الموقع
+        secure=settings.SESSION_COOKIE_SECURE,
+        httponly=False      # السماح للجافاسكريبت بالوصول إليها
+    )
     
-    # إضافة رسالة نجاح
+    # 5. إضافة رسالة نجاح مناسبة للغة الجديدة
     if new_language == 'ar':
         messages.success(request, "تم تغيير اللغة إلى العربية")
     else:

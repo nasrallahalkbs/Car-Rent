@@ -191,14 +191,17 @@ LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale'),
 ]
 
-# Cookie name for storing the language preference
-LANGUAGE_COOKIE_NAME = 'django_language'
-LANGUAGE_COOKIE_AGE = 60 * 60 * 24 * 365  # One year (in seconds)
-LANGUAGE_COOKIE_DOMAIN = None
-LANGUAGE_COOKIE_PATH = '/'
-LANGUAGE_COOKIE_SECURE = False
-LANGUAGE_COOKIE_HTTPONLY = False
-LANGUAGE_COOKIE_SAMESITE = None
+# إعدادات اللغة والكوكيز
+LANGUAGE_COOKIE_NAME = 'django_language'    # اسم الكوكي الذي سيتم استخدامه لتخزين تفضيل اللغة
+LANGUAGE_COOKIE_AGE = 60 * 60 * 24 * 365    # مدة صلاحية الكوكي (سنة واحدة بالثواني)
+LANGUAGE_COOKIE_DOMAIN = None               # نطاق الكوكي (لا تعيين قيمة يعني النطاق الحالي فقط)
+LANGUAGE_COOKIE_PATH = '/'                  # مسار الكوكي (متاح لجميع الصفحات)
+LANGUAGE_COOKIE_SECURE = False              # لا تطلب HTTPS (مهم للتطوير المحلي)
+LANGUAGE_COOKIE_HTTPONLY = False            # السماح لـ JavaScript بالوصول
+LANGUAGE_COOKIE_SAMESITE = None             # سماحية Same-Site للتكامل مع الخدمات الخارجية
+
+# Use SessionMiddleware for storing language preference in the session as well
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30      # مدة جلسة المستخدم (30 يوم)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
