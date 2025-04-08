@@ -28,6 +28,10 @@ def get_template_by_language(request, base_template):
     # For profile.html
     if base_template == 'profile.html' and language == 'ar':
         return 'profile_arabic.html'
+        
+    # For cars.html
+    if base_template == 'cars.html' and language == 'ar':
+        return 'cars_arabic.html'
     
     # Handle templates with _django suffix for Arabic
     if language == 'ar':
