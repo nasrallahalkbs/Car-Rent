@@ -3,20 +3,22 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls.i18n import i18n_patterns
+from django.utils.translation import gettext_lazy as _
 
-# URLs that don't need language prefix
+# المسارات التي لا تحتاج بادئة لغة
 urlpatterns = [
-    path('i18n/', include('django.conf.urls.i18n')),  # Language switching URLs
+    # إضافة مسار العرض الخاص بتبديل اللغة من Django
+    path('i18n/', include('django.conf.urls.i18n')),
 ]
 
-# URLs with language prefix (e.g., /ar/, /en/)
+# المسارات مع بادئة اللغة (مثل /ar/، /en/)
 urlpatterns += i18n_patterns(
-    path('admin/', admin.site.urls),
+    path(_('admin/'), admin.site.urls),  # يمكن ترجمة المسارات أيضًا
     path('', include('rental.urls')),
-    prefix_default_language=True,  # Include prefix for default language too
+    prefix_default_language=True,  # تضمين بادئة اللغة الافتراضية أيضًا
 )
 
-# Serve media and static files during development
+# خدمة ملفات الوسائط والملفات الثابتة أثناء التطوير
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

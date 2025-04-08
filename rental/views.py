@@ -622,59 +622,7 @@ def toggle_dark_mode(request):
         return redirect(referer)
     return redirect('index')
 
-def toggle_language(request):
-    """
-    تبديل اللغة بين العربية والإنجليزية
-    
-    تقوم هذه الدالة بتنفيذ:
-    1. تخزين اللغة في جلسة المستخدم
-    2. تخزين اللغة في الكوكيز
-    3. فرض تحديث جميع الصفحات لإظهار اللغة الجديدة
-    
-    تستخدم هذه الدالة نهجًا مباشرًا وشاملاً لضمان تطبيق تغيير اللغة
-    على جميع أجزاء التطبيق بشكل متسق.
-    """
-    # الحصول على رابط الصفحة الحالية للعودة إليها بعد تغيير اللغة
-    referer = request.META.get('HTTP_REFERER', '/')
-    
-    # 1. الحصول على اللغة الحالية من الكوكيز أو الجلسة
-    current_language = 'en'  # افتراضياً الإنجليزية
-    if 'django_language' in request.COOKIES:
-        current_language = request.COOKIES.get('django_language')
-    elif 'django_language' in request.session:
-        current_language = request.session.get('django_language')
-        
-    # تأكد من أن القيمة هي إما 'ar' أو 'en'
-    if current_language not in ['ar', 'en']:
-        current_language = 'en'
-    
-    # 2. تبديل اللغة
-    new_language = 'ar' if current_language == 'en' else 'en'
-    
-    # طباعة معلومات التصحيح
-    print(f"**Language Toggle: {current_language} -> {new_language}**")
-    
-    # 3. حفظ اللغة الجديدة في جلسة المستخدم
-    request.session['django_language'] = new_language
-    
-    # 4. إنشاء استجابة HTTP وتعيين الكوكيز
-    response = redirect(referer)
-    response.set_cookie(
-        'django_language',
-        new_language,
-        max_age=86400*365,  # صالحة لمدة سنة
-        path='/',           # متاحة في جميع مسارات الموقع
-        secure=settings.SESSION_COOKIE_SECURE,
-        httponly=False      # السماح للجافاسكريبت بالوصول إليها
-    )
-    
-    # 5. إضافة رسالة نجاح مناسبة للغة الجديدة
-    if new_language == 'ar':
-        messages.success(request, "تم تغيير اللغة إلى العربية")
-    else:
-        messages.success(request, "Language changed to English successfully")
-    
-    return response
+
 def about_us(request):
     """About Us page view"""
     template = get_template_by_language(request, 'about_us.html')
