@@ -623,44 +623,25 @@ def toggle_dark_mode(request):
 
 def toggle_language(request):
     """Toggle between Arabic and English languages"""
-    from django.utils.translation import activate
-    from django.utils import translation
+    # نهج مباشر وبسيط لتبديل اللغة
+
+    # التحقق من اللغة الحالية في جلسة المستخدم
+    current_language = request.session.get('django_language', 'en')
     
-    # Get current language
-    current_language = translation.get_language() or 'ar'
+    # تبديل اللغة 
+    new_language = 'ar' if current_language == 'en' else 'en'
     
-    # Debug logging
-    print(f"Toggle Language - Current language: {current_language}")
+    # طباعة معلومات التصحيح
+    print(f"Language Toggle: {current_language} -> {new_language}")
     
-    # Toggle between 'ar' and 'en'
-    new_language = 'en' if current_language.startswith('ar') else 'ar'
+    # تخزين اللغة الجديدة في الجلسة
+    request.session['django_language'] = new_language
     
-    # Debug logging
-    print(f"Toggle Language - New language: {new_language}")
+    # تخزين اللغة في الكوكيز
+    response = redirect(request.META.get('HTTP_REFERER', '/'))
+    response.set_cookie('django_language', new_language, max_age=86400*365)
     
-    # Set language in session and activate it in this request
-    activate(new_language)
-    # Store in session directly
-    request.session['_language'] = new_language
-    
-    # Create a response object
-    referer = request.META.get('HTTP_REFERER', '/')
-    response = redirect(referer)
-    
-    # Set the cookie
-    print(f"Setting language cookie to: {new_language}")
-    response.set_cookie(
-        settings.LANGUAGE_COOKIE_NAME,
-        new_language,
-        max_age=settings.LANGUAGE_COOKIE_AGE,
-        path=settings.LANGUAGE_COOKIE_PATH,
-        domain=settings.LANGUAGE_COOKIE_DOMAIN,
-        secure=settings.LANGUAGE_COOKIE_SECURE,
-        httponly=settings.LANGUAGE_COOKIE_HTTPONLY,
-        samesite=settings.LANGUAGE_COOKIE_SAMESITE
-    )
-    
-    # Add success message
+    # إضافة رسالة نجاح
     if new_language == 'ar':
         messages.success(request, "تم تغيير اللغة إلى العربية")
     else:
