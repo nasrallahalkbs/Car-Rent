@@ -18,8 +18,17 @@ def language_context(request):
     language = request.session.get('language', 'ar')
     is_arabic = language == 'ar'
     is_english = language == 'en'
+    
+    # Additional context variables for layout adaptation
     return {
         'current_language': language,
         'is_arabic': is_arabic,
-        'is_english': is_english
+        'is_english': is_english,
+        'html_dir': 'rtl' if is_arabic else 'ltr',
+        'html_lang': 'ar' if is_arabic else 'en',
+        'margin_right_class': 'ms' if is_arabic else 'me',
+        'margin_left_class': 'me' if is_arabic else 'ms',
+        'text_align': 'right' if is_arabic else 'left',
+        'font_family': "'Tajawal', sans-serif" if is_arabic else "'Roboto', sans-serif",
+        'bootstrap_css': 'bootstrap.rtl.min.css' if is_arabic else 'bootstrap.min.css'
     }
