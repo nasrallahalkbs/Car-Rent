@@ -1,4 +1,5 @@
 {% extends 'layout_django.html' %}
+{% load i18n %}
 {% load static %}
 
 {% block title %}{% if is_english %}Booking - {{ car.make }} {{ car.model }}{% else %}حجز - {{ car.make }} {{ car.model }}{% endif %}{% endblock %}
@@ -25,12 +26,12 @@
                             <div class="col-md-9">
                                 <h4 class="car-title">{{ car.make }} {{ car.model }} {{ car.year }}</h4>
                                 <div class="car-specs">
-                                    <span class="badge bg-info me-2"><i class="fas fa-car {% if is_english %}me-1{% else %}ms-1{% endif %}"></i>{{ car.category }}</span>
-                                    <span class="badge bg-secondary me-2"><i class="fas fa-cog {% if is_english %}me-1{% else %}ms-1{% endif %}"></i>{{ car.transmission }}</span>
-                                    <span class="badge bg-success"><i class="fas fa-gas-pump {% if is_english %}me-1{% else %}ms-1{% endif %}"></i>{{ car.fuel_type }}</span>
+                                    <span class="badge bg-info me-2"><i class="fas fa-car {% trans "me-1" %}"></i>{{ car.category }}</span>
+                                    <span class="badge bg-secondary me-2"><i class="fas fa-cog {% trans "me-1" %}"></i>{{ car.transmission }}</span>
+                                    <span class="badge bg-success"><i class="fas fa-gas-pump {% trans "me-1" %}"></i>{{ car.fuel_type }}</span>
                                 </div>
                                 <div class="car-price mt-2">
-                                    <strong>{% if is_english %}Daily Rate:{% else %}السعر اليومي:{% endif %}</strong> {{ car.daily_rate }} {% if is_english %}JOD / day{% else %}دينار / يوم{% endif %}
+                                    <strong>{% trans "Daily Rate:" %}</strong> {{ car.daily_rate }} {% trans "JOD / day" %}
                                 </div>
                                 {% if cart_item %}
                                 <div class="alert alert-info mt-2 mb-0">
@@ -48,40 +49,40 @@
                         <input type="hidden" name="car_id" value="{{ car.id }}">
                         
                         <!-- Date Selection -->
-                        <h5 class="section-title mb-3"><i class="far fa-calendar-alt {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>{% if is_english %}Booking Details{% else %}تفاصيل الحجز{% endif %}</h5>
+                        <h5 class="section-title mb-3"><i class="far fa-calendar-alt {% trans "me-2" %}"></i>{% trans "Booking Details" %}</h5>
                         <div class="row mb-4">
                             <div class="col-md-6 mb-3">
-                                <label for="start_date" class="form-label">{% if is_english %}Pick-up Date*{% else %}تاريخ الاستلام*{% endif %}</label>
+                                <label for="start_date" class="form-label">{% trans "Pick-up Date*" %}</label>
                                 <input type="date" id="start_date" name="start_date" class="form-control" 
                                        value="{{ start_date|default:'' }}" min="{{ today|date:'Y-m-d' }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="end_date" class="form-label">{% if is_english %}Return Date*{% else %}تاريخ التسليم*{% endif %}</label>
+                                <label for="end_date" class="form-label">{% trans "Return Date*" %}</label>
                                 <input type="date" id="end_date" name="end_date" class="form-control" 
                                        value="{{ end_date|default:'' }}" min="{{ today|date:'Y-m-d' }}" required>
                             </div>
                         </div>
                         
                         <!-- Customer Information -->
-                        <h5 class="section-title mb-3"><i class="far fa-user {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>{% if is_english %}Customer Information{% else %}معلومات العميل{% endif %}</h5>
+                        <h5 class="section-title mb-3"><i class="far fa-user {% trans "me-2" %}"></i>{% trans "Customer Information" %}</h5>
                         <div class="row mb-4">
                             <div class="col-md-6 mb-3">
-                                <label for="first_name" class="form-label">{% if is_english %}First Name*{% else %}الاسم الأول*{% endif %}</label>
+                                <label for="first_name" class="form-label">{% trans "First Name*" %}</label>
                                 <input type="text" id="first_name" name="first_name" class="form-control" 
                                        value="{{ request.user.first_name|default:'' }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="last_name" class="form-label">{% if is_english %}Last Name*{% else %}الاسم الأخير*{% endif %}</label>
+                                <label for="last_name" class="form-label">{% trans "Last Name*" %}</label>
                                 <input type="text" id="last_name" name="last_name" class="form-control" 
                                        value="{{ request.user.last_name|default:'' }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label">{% if is_english %}Email*{% else %}البريد الإلكتروني*{% endif %}</label>
+                                <label for="email" class="form-label">{% trans "Email*" %}</label>
                                 <input type="email" id="email" name="email" class="form-control" 
                                        value="{{ request.user.email|default:'' }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label">{% if is_english %}Phone Number*{% else %}رقم الهاتف*{% endif %}</label>
+                                <label for="phone" class="form-label">{% trans "Phone Number*" %}</label>
                                 <input type="tel" id="phone" name="phone" class="form-control" 
                                        value="{{ request.user.phone|default:'' }}" required>
                             </div>
@@ -89,28 +90,28 @@
                         
                         <!-- Additional Requests -->
                         <div class="mb-4">
-                            <label for="notes" class="form-label">{% if is_english %}Additional Notes{% else %}ملاحظات إضافية{% endif %}</label>
+                            <label for="notes" class="form-label">{% trans "Additional Notes" %}</label>
                             <textarea id="notes" name="notes" class="form-control" rows="3" 
-                                      placeholder="{% if is_english %}Any special requests or additional notes?{% else %}أي طلبات خاصة أو ملاحظات إضافية؟{% endif %}"></textarea>
+                                      placeholder="{% trans "Any special requests or additional notes?" %}"></textarea>
                         </div>
                         
                         <!-- Booking Summary -->
                         <div class="booking-summary card mb-4">
                             <div class="card-header bg-light">
-                                <h5 class="mb-0">{% if is_english %}Booking Summary{% else %}ملخص الحجز{% endif %}</h5>
+                                <h5 class="mb-0">{% trans "Booking Summary" %}</h5>
                             </div>
                             <div class="card-body">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>{% if is_english %}Daily Rate:{% else %}السعر اليومي:{% endif %}</span>
-                                    <strong>{{ car.daily_rate }} {% if is_english %}JOD{% else %}دينار{% endif %}</strong>
+                                    <span>{% trans "Daily Rate:" %}</span>
+                                    <strong>{{ car.daily_rate }} {% trans "JOD" %}</strong>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>{% if is_english %}Number of Days:{% else %}عدد الأيام:{% endif %}</span>
+                                    <span>{% trans "Number of Days:" %}</span>
                                     <strong id="totalDays">--</strong>
                                 </div>
                                 <hr>
                                 <div class="d-flex justify-content-between fw-bold">
-                                    <span>{% if is_english %}Total:{% else %}الإجمالي:{% endif %}</span>
+                                    <span>{% trans "Total:" %}</span>
                                     <strong id="totalPrice">--</strong>
                                 </div>
                             </div>
@@ -120,18 +121,18 @@
                         <div class="form-check mb-4">
                             <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
                             <label class="form-check-label" for="terms">
-                                {% if is_english %}I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>{% else %}أوافق على <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">الشروط والأحكام</a>{% endif %}
+                                {% blocktrans trimmed %}I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>{% endblocktrans %}
                             </label>
                         </div>
                         
                         <!-- Submit Button -->
                         <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <i class="fas fa-paper-plane {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>{% if is_english %}Submit Booking Request{% else %}إرسال طلب الحجز{% endif %}
+                            <i class="fas fa-paper-plane {% trans "me-2" %}"></i>{% trans "Submit Booking Request" %}
                         </button>
                         
                         <div class="alert alert-info mt-3">
                             <i class="fas fa-info-circle ms-2"></i>
-                            {% if is_english %}Your booking request will be reviewed as soon as possible. After approval, you can complete the payment process.{% else %}سيتم مراجعة طلب الحجز والرد عليه في أقرب وقت ممكن. بعد الموافقة، سيمكنك إتمام عملية الدفع.{% endif %}
+                            {% blocktrans trimmed %}Your booking request will be reviewed as soon as possible. After approval, you can complete the payment process.{% endblocktrans %}
                         </div>
                     </form>
                 </div>
@@ -145,7 +146,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="termsModalLabel">{% if is_english %}Terms and Conditions{% else %}الشروط والأحكام{% endif %}</h5>
+                <h5 class="modal-title" id="termsModalLabel">{% trans "Terms and Conditions" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
