@@ -2,39 +2,70 @@
 {% load i18n %}
 {% load static %}
 
+{% block extrahead %}
+<link rel="stylesheet" href="{% static 'css/home-page.css' %}">
+{% endblock %}
+
 {% block title %}{% trans "Luxury Car Rental Service" %}{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
 <section class="hero-section">
     <div class="container">
-        <h1>{% trans "Find Your Perfect Car" %}</h1>
-        <p>{% blocktrans trimmed %}Discover our exceptional collection of cars for any occasion. From economy to luxury, we have the perfect vehicle for your needs.{% endblocktrans %}</p>
-        <a href="{% url 'cars' %}" class="btn btn-primary btn-lg">{% trans "Browse Cars" %}</a>
+        <h1>{% if is_english %}Find Your Perfect Car{% else %}ابحث عن سيارتك المثالية{% endif %}</h1>
+        <p>
+            {% if is_english %}
+            Discover our exceptional collection of premium cars for any occasion. From economy to luxury, we have the perfect vehicle for your needs.
+            {% else %}
+            اكتشف مجموعتنا الاستثنائية من السيارات الفاخرة لأي مناسبة. من الاقتصادية إلى الفاخرة، لدينا السيارة المثالية لاحتياجاتك.
+            {% endif %}
+        </p>
+        <a href="{% url 'cars' %}" class="btn btn-primary btn-lg">
+            {% if is_english %}Browse Cars{% else %}تصفح السيارات{% endif %}
+        </a>
     </div>
 </section>
 
 <!-- Featured Cars -->
-<section class="featured-cars py-5">
+<section class="featured-cars">
     <div class="container">
-        <h2 class="section-title">{% trans "Featured Cars" %}</h2>
+        <h2 class="section-title">{% if is_english %}Featured Cars{% else %}السيارات المميزة{% endif %}</h2>
         <div class="row g-4">
             {% for car in featured_cars %}
-            <div class="col-md-6 col-lg-4">
+            <div class="col-md-6 col-lg-4 fadeInUp">
                 <div class="card car-card h-100">
                     <img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
                     <div class="card-body">
                         <h3 class="car-title">{{ car.make }} {{ car.model }} {{ car.year }}</h3>
-                        <p class="car-category">{{ car.category }} | {{ car.transmission }} | {{ car.fuel_type }}</p>
+                        <p class="car-category">
+                            {% if is_english %}
+                                {{ car.get_category_display }} | {{ car.get_transmission_display }} | {{ car.get_fuel_type_display }}
+                            {% else %}
+                                {{ car.category }} | {{ car.transmission }} | {{ car.fuel_type }}
+                            {% endif %}
+                        </p>
                         <p class="car-features">
-                            <i class="fas fa-users {% trans "me-2" %}"></i>{{ car.seats }} {% trans "seats" %}
+                            <i class="fas fa-users {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% if is_english %}{{ car.seats }} seats{% else %}{{ car.seats }} مقاعد{% endif %}
+                            
                             {% if car.features %}
-                            <span class="{% trans "ms-3" %}"><i class="fas fa-cog {% trans "me-2" %}"></i>{{ car.features|length }} {% trans "features" %}</span>
+                            <span class="{% if is_english %}ms-3{% else %}me-3{% endif %}">
+                                <i class="fas fa-cog {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                                {% if is_english %}{{ car.features|length }} features{% else %}{{ car.features|length }} ميزات{% endif %}
+                            </span>
                             {% endif %}
                         </p>
                         <div class="d-flex justify-content-between align-items-center">
-                            <p class="car-price mb-0">{{ car.daily_rate }} $<small>{% trans "/day" %}</small></p>
-                            <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-outline-primary">{% trans "View Details" %}</a>
+                            <p class="car-price mb-0">
+                                {% if is_english %}
+                                ${{ car.daily_rate }}<small>/day</small>
+                                {% else %}
+                                {{ car.daily_rate }} $<small>/يوم</small>
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-outline-primary">
+                                {% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -42,24 +73,32 @@
             {% endfor %}
         </div>
         <div class="text-center mt-4">
-            <a href="{% url 'cars' %}" class="btn btn-outline-primary">{% trans "View All Cars" %}</a>
+            <a href="{% url 'cars' %}" class="btn btn-outline-primary">
+                {% if is_english %}View All Cars{% else %}عرض جميع السيارات{% endif %}
+            </a>
         </div>
     </div>
 </section>
 
 <!-- How It Works -->
-<section class="how-it-works py-5 bg-light">
+<section class="how-it-works">
     <div class="container">
-        <h2 class="section-title">{% trans "How It Works" %}</h2>
+        <h2 class="section-title">{% if is_english %}How It Works{% else %}كيف يعمل؟{% endif %}</h2>
         <div class="row g-4 mt-3">
             <div class="col-md-4">
                 <div class="card h-100 text-center p-4">
                     <div class="card-body">
                         <div class="icon-wrapper mb-4">
-                            <i class="fas fa-search fa-4x text-primary"></i>
+                            <i class="fas fa-search fa-2x"></i>
                         </div>
-                        <h3 class="h4">{% trans "1. Choose Your Car" %}</h3>
-                        <p>{% blocktrans trimmed %}Browse our extensive collection of vehicles and choose the perfect car for your needs.{% endblocktrans %}</p>
+                        <h3 class="h4">{% if is_english %}1. Choose Your Car{% else %}١. اختر سيارتك{% endif %}</h3>
+                        <p>
+                            {% if is_english %}
+                            Browse our extensive collection of vehicles and choose the perfect car for your needs.
+                            {% else %}
+                            تصفح مجموعتنا الواسعة من السيارات واختر السيارة المناسبة لاحتياجاتك.
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -67,10 +106,16 @@
                 <div class="card h-100 text-center p-4">
                     <div class="card-body">
                         <div class="icon-wrapper mb-4">
-                            <i class="fas fa-calendar-alt fa-4x text-primary"></i>
+                            <i class="fas fa-calendar-alt fa-2x"></i>
                         </div>
-                        <h3 class="h4">{% trans "2. Make a Reservation" %}</h3>
-                        <p>{% blocktrans trimmed %}Select pickup and return dates, and complete the reservation process.{% endblocktrans %}</p>
+                        <h3 class="h4">{% if is_english %}2. Make a Reservation{% else %}٢. قم بالحجز{% endif %}</h3>
+                        <p>
+                            {% if is_english %}
+                            Select pickup and return dates, and complete the reservation process.
+                            {% else %}
+                            حدد تواريخ الاستلام والإرجاع، وأكمل عملية الحجز.
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -78,10 +123,16 @@
                 <div class="card h-100 text-center p-4">
                     <div class="card-body">
                         <div class="icon-wrapper mb-4">
-                            <i class="fas fa-car fa-4x text-primary"></i>
+                            <i class="fas fa-car fa-2x"></i>
                         </div>
-                        <h3 class="h4">{% trans "3. Enjoy Your Trip" %}</h3>
-                        <p>{% blocktrans trimmed %}Pick up your car from our convenient location and enjoy your journey with complete confidence.{% endblocktrans %}</p>
+                        <h3 class="h4">{% if is_english %}3. Enjoy Your Trip{% else %}٣. استمتع برحلتك{% endif %}</h3>
+                        <p>
+                            {% if is_english %}
+                            Pick up your car from our convenient location and enjoy your journey with complete confidence.
+                            {% else %}
+                            استلم سيارتك من موقعنا المناسب واستمتع برحلتك بكل ثقة.
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -90,75 +141,87 @@
 </section>
 
 <!-- Testimonials -->
-<section class="testimonials py-5">
+<section class="testimonials">
     <div class="container">
-        <h2 class="section-title">{% trans "What Our Customers Say" %}</h2>
+        <h2 class="section-title">{% if is_english %}What Our Customers Say{% else %}ماذا يقول عملاؤنا{% endif %}</h2>
         <div class="row g-4 mt-3">
             <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="testimonial-rating mb-3">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
+                <div class="testimonial-card h-100">
+                    <div class="testimonial-rating mb-3">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        {% if is_english %}
+                        "Great service and excellent selection of cars. The staff were extremely helpful and made the entire rental process smooth and hassle-free."
+                        {% else %}
+                        "خدمة رائعة ومجموعة مختارة ممتازة من السيارات. كان الموظفون متعاونين للغاية وجعلوا عملية التأجير بأكملها سلسة وخالية من المتاعب."
+                        {% endif %}
+                    </p>
+                    <div class="testimonial-author d-flex align-items-center mt-4">
+                        <div class="author-avatar {% if is_english %}me-3{% else %}ms-3{% endif %}">
+                            <img src="{% static 'images/avatar1.jpg' %}" alt="{% if is_english %}Customer{% else %}عميل{% endif %}" class="rounded-circle" width="50" height="50">
                         </div>
-                        <p class="testimonial-text">{% blocktrans trimmed %}"Great service and excellent selection of cars. The staff were extremely helpful and made the entire rental process smooth and hassle-free."{% endblocktrans %}</p>
-                        <div class="testimonial-author d-flex align-items-center mt-4">
-                            <div class="author-avatar {% trans "me-3" %}">
-                                <img src="{% static 'images/avatar1.jpg' %}" alt="{% trans "Customer" %}" class="rounded-circle" width="50" height="50">
-                            </div>
-                            <div>
-                                <h5 class="mb-0">{% trans "Mohammed Ali" %}</h5>
-                                <small class="text-muted">{% trans "Business Traveler" %}</small>
-                            </div>
+                        <div>
+                            <h5 class="mb-0">{% if is_english %}Mohammed Ali{% else %}محمد علي{% endif %}</h5>
+                            <small class="text-muted">{% if is_english %}Business Traveler{% else %}مسافر عمل{% endif %}</small>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="testimonial-rating mb-3">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
+                <div class="testimonial-card h-100">
+                    <div class="testimonial-rating mb-3">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        {% if is_english %}
+                        "I rented an SUV for our family vacation and it was perfect! Clean, in great condition, and exactly what we needed. Will definitely use their service again."
+                        {% else %}
+                        "استأجرت سيارة دفع رباعي لإجازة عائلتنا وكانت مثالية! نظيفة، بحالة جيدة، وبالضبط ما احتجناه. سأستخدم خدمتهم بالتأكيد مرة أخرى."
+                        {% endif %}
+                    </p>
+                    <div class="testimonial-author d-flex align-items-center mt-4">
+                        <div class="author-avatar {% if is_english %}me-3{% else %}ms-3{% endif %}">
+                            <img src="{% static 'images/avatar2.jpg' %}" alt="{% if is_english %}Customer{% else %}عميل{% endif %}" class="rounded-circle" width="50" height="50">
                         </div>
-                        <p class="testimonial-text">"استأجرت سيارة دفع رباعي لإجازة عائلتنا وكانت مثالية! نظيفة، بحالة جيدة، وبالضبط ما احتجناه. سأستخدم خدمتهم بالتأكيد مرة أخرى."</p>
-                        <div class="testimonial-author d-flex align-items-center mt-4">
-                            <div class="author-avatar {% trans "me-3" %}">
-                                <img src="{% static 'images/avatar2.jpg' %}" alt="عميل" class="rounded-circle" width="50" height="50">
-                            </div>
-                            <div>
-                                <h5 class="mb-0">سارة أحمد</h5>
-                                <small class="text-muted">مسافرة عائلية</small>
-                            </div>
+                        <div>
+                            <h5 class="mb-0">{% if is_english %}Sarah Ahmed{% else %}سارة أحمد{% endif %}</h5>
+                            <small class="text-muted">{% if is_english %}Family Traveler{% else %}مسافرة عائلية{% endif %}</small>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="testimonial-rating mb-3">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star-half-alt text-warning"></i>
+                <div class="testimonial-card h-100">
+                    <div class="testimonial-rating mb-3">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star-half-alt text-warning"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        {% if is_english %}
+                        "The luxury car I rented was immaculately clean and performed exceptionally. The online booking system was easy and the pickup/drop-off process was efficient."
+                        {% else %}
+                        "كانت السيارة الفاخرة التي استأجرتها نظيفة تمامًا وأداؤها كان ممتازًا. نظام الحجز عبر الإنترنت كان سهلًا وعملية الاستلام/التسليم كانت فعالة."
+                        {% endif %}
+                    </p>
+                    <div class="testimonial-author d-flex align-items-center mt-4">
+                        <div class="author-avatar {% if is_english %}me-3{% else %}ms-3{% endif %}">
+                            <img src="{% static 'images/avatar3.jpg' %}" alt="{% if is_english %}Customer{% else %}عميل{% endif %}" class="rounded-circle" width="50" height="50">
                         </div>
-                        <p class="testimonial-text">"كانت السيارة الفاخرة التي استأجرتها نظيفة تمامًا وأداؤها كان ممتازًا. نظام الحجز عبر الإنترنت كان سهلًا وعملية الاستلام/التسليم كانت فعالة."</p>
-                        <div class="testimonial-author d-flex align-items-center mt-4">
-                            <div class="author-avatar {% trans "me-3" %}">
-                                <img src="{% static 'images/avatar3.jpg' %}" alt="عميل" class="rounded-circle" width="50" height="50">
-                            </div>
-                            <div>
-                                <h5 class="mb-0">خالد محمد</h5>
-                                <small class="text-muted">عاشق للسيارات الفاخرة</small>
-                            </div>
+                        <div>
+                            <h5 class="mb-0">{% if is_english %}Khalid Mohamed{% else %}خالد محمد{% endif %}</h5>
+                            <small class="text-muted">{% if is_english %}Luxury Car Enthusiast{% else %}عاشق للسيارات الفاخرة{% endif %}</small>
                         </div>
                     </div>
                 </div>
@@ -168,29 +231,53 @@
 </section>
 
 <!-- Categories -->
-<section class="categories py-5 bg-light">
+<section class="categories">
     <div class="container">
-        <h2 class="section-title">{% trans "Browse by Category" %}</h2>
+        <h2 class="section-title">{% if is_english %}Browse by Category{% else %}تصفح حسب الفئة{% endif %}</h2>
         <div class="row g-4 mt-3">
             {% for category, cars in category_cars.items %}
             <div class="col-md-6 col-lg-4">
-                <div class="card category-card h-100">
-                    <div class="card-body">
-                        <h3 class="category-title">{{ category }}</h3>
-                        <p class="text-muted">{{ cars|length }} سيارة متاحة</p>
-                        <div class="category-car-list">
-                            {% for car in cars|slice:":3" %}
-                            <div class="category-car-item d-flex align-items-center mb-2">
-                                <img src="{{ car.image_url }}" alt="{{ car.make }}" class="category-car-img ms-3" width="50" height="50">
-                                <div>
-                                    <div class="category-car-name">{{ car.make }} {{ car.model }}</div>
-                                    <div class="category-car-price">{{ car.daily_rate }} $/يوم</div>
+                <div class="category-card h-100">
+                    <h3 class="category-title">
+                        {% if is_english %}
+                            {% for cat_choice in category_choices %}
+                                {% if cat_choice.0 == category %}{{ cat_choice.1 }}{% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {{ category }}
+                        {% endif %}
+                    </h3>
+                    <p class="text-muted">
+                        {% if is_english %}
+                            {{ cars|length }} cars available
+                        {% else %}
+                            {{ cars|length }} سيارة متاحة
+                        {% endif %}
+                    </p>
+                    <div class="category-car-list">
+                        {% for car in cars|slice:":3" %}
+                        <div class="category-car-item d-flex align-items-center mb-2">
+                            <img src="{{ car.image_url }}" alt="{{ car.make }}" class="category-car-img {% if is_english %}me-3{% else %}ms-3{% endif %}" width="50" height="50">
+                            <div>
+                                <div class="category-car-name">{{ car.make }} {{ car.model }}</div>
+                                <div class="category-car-price">
+                                    {% if is_english %}
+                                        ${{ car.daily_rate }}/day
+                                    {% else %}
+                                        {{ car.daily_rate }} $/يوم
+                                    {% endif %}
                                 </div>
                             </div>
-                            {% endfor %}
                         </div>
-                        <a href="{% url 'cars' %}?category={{ category }}" class="btn btn-outline-primary mt-3">عرض كل سيارات {{ category }}</a>
+                        {% endfor %}
                     </div>
+                    <a href="{% url 'cars' %}?category={{ category }}" class="btn btn-outline-primary mt-3">
+                        {% if is_english %}
+                            View all {{ category }} cars
+                        {% else %}
+                            عرض كل سيارات {{ category }}
+                        {% endif %}
+                    </a>
                 </div>
             </div>
             {% endfor %}
@@ -199,15 +286,33 @@
 </section>
 
 <!-- CTA Section -->
-<section class="cta-section py-5">
+<section class="cta-section">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-8">
-                <h2 class="mb-3">جاهز لتجربة تأجير سيارات مميزة؟</h2>
-                <p class="lead mb-0">تصفح مجموعتنا من المركبات واحجز سيارتك المثالية اليوم.</p>
+                <h2 class="mb-3">
+                    {% if is_english %}
+                        Ready for an exceptional car rental experience?
+                    {% else %}
+                        جاهز لتجربة تأجير سيارات مميزة؟
+                    {% endif %}
+                </h2>
+                <p class="lead mb-0">
+                    {% if is_english %}
+                        Browse our collection of vehicles and book your perfect car today.
+                    {% else %}
+                        تصفح مجموعتنا من المركبات واحجز سيارتك المثالية اليوم.
+                    {% endif %}
+                </p>
             </div>
             <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
-                <a href="{% url 'cars' %}" class="btn btn-primary btn-lg">ابحث عن سيارتك</a>
+                <a href="{% url 'cars' %}" class="btn btn-lg">
+                    {% if is_english %}
+                        Find Your Car
+                    {% else %}
+                        ابحث عن سيارتك
+                    {% endif %}
+                </a>
             </div>
         </div>
     </div>

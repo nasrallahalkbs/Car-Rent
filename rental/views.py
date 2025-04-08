@@ -87,6 +87,7 @@ def index(request):
     context = {
         'featured_cars': featured_cars,
         'category_cars': category_cars,
+        'category_choices': Car.CATEGORY_CHOICES,  # Add category choices for translations
     }
     
     # Use our helper function to select the appropriate template
