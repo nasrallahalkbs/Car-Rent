@@ -1,6 +1,7 @@
 from django.utils import translation
 from django.utils.deprecation import MiddlewareMixin
 from django.conf import settings
+from django.shortcuts import redirect
 import logging
 import re
 
@@ -17,6 +18,11 @@ class ForceLanguageMiddleware(MiddlewareMixin):
         """
         معالجة الطلب وضبط اللغة المناسبة
         """
+        # تدفق خاص لمعالجة تبديل اللغة
+        if request.path_info.endswith('/toggle-language/'):
+            print("Toggle language request detected, skipping language middleware processing")
+            return None
+            
         # محاولة الحصول على اللغة من مسار URL أولاً
         url_language = None
         path = request.path_info
@@ -37,8 +43,18 @@ class ForceLanguageMiddleware(MiddlewareMixin):
         print(f"Language session: {lang_session}")
         print(f"Accept-Language header: {request.META.get('HTTP_ACCEPT_LANGUAGE', '')}")
         
-        # الأولوية: مسار URL، ثم ملف تعريف الارتباط، ثم الجلسة، ثم اللغة الافتراضية
-        language = url_language or lang_cookie or lang_session or settings.LANGUAGE_CODE
+        # الأولوية المعدلة: ملف تعريف الارتباط، ثم جلسة المستخدم، ثم مسار URL، ثم اللغة الافتراضية
+        # هذا يسمح لاختيار المستخدم بتجاوز بادئة المسار
+        language = lang_cookie or lang_session or url_language or settings.LANGUAGE_CODE
+        
+        # إذا كانت اللغة المختارة لا تتطابق مع بادئة URL واللغة ليست AR (وهي الافتراضية)،
+        # نقوم بإعادة التوجيه إلى المسار الصحيح
+        if lang_cookie and url_language and lang_cookie != url_language and request.method == 'GET':
+            # إذا كان المستخدم قام بتغيير اللغة، نعيد توجيهه إلى المسار بالبادئة الصحيحة
+            if lang_cookie == 'en' and url_language == 'ar':
+                correct_path = path.replace('/ar/', '/en/', 1)
+                print(f"Redirecting to correct language path: {correct_path}")
+                return redirect(correct_path)
         
         # تعيين اللغة النشطة
         translation.activate(language)
@@ -63,8 +79,12 @@ class ForceLanguageMiddleware(MiddlewareMixin):
         # التأكد من وجود ملف تعريف ارتباط اللغة في كل استجابة
         lang = translation.get_language()
         
-        # تعيين ملف تعريف الارتباط إذا لم يكن موجودًا
-        if settings.LANGUAGE_COOKIE_NAME not in response.cookies:
+        # تحقق مما إذا كان هناك تغيير في اللغة تم ضبطه من خلال toggle_language
+        toggle_language_cookie = request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
+        
+        # إذا كان هناك ملف تعريف ارتباط للغة تم تعيينه عن طريق toggle_language،
+        # فلا نقوم بتغييره هنا لتجنب التعارض
+        if not toggle_language_cookie and settings.LANGUAGE_COOKIE_NAME not in response.cookies:
             response.set_cookie(
                 settings.LANGUAGE_COOKIE_NAME,
                 lang,
@@ -75,5 +95,8 @@ class ForceLanguageMiddleware(MiddlewareMixin):
                 httponly=settings.LANGUAGE_COOKIE_HTTPONLY,
                 samesite=settings.LANGUAGE_COOKIE_SAMESITE,
             )
+        
+        # طباعة معلومات التصحيح
+        print(f"Response language: {lang}, Cookie language: {toggle_language_cookie}")
         
         return response
