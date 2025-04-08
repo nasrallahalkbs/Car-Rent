@@ -4,118 +4,419 @@
 
 {% block title %}{% trans "My Reservations" %}{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <h1 class="mb-4">{% trans "My Reservations" %}</h1>
+{% block extrahead %}
+<style>
+    /* تحسين أسلوب صفحة الحجوزات */
+    .page-header {
+        background: var(--gradient-primary);
+        padding: 3rem 0;
+        margin-bottom: 3rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
     
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='rgba(255,255,255,.05)' fill-rule='evenodd'/%3E%3C/svg%3E");
+        z-index: 1;
+    }
+    
+    .page-header .container {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        font-family: 'Almarai', 'Cairo', sans-serif;
+    }
+    
+    .page-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        font-weight: 300;
+        margin-bottom: 0;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .reservation-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    
+    .reservation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .reservation-header {
+        background-color: var(--light);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .reservation-id {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 0;
+    }
+    
+    .reservation-body {
+        padding: 1.5rem;
+    }
+    
+    .car-image {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .car-info {
+        margin-top: 1rem;
+    }
+    
+    .car-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.25rem;
+    }
+    
+    .reservation-details {
+        margin-top: 1.5rem;
+    }
+    
+    .detail-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .detail-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--light);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        margin-right: 0.75rem;
+        margin-left: 0.75rem;
+        flex-shrink: 0;
+    }
+    
+    .reservation-footer {
+        background-color: var(--light);
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .status-badges {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .badge-custom {
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    
+    .status-pending {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #d69e00;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+    
+    .status-confirmed {
+        background-color: rgba(40, 167, 69, 0.15);
+        color: #208b3a;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+    
+    .status-completed {
+        background-color: rgba(23, 162, 184, 0.15);
+        color: #117a8b;
+        border: 1px solid rgba(23, 162, 184, 0.3);
+    }
+    
+    .status-cancelled {
+        background-color: rgba(220, 53, 69, 0.15);
+        color: #b21f2d;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+    
+    .payment-pending {
+        background-color: rgba(108, 117, 125, 0.15);
+        color: #5a6268;
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+    
+    .payment-paid {
+        background-color: rgba(40, 167, 69, 0.15);
+        color: #208b3a;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+    
+    .payment-refunded {
+        background-color: rgba(220, 53, 69, 0.15);
+        color: #b21f2d;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        border: none;
+    }
+    
+    .btn-view {
+        background-color: var(--primary);
+        color: white;
+    }
+    
+    .btn-view:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+    }
+    
+    .btn-pay {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .btn-pay:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+    }
+    
+    .btn-cancel {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .btn-cancel:hover {
+        background-color: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .empty-icon {
+        width: 120px;
+        height: 120px;
+        background: var(--light);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        color: var(--primary);
+    }
+    
+    .explore-btn {
+        padding: 0.75rem 2rem;
+        border-radius: 50px;
+        font-weight: 600;
+        background: var(--gradient-primary);
+        border: none;
+        color: white;
+        box-shadow: 0 5px 15px rgba(37, 99, 235, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .explore-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+    }
+    
+    .explore-btn i {
+        {% if is_english %}margin-right{% else %}margin-left{% endif %}: 8px;
+    }
+    
+    /* تعديلات خاصة بالغة العربية */
+    html[dir="rtl"] .detail-icon {
+        margin-right: 0;
+        margin-left: 0.75rem;
+    }
+    
+    html[dir="rtl"] .explore-btn i {
+        margin-right: 0;
+        margin-left: 8px;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ترويسة الصفحة الجديدة -->
+<header class="page-header">
+    <div class="container">
+        <h1 class="page-title">{% trans "My Reservations" %}</h1>
+        <p class="page-subtitle">{% if is_english %}View and manage all your car bookings{% else %}عرض وإدارة جميع حجوزات السيارات الخاصة بك{% endif %}</p>
+    </div>
+</header>
+
+<div class="container py-4">
     {% if reservations %}
     <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th scope="col">{% trans "Reservation ID" %}</th>
-                                    <th scope="col">{% trans "Car" %}</th>
-                                    <th scope="col">{% trans "Dates" %}</th>
-                                    <th scope="col">{% trans "Total" %}</th>
-                                    <th scope="col">{% trans "Reservation Status" %}</th>
-                                    <th scope="col">{% trans "Payment Status" %}</th>
-                                    <th scope="col">{% trans "Actions" %}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for reservation in reservations %}
-                                <tr>
-                                    <td><strong>#{{ reservation.id }}</strong></td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            {% if reservation.car.image_url %}
-                                            <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="rounded ms-2" width="50">
-                                            {% else %}
-                                            <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="rounded ms-2" width="50">
-                                            {% endif %}
-                                            <div>
-                                                <div class="fw-semibold">{{ reservation.car.make }} {{ reservation.car.model }}</div>
-                                                <small class="text-muted">{{ reservation.car.year }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div>{% if is_english %}{{ reservation.start_date|date:"m/d/Y" }} - {{ reservation.end_date|date:"m/d/Y" }}{% else %}{{ reservation.start_date|date:"d/m/Y" }} - {{ reservation.end_date|date:"d/m/Y" }}{% endif %}</div>
-                                        <small class="text-muted">
-                                            {{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} يوم
-                                        </small>
-                                    </td>
-                                    <td>{{ reservation.total_price }} دينار</td>
-                                    <td>
-                                        {% if reservation.status == 'pending' %}
-                                        <span class="badge bg-warning">قيد المراجعة</span>
-                                        {% elif reservation.status == 'confirmed' %}
-                                        <span class="badge bg-success">تمت الموافقة</span>
-                                        {% elif reservation.status == 'completed' %}
-                                        <span class="badge bg-info">مكتمل</span>
-                                        {% elif reservation.status == 'cancelled' %}
-                                        <span class="badge bg-danger">ملغي</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if reservation.payment_status == 'pending' %}
-                                        <span class="badge bg-secondary">في انتظار الدفع</span>
-                                        {% elif reservation.payment_status == 'paid' %}
-                                        <span class="badge bg-success">مدفوع</span>
-                                        {% elif reservation.payment_status == 'refunded' %}
-                                        <span class="badge bg-danger">مسترجع</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'reservation_detail' reservation_id=reservation.id %}" class="btn btn-outline-primary">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            
-                                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                                            <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success">
-                                                <i class="fas fa-credit-card"></i>
-                                            </a>
-                                            {% endif %}
-                                            
-                                            {% if reservation.status == 'pending' %}
-                                            <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-outline-danger">
-                                                <i class="fas fa-times"></i>
-                                            </a>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+        {% for reservation in reservations %}
+        <div class="col-md-6 col-lg-4">
+            <div class="reservation-card">
+                <div class="reservation-header d-flex justify-content-between align-items-center">
+                    <p class="reservation-id">#{{ reservation.id }}</p>
+                    <div class="date-badge">
+                        <small>
+                            {% if is_english %}
+                                {{ reservation.start_date|date:"m/d/Y" }} - {{ reservation.end_date|date:"m/d/Y" }}
+                            {% else %}
+                                {{ reservation.start_date|date:"d/m/Y" }} - {{ reservation.end_date|date:"d/m/Y" }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="reservation-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            {% if reservation.car.image_url %}
+                            <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="car-image">
+                            {% else %}
+                            <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="car-image">
+                            {% endif %}
+                            
+                            <div class="car-info">
+                                <h3 class="car-name">{{ reservation.car.make }} {{ reservation.car.model }}</h3>
+                                <p class="car-year text-muted">{{ reservation.car.year }}</p>
+                            </div>
+                            
+                            <div class="reservation-details">
+                                <div class="detail-item">
+                                    <div class="detail-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div>
+                                        <p class="mb-0 fw-semibold">{% trans "Duration" %}</p>
+                                        <small class="text-muted">{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }}{% if is_english %} days{% else %} يوم{% endif %}</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <div class="detail-icon">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                    <div>
+                                        <p class="mb-0 fw-semibold">{% trans "Total" %}</p>
+                                        <small class="text-muted">{{ reservation.total_price }}{% if is_english %} JOD{% else %} دينار{% endif %}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="reservation-footer">
+                    <div class="status-badges">
+                        {% if reservation.status == 'pending' %}
+                        <span class="badge-custom status-pending">{% if is_english %}Under Review{% else %}قيد المراجعة{% endif %}</span>
+                        {% elif reservation.status == 'confirmed' %}
+                        <span class="badge-custom status-confirmed">{% if is_english %}Confirmed{% else %}تمت الموافقة{% endif %}</span>
+                        {% elif reservation.status == 'completed' %}
+                        <span class="badge-custom status-completed">{% if is_english %}Completed{% else %}مكتمل{% endif %}</span>
+                        {% elif reservation.status == 'cancelled' %}
+                        <span class="badge-custom status-cancelled">{% if is_english %}Cancelled{% else %}ملغي{% endif %}</span>
+                        {% endif %}
+                        
+                        {% if reservation.payment_status == 'pending' %}
+                        <span class="badge-custom payment-pending">{% if is_english %}Payment Pending{% else %}في انتظار الدفع{% endif %}</span>
+                        {% elif reservation.payment_status == 'paid' %}
+                        <span class="badge-custom payment-paid">{% if is_english %}Paid{% else %}مدفوع{% endif %}</span>
+                        {% elif reservation.payment_status == 'refunded' %}
+                        <span class="badge-custom payment-refunded">{% if is_english %}Refunded{% else %}مسترجع{% endif %}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <a href="{% url 'reservation_detail' reservation_id=reservation.id %}" class="btn-action btn-view" title="{% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        
+                        {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                        <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn-action btn-pay" title="{% if is_english %}Pay Now{% else %}ادفع الآن{% endif %}">
+                            <i class="fas fa-credit-card"></i>
+                        </a>
+                        {% endif %}
+                        
+                        {% if reservation.status == 'pending' %}
+                        <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn-action btn-cancel" title="{% if is_english %}Cancel{% else %}إلغاء{% endif %}">
+                            <i class="fas fa-times"></i>
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-            
-            <div class="mt-4 text-center">
-                <a href="{% url 'cars' %}" class="btn btn-primary">
-                    <i class="fas fa-search ms-2"></i>البحث عن المزيد من السيارات
-                </a>
-            </div>
         </div>
+        {% endfor %}
+    </div>
+    
+    <div class="mt-5 text-center">
+        <a href="{% url 'cars' %}" class="explore-btn">
+            <i class="fas fa-search"></i>
+            {% if is_english %}Find More Cars{% else %}البحث عن المزيد من السيارات{% endif %}
+        </a>
     </div>
     {% else %}
-    <div class="card shadow-sm border-0">
-        <div class="card-body text-center p-5">
-            <div class="mb-4">
-                <i class="fas fa-calendar-alt fa-4x text-muted"></i>
-            </div>
-            <h3>لا توجد حجوزات</h3>
-            <p class="text-muted mb-4">لم تقم بإجراء أي حجوزات بعد. ابدأ باستكشاف السيارات المتاحة للإيجار.</p>
-            <a href="{% url 'cars' %}" class="btn btn-primary">
-                <i class="fas fa-search ms-2"></i>استكشاف السيارات
-            </a>
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-calendar-alt fa-3x"></i>
         </div>
+        <h3 class="mb-3">{% if is_english %}No Reservations Found{% else %}لا توجد حجوزات{% endif %}</h3>
+        <p class="text-muted mb-4">{% if is_english %}You haven't made any reservations yet. Start exploring our available cars for rent.{% else %}لم تقم بإجراء أي حجوزات بعد. ابدأ باستكشاف السيارات المتاحة للإيجار.{% endif %}</p>
+        <a href="{% url 'cars' %}" class="explore-btn">
+            <i class="fas fa-search"></i>
+            {% if is_english %}Explore Cars{% else %}استكشاف السيارات{% endif %}
+        </a>
     </div>
     {% endif %}
 </div>
