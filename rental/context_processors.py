@@ -1,4 +1,5 @@
 from .models import CartItem
+from django.utils.translation import get_language
 
 def cart_count(request):
     """Add cart_count to all templates"""
@@ -14,10 +15,10 @@ def dark_mode(request):
 
 def language_context(request):
     """Add language context to all templates"""
-    # Default to Arabic if not set
-    language = request.session.get('language', 'ar')
-    is_arabic = language == 'ar'
-    is_english = language == 'en'
+    # Get language from Django's i18n system
+    language = get_language() or 'ar'
+    is_arabic = language.startswith('ar')
+    is_english = language.startswith('en')
     
     # Additional context variables for layout adaptation
     return {

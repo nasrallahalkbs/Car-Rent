@@ -1,5 +1,7 @@
 {pkgs}: {
   deps = [
+    pkgs.iproute2
+    pkgs.gettext
     pkgs.zlib
     pkgs.tk
     pkgs.tcl

@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Q, Avg, Count
 from django.core.paginator import Paginator
+from django.conf import settings
 from .forms import LoginForm, RegisterForm, CarSearchForm, ReservationForm, CheckoutForm, ReviewForm, ProfileForm
 from .models import User, Car, Reservation, Review, CartItem
 from .utils import calculate_total_price, get_car_availability, get_unavailable_dates
@@ -622,14 +623,26 @@ def toggle_dark_mode(request):
 
 def toggle_language(request):
     """Toggle between Arabic and English languages"""
-    current_language = request.session.get('language', 'ar')  # Default to Arabic if not set
+    from django.utils.translation import activate
+    from django.utils import translation
+    
+    current_language = translation.get_language() or 'ar'
     
     # Toggle between 'ar' and 'en'
-    new_language = 'en' if current_language == 'ar' else 'ar'
-    request.session['language'] = new_language
+    new_language = 'en' if current_language.startswith('ar') else 'ar'
     
-    # Force save session to ensure changes are persisted
-    request.session.modified = True
+    # Set language in session and activate it
+    activate(new_language)
+    
+    # Use Django's set_language view
+    response = redirect('/')
+    
+    # Set language cookie if LANGUAGE_COOKIE_NAME is defined
+    if hasattr(settings, 'LANGUAGE_COOKIE_NAME'):
+        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, new_language)
+    else:
+        # Default cookie name if not defined in settings
+        response.set_cookie('django_language', new_language)
     
     # Add success message
     if new_language == 'ar':
@@ -637,7 +650,7 @@ def toggle_language(request):
     else:
         messages.success(request, "Language changed to English successfully")
     
-    # Go back to the previous page
+    # Go back to the previous page or homepage
     referer = request.META.get('HTTP_REFERER')
     if referer:
         return redirect(referer)
