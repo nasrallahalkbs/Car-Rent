@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 
-{% block title %}Browse Our Fleet{% endblock %}
+{% block title %}{% if is_arabic %}استعراض أسطول السيارات{% else %}Browse Our Fleet{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -26,7 +26,7 @@
     }
     
     .category-pill i {
-        margin-right: 8px;
+        margin-{% if is_arabic %}left{% else %}right{% endif %}: 8px;
     }
     
     .search-control-wrapper {
@@ -50,7 +50,7 @@
     .available-badge {
         position: absolute;
         top: 10px;
-        left: 10px;
+        {% if is_arabic %}right{% else %}left{% endif %}: 10px;
         background-color: #28a745;
         color: white;
         padding: 5px 10px;
@@ -67,45 +67,45 @@
     }
     
     .filter-button i {
-        margin-right: 8px;
+        margin-{% if is_arabic %}left{% else %}right{% endif %}: 8px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="text-start">
-        <h2 class="mb-3 fw-bold">Browse Our Fleet</h2>
-        <div class="title-border"></div>
-        <p class="mb-4 mt-3">Choose the perfect vehicle for your journey from our wide collection of luxury and economy cars</p>
+    <div class="text-{% if is_arabic %}end{% else %}start{% endif %}">
+        <h2 class="mb-3 fw-bold">{% if is_arabic %}استعراض أسطول السيارات{% else %}Browse Our Fleet{% endif %}</h2>
+        <div class="title-border {% if is_arabic %}float-end{% endif %}"></div>
+        <p class="mb-4 mt-3">{% if is_arabic %}اختر السيارة المناسبة لرحلتك من مجموعتنا الواسعة من السيارات الفاخرة والاقتصادية{% else %}Choose the perfect vehicle for your journey from our wide collection of luxury and economy cars{% endif %}</p>
     </div>
     
     <!-- Category Pills -->
     <div class="d-flex flex-wrap justify-content-center my-4">
-        <a href="{% url 'cars' %}" class="category-pill me-2 {% if not request.GET.category %}active{% endif %}">
-            <i class="fas fa-car"></i> All Cars
+        <a href="{% url 'cars' %}" class="category-pill {{ margin_right_class }}-2 {% if not request.GET.category %}active{% endif %}">
+            <i class="fas fa-car"></i> {% if is_arabic %}جميع السيارات{% else %}All Cars{% endif %}
         </a>
-        <a href="{% url 'cars' %}?category=Economy" class="category-pill me-2 {% if request.GET.category == 'Economy' %}active{% endif %}">
-            <i class="fas fa-money-bill-wave"></i> Economy
+        <a href="{% url 'cars' %}?category=Economy" class="category-pill {{ margin_right_class }}-2 {% if request.GET.category == 'Economy' %}active{% endif %}">
+            <i class="fas fa-money-bill-wave"></i> {% if is_arabic %}اقتصادية{% else %}Economy{% endif %}
         </a>
-        <a href="{% url 'cars' %}?category=Mid-size" class="category-pill me-2 {% if request.GET.category == 'Mid-size' %}active{% endif %}">
-            <i class="fas fa-car-side"></i> Mid-size
+        <a href="{% url 'cars' %}?category=Mid-size" class="category-pill {{ margin_right_class }}-2 {% if request.GET.category == 'Mid-size' %}active{% endif %}">
+            <i class="fas fa-car-side"></i> {% if is_arabic %}متوسطة{% else %}Mid-size{% endif %}
         </a>
-        <a href="{% url 'cars' %}?category=Luxury" class="category-pill me-2 {% if request.GET.category == 'Luxury' %}active{% endif %}">
-            <i class="fas fa-crown"></i> Luxury
+        <a href="{% url 'cars' %}?category=Luxury" class="category-pill {{ margin_right_class }}-2 {% if request.GET.category == 'Luxury' %}active{% endif %}">
+            <i class="fas fa-crown"></i> {% if is_arabic %}فاخرة{% else %}Luxury{% endif %}
         </a>
-        <a href="{% url 'cars' %}?category=SUV" class="category-pill me-2 {% if request.GET.category == 'SUV' %}active{% endif %}">
-            <i class="fas fa-truck"></i> SUV
+        <a href="{% url 'cars' %}?category=SUV" class="category-pill {{ margin_right_class }}-2 {% if request.GET.category == 'SUV' %}active{% endif %}">
+            <i class="fas fa-truck"></i> {% if is_arabic %}دفع رباعي{% else %}SUV{% endif %}
         </a>
         <a href="{% url 'cars' %}?transmission=Automatic" class="category-pill {% if request.GET.transmission == 'Automatic' %}active{% endif %}">
-            <i class="fas fa-cog"></i> Automatic
+            <i class="fas fa-cog"></i> {% if is_arabic %}أوتوماتيك{% else %}Automatic{% endif %}
         </a>
     </div>
     
     <!-- Search Controls -->
     <div class="search-control-wrapper d-flex align-items-center justify-content-between">
         <div class="view-switch d-flex">
-            <button class="btn me-2 active" id="gridViewBtn">
+            <button class="btn {{ margin_right_class }}-2 active" id="gridViewBtn">
                 <i class="fas fa-th-large"></i>
             </button>
             <button class="btn" id="listViewBtn">
@@ -114,25 +114,25 @@
         </div>
         
         <div class="d-flex align-items-center">
-            <div class="dropdown me-3">
+            <div class="dropdown {{ margin_right_class }}-3">
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-sort me-1"></i> Sort By
+                    <i class="fas fa-sort {{ margin_right_class }}-1"></i> {% if is_arabic %}ترتيب حسب{% else %}Sort By{% endif %}
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="sortDropdown">
-                    <li><a class="dropdown-item" href="?sort=price_asc">Price (Low to High)</a></li>
-                    <li><a class="dropdown-item" href="?sort=price_desc">Price (High to Low)</a></li>
-                    <li><a class="dropdown-item" href="?sort=year_desc">Newest</a></li>
-                    <li><a class="dropdown-item" href="?sort=year_asc">Oldest</a></li>
+                    <li><a class="dropdown-item" href="?sort=price_asc">{% if is_arabic %}السعر (من الأقل للأعلى){% else %}Price (Low to High){% endif %}</a></li>
+                    <li><a class="dropdown-item" href="?sort=price_desc">{% if is_arabic %}السعر (من الأعلى للأقل){% else %}Price (High to Low){% endif %}</a></li>
+                    <li><a class="dropdown-item" href="?sort=year_desc">{% if is_arabic %}الأحدث{% else %}Newest{% endif %}</a></li>
+                    <li><a class="dropdown-item" href="?sort=year_asc">{% if is_arabic %}الأقدم{% else %}Oldest{% endif %}</a></li>
                 </ul>
             </div>
             
-            <div class="ms-2">
-                <span class="text-muted">{{ cars.count }} cars available</span>
+            <div class="{{ margin_left_class }}-2">
+                <span class="text-muted">{{ cars.count }} {% if is_arabic %}سيارة متوفرة{% else %}cars available{% endif %}</span>
             </div>
         </div>
         
         <button class="filter-button" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
-            <i class="fas fa-filter"></i> Advanced Search
+            <i class="fas fa-filter"></i> {% if is_arabic %}بحث متقدم{% else %}Advanced Search{% endif %}
         </button>
     </div>
     
@@ -145,9 +145,9 @@
                 {% endif %}
                 
                 <div class="col-md-3">
-                    <label class="form-label">Car Type</label>
+                    <label class="form-label">{% if is_arabic %}نوع السيارة{% else %}Car Type{% endif %}</label>
                     <select name="category" class="form-select">
-                        <option value="">All Types</option>
+                        <option value="">{% if is_arabic %}كل الأنواع{% else %}All Types{% endif %}</option>
                         {% for cat_id, cat_name in form.fields.category.choices %}
                         {% if cat_id %}
                         <option value="{{ cat_id }}" {% if request.GET.category == cat_id %}selected{% endif %}>{{ cat_name }}</option>
@@ -157,9 +157,9 @@
                 </div>
                 
                 <div class="col-md-3">
-                    <label class="form-label">Transmission</label>
+                    <label class="form-label">{% if is_arabic %}نوع ناقل الحركة{% else %}Transmission{% endif %}</label>
                     <select name="transmission" class="form-select">
-                        <option value="">Any</option>
+                        <option value="">{% if is_arabic %}الكل{% else %}Any{% endif %}</option>
                         {% for trans_id, trans_name in form.fields.transmission.choices %}
                         {% if trans_id %}
                         <option value="{{ trans_id }}" {% if request.GET.transmission == trans_id %}selected{% endif %}>{{ trans_name }}</option>
@@ -169,9 +169,9 @@
                 </div>
                 
                 <div class="col-md-3">
-                    <label class="form-label">Fuel Type</label>
+                    <label class="form-label">{% if is_arabic %}نوع الوقود{% else %}Fuel Type{% endif %}</label>
                     <select name="fuel_type" class="form-select">
-                        <option value="">Any</option>
+                        <option value="">{% if is_arabic %}الكل{% else %}Any{% endif %}</option>
                         {% for fuel_id, fuel_name in form.fields.fuel_type.choices %}
                         {% if fuel_id %}
                         <option value="{{ fuel_id }}" {% if request.GET.fuel_type == fuel_id %}selected{% endif %}>{{ fuel_name }}</option>
@@ -181,17 +181,17 @@
                 </div>
                 
                 <div class="col-md-3">
-                    <label class="form-label">Daily Price Range</label>
+                    <label class="form-label">{% if is_arabic %}حد السعر اليومي{% else %}Daily Price Range{% endif %}</label>
                     <div class="input-group">
-                        <input type="number" class="form-control" name="min_price" placeholder="Min" value="{{ request.GET.min_price|default:'' }}">
+                        <input type="number" class="form-control" name="min_price" placeholder="{% if is_arabic %}من{% else %}Min{% endif %}" value="{{ request.GET.min_price|default:'' }}">
                         <span class="input-group-text">-</span>
-                        <input type="number" class="form-control" name="max_price" placeholder="Max" value="{{ request.GET.max_price|default:'' }}">
+                        <input type="number" class="form-control" name="max_price" placeholder="{% if is_arabic %}إلى{% else %}Max{% endif %}" value="{{ request.GET.max_price|default:'' }}">
                     </div>
                 </div>
                 
-                <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-primary me-2">Apply Filter</button>
-                    <a href="{% url 'cars' %}" class="btn btn-outline-secondary">Reset</a>
+                <div class="col-12 text-{% if is_arabic %}end{% else %}end{% endif %}">
+                    <button type="submit" class="btn btn-primary {{ margin_right_class }}-2">{% if is_arabic %}تطبيق الفلتر{% else %}Apply Filter{% endif %}</button>
+                    <a href="{% url 'cars' %}" class="btn btn-outline-secondary">{% if is_arabic %}إعادة ضبط{% else %}Reset{% endif %}</a>
                 </div>
             </form>
         </div>
@@ -212,36 +212,36 @@
                     {% endif %}
                     <div class="car-overlay"></div>
                     <div class="car-price">
-                        <span class="price-tag">${{ car.daily_rate }}/day</span>
+                        <span class="price-tag">{% if is_arabic %}{{ car.daily_rate }} ريال/يوم{% else %}${{ car.daily_rate }}/day{% endif %}</span>
                     </div>
                     {% if car.is_available %}
-                    <span class="available-badge">Available</span>
+                    <span class="available-badge">{% if is_arabic %}متاحة{% else %}Available{% endif %}</span>
                     {% endif %}
                 </div>
                 <div class="card-body">
                     <h5 class="card-title fw-bold">{{ car.make }} {{ car.model }} {{ car.year }}</h5>
                     <div class="car-features">
                         <span class="badge rounded-pill bg-light text-dark mb-2">
-                            <i class="fas fa-car-side me-1"></i>{{ car.get_category_display }}
+                            <i class="fas fa-car-side {{ margin_right_class }}-1"></i>{{ car.get_category_display }}
                         </span>
                         <span class="badge rounded-pill bg-light text-dark mb-2">
-                            <i class="fas fa-gas-pump me-1"></i>{{ car.get_fuel_type_display }}
+                            <i class="fas fa-gas-pump {{ margin_right_class }}-1"></i>{{ car.get_fuel_type_display }}
                         </span>
                         <span class="badge rounded-pill bg-light text-dark mb-2">
-                            <i class="fas fa-cog me-1"></i>{{ car.get_transmission_display }}
+                            <i class="fas fa-cog {{ margin_right_class }}-1"></i>{{ car.get_transmission_display }}
                         </span>
                     </div>
                 </div>
                 <div class="card-footer bg-white border-top-0">
-                    <a href="{% url 'car_detail' car.id %}" class="btn btn-outline-primary w-100">View Details</a>
+                    <a href="{% url 'car_detail' car.id %}" class="btn btn-outline-primary w-100">{% if is_arabic %}عرض التفاصيل{% else %}View Details{% endif %}</a>
                 </div>
             </div>
         </div>
         {% empty %}
         <div class="col-12 text-center py-5">
             <i class="fas fa-car-crash fa-3x text-muted mb-3"></i>
-            <h4>No cars available based on your search criteria</h4>
-            <p class="text-muted">Please change your search criteria or <a href="{% url 'cars' %}">view all cars</a></p>
+            <h4>{% if is_arabic %}لا توجد سيارات متاحة بناءً على معايير البحث{% else %}No cars available based on your search criteria{% endif %}</h4>
+            <p class="text-muted">{% if is_arabic %}يرجى تغيير معايير البحث أو{% else %}Please change your search criteria or{% endif %} <a href="{% url 'cars' %}">{% if is_arabic %}عرض جميع السيارات{% else %}view all cars{% endif %}</a></p>
         </div>
         {% endfor %}
     </div>
@@ -261,7 +261,7 @@
                         <img src="https://via.placeholder.com/300x200?text=No+Image" class="img-fluid rounded-start h-100 w-100 object-fit-cover" alt="No image available">
                         {% endif %}
                         {% if car.is_available %}
-                        <span class="available-badge">Available</span>
+                        <span class="available-badge">{% if is_arabic %}متاحة{% else %}Available{% endif %}</span>
                         {% endif %}
                     </div>
                 </div>
@@ -269,21 +269,21 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <h5 class="card-title fw-bold">{{ car.make }} {{ car.model }} {{ car.year }}</h5>
-                            <span class="badge bg-primary rounded-pill">${{ car.daily_rate }}/day</span>
+                            <span class="badge bg-primary rounded-pill">{% if is_arabic %}{{ car.daily_rate }} ريال/يوم{% else %}${{ car.daily_rate }}/day{% endif %}</span>
                         </div>
                         <div class="car-features mb-3">
-                            <span class="badge rounded-pill bg-light text-dark me-2">
-                                <i class="fas fa-car-side me-1"></i>{{ car.get_category_display }}
+                            <span class="badge rounded-pill bg-light text-dark {{ margin_right_class }}-2">
+                                <i class="fas fa-car-side {{ margin_right_class }}-1"></i>{{ car.get_category_display }}
                             </span>
-                            <span class="badge rounded-pill bg-light text-dark me-2">
-                                <i class="fas fa-gas-pump me-1"></i>{{ car.get_fuel_type_display }}
+                            <span class="badge rounded-pill bg-light text-dark {{ margin_right_class }}-2">
+                                <i class="fas fa-gas-pump {{ margin_right_class }}-1"></i>{{ car.get_fuel_type_display }}
                             </span>
-                            <span class="badge rounded-pill bg-light text-dark me-2">
-                                <i class="fas fa-cog me-1"></i>{{ car.get_transmission_display }}
+                            <span class="badge rounded-pill bg-light text-dark {{ margin_right_class }}-2">
+                                <i class="fas fa-cog {{ margin_right_class }}-1"></i>{{ car.get_transmission_display }}
                             </span>
                         </div>
                         <p class="card-text">{{ car.features|truncatewords:10 }}</p>
-                        <a href="{% url 'car_detail' car.id %}" class="btn btn-outline-primary">View Details</a>
+                        <a href="{% url 'car_detail' car.id %}" class="btn btn-outline-primary">{% if is_arabic %}عرض التفاصيل{% else %}View Details{% endif %}</a>
                     </div>
                 </div>
             </div>
