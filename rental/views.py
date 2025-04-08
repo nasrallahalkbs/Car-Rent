@@ -23,7 +23,7 @@ def get_template_by_language(request, base_template):
     
     # Special cases where we have dedicated Arabic templates
     if base_template == 'cars.html' and language == 'ar':
-        return 'cars_arabic.html'
+        return 'cars_django.html'
     
     if base_template == 'index.html' and language == 'ar':
         return 'index_arabic.html'
