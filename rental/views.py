@@ -19,31 +19,33 @@ logger = logging.getLogger(__name__)
 
 def get_template_by_language(request, base_template):
     """Helper function to choose the appropriate template based on language setting"""
-    language = request.session.get('language', 'ar')
+    # Always use the Arabic design template regardless of language
     
-    # For cars.html, always use the Arabic design template regardless of language
+    # For cars.html
     if base_template == 'cars.html':
         return 'cars_django.html'
     
-    # Special cases where we have dedicated Arabic templates
-    if base_template == 'index.html' and language == 'ar':
+    # For index.html - always use Arabic design template
+    if base_template == 'index.html':
         return 'index_arabic.html'
     
-    # For profile.html
-    if base_template == 'profile.html' and language == 'ar':
+    # For profile.html - always use Arabic design template
+    if base_template == 'profile.html':
         return 'profile_arabic.html'
     
-    # Handle templates with _django suffix for Arabic
-    if language == 'ar':
-        # Remove .html extension if present
-        if base_template.endswith('.html'):
-            base_name = base_template[:-5]
-            # Check if *_django.html exists
-            django_template = f"{base_name}_django.html"
-            if os.path.exists(f"templates/{django_template}"):
-                return django_template
+    # For car detail - always use Arabic design template
+    if base_template == 'car_detail.html':
+        return 'car_detail_django.html'
     
-    # Default case - use the original template
+    # Handle templates with _django suffix for all languages
+    if base_template.endswith('.html'):
+        base_name = base_template[:-5]
+        # Check if *_django.html exists (used for templates with Arabic design)
+        django_template = f"{base_name}_django.html"
+        if django_template in ['login_django.html', 'register_django.html', 'checkout_django.html', 'confirmation_django.html']:
+            return django_template
+    
+    # Default fallback - use the base template unchanged
     return base_template
 
 def index(request):
