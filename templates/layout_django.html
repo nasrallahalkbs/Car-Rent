@@ -124,20 +124,10 @@
                      </li>
                     <!-- Language Toggle -->
                     <li class="nav-item">
-                        <form id="languageForm" action="{% url 'set_language' %}" method="post" class="d-inline">
-                            {% csrf_token %}
-                            <input name="next" type="hidden" value="{{ request.path }}">
-                            <input type="hidden" name="language" value="{% if is_arabic %}en{% else %}ar{% endif %}">
-                            <button type="submit" class="nav-link btn btn-sm btn-primary mx-2 px-3" id="toggleLanguageBtn">
-                                <i class="fas fa-language {% if is_arabic %}ms-1{% else %}me-1{% endif %}"></i> 
-                                {% if is_arabic %}Switch to English{% else %}التحويل إلى العربية{% endif %}
-                            </button>
-                        </form>
-                    </li>
-                                <i class="fas fa-language {% if is_arabic %}ms-1{% else %}me-1{% endif %}"></i> 
-                                {% if is_arabic %}Switch to English{% else %}التحويل إلى العربية{% endif %}
-                            </button>
-                        </form>
+                        <a class="nav-link btn btn-sm btn-primary mx-2 px-3" href="{% url 'toggle_language' %}" id="toggleLanguageBtn">
+                            <i class="fas fa-language {% if is_arabic %}ms-1{% else %}me-1{% endif %}"></i> 
+                            {% if is_arabic %}Switch to English{% else %}التحويل إلى العربية{% endif %}
+                        </a>
                     </li>
                     
                     {% if user.is_authenticated %}
@@ -294,16 +284,14 @@
                 console.warn('⚠️ Cookie language mismatch! Cookie: ' + cookieLang + ', Context: ' + currentLang);
             }
             
-            // 3. إضافة مستمع حدث لزر تبديل اللغة
+            // 3. إضافة مستمع حدث لزر تبديل اللغة (للتتبع فقط)
             const toggleBtn = document.getElementById('toggleLanguageBtn');
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', function(e) {
+                    // لا نمنع الحدث الافتراضي، بل نترك الرابط يعمل بشكل طبيعي
                     console.log('🔄 Language toggle button clicked');
                     const newLang = isArabic ? 'en' : 'ar';
                     console.log('Switching to: ' + newLang);
-                    
-                    // يمكننا أيضًا تعيين الكوكيز من جانب العميل كدعم إضافي
-                    document.cookie = "django_language=" + newLang + "; path=/; max-age=" + (86400 * 365);
                 });
             }
             

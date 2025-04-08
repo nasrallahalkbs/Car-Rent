@@ -23,6 +23,7 @@ urlpatterns = [
     path('reservation/<int:reservation_id>/cancel/', views.cancel_reservation, name='cancel_reservation'),
     path('reservation/<int:reservation_id>/review/', views.add_review, name='add_review'),
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
+    path('toggle-language/', views.toggle_language, name='toggle_language'),
     path('about-us/', views.about_us, name='about_us'),
     
     # API endpoints
