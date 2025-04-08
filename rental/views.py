@@ -25,6 +25,16 @@ def get_template_by_language(request, base_template):
     الدالة المساعدة لاختيار القالب المناسب بناء على إعداد اللغة.
     تسهل هذه الدالة استخدام نظام Django i18n الأصلي من خلال توحيد نظام القوالب.
     """
+    # تأكد من قراءة اللغة الحالية مباشرة من django كل مرة
+    from django.utils.translation import get_language
+    
+    # الحصول على اللغة الحالية (ar أو en)
+    current_language = get_language()
+    
+    # طباعة للتصحيح
+    print(f"Current language: {current_language}")
+    print(f"Cookie language: {request.COOKIES.get('django_language', 'none')}")
+    
     # قاموس لتحويل القوالب الأساسية إلى نسخها المدعومة بنظام i18n
     template_mappings = {
         # قوالب التنقل الرئيسية
@@ -40,8 +50,6 @@ def get_template_by_language(request, base_template):
         'register.html': 'register_django.html',
         'my_reservations.html': 'my_reservations_django.html',
         'booking.html': 'booking_django.html',
-        
-        # القوالب الإضافية
         'reservation_detail.html': 'reservation_detail_django.html',
         'error.html': 'error_django.html',
         'admin_dashboard.html': 'admin_dashboard_django.html',
@@ -191,11 +199,12 @@ def car_listing(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Get language and set appropriate margin classes for RTL/LTR
-    language = request.session.get('language', 'ar')
-    is_arabic = (language == 'ar')
+    # الحصول على اللغة الحالية مباشرة من django i18n
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_arabic = (current_language == 'ar')
     
-    # Set margin classes based on language direction
+    # تعيين فئات الهوامش بناءً على اتجاه اللغة
     margin_right_class = 'ms-2' if is_arabic else 'me-2'
     margin_left_class = 'me-1' if is_arabic else 'ms-1'
     
