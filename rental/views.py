@@ -21,10 +21,11 @@ def get_template_by_language(request, base_template):
     """Helper function to choose the appropriate template based on language setting"""
     language = request.session.get('language', 'ar')
     
-    # Special cases where we have dedicated Arabic templates
-    if base_template == 'cars.html' and language == 'ar':
+    # For cars.html, always use the Arabic design template regardless of language
+    if base_template == 'cars.html':
         return 'cars_django.html'
     
+    # Special cases where we have dedicated Arabic templates
     if base_template == 'index.html' and language == 'ar':
         return 'index_arabic.html'
     
