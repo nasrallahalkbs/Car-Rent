@@ -39,8 +39,17 @@ def language_context(request):
     cookie_lang = request.COOKIES.get('django_language', 'none')
     print(f"Cookie language: {cookie_lang}")
     
+    # التحقق من مسار URL
+    path = request.path_info
+    url_language = "none"
+    if path.startswith('/ar/'):
+        url_language = "ar"
+    elif path.startswith('/en/'):
+        url_language = "en"
+    print(f"URL language: {url_language}")
+    
     # تسجيل معلومات السياق
-    logger.debug(f"Language context: code={language_code}, is_ar={is_arabic}, is_en={is_english}")
+    logger.debug(f"Language context: code={language_code}, is_ar={is_arabic}, is_en={is_english}, url_lang={url_language}")
     
     # إنشاء متغيرات السياق
     context_data = {
@@ -72,6 +81,10 @@ def language_context(request):
         'is_rtl': is_arabic,
         'is_ltr': not is_arabic,
         'text_direction': 'rtl' if is_arabic else 'ltr',
+        
+        # معلومات تصحيح
+        'debug_language_cookie': cookie_lang,
+        'debug_url_language': url_language,
     }
     
     return context_data
