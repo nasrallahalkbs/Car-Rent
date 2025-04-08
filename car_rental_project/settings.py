@@ -191,6 +191,15 @@ LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale'),
 ]
 
+# Cookie name for storing the language preference
+LANGUAGE_COOKIE_NAME = 'django_language'
+LANGUAGE_COOKIE_AGE = 60 * 60 * 24 * 365  # One year (in seconds)
+LANGUAGE_COOKIE_DOMAIN = None
+LANGUAGE_COOKIE_PATH = '/'
+LANGUAGE_COOKIE_SECURE = False
+LANGUAGE_COOKIE_HTTPONLY = False
+LANGUAGE_COOKIE_SAMESITE = None
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 STATIC_URL = 'static/'

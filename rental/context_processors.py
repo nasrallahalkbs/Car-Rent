@@ -15,14 +15,26 @@ def dark_mode(request):
 
 def language_context(request):
     """Add language context to all templates"""
-    # Get language from Django's i18n system
+    # Get language from Django's i18n system, cookies, or session
     language = get_language() or 'ar'
+    
+    # Also check from request directly (cookie or session) for redundancy
+    if hasattr(request, 'COOKIES'):
+        cookie_lang = request.COOKIES.get('django_language')
+        if cookie_lang:
+            language = cookie_lang
+    
+    # Set boolean flags for template use
     is_arabic = language.startswith('ar')
     is_english = language.startswith('en')
+    
+    # Debug
+    print(f"Current language: {language}, is_arabic: {is_arabic}, is_english: {is_english}")
     
     # Additional context variables for layout adaptation
     return {
         'current_language': language,
+        'LANGUAGE_CODE': language,  # Django's default context variable name
         'is_arabic': is_arabic,
         'is_english': is_english,
         'html_dir': 'rtl' if is_arabic else 'ltr',

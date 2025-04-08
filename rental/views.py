@@ -626,23 +626,38 @@ def toggle_language(request):
     from django.utils.translation import activate
     from django.utils import translation
     
+    # Get current language
     current_language = translation.get_language() or 'ar'
+    
+    # Debug logging
+    print(f"Toggle Language - Current language: {current_language}")
     
     # Toggle between 'ar' and 'en'
     new_language = 'en' if current_language.startswith('ar') else 'ar'
     
-    # Set language in session and activate it
+    # Debug logging
+    print(f"Toggle Language - New language: {new_language}")
+    
+    # Set language in session and activate it in this request
     activate(new_language)
+    request.session[translation.LANGUAGE_SESSION_KEY] = new_language
     
-    # Use Django's set_language view
-    response = redirect('/')
+    # Create a response object
+    referer = request.META.get('HTTP_REFERER', '/')
+    response = redirect(referer)
     
-    # Set language cookie if LANGUAGE_COOKIE_NAME is defined
-    if hasattr(settings, 'LANGUAGE_COOKIE_NAME'):
-        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, new_language)
-    else:
-        # Default cookie name if not defined in settings
-        response.set_cookie('django_language', new_language)
+    # Set the cookie
+    print(f"Setting language cookie to: {new_language}")
+    response.set_cookie(
+        settings.LANGUAGE_COOKIE_NAME,
+        new_language,
+        max_age=settings.LANGUAGE_COOKIE_AGE,
+        path=settings.LANGUAGE_COOKIE_PATH,
+        domain=settings.LANGUAGE_COOKIE_DOMAIN,
+        secure=settings.LANGUAGE_COOKIE_SECURE,
+        httponly=settings.LANGUAGE_COOKIE_HTTPONLY,
+        samesite=settings.LANGUAGE_COOKIE_SAMESITE
+    )
     
     # Add success message
     if new_language == 'ar':
@@ -650,11 +665,7 @@ def toggle_language(request):
     else:
         messages.success(request, "Language changed to English successfully")
     
-    # Go back to the previous page or homepage
-    referer = request.META.get('HTTP_REFERER')
-    if referer:
-        return redirect(referer)
-    return redirect('index')
+    return response
 def about_us(request):
     """About Us page view"""
     template = get_template_by_language(request, 'about_us.html')
