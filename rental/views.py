@@ -628,6 +628,53 @@ def toggle_dark_mode(request):
         return redirect(referer)
     return redirect('index')
 
+def toggle_language(request):
+    """
+    تبديل إعدادات اللغة بين العربية والإنجليزية
+    يستخدم هذا الـ view نظام Django i18n الرسمي لتبديل اللغة
+    """
+    from django.utils import translation
+    from django.utils.translation import get_language
+    from django.conf import settings
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # الحصول على اللغة الحالية
+    current_language = get_language()
+    logger.debug(f"Current language before toggle: {current_language}")
+    
+    # تبديل بين العربية والإنجليزية
+    new_language = 'en' if current_language == 'ar' else 'ar'
+    
+    # تنشيط اللغة الجديدة
+    translation.activate(new_language)
+    
+    # حفظ تفضيل اللغة في جلسة المستخدم
+    request.session[settings.LANGUAGE_COOKIE_NAME] = new_language
+    request.session.modified = True
+    
+    # طباعة معلومات التصحيح
+    print(f"Language session updated: {new_language}")
+    
+    # إعادة توجيه إلى الصفحة السابقة
+    referer = request.META.get('HTTP_REFERER')
+    response = redirect(referer) if referer else redirect('index')
+    
+    # ضبط ملف تعريف الارتباط
+    response.set_cookie(
+        settings.LANGUAGE_COOKIE_NAME, 
+        new_language,
+        max_age=settings.LANGUAGE_COOKIE_AGE,
+        path=settings.LANGUAGE_COOKIE_PATH,
+        domain=settings.LANGUAGE_COOKIE_DOMAIN,
+        secure=settings.LANGUAGE_COOKIE_SECURE,
+        httponly=settings.LANGUAGE_COOKIE_HTTPONLY,
+        samesite=settings.LANGUAGE_COOKIE_SAMESITE,
+    )
+    
+    logger.debug(f"Language switched to: {new_language}")
+    return response
 
 
 

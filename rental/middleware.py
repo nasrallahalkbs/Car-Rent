@@ -46,6 +46,11 @@ class ForceLanguageMiddleware(MiddlewareMixin):
         # إضافة معلومات اللغة إلى الطلب
         request.LANGUAGE_CODE = language
         
+        # تخزين اللغة المحددة في الجلسة للاتساق
+        if not lang_session or lang_session != language:
+            request.session[settings.LANGUAGE_COOKIE_NAME] = language
+            request.session.modified = True
+        
         # تسجيل اللغة المستخدمة
         print(f"Using language: {language}")
         
