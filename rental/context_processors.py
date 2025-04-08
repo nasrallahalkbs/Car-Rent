@@ -16,43 +16,39 @@ def language_context(request):
     """
     إضافة سياق اللغة لجميع القوالب
     
-    تقوم هذه الدالة بتوفير متغيرات السياق اللازمة للقوالب للتكيف مع اللغة المناسبة
+    تقوم هذه الدالة بتوفير متغيرات سياق إضافية للقوالب للتكيف مع اللغة المناسبة
     (العربية أو الإنجليزية)، بالاعتماد على نظام الترجمة الأصلي في Django.
     
-    نستخدم متغير LANGUAGE_CODE المتوفر من خلال middleware اللغة في Django.
+    LANGUAGE_CODE متاح في القوالب تلقائيًا من خلال template context processor
+    المسمى django.template.context_processors.i18n
     """
-    # تعتمد على LANGUAGE_CODE الذي يوفره Django
-    # والذي يتم تحديثه تلقائيًا من خلال middleware اللغة
-
-    # 1. تعيين العلامات المنطقية للاستخدام في القوالب
-    language_code = getattr(request, 'LANGUAGE_CODE', None)
-    if language_code is None:
-        from django.utils.translation import get_language
-        language_code = get_language()
+    from django.utils.translation import get_language
     
+    # get_language يقوم بإرجاع رمز اللغة الحالية مثل 'ar' أو 'en'
+    language_code = get_language()
+    
+    # تعيين العلامات المنطقية
     is_arabic = (language_code == 'ar')
-    is_english = (language_code == 'en' or not is_arabic)
+    is_english = (language_code == 'en')
     
-    # 2. متغيرات سياق لدعم تكييف القوالب مع اتجاه اللغة
+    # إنشاء متغيرات السياق الإضافية
     context_data = {
-        # المتغيرات الأساسية للغة (احتفظنا بها للتوافق مع القوالب الحالية)
+        # متغيرات السياق المستخدمة في القوالب الحالية (للتوافق)
         'current_language': language_code,
-        'LANGUAGE_CODE': language_code, 
         'is_arabic': is_arabic,
         'is_english': is_english,
         
-        # متغيرات اتجاه النص والتنسيق
+        # متغيرات اتجاه النص
         'html_dir': 'rtl' if is_arabic else 'ltr',
         'html_lang': 'ar' if is_arabic else 'en',
         'text_align': 'right' if is_arabic else 'left',
         
-        # متغيرات هوامش Bootstrap المعتمدة على اللغة
+        # متغيرات Bootstrap
         'margin_right_class': 'ms' if is_arabic else 'me',
         'margin_left_class': 'me' if is_arabic else 'ms',
         
-        # متغيرات الخط والتنسيق
-        'font_family': "'Tajawal', sans-serif" if is_arabic else "'Roboto', sans-serif",
-        'bootstrap_css': 'bootstrap.rtl.min.css' if is_arabic else 'bootstrap.min.css'
+        # متغيرات التنسيق
+        'font_family': "'Tajawal', sans-serif" if is_arabic else "'Roboto', sans-serif"
     }
     
     return context_data

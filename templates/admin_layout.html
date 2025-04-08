@@ -79,10 +79,21 @@
                     </li>
                                         <!-- Language Toggle -->
                     <li class="nav-item">
-                        <a class="nav-link btn btn-sm btn-outline-primary mx-2 px-3" href="{% url 'toggle_language' %}">
-                            <i class="fas fa-language {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> 
-                            {% if is_english %}التحويل إلى العربية{% else %}Switch to English{% endif %}
-                        </a>
+                        <form action="{% url 'set_language' %}" method="post" class="mb-0">
+                            {% csrf_token %}
+                            <input name="next" type="hidden" value="{{ request.path }}">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                            <input name="language" type="hidden" value="en">
+                            <button class="nav-link btn btn-sm btn-outline-primary mx-2 px-3" type="submit">
+                                <i class="fas fa-language ms-1"></i> Switch to English
+                            </button>
+                            {% else %}
+                            <input name="language" type="hidden" value="ar">
+                            <button class="nav-link btn btn-sm btn-outline-primary mx-2 px-3" type="submit">
+                                <i class="fas fa-language me-1"></i> التحويل إلى العربية
+                            </button>
+                            {% endif %}
+                        </form>
                     </li>
                     
                     <!-- Cart -->

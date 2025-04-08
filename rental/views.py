@@ -23,12 +23,9 @@ def get_template_by_language(request, base_template):
     Helper function to choose the appropriate template based on language setting
     
     الدالة المساعدة لاختيار القالب المناسب بناء على إعداد اللغة.
-    في هذا النظام، نستخدم دائما نفس القالب للغتين العربية والإنجليزية،
-    ولكن نضبط اتجاه العرض وتفاصيل أخرى عبر متغيرات السياق.
+    تسهل هذه الدالة استخدام نظام Django i18n الأصلي من خلال توحيد نظام القوالب.
     """
-    # لدينا الآن آلية واحدة فقط - استخدام القوالب المنتهية بـ _django.html
-    
-    # قاموس لتحويل القوالب الأساسية إلى نسخها المحسنة
+    # قاموس لتحويل القوالب الأساسية إلى نسخها المدعومة بنظام i18n
     template_mappings = {
         # قوالب التنقل الرئيسية
         'index.html': 'index_django.html',
@@ -44,7 +41,7 @@ def get_template_by_language(request, base_template):
         'my_reservations.html': 'my_reservations_django.html',
         'booking.html': 'booking_django.html',
         
-        # للاكتمال، نتضمن القوالب التالية التي قد تكون مستخدمة في أماكن أخرى
+        # القوالب الإضافية
         'reservation_detail.html': 'reservation_detail_django.html',
         'error.html': 'error_django.html',
         'admin_dashboard.html': 'admin_dashboard_django.html',
@@ -623,26 +620,6 @@ def toggle_dark_mode(request):
     return redirect('index')
 
 
-def toggle_language(request):
-    """عرض بسيط لتغيير اللغة يتوافق مع CSRF"""
-    if request.method == 'POST':
-        language = request.POST.get('language', 'ar')
-        next_url = request.POST.get('next', '/')
-        
-        # الحصول على الاستجابة مع إعادة التوجيه
-        response = redirect(next_url)
-        
-        # تعيين كوكي اللغة
-        response.set_cookie('django_language', language, max_age=86400*365)
-        
-        # طباعة معلومات للتصحيح
-        current_language = request.COOKIES.get('django_language', 'ar')
-        print(f"**Language Toggle: {current_language} -> {language}**")
-        
-        return response
-    
-    # إذا لم تكن طريقة POST، أعد توجيه إلى الصفحة الرئيسية
-    return redirect('index')
 
 
 def about_us(request):
