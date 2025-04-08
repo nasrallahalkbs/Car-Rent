@@ -25,13 +25,19 @@ def language_context(request):
     # والذي يتم تحديثه تلقائيًا من خلال middleware اللغة
 
     # 1. تعيين العلامات المنطقية للاستخدام في القوالب
-    is_arabic = (request.LANGUAGE_CODE == 'ar')
-    is_english = (request.LANGUAGE_CODE == 'en')
+    language_code = getattr(request, 'LANGUAGE_CODE', None)
+    if language_code is None:
+        from django.utils.translation import get_language
+        language_code = get_language()
+    
+    is_arabic = (language_code == 'ar')
+    is_english = (language_code == 'en' or not is_arabic)
     
     # 2. متغيرات سياق لدعم تكييف القوالب مع اتجاه اللغة
     context_data = {
         # المتغيرات الأساسية للغة (احتفظنا بها للتوافق مع القوالب الحالية)
-        'current_language': request.LANGUAGE_CODE, 
+        'current_language': language_code,
+        'LANGUAGE_CODE': language_code, 
         'is_arabic': is_arabic,
         'is_english': is_english,
         

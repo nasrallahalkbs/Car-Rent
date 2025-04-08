@@ -623,6 +623,28 @@ def toggle_dark_mode(request):
     return redirect('index')
 
 
+def toggle_language(request):
+    """عرض بسيط لتغيير اللغة يتوافق مع CSRF"""
+    if request.method == 'POST':
+        language = request.POST.get('language', 'ar')
+        next_url = request.POST.get('next', '/')
+        
+        # الحصول على الاستجابة مع إعادة التوجيه
+        response = redirect(next_url)
+        
+        # تعيين كوكي اللغة
+        response.set_cookie('django_language', language, max_age=86400*365)
+        
+        # طباعة معلومات للتصحيح
+        current_language = request.COOKIES.get('django_language', 'ar')
+        print(f"**Language Toggle: {current_language} -> {language}**")
+        
+        return response
+    
+    # إذا لم تكن طريقة POST، أعد توجيه إلى الصفحة الرئيسية
+    return redirect('index')
+
+
 def about_us(request):
     """About Us page view"""
     template = get_template_by_language(request, 'about_us.html')
