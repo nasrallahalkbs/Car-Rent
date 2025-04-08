@@ -1,7 +1,7 @@
 {% extends 'layout_django.html' %}
 {% load static %}
 
-{% block title %}الدفع{% endblock %}
+{% block title %}{% if is_english %}Checkout{% else %}الدفع{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -9,7 +9,7 @@
         <div class="col-lg-8">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">معلومات الدفع</h4>
+                    <h4 class="mb-0">{% if is_english %}Payment Information{% else %}معلومات الدفع{% endif %}</h4>
                 </div>
                 <div class="card-body p-4">
                     <form method="post" action="{% url 'checkout' %}{% if reservation %}?reservation_id={{ reservation.id }}{% endif %}" id="payment-form">
@@ -19,7 +19,7 @@
                         {% endif %}
                         
                         <!-- Payment Method Selection -->
-                        <h5 class="mb-3">اختر طريقة الدفع</h5>
+                        <h5 class="mb-3">{% if is_english %}Select Payment Method{% else %}اختر طريقة الدفع{% endif %}</h5>
                         <div class="payment-methods mb-4">
                             <div class="row">
                                 {% for method in form.card_type %}
@@ -135,33 +135,33 @@
                         {% endif %}
                         <div>
                             <div class="fw-semibold">{{ reservation.car.make }} {{ reservation.car.model }}</div>
-                            <div class="text-muted small">{{ reservation.car.year }} • {{ reservation.car.category }}</div>
+                            <div class="text-muted small">{{ reservation.car.year }} • {% if is_english %}{% if reservation.car.category == "Economy" %}Economy{% elif reservation.car.category == "Compact" %}Compact{% elif reservation.car.category == "Mid-size" %}Mid-size{% elif reservation.car.category == "Luxury" %}Luxury{% elif reservation.car.category == "SUV" %}SUV{% elif reservation.car.category == "Truck" %}Truck{% else %}{{ reservation.car.category }}{% endif %}{% else %}{% if reservation.car.category == "Economy" %}اقتصادية{% elif reservation.car.category == "Compact" %}مدمجة{% elif reservation.car.category == "Mid-size" %}متوسطة{% elif reservation.car.category == "Luxury" %}فاخرة{% elif reservation.car.category == "SUV" %}دفع رباعي{% elif reservation.car.category == "Truck" %}شاحنات{% else %}{{ reservation.car.category }}{% endif %}{% endif %}</div>
                         </div>
                     </div>
                     
                     <div class="reservation-details mb-3 pb-3 border-bottom">
                         <div class="mb-2">
-                            <div class="text-muted small">تاريخ الاستلام</div>
-                            <div>{{ reservation.start_date|date:"Y/m/d" }}</div>
+                            <div class="text-muted small">{% if is_english %}Pickup Date{% else %}تاريخ الاستلام{% endif %}</div>
+                            <div>{% if is_english %}{{ reservation.start_date|date:"m/d/Y" }}{% else %}{{ reservation.start_date|date:"Y/m/d" }}{% endif %}</div>
                         </div>
                         <div class="mb-2">
-                            <div class="text-muted small">تاريخ التسليم</div>
-                            <div>{{ reservation.end_date|date:"Y/m/d" }}</div>
+                            <div class="text-muted small">{% if is_english %}Return Date{% else %}تاريخ التسليم{% endif %}</div>
+                            <div>{% if is_english %}{{ reservation.end_date|date:"m/d/Y" }}{% else %}{{ reservation.end_date|date:"Y/m/d" }}{% endif %}</div>
                         </div>
                         <div>
-                            <div class="text-muted small">مدة الإيجار</div>
-                            <div>{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} يوم</div>
+                            <div class="text-muted small">{% if is_english %}Rental Duration{% else %}مدة الإيجار{% endif %}</div>
+                            <div>{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} {% if is_english %}day(s){% else %}يوم{% endif %}</div>
                         </div>
                     </div>
                     
                     <div class="price-summary">
                         <div class="d-flex justify-content-between mb-2">
-                            <span>سعر الإيجار اليومي:</span>
-                            <span>{{ reservation.car.daily_rate }} دينار</span>
+                            <span>{% if is_english %}Daily Rate:{% else %}سعر الإيجار اليومي:{% endif %}</span>
+                            <span>{% if is_english %}${{ reservation.car.daily_rate }}{% else %}{{ reservation.car.daily_rate }} دينار{% endif %}</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span>عدد الأيام:</span>
-                            <span>{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} يوم</span>
+                            <span>{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} {% if is_english %}day(s){% else %}يوم{% endif %}</span>
                         </div>
                         <hr>
                         <div class="d-flex justify-content-between fw-bold">

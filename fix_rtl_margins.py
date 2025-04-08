@@ -1,44 +1,42 @@
 #!/usr/bin/env python3
 
+import re
+
 """
 Fix template RTL margin issues.
 This script replaces 'me-X' with 'ms-X' in the Arabic templates.
 """
 
-import os
+def fix_rtl_margins():
+    with open('templates/layout.html', 'r', encoding='utf-8') as file:
+        content = file.read()
+    
+    # Fix fixed me-X margins in Arabic section 
+    # Arabic navbar uses ms-X for right margins
+    content = re.sub(
+        r'<i class="fas fa-language me-1"></i> تبديل إلى العربية',
+        '<i class="fas fa-language {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> تبديل إلى العربية',
+        content
+    )
+    
+    # Fix fixed ms-X margins in English section
+    # English navbar uses me-X for right margins
+    content = re.sub(
+        r'class="dropdown me-3"',
+        'class="dropdown {% if is_english %}me-3{% else %}ms-3{% endif %}"',
+        content
+    )
+    
+    content = re.sub(
+        r'<a href="{% url \'cart\' %}" class="me-3 position-relative">',
+        '<a href="{% url \'cart\' %}" class="{% if is_english %}me-3{% else %}ms-3{% endif %} position-relative">',
+        content
+    )
+    
+    # Write the changes back
+    with open('templates/layout.html', 'w', encoding='utf-8') as file:
+        file.write(content)
+    
+    print("Fixed RTL margin issues in layout.html.")
 
-# List of templates to fix (Arabic templates)
-templates_to_fix = [
-    'templates/confirmation.html',
-    'templates/cart_django.html',
-    'templates/car_detail_django.html',
-    'templates/profile.html',
-    'templates/my_reservations.html',
-    'templates/cars_django.html'
-]
-
-for template_path in templates_to_fix:
-    # Skip if file doesn't exist
-    if not os.path.exists(template_path):
-        print(f"Skipping {template_path}: File does not exist")
-        continue
-        
-    try:
-        with open(template_path, 'r', encoding='utf-8') as file:
-            content = file.read()
-            
-        # Replace me-X with ms-X for RTL support in Arabic templates
-        for i in range(1, 6):
-            # For clarity: me = margin-end, ms = margin-start
-            # In RTL (Arabic), we need margin-start (ms) where English templates use margin-end (me)
-            content = content.replace(f'me-{i}"', f'ms-{i}"')
-            content = content.replace(f'me-{i} ', f'ms-{i} ')
-            
-        with open(template_path, 'w', encoding='utf-8') as file:
-            file.write(content)
-            
-        print(f"Fixed margin classes in {template_path}")
-    except Exception as e:
-        print(f"Error fixing {template_path}: {e}")
-
-print("RTL margin fix completed!")
+fix_rtl_margins()

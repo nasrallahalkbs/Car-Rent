@@ -1,155 +1,200 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
+import re
 
 """
 تصحيح قالب الدفع للتعامل مع السلة والحجز المباشر
 هذا السكربت يقوم بتحديث صفحة الدفع للتعامل مع حالات الدفع المختلفة (من السلة أو من الحجز المباشر)
 """
 
-import re
-import os
-
 def process_file():
     """Process the checkout template file"""
-    template_path = "templates/checkout.html"
-    
-    # Make sure the file exists
-    if not os.path.exists(template_path):
-        print(f"Error: {template_path} does not exist")
-        return False
-    
-    # Read the file
-    with open(template_path, "r", encoding="utf-8") as file:
+    with open('templates/checkout.html', 'r', encoding='utf-8') as file:
         content = file.read()
     
-    # Make the necessary changes
-    updated_content = update_submit_button(content)
-    updated_content = update_order_summary(updated_content)
+    # Fix page title
+    content = re.sub(
+        r'{% block title %}الدفع{% endblock %}',
+        r'{% block title %}{% if is_english %}Checkout{% else %}الدفع{% endif %}{% endblock %}',
+        content
+    )
     
-    # Write the changes back to the file
-    with open(template_path, "w", encoding="utf-8") as file:
-        file.write(updated_content)
+    # Fix payment information header
+    content = re.sub(
+        r'<h4 class="mb-0">معلومات الدفع</h4>',
+        r'<h4 class="mb-0">{% if is_english %}Payment Information{% else %}معلومات الدفع{% endif %}</h4>',
+        content
+    )
     
-    print(f"Successfully updated {template_path}")
-    return True
+    # Fix payment method selection text
+    content = re.sub(
+        r'<h5 class="mb-3">اختر طريقة الدفع</h5>',
+        r'<h5 class="mb-3">{% if is_english %}Select Payment Method{% else %}اختر طريقة الدفع{% endif %}</h5>',
+        content
+    )
+    
+    # Fix card information text
+    content = re.sub(
+        r'<h5 class="mb-3">معلومات البطاقة</h5>',
+        r'<h5 class="mb-3">{% if is_english %}Card Information{% else %}معلومات البطاقة{% endif %}</h5>',
+        content
+    )
+    
+    # Fix "Complete Payment" button
+    content = update_submit_button(content)
+    
+    # Fix order summary section
+    content = update_order_summary(content)
+    
+    # Fix car category display
+    content = re.sub(
+        r'<div class="text-muted small">{{ reservation.car.year }} • {{ reservation.car.category }}</div>',
+        r'<div class="text-muted small">{{ reservation.car.year }} • {% if is_english %}{% if reservation.car.category == "Economy" %}Economy{% elif reservation.car.category == "Compact" %}Compact{% elif reservation.car.category == "Mid-size" %}Mid-size{% elif reservation.car.category == "Luxury" %}Luxury{% elif reservation.car.category == "SUV" %}SUV{% elif reservation.car.category == "Truck" %}Truck{% else %}{{ reservation.car.category }}{% endif %}{% else %}{% if reservation.car.category == "Economy" %}اقتصادية{% elif reservation.car.category == "Compact" %}مدمجة{% elif reservation.car.category == "Mid-size" %}متوسطة{% elif reservation.car.category == "Luxury" %}فاخرة{% elif reservation.car.category == "SUV" %}دفع رباعي{% elif reservation.car.category == "Truck" %}شاحنات{% else %}{{ reservation.car.category }}{% endif %}{% endif %}</div>',
+        content
+    )
+    
+    # Write changes back to file
+    with open('templates/checkout.html', 'w', encoding='utf-8') as file:
+        file.write(content)
+    
+    print("Updated checkout template for multilingual support.")
 
 def update_submit_button(content):
     """Update the submit button to handle both reservation and cart checkout"""
-    submit_button_pattern = r'<!-- Submit Button -->\s*<button type="submit" class="btn btn-primary btn-lg w-100">\s*<i class="fas fa-lock ms-2"></i>إتمام الدفع - {{ reservation.total_price }} دينار\s*</button>'
-    
-    replacement = '''<!-- Submit Button -->
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <i class="fas fa-lock ms-2"></i>إتمام الدفع {% if reservation %}- {{ reservation.total_price }} دينار{% else %}- {{ cart_total }} دينار{% endif %}
-                        </button>'''
-    
-    return re.sub(submit_button_pattern, replacement, content)
+    if '<button type="submit" class="btn btn-success btn-lg w-100">' in content:
+        return re.sub(
+            r'<button type="submit" class="btn btn-success btn-lg w-100">.*?</button>',
+            r'<button type="submit" class="btn btn-success btn-lg w-100">\n'
+            r'                                <i class="fas fa-check-circle {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>\n'
+            r'                                {% if is_english %}Complete Payment{% else %}إتمام الدفع{% endif %}\n'
+            r'                            </button>',
+            content,
+            flags=re.DOTALL
+        )
+    return content
 
 def update_order_summary(content):
     """Update the order summary section to handle both reservation and cart checkout"""
-    # Find the beginning of the order summary card
-    order_summary_pattern = r'<!-- Order Summary -->\s*<div class="card shadow-sm border-0 mb-4">.*?<div class="card-body">'
     
-    # Split content at this point to insert conditional logic
-    match = re.search(order_summary_pattern, content, re.DOTALL)
-    if not match:
-        print("Warning: Could not find order summary section")
-        return content
-        
-    # Split at the match end position
-    pre_content = content[:match.end()]
-    post_content = content[match.end():]
+    # Fix Order Summary header
+    content = re.sub(
+        r'<h4 class="mb-0">ملخص الطلب</h4>',
+        r'<h4 class="mb-0">{% if is_english %}Order Summary{% else %}ملخص الطلب{% endif %}</h4>',
+        content
+    )
     
-    # Add conditional rendering for reservation or cart items
-    conditional_block = '''
-                    {% if reservation %}
-                    <!-- Single Reservation Summary -->
-                    <div class="reservation-car d-flex align-items-center mb-3 pb-3 border-bottom">
-                        {% if reservation.car.image_url %}
-                        <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="rounded ms-3" width="60">
-                        {% else %}
-                        <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="rounded ms-3" width="60">
-                        {% endif %}
-                        <div>
-                            <div class="fw-semibold">{{ reservation.car.make }} {{ reservation.car.model }}</div>
-                            <div class="text-muted small">{{ reservation.car.year }} • {{ reservation.car.category }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="reservation-details mb-3 pb-3 border-bottom">
-                        <div class="mb-2">
-                            <div class="text-muted small">تاريخ الاستلام</div>
-                            <div>{{ reservation.start_date|date:"Y/m/d" }}</div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="text-muted small">تاريخ التسليم</div>
-                            <div>{{ reservation.end_date|date:"Y/m/d" }}</div>
-                        </div>
-                        <div>
-                            <div class="text-muted small">مدة الإيجار</div>
-                            <div>{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} يوم</div>
-                        </div>
-                    </div>
-                    
-                    <div class="price-summary">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>سعر الإيجار اليومي:</span>
-                            <span>{{ reservation.car.daily_rate }} دينار</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>عدد الأيام:</span>
-                            <span>{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} يوم</span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between fw-bold">
-                            <span>المجموع:</span>
-                            <span>{{ reservation.total_price }} دينار</span>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- Cart Items Summary -->
-                    {% for item in cart_items %}
-                    <div class="cart-car d-flex align-items-center mb-3 pb-3 border-bottom">
-                        {% if item.car.image_url %}
-                        <img src="{{ item.car.image_url }}" alt="{{ item.car.make }}" class="rounded ms-3" width="60">
-                        {% else %}
-                        <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ item.car.make }}" class="rounded ms-3" width="60">
-                        {% endif %}
-                        <div>
-                            <div class="fw-semibold">{{ item.car.make }} {{ item.car.model }}</div>
-                            <div class="text-muted small">{{ item.car.year }} • {{ item.car.category }}</div>
-                            <div class="text-muted small">{{ item.start_date|date:"Y/m/d" }} - {{ item.end_date|date:"Y/m/d" }}</div>
-                            <div class="text-primary">{{ item.total }} دينار</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    
-                    <div class="price-summary">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>عدد السيارات:</span>
-                            <span>{{ cart_items|length }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>مجموع الأيام:</span>
-                            <span>{{ total_days }} يوم</span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between fw-bold">
-                            <span>المجموع:</span>
-                            <span>{{ cart_total }} دينار</span>
-                        </div>
-                    </div>
-                    {% endif %}
-'''
+    # Fix pickup date text
+    content = re.sub(
+        r'<div class="text-muted small">تاريخ الاستلام</div>',
+        r'<div class="text-muted small">{% if is_english %}Pickup Date{% else %}تاريخ الاستلام{% endif %}</div>',
+        content
+    )
     
-    # Replace the existing content with conditional logic
-    old_content_pattern = r'<div class="reservation-car d-flex align-items-center mb-3 pb-3 border-bottom">.*?<div class="d-flex justify-content-between fw-bold">.*?<span>{{ reservation.total_price }} دينار</span>.*?</div>.*?</div>'
+    # Fix return date text
+    content = re.sub(
+        r'<div class="text-muted small">تاريخ التسليم</div>',
+        r'<div class="text-muted small">{% if is_english %}Return Date{% else %}تاريخ التسليم{% endif %}</div>',
+        content
+    )
     
-    # Check if we can find the pattern to replace
-    if re.search(old_content_pattern, post_content, re.DOTALL):
-        updated_post_content = re.sub(old_content_pattern, conditional_block, post_content, flags=re.DOTALL)
-        return pre_content + updated_post_content
-    else:
-        # If pattern not found, insert at the beginning of post_content
-        return pre_content + conditional_block + post_content
+    # Fix rental duration text
+    content = re.sub(
+        r'<div class="text-muted small">مدة الإيجار</div>',
+        r'<div class="text-muted small">{% if is_english %}Rental Duration{% else %}مدة الإيجار{% endif %}</div>',
+        content
+    )
+    
+    # Fix days text
+    content = re.sub(
+        r'{{ reservation.start_date\|timesince:reservation.end_date\|slice:":-1" }} يوم',
+        r'{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} {% if is_english %}day(s){% else %}يوم{% endif %}',
+        content
+    )
+    
+    # Fix daily rate text
+    content = re.sub(
+        r'<span>سعر الإيجار اليومي:</span>',
+        r'<span>{% if is_english %}Daily Rate:{% else %}سعر الإيجار اليومي:{% endif %}</span>',
+        content
+    )
+    
+    # Fix price display
+    content = re.sub(
+        r'<span>{{ reservation.car.daily_rate }} دينار</span>',
+        r'<span>{% if is_english %}${{ reservation.car.daily_rate }}{% else %}{{ reservation.car.daily_rate }} دينار{% endif %}</span>',
+        content
+    )
+    
+    # Fix total days text
+    content = re.sub(
+        r'<span>إجمالي الأيام:</span>',
+        r'<span>{% if is_english %}Total Days:{% else %}إجمالي الأيام:{% endif %}</span>',
+        content
+    )
+    
+    # Fix days count
+    content = re.sub(
+        r'<span>{{ reservation.total_days }} يوم</span>',
+        r'<span>{{ reservation.total_days }} {% if is_english %}day(s){% else %}يوم{% endif %}</span>',
+        content
+    )
+    
+    # Fix subtotal text
+    content = re.sub(
+        r'<span>المجموع الفرعي:</span>',
+        r'<span>{% if is_english %}Subtotal:{% else %}المجموع الفرعي:{% endif %}</span>',
+        content
+    )
+    
+    # Fix subtotal price display
+    content = re.sub(
+        r'<span>{{ reservation.sub_total }} دينار</span>',
+        r'<span>{% if is_english %}${{ reservation.sub_total }}{% else %}{{ reservation.sub_total }} دينار{% endif %}</span>',
+        content
+    )
+    
+    # Fix tax text
+    content = re.sub(
+        r'<span>الضريبة \(15%\):</span>',
+        r'<span>{% if is_english %}Tax (15%):{% else %}الضريبة (15%):{% endif %}</span>',
+        content
+    )
+    
+    # Fix tax amount display
+    content = re.sub(
+        r'<span>{{ reservation.tax_amount }} دينار</span>',
+        r'<span>{% if is_english %}${{ reservation.tax_amount }}{% else %}{{ reservation.tax_amount }} دينار{% endif %}</span>',
+        content
+    )
+    
+    # Fix total text
+    content = re.sub(
+        r'<span class="fw-bold">المجموع:</span>',
+        r'<span class="fw-bold">{% if is_english %}Total:{% else %}المجموع:{% endif %}</span>',
+        content
+    )
+    
+    # Fix total amount display
+    content = re.sub(
+        r'<span class="fw-bold">{{ reservation.total_price }} دينار</span>',
+        r'<span class="fw-bold">{% if is_english %}${{ reservation.total_price }}{% else %}{{ reservation.total_price }} دينار{% endif %}</span>',
+        content
+    )
+    
+    # Fix date format
+    content = re.sub(
+        r'{{ reservation.start_date\|date:"Y/m/d" }}',
+        r'{% if is_english %}{{ reservation.start_date|date:"m/d/Y" }}{% else %}{{ reservation.start_date|date:"Y/m/d" }}{% endif %}',
+        content
+    )
+    
+    content = re.sub(
+        r'{{ reservation.end_date\|date:"Y/m/d" }}',
+        r'{% if is_english %}{{ reservation.end_date|date:"m/d/Y" }}{% else %}{{ reservation.end_date|date:"Y/m/d" }}{% endif %}',
+        content
+    )
+    
+    return content
 
-if __name__ == "__main__":
-    process_file()
+# Run the file processor
+process_file()
