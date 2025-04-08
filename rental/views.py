@@ -18,13 +18,28 @@ import os.path
 logger = logging.getLogger(__name__)
 
 def get_template_by_language(request, base_template):
-    """
-    Helper function to handle templates with language adaptation
-    Now returns the same template regardless of language,
-    since we're using a unified template with language-specific content.
-    """
-    # We don't need to select different templates anymore
-    # Just return the base template
+    """Helper function to choose the appropriate template based on language setting"""
+    language = request.session.get('language', 'ar')
+    
+    # Special cases where we have dedicated Arabic templates
+    if base_template == 'index.html' and language == 'ar':
+        return 'index_arabic.html'
+        
+    # For profile.html
+    if base_template == 'profile.html' and language == 'ar':
+        return 'profile_arabic.html'
+    
+    # Handle templates with _django suffix for Arabic
+    if language == 'ar':
+        # Remove .html extension if present
+        if base_template.endswith('.html'):
+            base_name = base_template[:-5]
+            # Check if *_django.html exists
+            django_template = f"{base_name}_django.html"
+            if os.path.exists(f"templates/{django_template}"):
+                return django_template
+    
+    # Default case - use the original template
     return base_template
 
 def index(request):

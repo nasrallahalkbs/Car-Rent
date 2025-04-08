@@ -1,214 +1,241 @@
-{% extends 'layout_django.html' %}
-{% load static %}
+{% extends 'layout.html' %}
 
-{% block title %}خدمة تأجير السيارات الفاخرة{% endblock %}
+{% block title %}الصفحة الرئيسية{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero-section">
-    <div class="container">
-        <h1>اعثر على سيارتك المثالية</h1>
-        <p>اكتشف مجموعتنا المميزة من السيارات لأي مناسبة. من السيارات الاقتصادية إلى الفاخرة، لدينا المركبة المثالية لاحتياجاتك.</p>
-        <a href="{% url 'cars' %}" class="btn btn-primary btn-lg">تصفح السيارات</a>
-    </div>
-</section>
-
-<!-- Featured Cars -->
-<section class="featured-cars py-5">
-    <div class="container">
-        <h2 class="section-title">السيارات المميزة</h2>
-        <div class="row g-4">
-            {% for car in featured_cars %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card car-card h-100">
-                    <img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
-                    <div class="card-body">
-                        <h3 class="car-title">{{ car.make }} {{ car.model }} {{ car.year }}</h3>
-                        <p class="car-category">{{ car.category }} | {{ car.transmission }} | {{ car.fuel_type }}</p>
-                        <p class="car-features">
-                            <i class="fas fa-users ms-2"></i>{{ car.seats }} مقاعد
-                            {% if car.features %}
-                            <span class="me-3"><i class="fas fa-cog ms-2"></i>{{ car.features|length }} ميزات</span>
-                            {% endif %}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <p class="car-price mb-0">{{ car.daily_rate }} $<small>/يوم</small></p>
-                            <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-outline-primary">عرض التفاصيل</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        <div class="text-center mt-4">
-            <a href="{% url 'cars' %}" class="btn btn-outline-primary">عرض جميع السيارات</a>
-        </div>
-    </div>
-</section>
-
-<!-- How It Works -->
-<section class="how-it-works py-5 bg-light">
-    <div class="container">
-        <h2 class="section-title">كيف يعمل النظام</h2>
-        <div class="row g-4 mt-3">
-            <div class="col-md-4">
-                <div class="card h-100 text-center p-4">
-                    <div class="card-body">
-                        <div class="icon-wrapper mb-4">
-                            <i class="fas fa-search fa-4x text-primary"></i>
-                        </div>
-                        <h3 class="h4">١. اختر سيارتك</h3>
-                        <p>تصفح مجموعتنا الواسعة من المركبات واختر السيارة المثالية لاحتياجاتك.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100 text-center p-4">
-                    <div class="card-body">
-                        <div class="icon-wrapper mb-4">
-                            <i class="fas fa-calendar-alt fa-4x text-primary"></i>
-                        </div>
-                        <h3 class="h4">٢. قم بالحجز</h3>
-                        <p>حدد تواريخ الاستلام والإرجاع، وأكمل عملية الحجز.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100 text-center p-4">
-                    <div class="card-body">
-                        <div class="icon-wrapper mb-4">
-                            <i class="fas fa-car fa-4x text-primary"></i>
-                        </div>
-                        <h3 class="h4">٣. استمتع برحلتك</h3>
-                        <p>استلم سيارتك من موقعنا المناسب واستمتع برحلتك بكل ثقة.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Testimonials -->
-<section class="testimonials py-5">
-    <div class="container">
-        <h2 class="section-title">ماذا يقول عملاؤنا</h2>
-        <div class="row g-4 mt-3">
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="testimonial-rating mb-3">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                        </div>
-                        <p class="testimonial-text">"خدمة رائعة ومجموعة ممتازة من السيارات. كان الموظفون مفيدين للغاية وجعلوا عملية التأجير بأكملها سلسة وخالية من المتاعب."</p>
-                        <div class="testimonial-author d-flex align-items-center mt-4">
-                            <div class="author-avatar ms-3">
-                                <img src="{% static 'images/avatar1.jpg' %}" alt="عميل" class="rounded-circle" width="50" height="50">
-                            </div>
-                            <div>
-                                <h5 class="mb-0">محمد علي</h5>
-                                <small class="text-muted">مسافر أعمال</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="testimonial-rating mb-3">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                        </div>
-                        <p class="testimonial-text">"استأجرت سيارة دفع رباعي لإجازة عائلتنا وكانت مثالية! نظيفة، بحالة جيدة، وبالضبط ما احتجناه. سأستخدم خدمتهم بالتأكيد مرة أخرى."</p>
-                        <div class="testimonial-author d-flex align-items-center mt-4">
-                            <div class="author-avatar ms-3">
-                                <img src="{% static 'images/avatar2.jpg' %}" alt="عميل" class="rounded-circle" width="50" height="50">
-                            </div>
-                            <div>
-                                <h5 class="mb-0">سارة أحمد</h5>
-                                <small class="text-muted">مسافرة عائلية</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="testimonial-rating mb-3">
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star text-warning"></i>
-                            <i class="fas fa-star-half-alt text-warning"></i>
-                        </div>
-                        <p class="testimonial-text">"كانت السيارة الفاخرة التي استأجرتها نظيفة تمامًا وأداؤها كان ممتازًا. نظام الحجز عبر الإنترنت كان سهلًا وعملية الاستلام/التسليم كانت فعالة."</p>
-                        <div class="testimonial-author d-flex align-items-center mt-4">
-                            <div class="author-avatar ms-3">
-                                <img src="{% static 'images/avatar3.jpg' %}" alt="عميل" class="rounded-circle" width="50" height="50">
-                            </div>
-                            <div>
-                                <h5 class="mb-0">خالد محمد</h5>
-                                <small class="text-muted">عاشق للسيارات الفاخرة</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Categories -->
-<section class="categories py-5 bg-light">
-    <div class="container">
-        <h2 class="section-title">تصفح حسب الفئة</h2>
-        <div class="row g-4 mt-3">
-            {% for category, cars in category_cars.items %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card category-card h-100">
-                    <div class="card-body">
-                        <h3 class="category-title">{{ category }}</h3>
-                        <p class="text-muted">{{ cars|length }} سيارة متاحة</p>
-                        <div class="category-car-list">
-                            {% for car in cars|slice:":3" %}
-                            <div class="category-car-item d-flex align-items-center mb-2">
-                                <img src="{{ car.image_url }}" alt="{{ car.make }}" class="category-car-img ms-3" width="50" height="50">
-                                <div>
-                                    <div class="category-car-name">{{ car.make }} {{ car.model }}</div>
-                                    <div class="category-car-price">{{ car.daily_rate }} $/يوم</div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <a href="{% url 'cars' %}?category={{ category }}" class="btn btn-outline-primary mt-3">عرض كل سيارات {{ category }}</a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<!-- CTA Section -->
-<section class="cta-section py-5">
+<!-- Hero Banner -->
+<div class="hero-section py-5">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-lg-8">
-                <h2 class="mb-3">جاهز لتجربة تأجير سيارات مميزة؟</h2>
-                <p class="lead mb-0">تصفح مجموعتنا من المركبات واحجز سيارتك المثالية اليوم.</p>
+            <div class="col-md-6 order-md-2">
+                <img src="https://img.freepik.com/free-psd/car-rental-concept-banner-template_23-2148586562.jpg" class="img-fluid rounded shadow" alt="تأجير سيارات" style="max-height: 350px; width: 100%; object-fit: cover;">
             </div>
-            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
-                <a href="{% url 'cars' %}" class="btn btn-primary btn-lg">ابحث عن سيارتك</a>
+            <div class="col-md-6 order-md-1 text-md-end text-center py-3">
+                <h1 class="display-4 fw-bold">اعثر على سيارتك المثالية</h1>
+                <p class="lead">اكتشف مجموعتنا المميزة من السيارات بأي مناسبة من السيارات الاقتصادية إلى الفاخرة. لدينا المركبة المثالية لاحتياجاتك.</p>
+                <a href="{% url 'cars' %}" class="btn btn-primary btn-lg px-4 me-2">تصفح السيارات</a>
             </div>
         </div>
     </div>
-</section>
+</div>
+
+<!-- Featured Cars -->
+<div class="container my-5">
+    <div class="text-center">
+        <h2 class="section-title fw-bold">السيارات المميزة</h2>
+        <div class="title-border"></div>
+    </div>
+    
+    <div class="row mt-4">
+        {% for car in featured_cars %}
+        <div class="col-md-4 mb-4">
+            <div class="card car-card h-100 shadow-sm">
+                <div class="car-image-wrapper">
+                    {% if car.image %}
+                    <img src="{{ car.image.url }}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
+                    {% elif car.image_url %}
+                    <img src="{{ car.image_url }}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top car-image" alt="No image available">
+                    {% endif %}
+                    <div class="car-overlay"></div>
+                    <div class="car-price">
+                        <span class="price-tag">{{ car.daily_rate }} ريال/يوم</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ car.make }} {{ car.model }} {{ car.year }}</h5>
+                    <div class="car-features">
+                        <span class="badge rounded-pill bg-light text-dark mb-2"><i class="fas fa-car-side ms-1"></i>{{ car.get_category_display }}</span>
+                        <span class="badge rounded-pill bg-light text-dark mb-2"><i class="fas fa-gas-pump ms-1"></i>{{ car.get_fuel_type_display }}</span>
+                        <span class="badge rounded-pill bg-light text-dark mb-2"><i class="fas fa-cog ms-1"></i>{{ car.get_transmission_display }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="{% url 'car_detail' car.id %}" class="btn btn-outline-primary w-100">عرض التفاصيل</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'cars' %}" class="btn btn-primary px-4">عرض جميع السيارات</a>
+    </div>
+</div>
+
+<!-- Car Categories -->
+<div class="container my-5 pb-5">
+    <div class="text-center">
+        <h2 class="section-title fw-bold">تصفح حسب الفئة</h2>
+        <div class="title-border"></div>
+    </div>
+    
+    <div class="row mt-4">
+        {% for category, cars in category_cars.items %}
+        {% if cars %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card category-card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ category }}</h5>
+                    <p class="text-muted">{{ cars.count }} سيارات متاحة</p>
+                    <div class="category-image-container mb-3">
+                        {% with first_car=cars.0 %}
+                        {% if first_car.image %}
+                        <img src="{{ first_car.image.url }}" class="img-fluid rounded" alt="{{ category }}">
+                        {% elif first_car.image_url %}
+                        <img src="{{ first_car.image_url }}" class="img-fluid rounded" alt="{{ category }}">
+                        {% else %}
+                        <img src="https://via.placeholder.com/200x150?text={{ category }}" class="img-fluid rounded" alt="{{ category }}">
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                    <a href="{% url 'cars' %}?category={{ category }}" class="btn btn-outline-primary w-100">تصفح {{ category }}</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="how-it-works-section my-5 py-5 bg-light">
+    <div class="container">
+        <div class="text-center">
+            <h2 class="section-title fw-bold">كيف يعمل</h2>
+            <div class="title-border mx-auto"></div>
+            <p class="lead mb-5">تمتع بتجربة تأجير سيارة سلسة وسهلة</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <div class="how-it-works-item">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-search fa-3x text-primary"></i>
+                    </div>
+                    <h4>اختر سيارتك</h4>
+                    <p>تصفح مجموعتنا الواسعة من السيارات واختر ما يناسب احتياجاتك.</p>
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="how-it-works-item">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-calendar-check fa-3x text-primary"></i>
+                    </div>
+                    <h4>حدد التواريخ</h4>
+                    <p>اختر تواريخ الاستلام والإرجاع المناسبة لك.</p>
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="how-it-works-item">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-road fa-3x text-primary"></i>
+                    </div>
+                    <h4>استلم وانطلق</h4>
+                    <p>استلم سيارتك واستمتع برحلتك بكل راحة وأمان.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Testimonials -->
+<div class="testimonials-section container my-5">
+    <div class="text-center">
+        <h2 class="section-title fw-bold">آراء العملاء</h2>
+        <div class="title-border"></div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-4 mb-4">
+            <div class="card testimonial-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="testimonial-rating mb-2">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                    </div>
+                    <p class="testimonial-text">"خدمة ممتازة والسيارة كانت نظيفة ومريحة. سأستخدم خدماتهم مرة أخرى بالتأكيد."</p>
+                    <div class="testimonial-author d-flex align-items-center mt-3">
+                        <div class="testimonial-avatar me-3">
+                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">أحمد محمد</h6>
+                            <small class="text-muted">الرياض</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card testimonial-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="testimonial-rating mb-2">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star-half-alt text-warning"></i>
+                    </div>
+                    <p class="testimonial-text">"أسعار مناسبة وخدمة عملاء ممتازة. السيارة كانت بحالة جيدة وعملية التأجير كانت سهلة وسريعة."</p>
+                    <div class="testimonial-author d-flex align-items-center mt-3">
+                        <div class="testimonial-avatar me-3">
+                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">سارة عبدالله</h6>
+                            <small class="text-muted">جدة</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card testimonial-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="testimonial-rating mb-2">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                    </div>
+                    <p class="testimonial-text">"تجربة رائعة مع هذه الشركة. أوصي بها بشدة لأي شخص يبحث عن تأجير سيارة موثوقة وبأسعار معقولة."</p>
+                    <div class="testimonial-author d-flex align-items-center mt-3">
+                        <div class="testimonial-avatar me-3">
+                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">محمد العلي</h6>
+                            <small class="text-muted">الدمام</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Download App Section -->
+<div class="app-download-section py-5 my-5 bg-primary text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6 py-3">
+                <h2 class="fw-bold mb-3">حمّل تطبيقنا</h2>
+                <p class="lead mb-4">احصل على تجربة أفضل مع تطبيقنا للهواتف الذكية. حجز سريع، تتبع الحجوزات، وعروض حصرية.</p>
+                <div class="app-badges">
+                    <a href="#" class="btn btn-light btn-lg me-2 mb-2"><i class="fab fa-apple me-2"></i> App Store</a>
+                    <a href="#" class="btn btn-light btn-lg mb-2"><i class="fab fa-google-play me-2"></i> Google Play</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-center py-3">
+                <img src="https://www.pngall.com/wp-content/uploads/5/Mobile-Phone-PNG-Free-Download.png" alt="تطبيق الجوال" class="img-fluid" style="max-height: 300px;">
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

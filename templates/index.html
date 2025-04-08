@@ -1,153 +1,241 @@
 {% extends 'layout.html' %}
-{% load static %}
 
-{% block title %}{% if is_arabic %}خدمة تأجير سيارات مميزة{% else %}Premium Car Rental Service{% endif %}{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero-section">
+<!-- Hero Banner -->
+<div class="hero-section py-5">
     <div class="container">
-        <h1>{% if is_arabic %}ابحث عن سيارتك المثالية{% else %}Find Your Perfect Ride{% endif %}</h1>
-        <p>{% if is_arabic %}اكتشف مجموعتنا المميزة من السيارات لأي مناسبة. من الاقتصادية إلى الفاخرة، لدينا السيارة المثالية لاحتياجاتك.{% else %}Discover our premium selection of cars for any occasion. From economy to luxury, we have the perfect vehicle for your needs.{% endif %}</p>
-        <a href="{% url 'cars' %}" class="btn btn-primary btn-lg">{% if is_arabic %}تصفح السيارات{% else %}Browse Cars{% endif %}</a>
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <img src="https://img.freepik.com/free-psd/car-rental-concept-banner-template_23-2148586562.jpg" class="img-fluid rounded shadow" alt="Car Rental" style="max-height: 350px; width: 100%; object-fit: cover;">
+            </div>
+            <div class="col-md-6 text-md-start text-center py-3">
+                <h1 class="display-4 fw-bold">Find Your Perfect Car</h1>
+                <p class="lead">Explore our premium collection of vehicles for any occasion from economy to luxury. We have the perfect vehicle for your needs.</p>
+                <a href="{% url 'cars' %}" class="btn btn-primary btn-lg px-4 me-2">Browse Cars</a>
+            </div>
+        </div>
     </div>
-</section>
+</div>
 
 <!-- Featured Cars -->
-<section class="featured-cars py-5">
-    <div class="container">
-        <h2 class="section-title">{% if is_arabic %}السيارات المميزة{% else %}Featured Cars{% endif %}</h2>
-        <div class="row g-4">
-            {% for car in featured_cars %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card car-card h-100">
-                    <img src="{{ car.image_url }}" class="card-img-top" alt="{{ car.make }} {{ car.model }}">
-                    <div class="card-body">
-                        <h3 class="car-title">{{ car.make }} {{ car.model }} {{ car.year }}</h3>
-                        <p class="car-category">{{ car.category }} | {{ car.transmission }} | {{ car.fuel_type }}</p>
-                        <p class="car-features">
-                            <i class="fas fa-users {{ margin_right_class }}-2"></i>{% if is_arabic %}{{ car.seats }} مقاعد{% else %}{{ car.seats }} Seats{% endif %}
-                            {% if car.features %}
-                            <span class="{{ margin_left_class }}-3"><i class="fas fa-cog {{ margin_right_class }}-2"></i>{% if is_arabic %}{{ car.features|length }} ميزات{% else %}{{ car.features|length }} Features{% endif %}</span>
-                            {% endif %}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <p class="car-price mb-0">{% if is_arabic %}{{ car.daily_rate }} $<small>/يوم</small>{% else %}${{ car.daily_rate }}<small>/day</small>{% endif %}</p>
-                            <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-outline-primary">{% if is_arabic %}عرض التفاصيل{% else %}View Details{% endif %}</a>
-                        </div>
+<div class="container my-5">
+    <div class="text-center">
+        <h2 class="section-title fw-bold">Featured Cars</h2>
+        <div class="title-border"></div>
+    </div>
+    
+    <div class="row mt-4">
+        {% for car in featured_cars %}
+        <div class="col-md-4 mb-4">
+            <div class="card car-card h-100 shadow-sm">
+                <div class="car-image-wrapper">
+                    {% if car.image %}
+                    <img src="{{ car.image.url }}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
+                    {% elif car.image_url %}
+                    <img src="{{ car.image_url }}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top car-image" alt="No image available">
+                    {% endif %}
+                    <div class="car-overlay"></div>
+                    <div class="car-price">
+                        <span class="price-tag">${{ car.daily_rate }}/day</span>
                     </div>
                 </div>
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ car.make }} {{ car.model }} {{ car.year }}</h5>
+                    <div class="car-features">
+                        <span class="badge rounded-pill bg-light text-dark mb-2"><i class="fas fa-car-side me-1"></i>{{ car.get_category_display }}</span>
+                        <span class="badge rounded-pill bg-light text-dark mb-2"><i class="fas fa-gas-pump me-1"></i>{{ car.get_fuel_type_display }}</span>
+                        <span class="badge rounded-pill bg-light text-dark mb-2"><i class="fas fa-cog me-1"></i>{{ car.get_transmission_display }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="{% url 'car_detail' car.id %}" class="btn btn-outline-primary w-100">View Details</a>
+                </div>
             </div>
-            {% endfor %}
         </div>
-        <div class="text-center mt-4">
-            <a href="{% url 'cars' %}" class="btn btn-outline-primary">{% if is_arabic %}عرض جميع السيارات{% else %}View All Cars{% endif %}</a>
-        </div>
+        {% endfor %}
     </div>
-</section>
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'cars' %}" class="btn btn-primary px-4">View All Cars</a>
+    </div>
+</div>
+
+<!-- Car Categories -->
+<div class="container my-5 pb-5">
+    <div class="text-center">
+        <h2 class="section-title fw-bold">Browse by Category</h2>
+        <div class="title-border"></div>
+    </div>
+    
+    <div class="row mt-4">
+        {% for category, cars in category_cars.items %}
+        {% if cars %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card category-card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ category }}</h5>
+                    <p class="text-muted">{{ cars.count }} cars available</p>
+                    <div class="category-image-container mb-3">
+                        {% with first_car=cars.0 %}
+                        {% if first_car.image %}
+                        <img src="{{ first_car.image.url }}" class="img-fluid rounded" alt="{{ category }}">
+                        {% elif first_car.image_url %}
+                        <img src="{{ first_car.image_url }}" class="img-fluid rounded" alt="{{ category }}">
+                        {% else %}
+                        <img src="https://via.placeholder.com/200x150?text={{ category }}" class="img-fluid rounded" alt="{{ category }}">
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                    <a href="{% url 'cars' %}?category={{ category }}" class="btn btn-outline-primary w-100">Browse {{ category }}</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
 
 <!-- How It Works -->
-<section class="how-it-works py-5 bg-light">
+<div class="how-it-works-section my-5 py-5 bg-light">
     <div class="container">
-        <h2 class="section-title text-center mb-5">{% if is_arabic %}كيف يعمل{% else %}How It Works{% endif %}</h2>
+        <div class="text-center">
+            <h2 class="section-title fw-bold">How It Works</h2>
+            <div class="title-border mx-auto"></div>
+            <p class="lead mb-5">Enjoy a smooth and easy car rental experience</p>
+        </div>
+        
         <div class="row g-4">
             <div class="col-md-4 text-center">
-                <div class="step-icon mb-3">
-                    <i class="fas fa-search fa-3x text-primary"></i>
+                <div class="how-it-works-item">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-search fa-3x text-primary"></i>
+                    </div>
+                    <h4>Choose Your Car</h4>
+                    <p>Browse our wide range of cars and choose what suits your needs.</p>
                 </div>
-                <h3>{% if is_arabic %}اختر سيارتك{% else %}Choose Your Car{% endif %}</h3>
-                <p>{% if is_arabic %}تصفح مجموعتنا الواسعة من السيارات واختر السيارة المثالية لاحتياجاتك{% else %}Browse our extensive fleet and select the perfect car that suits your needs{% endif %}</p>
             </div>
             <div class="col-md-4 text-center">
-                <div class="step-icon mb-3">
-                    <i class="fas fa-calendar-alt fa-3x text-primary"></i>
+                <div class="how-it-works-item">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-calendar-check fa-3x text-primary"></i>
+                    </div>
+                    <h4>Select Dates</h4>
+                    <p>Choose pick-up and return dates that work for you.</p>
                 </div>
-                <h3>{% if is_arabic %}حدد تاريخك{% else %}Pick Your Dates{% endif %}</h3>
-                <p>{% if is_arabic %}اختر تواريخ الاستلام والإرجاع التي تناسب جدولك الزمني{% else %}Choose pick-up and return dates that fit your schedule{% endif %}</p>
             </div>
             <div class="col-md-4 text-center">
-                <div class="step-icon mb-3">
-                    <i class="fas fa-car fa-3x text-primary"></i>
+                <div class="how-it-works-item">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-road fa-3x text-primary"></i>
+                    </div>
+                    <h4>Pick Up & Go</h4>
+                    <p>Collect your car and enjoy your trip with comfort and safety.</p>
                 </div>
-                <h3>{% if is_arabic %}استمتع برحلتك{% else %}Enjoy Your Ride{% endif %}</h3>
-                <p>{% if is_arabic %}استلم سيارتك واستمتع برحلة خالية من المتاعب مع دعمنا على مدار الساعة{% else %}Pick up your car and enjoy a hassle-free journey with our 24/7 support{% endif %}</p>
             </div>
         </div>
     </div>
-</section>
+</div>
 
-<!-- Customer Testimonials -->
-<section class="testimonials py-5">
-    <div class="container">
-        <h2 class="section-title text-center mb-5">{% if is_arabic %}آراء العملاء{% else %}What Our Customers Say{% endif %}</h2>
-        <div class="row">
-            <div class="col-lg-4 mb-4">
-                <div class="testimonial-card p-4">
-                    <div class="stars mb-3">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
+<!-- Testimonials -->
+<div class="testimonials-section container my-5">
+    <div class="text-center">
+        <h2 class="section-title fw-bold">Customer Reviews</h2>
+        <div class="title-border"></div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-4 mb-4">
+            <div class="card testimonial-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="testimonial-rating mb-2">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
                     </div>
-                    <p class="testimonial-text">{% if is_arabic %}"خدمة ممتازة وسيارات نظيفة وبحالة ممتازة. إجراءات الاستلام والتسليم كانت سريعة وسلسة. سأستخدم خدماتهم مرة أخرى بالتأكيد!"{% else %}"Excellent service and clean, well-maintained cars. The pick-up and drop-off process was quick and smooth. Will definitely use their services again!"{% endif %}</p>
-                    <div class="d-flex align-items-center mt-3">
-                        <img src="https://via.placeholder.com/50" alt="Customer" class="rounded-circle {{ margin_right_class }}-3">
-                        <div>
-                            <h5 class="mb-0">{% if is_arabic %}أحمد محمد{% else %}John Doe{% endif %}</h5>
-                            <small class="text-muted">{% if is_arabic %}رجل أعمال{% else %}Business Traveler{% endif %}</small>
+                    <p class="testimonial-text">"Excellent service and the car was clean and comfortable. Will definitely use their services again."</p>
+                    <div class="testimonial-author d-flex align-items-center mt-3">
+                        <div class="testimonial-avatar me-3">
+                            <i class="fas fa-user-circle fa-2x text-primary"></i>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 mb-4">
-                <div class="testimonial-card p-4">
-                    <div class="stars mb-3">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <p class="testimonial-text">{% if is_arabic %}"أسعار معقولة وسيارات رائعة. كان فريق خدمة العملاء ودودًا ومتعاونًا. أوصي بشدة بهذه الشركة لتأجير السيارات!"{% else %}"Affordable prices and great cars. The customer service team was friendly and helpful. Highly recommend this car rental company!"{% endif %}</p>
-                    <div class="d-flex align-items-center mt-3">
-                        <img src="https://via.placeholder.com/50" alt="Customer" class="rounded-circle {{ margin_right_class }}-3">
                         <div>
-                            <h5 class="mb-0">{% if is_arabic %}سارة خالد{% else %}Sarah Johnson{% endif %}</h5>
-                            <small class="text-muted">{% if is_arabic %}سائحة{% else %}Tourist{% endif %}</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 mb-4">
-                <div class="testimonial-card p-4">
-                    <div class="stars mb-3">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star-half-alt"></i>
-                    </div>
-                    <p class="testimonial-text">{% if is_arabic %}"استأجرت سيارة فاخرة لعطلة نهاية الأسبوع وكانت التجربة لا تشوبها شائبة. السيارة كانت نظيفة وبحالة ممتازة. سأعود بالتأكيد!"{% else %}"Rented a luxury car for a weekend getaway and the experience was flawless. The car was clean and in excellent condition. Will definitely be back!"{% endif %}</p>
-                    <div class="d-flex align-items-center mt-3">
-                        <img src="https://via.placeholder.com/50" alt="Customer" class="rounded-circle {{ margin_right_class }}-3">
-                        <div>
-                            <h5 class="mb-0">{% if is_arabic %}محمد العلي{% else %}Michael Brown{% endif %}</h5>
-                            <small class="text-muted">{% if is_arabic %}عميل منتظم{% else %}Regular Customer{% endif %}</small>
+                            <h6 class="mb-0">John Smith</h6>
+                            <small class="text-muted">New York</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="col-md-4 mb-4">
+            <div class="card testimonial-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="testimonial-rating mb-2">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star-half-alt text-warning"></i>
+                    </div>
+                    <p class="testimonial-text">"Reasonable prices and excellent customer service. The car was in good condition and the rental process was smooth and quick."</p>
+                    <div class="testimonial-author d-flex align-items-center mt-3">
+                        <div class="testimonial-avatar me-3">
+                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Sarah Johnson</h6>
+                            <small class="text-muted">Chicago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card testimonial-card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="testimonial-rating mb-2">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                    </div>
+                    <p class="testimonial-text">"Great experience with this company. Highly recommend to anyone looking for a reliable and affordable car rental."</p>
+                    <div class="testimonial-author d-flex align-items-center mt-3">
+                        <div class="testimonial-avatar me-3">
+                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Michael Brown</h6>
+                            <small class="text-muted">Los Angeles</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</section>
+</div>
 
-<!-- Call to Action -->
-<section class="cta py-5 text-center">
+<!-- Download App Section -->
+<div class="app-download-section py-5 my-5 bg-primary text-white">
     <div class="container">
-        <h2 class="mb-4">{% if is_arabic %}جاهز للانطلاق؟{% else %}Ready to Hit the Road?{% endif %}</h2>
-        <p class="mb-4">{% if is_arabic %}استأجر سيارتك اليوم واستمتع بتجربة قيادة لا تُنسى{% else %}Rent your car today and enjoy an unforgettable driving experience{% endif %}</p>
-        <a href="{% url 'cars' %}" class="btn btn-primary btn-lg">{% if is_arabic %}احجز الآن{% else %}Book Now{% endif %}</a>
+        <div class="row align-items-center">
+            <div class="col-md-6 py-3">
+                <h2 class="fw-bold mb-3">Download Our App</h2>
+                <p class="lead mb-4">Get a better experience with our mobile app. Quick booking, track reservations, and exclusive offers.</p>
+                <div class="app-badges">
+                    <a href="#" class="btn btn-light btn-lg me-2 mb-2"><i class="fab fa-apple me-2"></i> App Store</a>
+                    <a href="#" class="btn btn-light btn-lg mb-2"><i class="fab fa-google-play me-2"></i> Google Play</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-center py-3">
+                <img src="https://www.pngall.com/wp-content/uploads/5/Mobile-Phone-PNG-Free-Download.png" alt="Mobile App" class="img-fluid" style="max-height: 300px;">
+            </div>
+        </div>
     </div>
-</section>
+</div>
 {% endblock %}
