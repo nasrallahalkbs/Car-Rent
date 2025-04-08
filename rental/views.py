@@ -21,6 +21,11 @@ def get_template_by_language(request, base_template):
     """Helper function to choose the appropriate template based on language setting"""
     language = request.session.get('language', 'ar')
     
+    # For these templates, we now use a single template with language conditionals
+    templates_using_conditionals = ['cars.html']
+    if base_template in templates_using_conditionals:
+        return base_template
+    
     # Special cases where we have dedicated Arabic templates
     if base_template == 'index.html' and language == 'ar':
         return 'index_arabic.html'
@@ -169,10 +174,21 @@ def car_listing(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Get language and set appropriate margin classes for RTL/LTR
+    language = request.session.get('language', 'ar')
+    is_arabic = (language == 'ar')
+    
+    # Set margin classes based on language direction
+    margin_right_class = 'ms-2' if is_arabic else 'me-2'
+    margin_left_class = 'me-1' if is_arabic else 'ms-1'
+    
     context = {
         'form': form,
         'cars': page_obj,
         'today': date.today(),
+        'is_arabic': is_arabic,
+        'margin_right_class': margin_right_class,
+        'margin_left_class': margin_left_class,
     }
     
     template = get_template_by_language(request, 'cars.html')
