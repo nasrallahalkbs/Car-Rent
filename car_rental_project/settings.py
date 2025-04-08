@@ -90,7 +90,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',  # مهم: يجب أن يكون بعد SessionMiddleware وقبل CommonMiddleware
+    'django.middleware.locale.LocaleMiddleware',
+    'rental.middleware.ForceLanguageMiddleware',  # مهم: يجب أن يكون بعد SessionMiddleware وقبل CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
