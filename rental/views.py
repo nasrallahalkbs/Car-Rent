@@ -640,7 +640,8 @@ def toggle_language(request):
     
     # Set language in session and activate it in this request
     activate(new_language)
-    request.session[translation.LANGUAGE_SESSION_KEY] = new_language
+    # Store in session directly
+    request.session['_language'] = new_language
     
     # Create a response object
     referer = request.META.get('HTTP_REFERER', '/')
