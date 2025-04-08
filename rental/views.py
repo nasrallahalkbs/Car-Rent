@@ -623,25 +623,6 @@ def toggle_dark_mode(request):
     return redirect('index')
 
 
-def toggle_language(request):
-    """تبديل اللغة بطريقة مباشرة وبسيطة"""
-    # الحصول على اللغة الحالية
-    current_language = request.COOKIES.get('django_language', 'ar')
-    # تبديل اللغة
-    new_language = 'en' if current_language == 'ar' else 'ar'
-    
-    # الحصول على المسار الحالي للعودة إليه
-    referer = request.META.get('HTTP_REFERER', '/')
-    
-    # إعداد الاستجابة وتعيين الكوكي
-    response = redirect(referer)
-    response.set_cookie('django_language', new_language, max_age=86400*365)
-    
-    # طباعة معلومات للتصحيح
-    print(f"**Language Toggle: {current_language} -> {new_language}**")
-    
-    return response
-
 def about_us(request):
     """About Us page view"""
     template = get_template_by_language(request, 'about_us.html')
