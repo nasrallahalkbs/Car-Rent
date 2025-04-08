@@ -19,33 +19,50 @@ logger = logging.getLogger(__name__)
 
 def get_template_by_language(request, base_template):
     """Helper function to choose the appropriate template based on language setting"""
-    # Always use the Arabic design template regardless of language
+    # Always use the Arabic design template with layout_django.html for consistency
+    # This ensures we use the same layout template for all pages
     
-    # For cars.html
-    if base_template == 'cars.html':
-        return 'cars_django.html'
+    # Map all templates to their _django versions for consistency
+    template_mappings = {
+        # Main navigation templates
+        'index.html': 'index_django.html',
+        'cars.html': 'cars_django.html',
+        'profile.html': 'profile_django.html',
+        'car_detail.html': 'car_detail_django.html',
+        'about_us.html': 'about_us_django.html',
+        'cart.html': 'cart_django.html',
+        'confirmation.html': 'confirmation_django.html',
+        'checkout.html': 'checkout_django.html',
+        'login.html': 'login_django.html',
+        'register.html': 'register_django.html',
+        'my_reservations.html': 'my_reservations_django.html',
+        
+        # For completeness, include the following templates that may be used elsewhere
+        'reservation_detail.html': 'reservation_detail_django.html',
+        'error.html': 'error_django.html',
+        'admin_dashboard.html': 'admin_dashboard_django.html',
+    }
     
-    # For index.html - always use Arabic design template
-    if base_template == 'index.html':
-        return 'index_arabic.html'
+    # Special case for index_arabic.html - redirect to index_django.html
+    if base_template == 'index_arabic.html':
+        return 'index_django.html'
     
-    # For profile.html - always use Arabic design template
-    if base_template == 'profile.html':
-        return 'profile_arabic.html'
+    # If we have a direct mapping, use it
+    if base_template in template_mappings:
+        return template_mappings[base_template]
     
-    # For car detail - always use Arabic design template
-    if base_template == 'car_detail.html':
-        return 'car_detail_django.html'
-    
-    # Handle templates with _django suffix for all languages
-    if base_template.endswith('.html'):
+    # For templates that might already have _django suffix
+    if base_template.endswith('.html') and not base_template.endswith('_django.html'):
         base_name = base_template[:-5]
-        # Check if *_django.html exists (used for templates with Arabic design)
         django_template = f"{base_name}_django.html"
-        if django_template in ['login_django.html', 'register_django.html', 'checkout_django.html', 'confirmation_django.html']:
+        
+        # Try to use the _django version if it's available
+        import os.path
+        if os.path.exists(f"templates/{django_template}"):
             return django_template
     
-    # Default fallback - use the base template unchanged
+    # Default fallback - if the template is already in _django form or doesn't have a mapping
+    # Don't add a suffix to templates that don't have a _django version
     return base_template
 
 def index(request):
