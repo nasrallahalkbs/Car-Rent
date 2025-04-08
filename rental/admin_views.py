@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from .views import get_template_by_language
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
