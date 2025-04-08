@@ -1,7 +1,7 @@
 {% extends 'layout_django.html' %}
 {% load static %}
 
-{% block title %}سلة التسوق - كاررنتال{% endblock %}
+{% block title %}{% if is_english %}Shopping Cart - CarRental{% else %}سلة التسوق - كاررنتال{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -358,9 +358,9 @@
 <div class="container py-5">
     <div class="cart-header">
         <h1>
-            <i class="fas fa-shopping-cart ms-2"></i> سلة التسوق
+            <i class="fas fa-shopping-cart {% if is_english %}me-2{% else %}ms-2{% endif %}"></i> {% if is_english %}Shopping Cart{% else %}سلة التسوق{% endif %}
             {% if cart_items %}
-            <span class="cart-count">{{ cart_items|length }} عنصر</span>
+            <span class="cart-count">{{ cart_items|length }} {% if is_english %}item(s){% else %}عنصر{% endif %}</span>
             {% endif %}
         </h1>
     </div>
@@ -432,7 +432,7 @@
                             </div>
                             
                             <div class="cart-item-actions">
-                                <a href="{% url 'remove_from_cart' item_id=item.id %}" class="cart-remove-btn" onclick="return confirm('هل أنت متأكد من إزالة هذه السيارة من سلة التسوق؟')">
+                                <a href="{% url 'remove_from_cart' item_id=item.id %}" class="cart-remove-btn" onclick="return confirm('{% if is_english %}Are you sure you want to remove this car from your cart?{% else %}هل أنت متأكد من إزالة هذه السيارة من سلة التسوق؟{% endif %}')">
                                     <i class="fas fa-trash-alt ms-1"></i> إزالة
                                 </a>
                             </div>
@@ -488,8 +488,8 @@
     {% else %}
     <div class="empty-cart">
         <i class="fas fa-shopping-cart empty-cart-icon"></i>
-        <h3 class="empty-cart-title">سلة التسوق فارغة</h3>
-        <p class="empty-cart-text">يبدو أنك لم تضف أي سيارات إلى سلة التسوق بعد. يمكنك استعراض السيارات المتاحة والبدء في اختيار السيارة المناسبة لاحتياجاتك.</p>
+        <h3 class="empty-cart-title">{% if is_english %}Your Cart is Empty{% else %}سلة التسوق فارغة{% endif %}</h3>
+        <p class="empty-cart-text">{% if is_english %}It looks like you haven't added any cars to your cart yet. You can browse available cars and start choosing the right car for your needs.{% else %}يبدو أنك لم تضف أي سيارات إلى سلة التسوق بعد. يمكنك استعراض السيارات المتاحة والبدء في اختيار السيارة المناسبة لاحتياجاتك.{% endif %}</p>
         <a href="{% url 'cars' %}" class="shop-action-btn">
             <i class="fas fa-car-side ms-1"></i> استعراض السيارات
         </a>

@@ -1,4 +1,17 @@
-{% extends 'layout_django.html' %}
+"""
+إصلاح قالب الدفع (checkout.html) ليدعم اللغتين العربية والإنجليزية
+هذا السكربت يعيد إنشاء ملف checkout.html مع دعم اللغتين العربية والإنجليزية
+"""
+import os
+
+def create_new_checkout_template():
+    """
+    إنشاء ملف checkout.html جديد مع دعم اللغتين العربية والإنجليزية
+    """
+    template_path = 'templates/checkout.html'
+    
+    # محتوى القالب الجديد
+    new_content = """{% extends 'layout_django.html' %}
 {% load static %}
 
 {% block title %}{% if is_english %}Checkout - CarRental{% else %}الدفع - كاررنتال{% endif %}{% endblock %}
@@ -327,3 +340,13 @@
     });
 </script>
 {% endblock %}
+"""
+    
+    # كتابة المحتوى إلى الملف
+    with open(template_path, 'w', encoding='utf-8') as file:
+        file.write(new_content)
+    
+    print(f"تم إنشاء ملف قالب الدفع الجديد: {template_path}")
+
+if __name__ == "__main__":
+    create_new_checkout_template()
