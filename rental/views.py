@@ -350,6 +350,100 @@ def remove_from_cart(request, item_id):
     return redirect('cart')
 
 @login_required
+def checkout_old(request):
+    """Original checkout function that will be replaced"""
+    return redirect('checkout_new')
+    
+@login_required
+def checkout_new(request):
+    """New simplified checkout function without complex templates"""
+    # Check if coming from a specific reservation
+    reservation_id = request.GET.get('reservation_id')
+    
+    if reservation_id:
+        # User is paying for a specific reservation
+        reservation = get_object_or_404(
+            Reservation, 
+            id=reservation_id, 
+            user=request.user, 
+            status='confirmed', 
+            payment_status='pending'
+        )
+        
+        # Handle POST request (payment processing)
+        if request.method == 'POST':
+            # Process payment (simplified)
+            reservation.payment_status = 'paid'
+            
+            # Update status to completed if it was confirmed
+            if reservation.status == 'confirmed':
+                reservation.status = 'completed'
+            
+            reservation.save()
+            
+            messages.success(request, "Payment completed successfully!")
+            request.session['last_paid_reservation_id'] = reservation.id
+            return redirect('confirmation')
+        
+        context = {
+            'reservation': reservation,
+            'total_amount': reservation.total_price
+        }
+    else:
+        # User is checking out items from cart
+        cart_items = CartItem.objects.filter(user=request.user)
+        
+        if not cart_items:
+            messages.warning(request, "Your cart is empty!")
+            return redirect('cart')
+        
+        # Calculate totals
+        grand_total = 0
+        for item in cart_items:
+            delta = (item.end_date - item.start_date).days + 1
+            item.days = delta
+            item.total = item.car.daily_rate * delta
+            grand_total += item.total
+        
+        # Handle POST request (create reservations)
+        if request.method == 'POST':
+            # Create reservations for all cart items
+            for item in cart_items:
+                # Check car availability
+                if get_car_availability(item.car.id, item.start_date, item.end_date):
+                    total_price = calculate_total_price(item.car, item.start_date, item.end_date)
+                    
+                    # Create reservation with pending status
+                    Reservation.objects.create(
+                        user=request.user,
+                        car=item.car,
+                        start_date=item.start_date,
+                        end_date=item.end_date,
+                        total_price=total_price,
+                        status='pending',
+                        payment_status='pending'
+                    )
+                else:
+                    messages.error(
+                        request, 
+                        f"Sorry, the car {item.car.make} {item.car.model} is no longer available."
+                    )
+                    return redirect('cart')
+            
+            # Clear the cart
+            cart_items.delete()
+            
+            messages.success(request, "Booking request submitted successfully!")
+            return redirect('confirmation')
+        
+        context = {
+            'cart_items': cart_items,
+            'total_amount': grand_total
+        }
+    
+    # Use a simple template that doesn't have URL references
+    return render(request, 'checkout_minimal.html', context)
+    
 def checkout(request):
     """Checkout and payment view"""
     # Check if coming from a specific reservation (direct payment)
