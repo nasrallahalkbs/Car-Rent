@@ -718,7 +718,8 @@ def toggle_language(request):
 
 def about_us(request):
     """About Us page view"""
-    return render(request, 'about_us_original.html')
+    template = get_template_by_language(request, 'about_us.html')
+    return render(request, template)
 
 @login_required
 def book_car(request, car_id):
@@ -760,7 +761,8 @@ def book_car(request, car_id):
         'cart_item': cart_item,  # Pass the cart item to the template
     }
     
-    return render(request, 'booking_original.html', context)
+    template = get_template_by_language(request, 'booking.html')
+    return render(request, template, context)
 
 @login_required
 def process_booking(request):
