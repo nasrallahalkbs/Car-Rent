@@ -483,15 +483,59 @@ def confirmation(request):
 
 @login_required
 def my_reservations(request):
-    """User's reservations page - with original design"""
-    reservations = Reservation.objects.filter(user=request.user).order_by('-created_at')
+    """User's reservations page with search capability"""
+    # الحصول على كافة حجوزات المستخدم الحالي
+    reservations_query = Reservation.objects.filter(user=request.user)
+    
+    # استخراج معايير البحث من الاستعلام
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # تطبيق عوامل التصفية المختلفة إذا توفرت
+    if search_query:
+        # البحث في حقول متعددة
+        reservations_query = reservations_query.filter(
+            Q(car__make__icontains=search_query) | 
+            Q(car__model__icontains=search_query) |
+            Q(car__license_plate__icontains=search_query) |
+            Q(id__icontains=search_query)
+        )
+    
+    if status_filter:
+        reservations_query = reservations_query.filter(status=status_filter)
+    
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            reservations_query = reservations_query.filter(start_date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            reservations_query = reservations_query.filter(end_date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    # ترتيب النتائج حسب تاريخ الإنشاء (الأحدث أولاً)
+    reservations = reservations_query.order_by('-created_at')
     
     context = {
         'reservations': reservations,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'status_choices': Reservation.STATUS_CHOICES,
+        'today': date.today(),
     }
     
-    # استخدام القالب الأصلي بتصميم أبسط
-    return render(request, 'my_reservations_original.html', context)
+    # استخدام قالب مختلف حسب اللغة
+    template = get_template_by_language(request, 'my_reservations.html')
+    return render(request, template, context)
 
 @login_required
 def reservation_detail(request, reservation_id):
