@@ -1,79 +1,81 @@
-from datetime import timedelta
 from .models import Reservation
-
-def calculate_total_price(car, start_date, end_date):
-    """
-    Calculate the total price for a car rental
-    
-    Args:
-        car: Car object
-        start_date: date object for rental start
-        end_date: date object for rental end
-        
-    Returns:
-        float: total price
-    """
-    days = (end_date - start_date).days + 1  # Include both start and end days
-    return car.daily_rate * days
+from datetime import timedelta
 
 def get_car_availability(car_id, start_date, end_date, exclude_reservation=None):
     """
-    Check if a car is available for the specified date range
+    التحقق من توفر السيارة بين تاريخين محددين
     
     Args:
-        car_id: ID of the car
-        start_date: date object for rental start
-        end_date: date object for rental end
-        exclude_reservation: Optional ID of a reservation to exclude from check (for modifications)
+        car_id: معرف السيارة
+        start_date: تاريخ البداية
+        end_date: تاريخ النهاية
+        exclude_reservation: معرف الحجز المراد استبعاده من التحقق (مفيد عند تعديل حجز موجود)
         
     Returns:
-        bool: True if car is available, False otherwise
+        bool: True إذا كانت السيارة متاحة، False خلاف ذلك
     """
-    # Check for any overlapping reservations that are not cancelled
+    # البحث عن أي حجوزات تتداخل مع الفترة المطلوبة
     query = Reservation.objects.filter(
         car_id=car_id,
-        status__in=['pending', 'confirmed'],
+        status__in=['pending', 'confirmed'],  # البحث فقط عن الحجوزات النشطة
     ).exclude(
-        # Exclude completely non-overlapping reservations
-        start_date__gt=end_date,
-        end_date__lt=start_date,
+        # استبعاد الحجوزات التي تنتهي قبل تاريخ البداية المطلوب
+        end_date__lt=start_date
+    ).exclude(
+        # استبعاد الحجوزات التي تبدأ بعد تاريخ النهاية المطلوب
+        start_date__gt=end_date
     )
     
-    # If we're modifying an existing reservation, exclude it from the check
+    # إذا تم تحديد حجز للاستبعاد، قم باستبعاده من نتائج البحث
     if exclude_reservation:
         query = query.exclude(id=exclude_reservation)
     
-    # If any overlapping reservations exist, car is not available
+    # إذا وجدت أي حجوزات متداخلة، فالسيارة غير متاحة
     return not query.exists()
 
-def format_currency(value):
-    """Format a value as currency"""
-    return f"${float(value):.2f}"
-
-def get_unavailable_dates(car_id, exclude_reservation=None):
+def calculate_total_price(car, start_date, end_date):
     """
-    Get a list of date ranges when the car is unavailable
+    حساب السعر الإجمالي لحجز سيارة
     
     Args:
-        car_id: ID of the car
-        exclude_reservation: Optional ID of a reservation to exclude from check (for modifications)
+        car: كائن السيارة
+        start_date: تاريخ البداية
+        end_date: تاريخ النهاية
         
     Returns:
-        list: List of date ranges (tuples of start_date, end_date)
+        Decimal: السعر الإجمالي للحجز
     """
-    query = Reservation.objects.filter(
-        car_id=car_id,
+    # حساب عدد الأيام
+    days = (end_date - start_date).days + 1
+    
+    # حساب السعر الإجمالي
+    total_price = car.daily_rate * days
+    
+    return total_price
+
+def get_unavailable_dates(car_id):
+    """
+    الحصول على قائمة التواريخ غير المتاحة لسيارة محددة
+    
+    Args:
+        car_id: معرف السيارة
+        
+    Returns:
+        list: قائمة التواريخ غير المتاحة
+    """
+    # الحصول على جميع الحجوزات النشطة للسيارة
+    reservations = Reservation.objects.filter(
+        car_id=car_id, 
         status__in=['pending', 'confirmed']
     )
     
-    # If we're modifying an existing reservation, exclude it from the check
-    if exclude_reservation:
-        query = query.exclude(id=exclude_reservation)
+    unavailable_dates = []
     
-    reservations = query.order_by('start_date')
-    
-    date_ranges = []
+    # إنشاء قائمة بجميع التواريخ المحجوزة
     for reservation in reservations:
-        date_ranges.append((reservation.start_date, reservation.end_date))
-    
-    return date_ranges
+        current_date = reservation.start_date
+        while current_date <= reservation.end_date:
+            unavailable_dates.append(current_date)
+            current_date += timedelta(days=1)
+            
+    return unavailable_dates

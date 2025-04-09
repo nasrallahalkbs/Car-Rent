@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, admin_views
+from . import views, admin_views, payment_views
 
 urlpatterns = [
     # User-facing views
@@ -19,6 +19,7 @@ urlpatterns = [
     path('checkout-new/', views.checkout_new, name='checkout_new'),
     path('confirmation/', views.confirmation, name='confirmation'),
     path('reservations/', views.my_reservations, name='my_reservations'),
+    path('payment/', payment_views.professional_payment, name='professional_payment'),
     path('reservation/<int:reservation_id>/', views.reservation_detail, name='reservation_detail'),
     path('reservation/<int:reservation_id>/modify/', views.modify_reservation, name='modify_reservation'),
     path('reservation/<int:reservation_id>/cancel/', views.cancel_reservation, name='cancel_reservation'),

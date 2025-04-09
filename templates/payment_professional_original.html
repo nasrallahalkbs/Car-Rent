@@ -1,0 +1,333 @@
+{% extends 'layout_original.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Complete Payment{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Payment Information</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'professional_payment' %}{% if not from_cart %}?reservation_id={{ reservation.id }}{% endif %}" id="payment-form">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h5>Choose Payment Method</h5>
+                            <div class="payment-methods mt-3">
+                                <div class="row">
+                                    <div class="col-md-3 col-6 mb-3">
+                                        <div class="payment-method-item">
+                                            <input type="radio" name="payment_method" id="credit_card" value="credit_card" checked>
+                                            <label for="credit_card" class="payment-method-label">
+                                                <img src="{% static 'images/credit_card.svg' %}" alt="Credit Card" class="img-fluid">
+                                                <span>Credit Card</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-3">
+                                        <div class="payment-method-item">
+                                            <input type="radio" name="payment_method" id="paypal" value="paypal">
+                                            <label for="paypal" class="payment-method-label">
+                                                <img src="{% static 'images/paypal.svg' %}" alt="PayPal" class="img-fluid">
+                                                <span>PayPal</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-3">
+                                        <div class="payment-method-item">
+                                            <input type="radio" name="payment_method" id="bank_transfer" value="bank_transfer">
+                                            <label for="bank_transfer" class="payment-method-label">
+                                                <img src="{% static 'images/bank.svg' %}" alt="Bank Transfer" class="img-fluid">
+                                                <span>Bank Transfer</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-3">
+                                        <div class="payment-method-item">
+                                            <input type="radio" name="payment_method" id="cash" value="cash">
+                                            <label for="cash" class="payment-method-label">
+                                                <img src="{% static 'images/cash.svg' %}" alt="Cash" class="img-fluid">
+                                                <span>Cash on Pickup</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="credit-card-form" class="payment-method-details">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="card_number" class="form-label">Card Number</label>
+                                    <input type="text" class="form-control" id="card_number" placeholder="XXXX XXXX XXXX XXXX">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="expiry_date" class="form-label">Expiry Date</label>
+                                    <input type="text" class="form-control" id="expiry_date" placeholder="MM/YY">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="cvv" class="form-label">CVV</label>
+                                    <input type="text" class="form-control" id="cvv" placeholder="XXX">
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label for="card_name" class="form-label">Name on Card</label>
+                                    <input type="text" class="form-control" id="card_name">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="paypal-form" class="payment-method-details d-none">
+                            <div class="alert alert-info">
+                                You will be redirected to PayPal to complete your payment after clicking the confirmation button.
+                            </div>
+                        </div>
+                        
+                        <div id="bank-transfer-form" class="payment-method-details d-none">
+                            <div class="alert alert-info">
+                                <h5>Bank Account Details</h5>
+                                <p>Bank: <strong>XYZ National Bank</strong></p>
+                                <p>Account Number: <strong>SA12 3456 7890 1234 5678 9012</strong></p>
+                                <p>Beneficiary: <strong>CarRental Company</strong></p>
+                                <p>Note: Please include your reservation number in the transfer details</p>
+                            </div>
+                        </div>
+                        
+                        <div id="cash-form" class="payment-method-details d-none">
+                            <div class="alert alert-info">
+                                Payment will be made in cash upon vehicle pickup. Please bring the full amount required.
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="terms_agreement" required>
+                            <label class="form-check-label" for="terms_agreement">
+                                I agree to the terms and conditions and privacy policy
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                {% if from_cart %}
+                                    Confirm Booking and Pay ${{ total_amount }}
+                                {% else %}
+                                    Confirm Payment ${{ total_amount }}
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% if from_cart %}
+                        {% for item in cart_items %}
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>
+                                    <h6 class="mb-0">{{ item.car.make }} {{ item.car.model }}</h6>
+                                    <small class="text-muted">
+                                        {{ item.start_date|date:"j F Y" }} - {{ item.end_date|date:"j F Y" }}
+                                        ({{ item.days }} days)
+                                    </small>
+                                </div>
+                                <span>${{ item.total }}</span>
+                            </div>
+                            {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                        <hr class="my-3">
+                        <div class="d-flex justify-content-between">
+                            <h5>Total</h5>
+                            <h5>${{ total_amount }}</h5>
+                        </div>
+                    {% else %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <h6 class="mb-0">{{ reservation.car.make }} {{ reservation.car.model }}</h6>
+                                <small class="text-muted">
+                                    {{ reservation.start_date|date:"j F Y" }} - {{ reservation.end_date|date:"j F Y" }}
+                                    ({{ reservation.days }} days)
+                                </small>
+                            </div>
+                            <span>${{ reservation.total_price }}</span>
+                        </div>
+                        <hr class="my-3">
+                        <div class="d-flex justify-content-between">
+                            <h5>Total</h5>
+                            <h5>${{ reservation.total_price }}</h5>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Additional Details</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-shield-alt me-2 text-success"></i>
+                            Secure & Encrypted Payment
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-undo-alt me-2 text-success"></i>
+                            Flexible Cancellation Policy
+                        </li>
+                        <li>
+                            <i class="fas fa-headset me-2 text-success"></i>
+                            24/7 Customer Support
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-method-item {
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s;
+        height: 100%;
+    }
+    
+    .payment-method-item:hover {
+        border-color: #aaa;
+    }
+    
+    .payment-method-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 15px 10px;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .payment-method-label img {
+        height: 40px;
+        width: auto;
+        margin-bottom: 8px;
+        object-fit: contain;
+    }
+    
+    .payment-method-label span {
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    
+    input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+    
+    input[type="radio"]:checked + .payment-method-label {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+    }
+    
+    input[type="radio"]:checked + .payment-method-label::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 2px solid var(--bs-primary);
+        border-radius: 8px;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+        const paymentForms = document.querySelectorAll('.payment-method-details');
+        
+        function showSelectedPaymentForm() {
+            const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
+            
+            // Hide all forms
+            paymentForms.forEach(form => {
+                form.classList.add('d-none');
+            });
+            
+            // Show the selected form
+            document.getElementById(`${selectedMethod}-form`).classList.remove('d-none');
+        }
+        
+        // Initialize
+        showSelectedPaymentForm();
+        
+        // Add event listeners to payment method radios
+        paymentMethods.forEach(method => {
+            method.addEventListener('change', showSelectedPaymentForm);
+        });
+        
+        // Add basic validation for credit card form
+        const cardNumberInput = document.getElementById('card_number');
+        if (cardNumberInput) {
+            cardNumberInput.addEventListener('input', function (e) {
+                // Format card number with spaces after every 4 digits
+                let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+                let formattedValue = '';
+                
+                for (let i = 0; i < value.length; i++) {
+                    if (i > 0 && i % 4 === 0) {
+                        formattedValue += ' ';
+                    }
+                    formattedValue += value[i];
+                }
+                
+                // Limit to 19 characters (16 digits + 3 spaces)
+                if (formattedValue.length <= 19) {
+                    e.target.value = formattedValue;
+                } else {
+                    e.target.value = formattedValue.substring(0, 19);
+                }
+            });
+        }
+        
+        const expiryInput = document.getElementById('expiry_date');
+        if (expiryInput) {
+            expiryInput.addEventListener('input', function (e) {
+                // Format expiry date as MM/YY
+                let value = e.target.value.replace(/\D/g, '');
+                
+                if (value.length > 2) {
+                    value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                }
+                
+                e.target.value = value;
+            });
+        }
+        
+        const cvvInput = document.getElementById('cvv');
+        if (cvvInput) {
+            cvvInput.addEventListener('input', function (e) {
+                // Limit CVV to 3-4 digits
+                let value = e.target.value.replace(/\D/g, '');
+                e.target.value = value.substring(0, 4);
+            });
+        }
+    });
+</script>
+{% endblock %}

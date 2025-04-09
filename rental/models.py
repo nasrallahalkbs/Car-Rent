@@ -78,6 +78,16 @@ class Reservation(models.Model):
         ('refunded', 'Refunded'),
     ]
     
+    PAYMENT_METHOD_CHOICES = [
+        ('credit_card', 'Credit/Debit Card'),
+        ('paypal', 'PayPal'),
+        ('cash', 'Cash at Pickup'),
+        ('bank_transfer', 'Bank Transfer'),
+    ]
+    
+    # Generate a unique reservation number
+    reservation_number = models.CharField(max_length=10, blank=True, null=True)
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     start_date = models.DateField()
@@ -85,11 +95,38 @@ class Reservation(models.Model):
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    
+    # معلومات الدفع الإضافية
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
+    payment_reference = models.CharField(max_length=50, blank=True, null=True, help_text="Reference number for payment")
+    payment_date = models.DateTimeField(blank=True, null=True)
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True, help_text="Additional notes or payment details")
     
     def __str__(self):
         return f"Reservation #{self.id} - {self.car} ({self.status})"
+        
+    @property
+    def days(self):
+        """عدد أيام الحجز"""
+        if self.start_date and self.end_date:
+            delta = (self.end_date - self.start_date).days + 1
+            return delta
+        return 0
+        
+    def save(self, *args, **kwargs):
+        # إنشاء رقم حجز فريد عند إنشاء الحجز لأول مرة
+        if not self.reservation_number:
+            # احصل على آخر حجز وأنشئ رقمًا جديدًا
+            last_reservation = Reservation.objects.order_by('-id').first()
+            if last_reservation and last_reservation.id:
+                new_id = last_reservation.id + 1
+            else:
+                new_id = 1
+            self.reservation_number = f"R{new_id:06d}"
+        super().save(*args, **kwargs)
 
 class Review(models.Model):
     """Review model for car rentals"""

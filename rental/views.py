@@ -899,14 +899,14 @@ def process_booking(request):
     # Calculate total price
     total_price = calculate_total_price(car, start_date, end_date)
     
-    # Create reservation with pending status (awaiting admin approval)
+    # Create reservation with confirmed status for immediate payment
     reservation = Reservation.objects.create(
         user=request.user,
         car=car,
         start_date=start_date,
         end_date=end_date,
         total_price=total_price,
-        status='pending',
+        status='confirmed',  # Set as confirmed since we're going to payment immediately
         payment_status='pending',
         notes=notes
     )
@@ -919,8 +919,8 @@ def process_booking(request):
         end_date=end_date
     ).delete()
     
-    messages.success(request, "تم إرسال طلب الحجز بنجاح! سيتم إشعارك عند مراجعة طلبك.")
-    return redirect('confirmation')
+    # Redirect to professional payment page with this reservation
+    return redirect(f'{reverse("professional_payment")}?reservation_id={reservation.id}')
 
 def get_unavailable_dates_api(request, car_id):
     """API endpoint to get unavailable dates for a car"""
