@@ -1,0 +1,222 @@
+{% extends 'layout_django.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% if is_english %}Booking - {{ car.make }} {{ car.model }}{% else %}حجز - {{ car.make }} {{ car.model }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">{% if is_english %}Booking Request - {{ car.make }} {{ car.model }}{% else %}طلب حجز - {{ car.make }} {{ car.model }}{% endif %}</h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Car Info Summary -->
+                    <div class="car-summary mb-4 p-3 bg-light rounded">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                {% if car.image_url %}
+                                <img src="{{ car.image_url }}" class="img-fluid rounded" alt="{{ car.make }} {{ car.model }}">
+                                {% else %}
+                                <img src="{% static 'images/car-placeholder.svg' %}" class="img-fluid rounded" alt="{{ car.make }} {{ car.model }}">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-9">
+                                <h4 class="car-title">{{ car.make }} {{ car.model }} {{ car.year }}</h4>
+                                <div class="car-specs">
+                                    <span class="badge bg-info me-2"><i class="fas fa-car {% trans "me-1" %}"></i>{{ car.category }}</span>
+                                    <span class="badge bg-secondary me-2"><i class="fas fa-cog {% trans "me-1" %}"></i>{{ car.transmission }}</span>
+                                    <span class="badge bg-success"><i class="fas fa-gas-pump {% trans "me-1" %}"></i>{{ car.fuel_type }}</span>
+                                </div>
+                                <div class="car-price mt-2">
+                                    <strong>{% trans "Daily Rate:" %}</strong> {{ car.daily_rate }} {% trans "JOD / day" %}
+                                </div>
+                                {% if cart_item %}
+                                <div class="alert alert-info mt-2 mb-0">
+                                    <i class="fas fa-shopping-cart ms-2"></i>
+                                    {% if is_english %}This car is already in your cart for the period from {{ cart_item.start_date|date:"m/d/Y" }} to {{ cart_item.end_date|date:"m/d/Y" }}{% else %}هذه السيارة موجودة في سلة التسوق للفترة من {{ cart_item.start_date|date:"Y/m/d" }} إلى {{ cart_item.end_date|date:"Y/m/d" }}{% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Booking Form -->
+                    <form method="post" action="{% url 'process_booking' %}" class="booking-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="car_id" value="{{ car.id }}">
+                        
+                        <!-- Date Selection -->
+                        <h5 class="section-title mb-3"><i class="far fa-calendar-alt {% trans "me-2" %}"></i>{% trans "Booking Details" %}</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="start_date" class="form-label">{% trans "Pick-up Date*" %}</label>
+                                <input type="date" id="start_date" name="start_date" class="form-control" 
+                                       value="{{ start_date|default:'' }}" min="{{ today|date:'Y-m-d' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="end_date" class="form-label">{% trans "Return Date*" %}</label>
+                                <input type="date" id="end_date" name="end_date" class="form-control" 
+                                       value="{{ end_date|default:'' }}" min="{{ today|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Customer Information -->
+                        <h5 class="section-title mb-3"><i class="far fa-user {% trans "me-2" %}"></i>{% trans "Customer Information" %}</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">{% trans "First Name*" %}</label>
+                                <input type="text" id="first_name" name="first_name" class="form-control" 
+                                       value="{{ request.user.first_name|default:'' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">{% trans "Last Name*" %}</label>
+                                <input type="text" id="last_name" name="last_name" class="form-control" 
+                                       value="{{ request.user.last_name|default:'' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">{% trans "Email*" %}</label>
+                                <input type="email" id="email" name="email" class="form-control" 
+                                       value="{{ request.user.email|default:'' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">{% trans "Phone Number*" %}</label>
+                                <input type="tel" id="phone" name="phone" class="form-control" 
+                                       value="{{ request.user.phone|default:'' }}" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Requests -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">{% trans "Additional Notes" %}</label>
+                            <textarea id="notes" name="notes" class="form-control" rows="3" 
+                                      placeholder="{% trans "Any special requests or additional notes?" %}"></textarea>
+                        </div>
+                        
+                        <!-- Booking Summary -->
+                        <div class="booking-summary card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">{% trans "Booking Summary" %}</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>{% trans "Daily Rate:" %}</span>
+                                    <strong>{{ car.daily_rate }} {% trans "JOD" %}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>{% trans "Number of Days:" %}</span>
+                                    <strong id="totalDays">--</strong>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>{% trans "Total:" %}</span>
+                                    <strong id="totalPrice">--</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Terms and conditions -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                            <label class="form-check-label" for="terms">
+                                {% blocktrans trimmed %}I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a>{% endblocktrans %}
+                            </label>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-paper-plane {% trans "me-2" %}"></i>{% trans "Submit Booking Request" %}
+                        </button>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle ms-2"></i>
+                            {% blocktrans trimmed %}After submitting your booking request, you'll be redirected to our secure payment gateway to complete your reservation.{% endblocktrans %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">{% trans "Terms and Conditions" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. شروط الحجز</h6>
+                <p>• يجب أن يكون عمر السائق 21 عامًا على الأقل.</p>
+                <p>• يجب تقديم رخصة قيادة سارية المفعول عند استلام السيارة.</p>
+                <p>• يلزم تقديم بطاقة ائتمان سارية باسم السائق الرئيسي عند الاستلام.</p>
+                
+                <h6>2. الإلغاء والتعديل</h6>
+                <p>• يمكن إلغاء الحجز قبل 24 ساعة من وقت الاستلام مجانًا.</p>
+                <p>• الإلغاء خلال 24 ساعة من وقت الاستلام سيؤدي إلى رسوم تعادل يوم إيجار واحد.</p>
+                <p>• يمكن تعديل الحجز قبل 24 ساعة من وقت الاستلام مجانًا وفقًا لتوفر السيارات.</p>
+                
+                <h6>3. الاستلام والتسليم</h6>
+                <p>• يجب استلام السيارة في الوقت المحدد. تأخير الاستلام لأكثر من ساعتين دون إشعار مسبق قد يؤدي إلى إلغاء الحجز.</p>
+                <p>• يجب إعادة السيارة في الوقت المحدد. التأخير في التسليم سيؤدي إلى رسوم إضافية.</p>
+                
+                <h6>4. المسؤولية والتأمين</h6>
+                <p>• المستأجر مسؤول عن أي ضرر يلحق بالسيارة خلال فترة الإيجار.</p>
+                <p>• التأمين الأساسي مشمول في سعر الإيجار، مع إمكانية شراء تغطية إضافية.</p>
+                <p>• المستأجر مسؤول عن دفع تكاليف أي مخالفات مرورية خلال فترة الإيجار.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const totalDaysElement = document.getElementById('totalDays');
+    const totalPriceElement = document.getElementById('totalPrice');
+    const dailyRate = {{ car.daily_rate |escapejs }};
+    
+    // Calculate number of days and total price
+    function calculateTotals() {
+        if (startDateInput.value && endDateInput.value) {
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+            
+            // Check if end date is after start date
+            if (endDate < startDate) {
+                alert('تاريخ التسليم يجب أن يكون بعد تاريخ الاستلام');
+                endDateInput.value = '';
+                totalDaysElement.textContent = '--';
+                totalPriceElement.textContent = '--';
+                return;
+            }
+            
+            // Calculate number of days (inclusive)
+            const timeDiff = endDate.getTime() - startDate.getTime();
+            const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
+            
+            // Update display
+            totalDaysElement.textContent = daysDiff;
+            totalPriceElement.textContent = (dailyRate * daysDiff).toFixed(2) + ' دينار';
+        }
+    }
+    
+    // Event listeners
+    startDateInput.addEventListener('change', calculateTotals);
+    endDateInput.addEventListener('change', calculateTotals);
+    
+    // Calculate on page load if dates are pre-filled
+    calculateTotals();
+});
+</script>
+{% endblock %}

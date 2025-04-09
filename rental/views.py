@@ -831,14 +831,11 @@ def process_booking(request):
 
 def get_unavailable_dates_api(request, car_id):
     """API endpoint to get unavailable dates for a car"""
-    unavailable_ranges = get_unavailable_dates(car_id)
+    unavailable_dates_list = get_unavailable_dates(car_id)
     
     # Format the data for API response
-    unavailable_dates = []
-    for start_date, end_date in unavailable_ranges:
-        unavailable_dates.append({
-            'start': start_date.strftime('%Y-%m-%d'),
-            'end': end_date.strftime('%Y-%m-%d')
-        })
+    formatted_dates = []
+    for date_obj in unavailable_dates_list:
+        formatted_dates.append(date_obj.strftime('%Y-%m-%d'))
     
-    return JsonResponse({'unavailable_dates': unavailable_dates})
+    return JsonResponse({'unavailable_dates': formatted_dates})
