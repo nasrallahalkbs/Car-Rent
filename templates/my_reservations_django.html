@@ -514,11 +514,11 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     {% if reservation.car.image_url %}
-                                    <div class="car-img-wrapper me-3 ms-3">
+                                    <div class="car-img-wrapper {% if is_english %}me-3{% else %}ms-3{% endif %}">
                                         <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="rounded car-thumb">
                                     </div>
                                     {% else %}
-                                    <div class="car-img-wrapper me-3 ms-3">
+                                    <div class="car-img-wrapper {% if is_english %}me-3{% else %}ms-3{% endif %}">
                                         <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="rounded car-thumb">
                                     </div>
                                     {% endif %}
@@ -607,24 +607,63 @@
         </div>
     </div>
     
-    <div class="mt-5 text-center">
+    <div class="mt-5 text-center animate-fade-in-up" style="animation-delay: 0.2s;">
         <a href="{% url 'cars' %}" class="explore-btn">
             <i class="fas fa-search"></i>
             {% if is_english %}Find More Cars{% else %}البحث عن المزيد من السيارات{% endif %}
         </a>
     </div>
     {% else %}
-    <div class="empty-state">
+    <div class="empty-state animate-fade-in-up">
         <div class="empty-icon">
             <i class="fas fa-calendar-alt fa-3x"></i>
         </div>
-        <h3 class="mb-3">{% if is_english %}No Reservations Found{% else %}لا توجد حجوزات{% endif %}</h3>
-        <p class="text-muted mb-4">{% if is_english %}You haven't made any reservations yet. Start exploring our available cars for rent.{% else %}لم تقم بإجراء أي حجوزات بعد. ابدأ باستكشاف السيارات المتاحة للإيجار.{% endif %}</p>
-        <a href="{% url 'cars' %}" class="explore-btn">
+        <h3 class="mb-3 animate-fade-in-up" style="animation-delay: 0.1s;">{% if is_english %}No Reservations Found{% else %}لا توجد حجوزات{% endif %}</h3>
+        <p class="text-muted mb-4 animate-fade-in-up" style="animation-delay: 0.2s;">{% if is_english %}You haven't made any reservations yet. Start exploring our available cars for rent.{% else %}لم تقم بإجراء أي حجوزات بعد. ابدأ باستكشاف السيارات المتاحة للإيجار.{% endif %}</p>
+        <a href="{% url 'cars' %}" class="explore-btn animate-fade-in-up" style="animation-delay: 0.3s;">
             <i class="fas fa-search"></i>
             {% if is_english %}Explore Cars{% else %}استكشاف السيارات{% endif %}
         </a>
     </div>
     {% endif %}
 </div>
+
+<script>
+// تفعيل تلميحات Bootstrap للأزرار
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.forEach(function(element) {
+        new bootstrap.Tooltip(element, {
+            placement: {% if is_english %}'top'{% else %}'top'{% endif %},
+            trigger: 'hover',
+            animation: true,
+            delay: { show: 300, hide: 100 }
+        });
+    });
+    
+    // إضافة تأثيرات تفاعلية للجدول
+    const rows = document.querySelectorAll('.custom-table tbody tr');
+    rows.forEach((row, index) => {
+        // إضافة تأخير متدرج للتحريك
+        row.style.animationDelay = `${0.05 * index}s`;
+        row.classList.add('animate-fade-in-up');
+        
+        // إضافة تأثير عند التحويم
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px)';
+            this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.08)';
+            this.style.zIndex = '1';
+            this.style.position = 'relative';
+            this.style.transition = 'all 0.3s ease';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+            this.style.zIndex = '';
+            this.style.position = '';
+        });
+    });
+});
+</script>
 {% endblock %}
