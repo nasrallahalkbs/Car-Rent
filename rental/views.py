@@ -549,7 +549,8 @@ def reservation_detail(request, reservation_id):
         'has_review': has_review,
     }
     
-    return render(request, 'reservation_detail_original.html', context)
+    template = get_template_by_language(request, 'reservation_detail.html')
+    return render(request, template, context)
 
 @login_required
 def modify_reservation(request, reservation_id):
@@ -594,7 +595,8 @@ def modify_reservation(request, reservation_id):
         'today': date.today(),
     }
     
-    return render(request, 'modify_reservation_original.html', context)
+    template = get_template_by_language(request, 'modify_reservation.html')
+    return render(request, template, context)
 
 @login_required
 def cancel_reservation(request, reservation_id):
@@ -617,7 +619,8 @@ def cancel_reservation(request, reservation_id):
         'reservation': reservation,
     }
     
-    return render(request, 'cancel_reservation_original.html', context)
+    template = get_template_by_language(request, 'cancel_reservation.html')
+    return render(request, template, context)
 
 @login_required
 def add_review(request, reservation_id):
@@ -655,7 +658,8 @@ def add_review(request, reservation_id):
         'reservation': reservation,
     }
     
-    return render(request, 'add_review_original.html', context)
+    template = get_template_by_language(request, 'add_review.html')
+    return render(request, template, context)
 
 def toggle_dark_mode(request):
     """Toggle dark mode on/off"""
