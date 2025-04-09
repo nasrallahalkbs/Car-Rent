@@ -8,14 +8,49 @@
 <style>
     /* تحسين أسلوب صفحة الحجوزات */
     .page-header {
-        background: var(--gradient-primary);
-        padding: 3rem 0;
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-color-light));
+        padding: 3.5rem 0;
         margin-bottom: 3rem;
         color: white;
         position: relative;
         overflow: hidden;
-        border-radius: 0 0 20px 20px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-radius: 0 0 30px 30px;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+    }
+    
+    /* إضافة تأثيرات مرئية للصفحة */
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: -10%;
+        {% if is_english %}right{% else %}left{% endif %}: -10%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+        z-index: 1;
+        animation: float-slow 15s infinite ease-in-out;
+    }
+    
+    .page-header::after {
+        content: '';
+        position: absolute;
+        bottom: -20%;
+        {% if is_english %}left{% else %}right{% endif %}: -5%;
+        width: 250px;
+        height: 250px;
+        background: rgba(255,255,255,0.07);
+        border-radius: 50%;
+        z-index: 1;
+        animation: float-slow 18s infinite ease-in-out reverse;
+    }
+    
+    @keyframes float-slow {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(5px, 10px) rotate(5deg); }
+        50% { transform: translate(10px, 5px) rotate(0deg); }
+        75% { transform: translate(5px, 8px) rotate(-5deg); }
+        100% { transform: translate(0, 0) rotate(0deg); }
     }
     
     .page-header::before {
@@ -279,33 +314,62 @@
     .custom-table {
         border-collapse: separate;
         border-spacing: 0;
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
     }
     
     .custom-table thead th {
-        background-color: var(--light);
+        background: linear-gradient(to bottom, var(--light) 0%, rgba(248, 249, 250, 0.7) 100%);
         color: var(--dark);
         font-weight: 700;
         text-transform: uppercase;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         letter-spacing: 0.5px;
-        padding: 1.25rem 1rem;
+        padding: 1.5rem 1.25rem;
         border-bottom: 2px solid rgba(0,0,0,0.05);
         white-space: nowrap;
+        position: relative;
+    }
+    
+    .custom-table thead th::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(to right, var(--primary-color) 0%, transparent 100%);
+        opacity: 0.2;
     }
     
     .custom-table tbody tr {
-        transition: all 0.2s ease;
+        transition: all 0.25s ease;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+    
+    .custom-table tbody tr:last-child {
+        border-bottom: none;
     }
     
     .custom-table tbody tr:hover {
         background-color: rgba(37, 99, 235, 0.05);
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        z-index: 1;
+        position: relative;
     }
     
     .custom-table td {
-        padding: 1rem;
+        padding: 1.25rem 1.25rem;
         vertical-align: middle;
-        border-color: rgba(0,0,0,0.05);
+        border-color: rgba(0,0,0,0.03);
+    }
+    
+    /* تحسينات للنسخة العربية */
+    html[dir="rtl"] .custom-table thead th::after {
+        background: linear-gradient(to left, var(--primary-color) 0%, transparent 100%);
     }
     
     .reservation-id {
@@ -438,18 +502,38 @@
     }
     
     .action-button {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         padding: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+        font-size: 0.9rem;
+    }
+    
+    .btn-primary.action-button {
+        background: linear-gradient(45deg, var(--primary-color), var(--primary-color-light));
+    }
+    
+    .btn-success.action-button {
+        background: linear-gradient(45deg, #28a745, #34ce57);
+    }
+    
+    .btn-danger.action-button {
+        background: linear-gradient(45deg, #dc3545, #e74c3c);
     }
     
     .action-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 5px 12px rgba(0,0,0,0.15);
+    }
+    
+    .action-button:active {
+        transform: translateY(0) scale(0.98);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
     /* تعديلات خاصة بالغة العربية */
