@@ -47,13 +47,19 @@ class ForceLanguageMiddleware(MiddlewareMixin):
         # هذا يسمح لاختيار المستخدم بتجاوز بادئة المسار
         language = lang_cookie or lang_session or url_language or settings.LANGUAGE_CODE
         
-        # إذا كانت اللغة المختارة لا تتطابق مع بادئة URL واللغة ليست AR (وهي الافتراضية)،
-        # نقوم بإعادة التوجيه إلى المسار الصحيح
+        # إذا كانت اللغة المختارة لا تتطابق مع بادئة URL
+        # نقوم بإعادة التوجيه إلى المسار الصحيح لضمان اتساق واجهة المستخدم
         if lang_cookie and url_language and lang_cookie != url_language and request.method == 'GET':
             # إذا كان المستخدم قام بتغيير اللغة، نعيد توجيهه إلى المسار بالبادئة الصحيحة
             if lang_cookie == 'en' and url_language == 'ar':
+                # تبديل من العربية إلى الإنجليزية
                 correct_path = path.replace('/ar/', '/en/', 1)
-                print(f"Redirecting to correct language path: {correct_path}")
+                print(f"Redirecting from Arabic to English path: {correct_path}")
+                return redirect(correct_path)
+            elif lang_cookie == 'ar' and url_language == 'en':
+                # تبديل من الإنجليزية إلى العربية
+                correct_path = path.replace('/en/', '/ar/', 1)
+                print(f"Redirecting from English to Arabic path: {correct_path}")
                 return redirect(correct_path)
         
         # تعيين اللغة النشطة
