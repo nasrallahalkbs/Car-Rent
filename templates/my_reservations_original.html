@@ -1,0 +1,142 @@
+{% extends 'layout_django.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% if is_english %}My Reservations{% else %}حجوزاتي{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">{% if is_english %}My Reservations{% else %}حجوزاتي{% endif %}</h1>
+    
+    {% if reservations %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th scope="col">{% if is_english %}Reservation #{% else %}رقم الحجز{% endif %}</th>
+                                    <th scope="col">{% if is_english %}Car{% else %}السيارة{% endif %}</th>
+                                    <th scope="col">{% if is_english %}Dates{% else %}التواريخ{% endif %}</th>
+                                    <th scope="col">{% if is_english %}Total{% else %}المجموع{% endif %}</th>
+                                    <th scope="col">{% if is_english %}Reservation Status{% else %}حالة الحجز{% endif %}</th>
+                                    <th scope="col">{% if is_english %}Payment Status{% else %}حالة الدفع{% endif %}</th>
+                                    <th scope="col">{% if is_english %}Actions{% else %}الإجراءات{% endif %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in reservations %}
+                                <tr>
+                                    <td><strong>#{{ reservation.id }}</strong></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if reservation.car.image_url %}
+                                            <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="rounded {% if is_english %}me-2{% else %}ms-2{% endif %}" width="50">
+                                            {% else %}
+                                            <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="rounded {% if is_english %}me-2{% else %}ms-2{% endif %}" width="50">
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-semibold">{{ reservation.car.make }} {{ reservation.car.model }}</div>
+                                                <small class="text-muted">{{ reservation.car.year }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            {% if is_english %}
+                                                {{ reservation.start_date|date:"m/d/Y" }} - {{ reservation.end_date|date:"m/d/Y" }}
+                                            {% else %}
+                                                {{ reservation.start_date|date:"d/m/Y" }} - {{ reservation.end_date|date:"d/m/Y" }}
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} {% if is_english %}days{% else %}يوم{% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if is_english %}
+                                            ${{ reservation.total_price }}
+                                        {% else %}
+                                            {{ reservation.total_price }} دينار
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if reservation.status == 'pending' %}
+                                        <span class="badge bg-warning">{% if is_english %}Pending Review{% else %}قيد المراجعة{% endif %}</span>
+                                        {% elif reservation.status == 'confirmed' %}
+                                        <span class="badge bg-success">{% if is_english %}Approved{% else %}تمت الموافقة{% endif %}</span>
+                                        {% elif reservation.status == 'completed' %}
+                                        <span class="badge bg-info">{% if is_english %}Completed{% else %}مكتمل{% endif %}</span>
+                                        {% elif reservation.status == 'cancelled' %}
+                                        <span class="badge bg-danger">{% if is_english %}Cancelled{% else %}ملغي{% endif %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if reservation.payment_status == 'pending' %}
+                                        <span class="badge bg-secondary">{% if is_english %}Awaiting Payment{% else %}في انتظار الدفع{% endif %}</span>
+                                        {% elif reservation.payment_status == 'paid' %}
+                                        <span class="badge bg-success">{% if is_english %}Paid{% else %}مدفوع{% endif %}</span>
+                                        {% elif reservation.payment_status == 'refunded' %}
+                                        <span class="badge bg-danger">{% if is_english %}Refunded{% else %}مسترجع{% endif %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'reservation_detail' reservation_id=reservation.id %}" class="btn btn-outline-primary" title="{% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                                            <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success" title="{% if is_english %}Make Payment{% else %}إجراء الدفع{% endif %}">
+                                                <i class="fas fa-credit-card"></i>
+                                            </a>
+                                            {% endif %}
+                                            
+                                            {% if reservation.status == 'pending' %}
+                                            <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-outline-danger" title="{% if is_english %}Cancel Reservation{% else %}إلغاء الحجز{% endif %}">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <a href="{% url 'cars' %}" class="btn btn-primary">
+                    <i class="fas {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                    {% if is_english %}Search for more cars{% else %}البحث عن المزيد من السيارات{% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center p-5">
+            <div class="mb-4">
+                <i class="fas fa-calendar-alt fa-4x text-muted"></i>
+            </div>
+            <h3>{% if is_english %}No Reservations Found{% else %}لا توجد حجوزات{% endif %}</h3>
+            <p class="text-muted mb-4">
+                {% if is_english %}
+                You haven't made any reservations yet. Start by exploring available cars for rent.
+                {% else %}
+                لم تقم بإجراء أي حجوزات بعد. ابدأ باستكشاف السيارات المتاحة للإيجار.
+                {% endif %}
+            </p>
+            <a href="{% url 'cars' %}" class="btn btn-primary">
+                <i class="fas fa-search {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                {% if is_english %}Explore Cars{% else %}استكشاف السيارات{% endif %}
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
