@@ -141,4 +141,4 @@ def professional_payment(request):
             'from_cart': True
         }
     
-    return render(request, 'payment_professional_advanced.html', context)
+    return render(request, 'payment_modern.html', context)

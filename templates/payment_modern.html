@@ -1,0 +1,1097 @@
+{% extends 'layout_django.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'إتمام الدفع' %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/payment.css' %}">
+<style>
+/* Modern payment styles enhancement */
+.modern-payment-container {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.modern-payment-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.modern-payment-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.modern-payment-logo svg {
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+    fill: var(--bs-primary);
+}
+
+.modern-payment-heading {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.modern-payment-subheading {
+    font-size: 16px;
+    color: #666;
+}
+
+.modern-checkout-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.modern-main-panel {
+    flex: 1;
+    min-width: 300px;
+}
+
+.modern-side-panel {
+    width: 360px;
+}
+
+.modern-panel {
+    background-color: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.modern-panel-header {
+    background-color: #f8f9fa;
+    padding: 20px 24px;
+    border-bottom: 1px solid #eee;
+}
+
+.modern-panel-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.modern-panel-body {
+    padding: 24px;
+}
+
+.modern-steps {
+    display: flex;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.modern-steps:before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #e9ecef;
+    z-index: 1;
+}
+
+.modern-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.modern-step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    font-weight: 600;
+    position: relative;
+}
+
+.modern-step.active .modern-step-number {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.modern-step.completed .modern-step-number {
+    background-color: #28a745;
+    color: white;
+}
+
+.modern-step.completed .modern-step-number:after {
+    content: '\f00c';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+}
+
+.modern-step-label {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.modern-step.active .modern-step-label {
+    color: var(--bs-primary);
+    font-weight: 600;
+}
+
+.modern-step.completed .modern-step-label {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.modern-payment-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.modern-payment-method {
+    position: relative;
+}
+
+.modern-payment-method input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.modern-payment-method label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 100%;
+}
+
+.modern-payment-method label:hover {
+    border-color: #ced4da;
+    transform: translateY(-2px);
+}
+
+.modern-payment-method input:checked + label {
+    border-color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.04);
+}
+
+.modern-payment-method input:checked + label:before {
+    content: '\f058';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--bs-primary);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.modern-payment-method-icon {
+    height: 40px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modern-payment-method-icon img {
+    max-height: 100%;
+    max-width: 100%;
+}
+
+.modern-payment-method-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+    text-align: center;
+}
+
+.modern-card-preview {
+    perspective: 1000px;
+    margin-bottom: 30px;
+}
+
+.modern-card {
+    background: linear-gradient(135deg, #0f2041, #0d47a1);
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(13, 71, 161, 0.2);
+    position: relative;
+    height: 220px;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    overflow: hidden;
+}
+
+.modern-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -40px;
+    width: 180px;
+    height: 180px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.modern-card::after {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    left: -30px;
+    width: 210px;
+    height: 210px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+}
+
+.modern-card-chip {
+    width: 50px;
+    height: 35px;
+    background: linear-gradient(135deg, #ffd700, #b8860b);
+    border-radius: 6px;
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.modern-card-chip::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.modern-card-number {
+    font-size: 22px;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+}
+
+.modern-card-details {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+}
+
+.modern-card-detail {
+    flex: 1;
+}
+
+.modern-card-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.modern-card-value {
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+.modern-card-brand {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    height: 40px;
+    z-index: 2;
+}
+
+.modern-form-group {
+    margin-bottom: 20px;
+}
+
+.modern-form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.modern-form-control {
+    display: block;
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 10px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.modern-form-control:focus {
+    color: #495057;
+    background-color: #fff;
+    border-color: var(--bs-primary);
+    outline: 0;
+    box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.modern-form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.modern-form-col {
+    flex: 1;
+}
+
+.modern-subtitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 16px;
+}
+
+.modern-summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.modern-summary-label {
+    color: #6c757d;
+}
+
+.modern-summary-value {
+    font-weight: 500;
+    color: #212529;
+}
+
+.modern-summary-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-top: 2px solid #eee;
+    margin-top: 8px;
+}
+
+.modern-summary-total-label {
+    font-weight: 600;
+    color: #212529;
+    font-size: 16px;
+}
+
+.modern-summary-total-value {
+    font-weight: 700;
+    color: var(--bs-primary);
+    font-size: 18px;
+}
+
+.modern-car-details {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.modern-car-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.modern-car-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 8px;
+}
+
+.modern-car-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.modern-car-meta-item {
+    font-size: 13px;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+}
+
+.modern-car-meta-item i {
+    margin-right: 4px;
+    color: var(--bs-primary);
+}
+
+.modern-submit-button {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    color: #fff;
+    background-color: var(--bs-primary);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modern-submit-button:hover {
+    background-color: var(--bs-primary-dark, #0062cc);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.modern-submit-button:active {
+    transform: translateY(0);
+}
+
+.modern-security-badges {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.modern-security-badge {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.modern-security-badge i {
+    margin-right: 6px;
+    color: #28a745;
+    font-size: 14px;
+}
+
+/* Payment method specific forms */
+.modern-method-form {
+    display: none;
+}
+
+.modern-method-form.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* PayPal specific */
+.modern-paypal-form {
+    text-align: center;
+    padding: 30px 0;
+}
+
+.modern-paypal-logo {
+    width: 120px;
+    margin-bottom: 20px;
+}
+
+.modern-paypal-text {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Bank transfer specific */
+.modern-bank-details {
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.modern-bank-row {
+    display: flex;
+    margin-bottom: 12px;
+}
+
+.modern-bank-label {
+    width: 120px;
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.modern-bank-value {
+    flex: 1;
+    font-family: monospace;
+    font-size: 14px;
+    color: #212529;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.modern-copy-btn {
+    background: none;
+    border: none;
+    color: var(--bs-primary);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 8px;
+}
+
+/* Cash payment specific */
+.modern-cash-form {
+    text-align: center;
+    padding: 30px 20px;
+    background-color: #f8f9fa;
+    border-radius: 12px;
+}
+
+.modern-cash-icon {
+    font-size: 48px;
+    color: #28a745;
+    margin-bottom: 16px;
+}
+
+.modern-cash-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 8px;
+}
+
+.modern-cash-text {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .modern-main-panel, 
+    .modern-side-panel {
+        width: 100%;
+    }
+    
+    .modern-payment-methods {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .modern-form-row {
+        flex-direction: column;
+        gap: 20px;
+    }
+}
+
+/* RTL Support */
+.rtl .modern-payment-logo svg {
+    margin-right: 0;
+    margin-left: 12px;
+}
+
+.rtl .modern-payment-method input:checked + label:before {
+    right: auto;
+    left: -10px;
+}
+
+.rtl .modern-card-brand {
+    right: auto;
+    left: 24px;
+}
+
+.rtl .modern-car-meta-item i {
+    margin-right: 0;
+    margin-left: 4px;
+}
+
+.rtl .modern-security-badge i {
+    margin-right: 0;
+    margin-left: 6px;
+}
+
+.rtl .modern-copy-btn {
+    margin-left: 0;
+    margin-right: 8px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="modern-payment-container">
+    <div class="modern-payment-header">
+        <div class="modern-payment-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+            </svg>
+            <h1 class="modern-payment-heading">{% trans 'بوابة الدفع الآمن' %}</h1>
+        </div>
+        <p class="modern-payment-subheading">{% trans 'أكمل عملية الدفع بأمان لتأكيد حجزك' %}</p>
+    </div>
+
+    <div class="modern-steps">
+        <div class="modern-step completed">
+            <div class="modern-step-number">1</div>
+            <div class="modern-step-label">{% trans 'اختيار السيارة' %}</div>
+        </div>
+        <div class="modern-step completed">
+            <div class="modern-step-number">2</div>
+            <div class="modern-step-label">{% trans 'تفاصيل الحجز' %}</div>
+        </div>
+        <div class="modern-step active">
+            <div class="modern-step-number">3</div>
+            <div class="modern-step-label">{% trans 'الدفع' %}</div>
+        </div>
+        <div class="modern-step">
+            <div class="modern-step-number">4</div>
+            <div class="modern-step-label">{% trans 'التأكيد' %}</div>
+        </div>
+    </div>
+
+    <div class="modern-checkout-container">
+        <div class="modern-main-panel">
+            <form method="post" action="{% url 'professional_payment' %}{% if not from_cart %}?reservation_id={{ reservation.id }}{% endif %}" id="payment-form">
+                {% csrf_token %}
+                
+                <div class="modern-panel">
+                    <div class="modern-panel-header">
+                        <h3 class="modern-panel-title">{% trans 'اختر طريقة الدفع' %}</h3>
+                    </div>
+                    <div class="modern-panel-body">
+                        <div class="modern-payment-methods">
+                            <div class="modern-payment-method">
+                                <input type="radio" name="payment_method" id="credit_card" value="credit_card" checked>
+                                <label for="credit_card">
+                                    <div class="modern-payment-method-icon">
+                                        <img src="{% static 'images/credit_card.svg' %}" alt="Credit Card">
+                                    </div>
+                                    <div class="modern-payment-method-name">{% trans 'بطاقة ائتمان' %}</div>
+                                </label>
+                            </div>
+                            
+                            <div class="modern-payment-method">
+                                <input type="radio" name="payment_method" id="paypal" value="paypal">
+                                <label for="paypal">
+                                    <div class="modern-payment-method-icon">
+                                        <img src="{% static 'images/paypal.svg' %}" alt="PayPal">
+                                    </div>
+                                    <div class="modern-payment-method-name">PayPal</div>
+                                </label>
+                            </div>
+                            
+                            <div class="modern-payment-method">
+                                <input type="radio" name="payment_method" id="bank_transfer" value="bank_transfer">
+                                <label for="bank_transfer">
+                                    <div class="modern-payment-method-icon">
+                                        <img src="{% static 'images/bank.svg' %}" alt="Bank Transfer">
+                                    </div>
+                                    <div class="modern-payment-method-name">{% trans 'تحويل بنكي' %}</div>
+                                </label>
+                            </div>
+                            
+                            <div class="modern-payment-method">
+                                <input type="radio" name="payment_method" id="cash" value="cash">
+                                <label for="cash">
+                                    <div class="modern-payment-method-icon">
+                                        <img src="{% static 'images/cash.svg' %}" alt="Cash">
+                                    </div>
+                                    <div class="modern-payment-method-name">{% trans 'نقدًا' %}</div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Credit Card Form -->
+                        <div id="credit-card-form" class="modern-method-form active">
+                            <div class="modern-card-preview">
+                                <div class="modern-card">
+                                    <div class="modern-card-chip"></div>
+                                    <div class="modern-card-number" id="card-number-display">•••• •••• •••• ••••</div>
+                                    <div class="modern-card-details">
+                                        <div class="modern-card-detail">
+                                            <div class="modern-card-label">{% trans 'حامل البطاقة' %}</div>
+                                            <div class="modern-card-value" id="card-holder-display">{% trans 'اسمك هنا' %}</div>
+                                        </div>
+                                        <div class="modern-card-detail">
+                                            <div class="modern-card-label">{% trans 'تنتهي في' %}</div>
+                                            <div class="modern-card-value" id="card-expiry-display">MM/YY</div>
+                                        </div>
+                                    </div>
+                                    <img src="{% static 'images/visa.svg' %}" alt="Card Brand" class="modern-card-brand" id="card-brand">
+                                </div>
+                            </div>
+                            
+                            <div class="modern-form-group">
+                                <label class="modern-form-label" for="card_number">{% trans 'رقم البطاقة' %}</label>
+                                <input type="text" class="modern-form-control" id="card_number" placeholder="•••• •••• •••• ••••" maxlength="19">
+                            </div>
+                            
+                            <div class="modern-form-group">
+                                <label class="modern-form-label" for="card_name">{% trans 'اسم حامل البطاقة' %}</label>
+                                <input type="text" class="modern-form-control" id="card_name" placeholder="{% trans 'اسمك كما يظهر على البطاقة' %}">
+                            </div>
+                            
+                            <div class="modern-form-row">
+                                <div class="modern-form-col">
+                                    <div class="modern-form-group">
+                                        <label class="modern-form-label" for="expiry_date">{% trans 'تاريخ الانتهاء' %}</label>
+                                        <input type="text" class="modern-form-control" id="expiry_date" placeholder="MM/YY" maxlength="5">
+                                    </div>
+                                </div>
+                                <div class="modern-form-col">
+                                    <div class="modern-form-group">
+                                        <label class="modern-form-label" for="cvv">{% trans 'رمز الأمان' %} (CVV)</label>
+                                        <input type="text" class="modern-form-control" id="cvv" placeholder="•••" maxlength="4">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-items-center justify-content-center mb-3">
+                                <div class="me-2">{% trans 'نقبل' %}:</div>
+                                <div class="d-flex gap-2">
+                                    <img src="{% static 'images/visa.svg' %}" alt="Visa" height="30">
+                                    <img src="{% static 'images/mastercard.svg' %}" alt="Mastercard" height="30">
+                                    <img src="{% static 'images/amex.svg' %}" alt="American Express" height="30">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- PayPal Form -->
+                        <div id="paypal-form" class="modern-method-form">
+                            <div class="modern-paypal-form">
+                                <img src="{% static 'images/paypal.svg' %}" alt="PayPal" class="modern-paypal-logo">
+                                <p class="modern-paypal-text">{% trans 'ستتم إعادة توجيهك إلى PayPal لإتمام عملية الدفع بأمان بعد النقر على زر "إتمام الدفع".' %}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Bank Transfer Form -->
+                        <div id="bank-transfer-form" class="modern-method-form">
+                            <div class="modern-bank-details">
+                                <h4 class="modern-subtitle">{% trans 'تفاصيل الحساب البنكي' %}</h4>
+                                
+                                <div class="modern-bank-row">
+                                    <div class="modern-bank-label">{% trans 'اسم البنك' %}</div>
+                                    <div class="modern-bank-value">XYZ National Bank</div>
+                                </div>
+                                
+                                <div class="modern-bank-row">
+                                    <div class="modern-bank-label">{% trans 'اسم المستفيد' %}</div>
+                                    <div class="modern-bank-value">CarRental Company</div>
+                                </div>
+                                
+                                <div class="modern-bank-row">
+                                    <div class="modern-bank-label">{% trans 'رقم الحساب' %}</div>
+                                    <div class="modern-bank-value">
+                                        SA12 3456 7890 1234 5678 9012
+                                        <button type="button" class="modern-copy-btn" onclick="copyToClipboard('SA12 3456 7890 1234 5678 9012')">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="modern-bank-row">
+                                    <div class="modern-bank-label">{% trans 'رقم المرجع' %}</div>
+                                    <div class="modern-bank-value">
+                                        {% if from_cart %}CART-{{ request.user.id }}{% else %}{{ reservation.reservation_number }}{% endif %}
+                                        <button type="button" class="modern-copy-btn" onclick="copyToClipboard('{% if from_cart %}CART-{{ request.user.id }}{% else %}{{ reservation.reservation_number }}{% endif %}')">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info mt-3 mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {% trans 'يرجى تضمين رقم المرجع في تفاصيل التحويل. بعد إتمام التحويل، انقر على زر "إتمام الدفع".' %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cash Payment Form -->
+                        <div id="cash-form" class="modern-method-form">
+                            <div class="modern-cash-form">
+                                <i class="fas fa-money-bill-wave modern-cash-icon"></i>
+                                <h4 class="modern-cash-title">{% trans 'الدفع نقدًا عند الاستلام' %}</h4>
+                                <p class="modern-cash-text">{% trans 'سيتم تحصيل المبلغ المستحق نقدًا عند استلام السيارة. يرجى التأكد من توفر المبلغ المطلوب كاملاً.' %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modern-panel">
+                    <div class="modern-panel-header">
+                        <h3 class="modern-panel-title">{% trans 'معلومات الفوترة' %}</h3>
+                    </div>
+                    <div class="modern-panel-body">
+                        <div class="modern-form-group">
+                            <label class="modern-form-label" for="billing_address">{% trans 'العنوان' %}</label>
+                            <input type="text" class="modern-form-control" id="billing_address" placeholder="{% trans 'أدخل عنوانك الكامل' %}">
+                        </div>
+                        
+                        <div class="modern-form-row">
+                            <div class="modern-form-col">
+                                <div class="modern-form-group">
+                                    <label class="modern-form-label" for="city">{% trans 'المدينة' %}</label>
+                                    <input type="text" class="modern-form-control" id="city">
+                                </div>
+                            </div>
+                            <div class="modern-form-col">
+                                <div class="modern-form-group">
+                                    <label class="modern-form-label" for="postal_code">{% trans 'الرمز البريدي' %}</label>
+                                    <input type="text" class="modern-form-control" id="postal_code">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="terms_agreement" required>
+                            <label class="form-check-label" for="terms_agreement">
+                                {% trans 'أوافق على الشروط والأحكام وسياسة الخصوصية' %}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="modern-submit-button">
+                    <i class="fas fa-lock me-2"></i>
+                    {% trans 'إتمام الدفع' %} - {{ total_amount }} {% trans 'ريال' %}
+                </button>
+                
+                <div class="modern-security-badges">
+                    <div class="modern-security-badge">
+                        <i class="fas fa-lock"></i>
+                        {% trans 'دفع آمن' %}
+                    </div>
+                    <div class="modern-security-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        {% trans 'حماية البيانات' %}
+                    </div>
+                    <div class="modern-security-badge">
+                        <i class="fas fa-check-circle"></i>
+                        {% trans 'ضمان الإلغاء' %}
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="modern-side-panel">
+            <div class="modern-panel">
+                <div class="modern-panel-header">
+                    <h3 class="modern-panel-title">{% trans 'ملخص الطلب' %}</h3>
+                </div>
+                <div class="modern-panel-body">
+                    {% if from_cart %}
+                        {% for item in cart_items %}
+                            <div class="modern-car-details">
+                                {% if item.car.image %}
+                                    <img src="{{ item.car.image.url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="modern-car-image">
+                                {% endif %}
+                                <h4 class="modern-car-title">{{ item.car.make }} {{ item.car.model }}</h4>
+                                <div class="modern-car-meta">
+                                    <div class="modern-car-meta-item">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        {{ item.start_date|date:"j F Y" }} - {{ item.end_date|date:"j F Y" }}
+                                    </div>
+                                    <div class="modern-car-meta-item">
+                                        <i class="fas fa-clock"></i>
+                                        {{ item.days }} {% trans 'يوم' %}
+                                    </div>
+                                </div>
+                                <div class="modern-summary-item">
+                                    <div class="modern-summary-label">{% trans 'السعر اليومي' %}</div>
+                                    <div class="modern-summary-value">{{ item.car.daily_rate }} {% trans 'ريال' %}</div>
+                                </div>
+                                <div class="modern-summary-item">
+                                    <div class="modern-summary-label">{% trans 'المجموع' %}</div>
+                                    <div class="modern-summary-value">{{ item.total }} {% trans 'ريال' %}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        <div class="modern-summary-total">
+                            <div class="modern-summary-total-label">{% trans 'الإجمالي' %}</div>
+                            <div class="modern-summary-total-value">{{ total_amount }} {% trans 'ريال' %}</div>
+                        </div>
+                    {% else %}
+                        <div class="modern-car-details">
+                            {% if reservation.car.image %}
+                                <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="modern-car-image">
+                            {% endif %}
+                            <h4 class="modern-car-title">{{ reservation.car.make }} {{ reservation.car.model }}</h4>
+                            <div class="modern-car-meta">
+                                <div class="modern-car-meta-item">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    {{ reservation.start_date|date:"j F Y" }} - {{ reservation.end_date|date:"j F Y" }}
+                                </div>
+                                <div class="modern-car-meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    {% with days=reservation.end_date|timeuntil:reservation.start_date %}
+                                        {{ days.days }} {% trans 'يوم' %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="modern-summary-item">
+                            <div class="modern-summary-label">{% trans 'رقم الحجز' %}</div>
+                            <div class="modern-summary-value">{{ reservation.reservation_number }}</div>
+                        </div>
+                        
+                        <div class="modern-summary-item">
+                            <div class="modern-summary-label">{% trans 'السعر اليومي' %}</div>
+                            <div class="modern-summary-value">{{ reservation.car.daily_rate }} {% trans 'ريال' %}</div>
+                        </div>
+                        
+                        <div class="modern-summary-total">
+                            <div class="modern-summary-total-label">{% trans 'الإجمالي' %}</div>
+                            <div class="modern-summary-total-value">{{ reservation.total_price }} {% trans 'ريال' %}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="modern-panel">
+                <div class="modern-panel-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-headset fa-2x text-primary me-3"></i>
+                        <div>
+                            <h5 class="mb-1">{% trans 'تحتاج مساعدة؟' %}</h5>
+                            <p class="mb-0 text-muted">{% trans 'فريق الدعم متاح على مدار الساعة' %}</p>
+                        </div>
+                    </div>
+                    <a href="#" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-comment-alt me-2"></i>
+                        {% trans 'تواصل معنا' %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    // Card preview functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const cardNumberInput = document.getElementById('card_number');
+        const cardNameInput = document.getElementById('card_name');
+        const cardExpiryInput = document.getElementById('expiry_date');
+        const cardNumberDisplay = document.getElementById('card-number-display');
+        const cardHolderDisplay = document.getElementById('card-holder-display');
+        const cardExpiryDisplay = document.getElementById('card-expiry-display');
+        const cardBrandImage = document.getElementById('card-brand');
+        
+        // Format card number with spaces
+        cardNumberInput?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '';
+            
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    formattedValue += ' ';
+                }
+                formattedValue += value[i];
+            }
+            
+            e.target.value = formattedValue;
+            
+            // Display on card preview
+            cardNumberDisplay.textContent = formattedValue || '•••• •••• •••• ••••';
+            
+            // Update card brand based on first digit
+            const firstDigit = value[0];
+            if (firstDigit === '4') {
+                cardBrandImage.src = "{% static 'images/visa.svg' %}";
+            } else if (firstDigit === '5') {
+                cardBrandImage.src = "{% static 'images/mastercard.svg' %}";
+            } else if (firstDigit === '3') {
+                cardBrandImage.src = "{% static 'images/amex.svg' %}";
+            }
+        });
+        
+        // Update card holder name
+        cardNameInput?.addEventListener('input', function(e) {
+            cardHolderDisplay.textContent = e.target.value || '{% trans "اسمك هنا" %}';
+        });
+        
+        // Format expiry date (MM/YY)
+        cardExpiryInput?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length > 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            
+            e.target.value = value;
+            cardExpiryDisplay.textContent = value || 'MM/YY';
+        });
+        
+        // Payment method selection
+        const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+        const methodForms = {
+            'credit_card': document.getElementById('credit-card-form'),
+            'paypal': document.getElementById('paypal-form'),
+            'bank_transfer': document.getElementById('bank-transfer-form'),
+            'cash': document.getElementById('cash-form')
+        };
+        
+        paymentMethods.forEach(method => {
+            method.addEventListener('change', function() {
+                // Hide all forms
+                Object.values(methodForms).forEach(form => {
+                    if (form) form.classList.remove('active');
+                });
+                
+                // Show selected form
+                const selectedForm = methodForms[this.value];
+                if (selectedForm) selectedForm.classList.add('active');
+            });
+        });
+        
+        // Copy to clipboard function
+        window.copyToClipboard = function(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('تم نسخ النص: ' + text);
+            }).catch(err => {
+                console.error('فشل في نسخ النص: ', err);
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
