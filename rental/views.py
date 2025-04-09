@@ -483,15 +483,15 @@ def confirmation(request):
 
 @login_required
 def my_reservations(request):
-    """User's reservations page - with luxury design"""
+    """User's reservations page - with corporate design"""
     reservations = Reservation.objects.filter(user=request.user).order_by('-created_at')
     
     context = {
         'reservations': reservations,
     }
     
-    # استخدام القالب الفاخر الجديد مع التصميم المحسن
-    return render(request, 'my_reservations_django_luxe.html', context)
+    # استخدام القالب الرسمي الجديد مع التصميم المهني
+    return render(request, 'my_reservations_django_corporate.html', context)
 
 @login_required
 def reservation_detail(request, reservation_id):
