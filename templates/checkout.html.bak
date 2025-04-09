@@ -1,318 +1,295 @@
 {% extends 'layout_django.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}{% if is_english %}Checkout{% else %}الدفع{% endif %}{% endblock %}
+{% block title %}{% trans "Checkout - CarRental" %}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <div class="row">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 mb-4">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm border-0">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{% if is_english %}Payment Information{% else %}معلومات الدفع{% endif %}</h4>
+                    <h3 class="mb-0">{% trans "Checkout" %}</h3>
                 </div>
                 <div class="card-body p-4">
-                    <form method="post" action="{% url 'checkout' %}{% if reservation %}?reservation_id={{ reservation.id }}{% endif %}" id="payment-form">
-                        {% csrf_token %}
+                    <!-- Order Summary -->
+                    <div class="order-summary mb-4">
+                        <h4 class="section-title">{% trans "Order Summary" %}</h4>
+                        
                         {% if reservation %}
-                        {%if reservation %}<input type="hidden" name="reservation_id" value="{{ reservation.id }}">{%endif%}
+                        <!-- Single Reservation Checkout -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        {% if reservation.car.image_url %}
+                                        <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="img-thumbnail" style="width: 100px;">
+                                        {% else %}
+                                        <img src="{% static 'images/car-placeholder.png' %}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="img-thumbnail" style="width: 100px;">
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5>{{ reservation.car.make }} {{ reservation.car.model }}</h5>
+                                        <div class="small text-muted">
+                                            {% if is_english %}
+                                            From {{ reservation.start_date|date:"m/d/Y" }} to {{ reservation.end_date|date:"m/d/Y" }}
+                                            ({{ reservation.days }} {% if reservation.days == 1 %}day{% else %}days{% endif %})
+                                            {% else %}
+                                            من {{ reservation.start_date|date:"Y/m/d" }} إلى {{ reservation.end_date|date:"Y/m/d" }}
+                                            ({{ reservation.days }} {% if reservation.days == 1 %}يوم{% else %}أيام{% endif %})
+                                            {% endif %}
+                                        </div>
+                                        <div class="mt-2">
+                                            <span class="fw-bold">{% trans "Reservation ID:" %}</span> {{ reservation.reservation_number }}
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0 text-end">
+                                        <div class="fw-bold">{{ reservation.car.daily_rate }} {% trans "JOD/day" %}</div>
+                                        <div class="text-muted small">x {{ reservation.days }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <!-- Cart Checkout -->
+                        {% for item in cart_items %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        {% if item.car.image_url %}
+                                        <img src="{{ item.car.image_url }}" alt="{{ item.car.make }} {{ item.car.model }}" class="img-thumbnail" style="width: 100px;">
+                                        {% else %}
+                                        <img src="{% static 'images/car-placeholder.png' %}" alt="{{ item.car.make }} {{ item.car.model }}" class="img-thumbnail" style="width: 100px;">
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5>{{ item.car.make }} {{ item.car.model }}</h5>
+                                        <div class="small text-muted">
+                                            {% if is_english %}
+                                            From {{ item.start_date|date:"m/d/Y" }} to {{ item.end_date|date:"m/d/Y" }}
+                                            ({{ item.days }} {% if item.days == 1 %}day{% else %}days{% endif %})
+                                            {% else %}
+                                            من {{ item.start_date|date:"Y/m/d" }} إلى {{ item.end_date|date:"Y/m/d" }}
+                                            ({{ item.days }} {% if item.days == 1 %}يوم{% else %}أيام{% endif %})
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0 text-end">
+                                        <div class="fw-bold">{{ item.car.daily_rate }} {% trans "JOD/day" %}</div>
+                                        <div class="text-muted small">x {{ item.days }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
                         {% endif %}
                         
-                        <!-- Payment Method Selection -->
-                        <h5 class="mb-3">{% if is_english %}Select Payment Method{% else %}اختر طريقة الدفع{% endif %}</h5>
-                        <div class="payment-methods mb-4">
-                            <div class="row">
-                                {% for method in form.card_type %}
-                                <div class="col-6 col-md-3 mb-3">
-                                    <div class="payment-method-card">
-                                        <input type="radio" class="btn-check" name="card_type" id="{{ method.id_for_label }}" value="{{ method.data.value }}" {% if forloop.first %}checked{% endif %}>
-                                        <label class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" for="{{ method.id_for_label }}">
-                                            <i class="fab fa-cc-{{ method.data.value }} fa-2x mb-2"></i>
-                                            <span>{{ method.choice_label }}</span>
+                        <!-- Total -->
+                        <div class="d-flex justify-content-between p-3 bg-light rounded">
+                            <div class="fw-bold">{% trans "Total Amount:" %}</div>
+                            <div class="fw-bold fs-5">{{ total_amount }} {% trans "JOD" %}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Form -->
+                    <div class="payment-form">
+                        <h4 class="section-title">{% trans "Payment Details" %}</h4>
+                        
+                        <form method="post" action="" class="mb-4">
+                            {% csrf_token %}
+                            
+                            {% if reservation %}
+                            <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+                            {% else %}
+                            <input type="hidden" name="from_cart" value="1">
+                            {% endif %}
+                            
+                            <!-- Payment Method -->
+                            <div class="mb-4">
+                                <label class="form-label">{% trans "Payment Method" %}</label>
+                                <div class="payment-methods">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="creditCard" value="credit_card" checked>
+                                        <label class="form-check-label" for="creditCard">
+                                            {% trans "Credit/Debit Card" %}
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="paypal" value="paypal">
+                                        <label class="form-check-label" for="paypal">
+                                            {% trans "PayPal" %}
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="cashOnDelivery" value="cash">
+                                        <label class="form-check-label" for="cashOnDelivery">
+                                            {% trans "Pay at Pickup" %}
                                         </label>
                                     </div>
                                 </div>
-                                {% endfor %}
                             </div>
-                        </div>
-                        
-                        <!-- Card Information -->
-                        <div class="row mb-3">
-                            <div class="col-12 mb-3">
-                                <label for="{{ form.card_number.id_for_label }}" class="form-label">رقم البطاقة</label>
-                                {{ form.card_number }}
-                                {% if form.card_number.errors %}
-                                <div class="invalid-feedback d-block">{{ form.card_number.errors }}</div>
-                                {% endif %}
+                            
+                            <!-- Credit Card Details (will be shown/hidden with JS) -->
+                            <div id="creditCardDetails">
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label for="cardName" class="form-label">{% trans "Cardholder Name" %}</label>
+                                        <input type="text" class="form-control" id="cardName" name="card_name">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label for="cardNumber" class="form-label">{% trans "Card Number" %}</label>
+                                        <input type="text" class="form-control" id="cardNumber" name="card_number" placeholder="XXXX XXXX XXXX XXXX">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label for="expiryDate" class="form-label">{% trans "Expiry Date" %}</label>
+                                        <input type="text" class="form-control" id="expiryDate" name="expiry_date" placeholder="MM/YY">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="cvv" class="form-label">{% trans "CVV" %}</label>
+                                        <input type="text" class="form-control" id="cvv" name="cvv" placeholder="XXX">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-12 mb-3">
-                                <label for="{{ form.card_name.id_for_label }}" class="form-label">الاسم على البطاقة</label>
-                                {{ form.card_name }}
-                                {% if form.card_name.errors %}
-                                <div class="invalid-feedback d-block">{{ form.card_name.errors }}</div>
-                                {% endif %}
+                            
+                            <!-- Billing Address -->
+                            <div class="mb-4">
+                                <h5 class="mb-3">{% trans "Billing Address" %}</h5>
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label for="address" class="form-label">{% trans "Address" %}</label>
+                                        <input type="text" class="form-control" id="address" name="address">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="city" class="form-label">{% trans "City" %}</label>
+                                        <input type="text" class="form-control" id="city" name="city">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label for="country" class="form-label">{% trans "Country" %}</label>
+                                        <select class="form-select" id="country" name="country">
+                                            <option value="">{% trans "Select Country" %}</option>
+                                            <option value="JO">{% trans "Jordan" %}</option>
+                                            <option value="SA">{% trans "Saudi Arabia" %}</option>
+                                            <option value="AE">{% trans "United Arab Emirates" %}</option>
+                                            <option value="KW">{% trans "Kuwait" %}</option>
+                                            <option value="QA">{% trans "Qatar" %}</option>
+                                            <option value="OM">{% trans "Oman" %}</option>
+                                            <option value="BH">{% trans "Bahrain" %}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="postalCode" class="form-label">{% trans "Postal Code" %}</label>
+                                        <input type="text" class="form-control" id="postalCode" name="postal_code">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.expiry_month.id_for_label }}" class="form-label">شهر الانتهاء</label>
-                                {{ form.expiry_month }}
-                                {% if form.expiry_month.errors %}
-                                <div class="invalid-feedback d-block">{{ form.expiry_month.errors }}</div>
-                                {% endif %}
+                            
+                            <!-- Terms and Conditions -->
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    {% blocktrans trimmed %}I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a> and <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>{% endblocktrans %}
+                                </label>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.expiry_year.id_for_label }}" class="form-label">سنة الانتهاء</label>
-                                {{ form.expiry_year }}
-                                {% if form.expiry_year.errors %}
-                                <div class="invalid-feedback d-block">{{ form.expiry_year.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.cvv.id_for_label }}" class="form-label">رمز الأمان (CVV)</label>
-                                {{ form.cvv }}
-                                {% if form.cvv.errors %}
-                                <div class="invalid-feedback d-block">{{ form.cvv.errors }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- Billing Address -->
-                        <h5 class="mb-3 mt-4">عنوان الفوترة</h5>
-                        <div class="row mb-4">
-                            <div class="col-md-6 mb-3">
-                                <label for="billing_first_name" class="form-label">الاسم الأول</label>
-                                <input type="text" class="form-control" id="billing_first_name" name="billing_first_name" value="{{ request.user.first_name|default:'' }}" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="billing_last_name" class="form-label">الاسم الأخير</label>
-                                <input type="text" class="form-control" id="billing_last_name" name="billing_last_name" value="{{ request.user.last_name|default:'' }}" required>
-                            </div>
-                            <div class="col-12 mb-3">
-                                <label for="billing_address" class="form-label">العنوان</label>
-                                <input type="text" class="form-control" id="billing_address" name="billing_address" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="billing_city" class="form-label">المدينة</label>
-                                <input type="text" class="form-control" id="billing_city" name="billing_city" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="billing_postal_code" class="form-label">الرمز البريدي</label>
-                                <input type="text" class="form-control" id="billing_postal_code" name="billing_postal_code" required>
-                            </div>
-                        </div>
-                        
-                        <!-- Terms -->
-                        <div class="form-check mb-4">
-                            <input class="form-check-input" type="checkbox" id="agree_terms" name="agree_terms" required>
-                            <label class="form-check-label" for="agree_terms">
-                                أوافق على <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">شروط الدفع</a>
-                            </label>
-                        </div>
-                        
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <i class="fas fa-lock ms-2"></i>إتمام الدفع {% if reservation %}- {{ reservation.total_price }} دينار{% endif %}
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4">
-            <!-- Order Summary -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">ملخص الطلب</h5>
-                </div>
-                <div class="card-body">
-                    
-                    {% if reservation %}
-                    <!-- Single Reservation Summary -->
-                    <div class="reservation-car d-flex align-items-center mb-3 pb-3 border-bottom">
-                        {% if reservation.car.image_url %}
-                        <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="rounded ms-3" width="60">
-                        {% else %}
-                        <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="rounded ms-3" width="60">
-                        {% endif %}
-                        <div>
-                            <div class="fw-semibold">{{ reservation.car.make }} {{ reservation.car.model }}</div>
-                            <div class="text-muted small">{{ reservation.car.year }} • {% if is_english %}{% if reservation.car.category == "Economy" %}Economy{% elif reservation.car.category == "Compact" %}Compact{% elif reservation.car.category == "Mid-size" %}Mid-size{% elif reservation.car.category == "Luxury" %}Luxury{% elif reservation.car.category == "SUV" %}SUV{% elif reservation.car.category == "Truck" %}Truck{% else %}{{ reservation.car.category }}{% endif %}{% else %}{% if reservation.car.category == "Economy" %}اقتصادية{% elif reservation.car.category == "Compact" %}مدمجة{% elif reservation.car.category == "Mid-size" %}متوسطة{% elif reservation.car.category == "Luxury" %}فاخرة{% elif reservation.car.category == "SUV" %}دفع رباعي{% elif reservation.car.category == "Truck" %}شاحنات{% else %}{{ reservation.car.category }}{% endif %}{% endif %}</div>
-                        </div>
+                            
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                {% trans "Complete Payment" %}
+                            </button>
+                        </form>
                     </div>
-                    
-                    <div class="reservation-details mb-3 pb-3 border-bottom">
-                        <div class="mb-2">
-                            <div class="text-muted small">{% if is_english %}Pickup Date{% else %}تاريخ الاستلام{% endif %}</div>
-                            <div>{% if is_english %}{{ reservation.start_date|date:"m/d/Y" }}{% else %}{{ reservation.start_date|date:"Y/m/d" }}{% endif %}</div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="text-muted small">{% if is_english %}Return Date{% else %}تاريخ التسليم{% endif %}</div>
-                            <div>{% if is_english %}{{ reservation.end_date|date:"m/d/Y" }}{% else %}{{ reservation.end_date|date:"Y/m/d" }}{% endif %}</div>
-                        </div>
-                        <div>
-                            <div class="text-muted small">{% if is_english %}Rental Duration{% else %}مدة الإيجار{% endif %}</div>
-                            <div>{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} {% if is_english %}day(s){% else %}يوم{% endif %}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="price-summary">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>{% if is_english %}Daily Rate:{% else %}سعر الإيجار اليومي:{% endif %}</span>
-                            <span>{% if is_english %}${{ reservation.car.daily_rate }}{% else %}{{ reservation.car.daily_rate }} دينار{% endif %}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>عدد الأيام:</span>
-                            <span>{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} {% if is_english %}day(s){% else %}يوم{% endif %}</span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between fw-bold">
-                            <span>المجموع:</span>
-                            <span>{{ reservation.total_price }} دينار</span>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- Cart Items Summary -->
-                    {% for item in cart_items %}
-                    <div class="cart-car d-flex align-items-center mb-3 pb-3 border-bottom">
-                        {% if item.car.image_url %}
-                        <img src="{{ item.car.image_url }}" alt="{{ item.car.make }}" class="rounded ms-3" width="60">
-                        {% else %}
-                        <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ item.car.make }}" class="rounded ms-3" width="60">
-                        {% endif %}
-                        <div>
-                            <div class="fw-semibold">{{ item.car.make }} {{ item.car.model }}</div>
-                            <div class="text-muted small">{{ item.car.year }} • {{ item.car.category }}</div>
-                            <div class="text-muted small">{{ item.start_date|date:"Y/m/d" }} - {{ item.end_date|date:"Y/m/d" }}</div>
-                            <div class="text-primary">{{ item.total }} دينار</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    
-                    <div class="price-summary">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>عدد السيارات:</span>
-                            <span>{{ cart_items|length }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>مجموع الأيام:</span>
-                            <span>{{ total_days }} يوم</span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between fw-bold">
-                            <span>المجموع:</span>
-                            <span>{{ cart_total }} دينار</span>
-                        </div>
-                    </div>
-                    {% endif %}
-
                 </div>
             </div>
             
-            <!-- Payment Security -->
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h5 class="card-title">الدفع الآمن</h5>
-                    <p class="text-muted small">
-                        جميع معاملات الدفع آمنة ومشفرة. معلومات بطاقتك الائتمانية لا يتم تخزينها أبدًا.
-                    </p>
-                    <div class="payment-security-icons d-flex gap-2 justify-content-center my-3">
-                        <i class="fas fa-lock fa-2x text-success"></i>
-                        <i class="fas fa-shield-alt fa-2x text-primary"></i>
-                        <i class="fas fa-credit-card fa-2x text-secondary"></i>
-                    </div>
-                    <div class="accepted-cards mt-3 text-center">
-                        <i class="fab fa-cc-visa fa-2x mx-1 text-primary"></i>
-                        <i class="fab fa-cc-mastercard fa-2x mx-1 text-danger"></i>
-                        <i class="fab fa-cc-amex fa-2x mx-1 text-info"></i>
-                        <i class="fab fa-cc-discover fa-2x mx-1 text-warning"></i>
-                    </div>
-                </div>
+            <div class="text-center mt-4">
+                <a href="{% url 'index' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-{% trans "left" %} {% trans "me-2" %}"></i>
+                    {% trans "Back to Home" %}
+                </a>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Terms Modal -->
+<!-- Terms and Conditions Modal -->
 <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="termsModalLabel">شروط الدفع</h5>
+                <h5 class="modal-title" id="termsModalLabel">{% trans "Terms and Conditions" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <h6>1. معالجة الدفع</h6>
-                <p>• عند تقديم معلومات بطاقة الائتمان، سيتم معالجة الدفع على الفور.</p>
-                <p>• ستتلقى تأكيدًا بالبريد الإلكتروني بمجرد إتمام المعاملة.</p>
+                {% blocktrans trimmed %}<h6>1. Rental Agreement</h6>
+                <p>This agreement constitutes a contract between the renter and CarRental. The renter agrees to the terms and conditions outlined herein.</p>
                 
-                <h6>2. الأمان</h6>
-                <p>• جميع معلومات الدفع مشفرة ومحمية.</p>
-                <p>• لا نقوم بتخزين تفاصيل بطاقتك الائتمانية على خوادمنا.</p>
+                <h6>2. Payment</h6>
+                <p>Full payment is required to complete the reservation. We accept credit/debit cards, PayPal, and cash payments at pickup.</p>
                 
-                <h6>3. سياسة الإلغاء والاسترداد</h6>
-                <p>• يمكن إلغاء الحجوزات مع استرداد كامل المبلغ قبل 24 ساعة من وقت الاستلام.</p>
-                <p>• الإلغاء خلال 24 ساعة من وقت الاستلام سيؤدي إلى تطبيق رسوم إلغاء تعادل يوم إيجار واحد.</p>
-                <p>• لا يمكن استرداد المبلغ بعد استلام السيارة.</p>
+                <h6>3. Cancellation Policy</h6>
+                <p>Cancellations made 48 hours or more before the pickup time will receive a full refund. Cancellations made less than 48 hours before pickup will be charged 50% of the total rental fee.</p>
+                
+                <h6>4. Insurance and Liability</h6>
+                <p>Basic insurance is included in the rental price. The renter is responsible for any damage not covered by the insurance policy.</p>{% endblocktrans %}
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    .payment-method-card {
-        height: 100%;
-    }
-    
-    .payment-method-card .btn {
-        transition: all 0.2s ease;
-    }
-    
-    .payment-method-card .btn-check:checked + .btn {
-        background-color: #0d6efd;
-        color: white;
-    }
-</style>
+<!-- Privacy Policy Modal -->
+<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="privacyModalLabel">{% trans "Privacy Policy" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% blocktrans trimmed %}<p>We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you how we look after your personal data when you visit our website and rent our vehicles.</p>
+                
+                <h6>1. Data Collection</h6>
+                <p>We collect personal identification information such as name, email address, phone number, and payment details to process your reservation and provide our services.</p>
+                
+                <h6>2. Data Storage</h6>
+                <p>Your data is securely stored and processed according to industry-standard practices. We implement appropriate security measures to prevent unauthorized access.</p>
+                
+                <h6>3. Data Usage</h6>
+                <p>We use your data solely for processing your reservation, providing customer support, and improving our services. We do not sell or share your data with third parties except as required to fulfill our services.</p>{% endblocktrans %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Format credit card number as user types
-    const cardNumberInput = document.getElementById('{{ form.card_number.id_for_label }}');
-    if (cardNumberInput) {
-        cardNumberInput.addEventListener('input', function(e) {
-            let value = e.target.value;
-            
-            // Remove non-digit characters
-            value = value.replace(/\D/g, '');
-            
-            // Add space after every 4 digits
-            value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
-            
-            // Limit to 19 characters (16 digits + 3 spaces)
-            value = value.substring(0, 19);
-            
-            e.target.value = value;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle payment method details
+        const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+        const creditCardDetails = document.getElementById('creditCardDetails');
+        
+        paymentMethods.forEach(method => {
+            method.addEventListener('change', function() {
+                if (this.value === 'credit_card') {
+                    creditCardDetails.style.display = 'block';
+                } else {
+                    creditCardDetails.style.display = 'none';
+                }
+            });
         });
-    }
-    
-    // Format CVV to only allow 3-4 digits
-    const cvvInput = document.getElementById('{{ form.cvv.id_for_label }}');
-    if (cvvInput) {
-        cvvInput.addEventListener('input', function(e) {
-            let value = e.target.value;
-            
-            // Remove non-digit characters
-            value = value.replace(/\D/g, '');
-            
-            // Limit to 4 characters
-            value = value.substring(0, 4);
-            
-            e.target.value = value;
-        });
-    }
-});
+    });
 </script>
 {% endblock %}
