@@ -1,0 +1,759 @@
+{% extends 'layout_django.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "My Reservations" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* تحسين أسلوب صفحة الحجوزات - النسخة الفاخرة */
+    :root {
+        --primary-dark: #2563eb;
+        --primary-light: #3b82f6;
+        --gradient-luxury: linear-gradient(135deg, #1a365d 0%, #3b82f6 100%);
+        --shadow-soft: 0 10px 25px rgba(0, 0, 0, 0.06);
+        --shadow-strong: 0 20px 40px rgba(0, 0, 0, 0.12);
+        --border-radius-lg: 16px;
+        --border-radius-xl: 24px;
+        --hover-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    
+    /* === هيدر الصفحة === */
+    .page-header {
+        background: var(--gradient-luxury);
+        padding: 4.5rem 0;
+        margin-bottom: 3.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0 0 var(--border-radius-xl) var(--border-radius-xl);
+        box-shadow: var(--shadow-strong);
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M11 18a7 7 0 100-14 7 7 0 000 14zm48 25a7 7 0 100-14 7 7 0 000 14zm-43-7a3 3 0 100-6 3 3 0 000 6zm63 31a3 3 0 100-6 3 3 0 000 6zm-33 32a3 3 0 100-6 3 3 0 000 6zm56-76a3 3 0 100-6 3 3 0 000 6zm-8 73a5 5 0 100-10 5 5 0 000 10zM38 45a5 5 0 100-10 5 5 0 000 10zm-17 34a5 5 0 100-10 5 5 0 000 10z' fill='rgba(255,255,255,0.075)' fill-rule='evenodd'/%3E%3C/svg%3E");
+        z-index: 1;
+        opacity: 0.7;
+    }
+    
+    .page-header::after {
+        content: '';
+        position: absolute;
+        bottom: -50px;
+        right: -50px;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        z-index: 1;
+    }
+    
+    .page-header .container {
+        position: relative;
+        z-index: 5;
+    }
+    
+    .page-title {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        font-family: 'Almarai', 'Cairo', sans-serif;
+        letter-spacing: -0.5px;
+    }
+    
+    .page-subtitle {
+        font-size: 1.25rem;
+        opacity: 0.9;
+        font-weight: 400;
+        margin-bottom: 0;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        max-width: 650px;
+    }
+    
+    /* === جدول الحجوزات === */
+    .card.shadow-lg {
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        border: none;
+        box-shadow: var(--shadow-soft);
+        transition: var(--hover-transition);
+    }
+    
+    .card.shadow-lg:hover {
+        box-shadow: var(--shadow-strong);
+        transform: translateY(-5px);
+    }
+    
+    .custom-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 100%;
+    }
+    
+    .custom-table thead th {
+        background-color: #f8fafc;
+        color: #334155;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        padding: 1.5rem 1.25rem;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.07);
+        white-space: nowrap;
+        position: relative;
+    }
+    
+    .custom-table thead th::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 3px;
+        width: 0;
+        background: var(--primary-light);
+        transition: width 0.3s ease;
+    }
+    
+    .custom-table:hover thead th::after {
+        width: 100%;
+    }
+    
+    .custom-table tbody tr {
+        transition: var(--hover-transition);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    }
+    
+    .custom-table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .custom-table tbody tr:hover {
+        background-color: rgba(59, 130, 246, 0.04);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+        position: relative;
+    }
+    
+    .custom-table td {
+        padding: 1.25rem;
+        vertical-align: middle;
+        border-color: rgba(0, 0, 0, 0.04);
+        position: relative;
+    }
+    
+    /* === معرفات الحجوزات === */
+    .reservation-id {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: var(--primary-dark);
+        position: relative;
+        display: inline-block;
+        letter-spacing: 0.5px;
+        padding: 0.25rem 0;
+    }
+    
+    .reservation-id::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 2px;
+        width: 100%;
+        background: linear-gradient(to right, var(--primary-light), transparent);
+        border-radius: 2px;
+    }
+    
+    /* === معلومات السيارة === */
+    .car-img-wrapper {
+        width: 70px;
+        height: 70px;
+        border-radius: 12px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background-color: #f1f5f9;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        position: relative;
+        transition: var(--hover-transition);
+    }
+    
+    .car-img-wrapper::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom right, transparent 50%, rgba(59, 130, 246, 0.1));
+        z-index: 1;
+    }
+    
+    .car-img-wrapper:hover {
+        transform: scale(1.1) rotate(2deg);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .car-thumb {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+    }
+    
+    .car-img-wrapper:hover .car-thumb {
+        transform: scale(1.15);
+    }
+    
+    .car-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 2px;
+        transition: color 0.3s ease;
+        letter-spacing: -0.3px;
+    }
+    
+    tr:hover .car-name {
+        color: var(--primary-dark);
+    }
+    
+    /* === أيقونات ومؤشرات === */
+    .date-icon,
+    .price-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, #f2f5f9, #ffffff);
+        color: var(--primary-dark);
+        margin-left: 0;
+        margin-right: 0.85rem;
+        flex-shrink: 0;
+        box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.05),
+                    -5px -5px 10px rgba(255, 255, 255, 0.8);
+        transition: var(--hover-transition);
+    }
+    
+    tr:hover .date-icon,
+    tr:hover .price-icon {
+        transform: scale(1.1);
+        background: linear-gradient(145deg, #e0e7ff, #ffffff);
+        color: var(--primary-dark);
+    }
+    
+    .date-range {
+        font-size: 0.95rem;
+        color: #475569;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+    
+    .duration-badge {
+        display: inline-block;
+        padding: 0.45rem 1rem;
+        border-radius: 30px;
+        background: linear-gradient(145deg, #f8fafc, #edf2f7);
+        color: #475569;
+        font-size: 0.9rem;
+        font-weight: 600;
+        box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.05),
+                    -3px -3px 6px rgba(255, 255, 255, 0.8);
+        transition: var(--hover-transition);
+    }
+    
+    tr:hover .duration-badge {
+        background: linear-gradient(145deg, #e0e7ff, #ffffff);
+        color: var(--primary-dark);
+        transform: scale(1.05);
+    }
+    
+    .price-amount {
+        font-weight: 800;
+        font-size: 1.15rem;
+        background: linear-gradient(to right, var(--primary-dark), var(--primary-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        position: relative;
+        display: inline-block;
+    }
+    
+    /* === شارات الحالة === */
+    .status-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .status-badge,
+    .payment-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-align: center;
+        white-space: nowrap;
+        transition: var(--hover-transition);
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+    
+    .status-badge::before,
+    .payment-badge::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 3px;
+        transition: width 0.3s ease;
+        z-index: -1;
+    }
+    
+    tr:hover .status-badge::before,
+    tr:hover .payment-badge::before {
+        width: 100%;
+    }
+    
+    .status-pending {
+        background-color: rgba(250, 204, 21, 0.1);
+        color: #b45309;
+        border: 1px solid rgba(250, 204, 21, 0.3);
+    }
+    
+    .status-pending::before {
+        background: linear-gradient(to right, rgba(250, 204, 21, 0.3), rgba(250, 204, 21, 0.05));
+    }
+    
+    .status-confirmed {
+        background-color: rgba(34, 197, 94, 0.1);
+        color: #166534;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .status-confirmed::before {
+        background: linear-gradient(to right, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.05));
+    }
+    
+    .status-completed {
+        background-color: rgba(6, 182, 212, 0.1);
+        color: #0e7490;
+        border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+    
+    .status-completed::before {
+        background: linear-gradient(to right, rgba(6, 182, 212, 0.3), rgba(6, 182, 212, 0.05));
+    }
+    
+    .status-cancelled {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .status-cancelled::before {
+        background: linear-gradient(to right, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.05));
+    }
+    
+    .payment-pending {
+        background-color: rgba(148, 163, 184, 0.1);
+        color: #475569;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+    
+    .payment-pending::before {
+        background: linear-gradient(to right, rgba(148, 163, 184, 0.3), rgba(148, 163, 184, 0.05));
+    }
+    
+    .payment-paid {
+        background-color: rgba(34, 197, 94, 0.1);
+        color: #166534;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .payment-paid::before {
+        background: linear-gradient(to right, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.05));
+    }
+    
+    .payment-refunded {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .payment-refunded::before {
+        background: linear-gradient(to right, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.05));
+    }
+    
+    /* === أزرار الإجراءات === */
+    .action-buttons {
+        display: flex;
+        gap: 0.85rem;
+        justify-content: flex-end;
+    }
+    
+    .action-button {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--hover-transition);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.05),
+                   -5px -5px 10px rgba(255, 255, 255, 0.8);
+        background: linear-gradient(145deg, #f8fafc, #edf2f7);
+        color: #475569;
+        border: none;
+    }
+    
+    .action-button::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to right, var(--primary-light), var(--primary-dark));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+    }
+    
+    .action-button:hover {
+        transform: translateY(-5px) scale(1.1);
+        color: white;
+        border: none;
+    }
+    
+    .action-button:hover::after {
+        opacity: 1;
+    }
+    
+    .btn-primary.action-button:hover {
+        background: transparent;
+        border: none;
+    }
+    
+    .btn-success.action-button::after {
+        background: linear-gradient(to right, #22c55e, #15803d);
+    }
+    
+    .btn-danger.action-button::after {
+        background: linear-gradient(to right, #ef4444, #b91c1c);
+    }
+    
+    /* === حالة الفراغ === */
+    .empty-state {
+        text-align: center;
+        padding: 5rem 2rem;
+        background: white;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-soft);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .empty-state::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: radial-gradient(circle at 20% 25%, rgba(59, 130, 246, 0.03) 0%, transparent 50%),
+                         radial-gradient(circle at 80% 75%, rgba(34, 197, 94, 0.03) 0%, transparent 50%);
+    }
+    
+    .empty-icon {
+        width: 150px;
+        height: 150px;
+        background: linear-gradient(145deg, #f8fafc, #edf2f7);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2.5rem;
+        color: var(--primary-dark);
+        position: relative;
+        box-shadow: 12px 12px 24px rgba(0, 0, 0, 0.06),
+                   -12px -12px 24px rgba(255, 255, 255, 0.8);
+        transition: var(--hover-transition);
+    }
+    
+    .empty-icon:hover {
+        transform: scale(1.05) rotate(5deg);
+    }
+    
+    .empty-icon i {
+        font-size: 3.5rem;
+        background: linear-gradient(to right, var(--primary-dark), var(--primary-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .empty-state h3 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state p {
+        font-size: 1.1rem;
+        color: #64748b;
+        max-width: 500px;
+        margin: 0 auto 2rem;
+    }
+    
+    /* === زر الاستكشاف === */
+    .explore-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: linear-gradient(to right, var(--primary-dark), var(--primary-light));
+        border: none;
+        color: white;
+        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+        transition: var(--hover-transition);
+        position: relative;
+        overflow: hidden;
+        text-decoration: none;
+    }
+    
+    .explore-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.7s ease;
+    }
+    
+    .explore-btn:hover {
+        transform: translateY(-7px);
+        box-shadow: 0 15px 30px rgba(37, 99, 235, 0.35);
+        color: white;
+    }
+    
+    .explore-btn:hover::before {
+        left: 100%;
+    }
+    
+    .explore-btn i {
+        {% if is_english %}margin-right{% else %}margin-left{% endif %}: 12px;
+        transition: transform 0.3s ease;
+    }
+    
+    .explore-btn:hover i {
+        transform: {% if is_english %}translateX(5px){% else %}translateX(-5px){% endif %};
+    }
+    
+    /* === تعديلات خاصة بالغة العربية === */
+    html[dir="rtl"] .date-icon,
+    html[dir="rtl"] .price-icon {
+        margin-right: 0;
+        margin-left: 0.85rem;
+    }
+    
+    html[dir="rtl"] .explore-btn i {
+        margin-right: 0;
+        margin-left: 12px;
+    }
+    
+    html[dir="rtl"] .action-buttons {
+        justify-content: flex-start;
+    }
+    
+    html[dir="rtl"] .custom-table thead th:first-child {
+        text-align: right;
+    }
+    
+    html[dir="rtl"] .custom-table thead th:last-child {
+        text-align: left;
+    }
+    
+    html[dir="rtl"] .reservation-id::after {
+        background: linear-gradient(to left, var(--primary-light), transparent);
+    }
+    
+    html[dir="rtl"] .status-badge::before,
+    html[dir="rtl"] .payment-badge::before {
+        left: auto;
+        right: 0;
+    }
+    
+    html[dir="rtl"] .status-pending::before,
+    html[dir="rtl"] .status-confirmed::before,
+    html[dir="rtl"] .status-completed::before,
+    html[dir="rtl"] .status-cancelled::before,
+    html[dir="rtl"] .payment-pending::before,
+    html[dir="rtl"] .payment-paid::before,
+    html[dir="rtl"] .payment-refunded::before {
+        background: linear-gradient(to left, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2));
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ترويسة الصفحة - تصميم فاخر -->
+<header class="page-header">
+    <div class="container">
+        <h1 class="page-title">{% trans "My Reservations" %}</h1>
+        <p class="page-subtitle">{% if is_english %}View and manage all your car bookings with us. Track status, make payments, and view details of your reservations in one place.{% else %}عرض وإدارة جميع حجوزات السيارات الخاصة بك معنا. تتبع الحالة، وإجراء المدفوعات، وعرض تفاصيل الحجوزات في مكان واحد.{% endif %}</p>
+    </div>
+</header>
+
+<div class="container py-4">
+    {% if reservations %}
+    <div class="card shadow-lg border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 custom-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">{% trans "Reservation ID" %}</th>
+                            <th>{% trans "Car" %}</th>
+                            <th>{% trans "Dates" %}</th>
+                            <th>{% trans "Duration" %}</th>
+                            <th>{% trans "Total" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th class="text-end pe-4">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in reservations %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="reservation-id">#{{ reservation.id }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if reservation.car.image_url %}
+                                    <div class="car-img-wrapper me-3 ms-3">
+                                        <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="car-thumb">
+                                    </div>
+                                    {% else %}
+                                    <div class="car-img-wrapper me-3 ms-3">
+                                        <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="car-thumb">
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0 car-name">{{ reservation.car.make }} {{ reservation.car.model }}</h6>
+                                        <span class="text-muted small">{{ reservation.car.year }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="date-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div>
+                                        <div class="date-range">
+                                            {% if is_english %}
+                                                {{ reservation.start_date|date:"m/d/Y" }} - {{ reservation.end_date|date:"m/d/Y" }}
+                                            {% else %}
+                                                {{ reservation.start_date|date:"d/m/Y" }} - {{ reservation.end_date|date:"d/m/Y" }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="duration-badge">
+                                    {{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }}{% if is_english %} days{% else %} يوم{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="price-icon">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                    <div>
+                                        <span class="price-amount">{{ reservation.total_price }}{% if is_english %} JOD{% else %} دينار{% endif %}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="status-container">
+                                    {% if reservation.status == 'pending' %}
+                                    <span class="status-badge status-pending">{% if is_english %}Under Review{% else %}قيد المراجعة{% endif %}</span>
+                                    {% elif reservation.status == 'confirmed' %}
+                                    <span class="status-badge status-confirmed">{% if is_english %}Confirmed{% else %}تمت الموافقة{% endif %}</span>
+                                    {% elif reservation.status == 'completed' %}
+                                    <span class="status-badge status-completed">{% if is_english %}Completed{% else %}مكتمل{% endif %}</span>
+                                    {% elif reservation.status == 'cancelled' %}
+                                    <span class="status-badge status-cancelled">{% if is_english %}Cancelled{% else %}ملغي{% endif %}</span>
+                                    {% endif %}
+                                    
+                                    {% if reservation.payment_status == 'pending' %}
+                                    <span class="payment-badge payment-pending">{% if is_english %}Payment Pending{% else %}في انتظار الدفع{% endif %}</span>
+                                    {% elif reservation.payment_status == 'paid' %}
+                                    <span class="payment-badge payment-paid">{% if is_english %}Paid{% else %}مدفوع{% endif %}</span>
+                                    {% elif reservation.payment_status == 'refunded' %}
+                                    <span class="payment-badge payment-refunded">{% if is_english %}Refunded{% else %}مسترجع{% endif %}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="action-buttons">
+                                    <a href="{% url 'reservation_detail' reservation_id=reservation.id %}" class="btn btn-primary rounded-circle action-button" title="{% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success rounded-circle action-button" title="{% if is_english %}Pay Now{% else %}ادفع الآن{% endif %}">
+                                        <i class="fas fa-credit-card"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if reservation.status == 'pending' %}
+                                    <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-danger rounded-circle action-button" title="{% if is_english %}Cancel{% else %}إلغاء{% endif %}">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-5 text-center">
+        <a href="{% url 'cars' %}" class="explore-btn">
+            <i class="fas fa-search"></i>
+            {% if is_english %}Find More Cars{% else %}البحث عن المزيد من السيارات{% endif %}
+        </a>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h3 class="mb-3">{% if is_english %}No Reservations Found{% else %}لا توجد حجوزات{% endif %}</h3>
+        <p class="text-muted mb-4">{% if is_english %}You haven't made any reservations yet. Start exploring our available cars for rent.{% else %}لم تقم بإجراء أي حجوزات بعد. ابدأ باستكشاف السيارات المتاحة للإيجار.{% endif %}</p>
+        <a href="{% url 'cars' %}" class="explore-btn">
+            <i class="fas fa-search"></i>
+            {% if is_english %}Explore Cars{% else %}استكشاف السيارات{% endif %}
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
