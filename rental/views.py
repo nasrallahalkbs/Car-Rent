@@ -533,9 +533,8 @@ def my_reservations(request):
         'today': date.today(),
     }
     
-    # استخدام قالب مختلف حسب اللغة
-    template = get_template_by_language(request, 'my_reservations.html')
-    return render(request, template, context)
+    # استخدام القالب الأصلي بتصميم أبسط
+    return render(request, 'my_reservations_original.html', context)
 
 @login_required
 def reservation_detail(request, reservation_id):
@@ -550,8 +549,7 @@ def reservation_detail(request, reservation_id):
         'has_review': has_review,
     }
     
-    template = get_template_by_language(request, 'reservation_detail.html')
-    return render(request, template, context)
+    return render(request, 'reservation_detail_original.html', context)
 
 @login_required
 def modify_reservation(request, reservation_id):
@@ -596,8 +594,7 @@ def modify_reservation(request, reservation_id):
         'today': date.today(),
     }
     
-    template = get_template_by_language(request, 'modify_reservation.html')
-    return render(request, template, context)
+    return render(request, 'modify_reservation_original.html', context)
 
 @login_required
 def cancel_reservation(request, reservation_id):
@@ -620,8 +617,7 @@ def cancel_reservation(request, reservation_id):
         'reservation': reservation,
     }
     
-    template = get_template_by_language(request, 'cancel_reservation.html')
-    return render(request, template, context)
+    return render(request, 'cancel_reservation_original.html', context)
 
 @login_required
 def add_review(request, reservation_id):
@@ -659,8 +655,7 @@ def add_review(request, reservation_id):
         'reservation': reservation,
     }
     
-    template = get_template_by_language(request, 'add_review.html')
-    return render(request, template, context)
+    return render(request, 'add_review_original.html', context)
 
 def toggle_dark_mode(request):
     """Toggle dark mode on/off"""
@@ -723,8 +718,7 @@ def toggle_language(request):
 
 def about_us(request):
     """About Us page view"""
-    template = get_template_by_language(request, 'about_us.html')
-    return render(request, template)
+    return render(request, 'about_us_original.html')
 
 @login_required
 def book_car(request, car_id):
@@ -766,8 +760,7 @@ def book_car(request, car_id):
         'cart_item': cart_item,  # Pass the cart item to the template
     }
     
-    template = get_template_by_language(request, 'booking.html')
-    return render(request, template, context)
+    return render(request, 'booking_original.html', context)
 
 @login_required
 def process_booking(request):
