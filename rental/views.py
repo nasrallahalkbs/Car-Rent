@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.db.models import Q, Avg, Count
 from django.core.paginator import Paginator
 from django.conf import settings
+from django.utils.translation import gettext as _
 from .forms import LoginForm, RegisterForm, CarSearchForm, ReservationForm, CheckoutForm, ReviewForm, ProfileForm
 from .models import User, Car, Reservation, Review, CartItem
 from .utils import calculate_total_price, get_car_availability, get_unavailable_dates
@@ -445,136 +446,16 @@ def checkout_new(request):
     return render(request, 'checkout_minimal.html', context)
     
 def checkout(request):
-    """Checkout and payment view"""
-    # Check if coming from a specific reservation (direct payment)
+    """Checkout and payment view - redirects to professional payment gateway"""
+    # Redirect to the advanced payment interface with the same parameters
     reservation_id = request.GET.get('reservation_id')
     
     if reservation_id:
-        # User is paying for a specific reservation
-        reservation = get_object_or_404(
-            Reservation, 
-            id=reservation_id, 
-            user=request.user, 
-            status='confirmed', 
-            payment_status='pending'
-        )
-        
-        # Create form for the payment
-        if request.method == 'POST':
-            form = CheckoutForm(request.POST)
-            if form.is_valid():
-                # Process payment (in a real app, this would integrate with a payment gateway)
-                # For now, just mark the reservation as paid and set status to completed
-                reservation.payment_status = 'paid'
-                
-                # Once paid, update status to completed if it was confirmed
-                if reservation.status == 'confirmed':
-                    reservation.status = 'completed'
-                
-                reservation.save()
-                
-                messages.success(request, "تم إتمام عملية الدفع بنجاح!")
-                
-                # Store reservation ID in session for confirmation page
-                request.session['last_paid_reservation_id'] = reservation.id
-                
-                return redirect('confirmation')
-        else:
-            form = CheckoutForm()
-        
-        context = {
-            'form': form,
-            'reservation': reservation,
-        }
-        
-        template = get_template_by_language(request, 'checkout.html')
-        return render(request, template, context)
+        # Redirect to professional payment with reservation_id
+        return redirect(f'/payment/?reservation_id={reservation_id}')
     else:
-        # User is checking out items from cart
-        cart_items = CartItem.objects.filter(user=request.user)
-        
-        if not cart_items:
-            messages.warning(request, "السلة فارغة!")
-            return redirect('cart')
-        
-        # Calculate totals
-        grand_total = 0
-        for item in cart_items:
-            delta = (item.end_date - item.start_date).days + 1
-            item.days = delta
-            item.total = item.car.daily_rate * delta
-            grand_total += item.total
-        
-        if request.method == 'POST':
-            form = CheckoutForm(request.POST)
-            if form.is_valid():
-                # Create reservations for all cart items
-                for item in cart_items:
-                    # Check again if car is available (in case someone else booked it)
-                    if get_car_availability(item.car.id, item.start_date, item.end_date):
-                        total_price = calculate_total_price(item.car, item.start_date, item.end_date)
-                        
-                        # Create reservation with pending status initially
-                        reservation = Reservation.objects.create(
-                            user=request.user,
-                            car=item.car,
-                            start_date=item.start_date,
-                            end_date=item.end_date,
-                            total_price=total_price,
-                            status='pending',  # All reservations start as pending
-                            payment_status='pending'
-                        )
-                    else:
-                        messages.error(
-                            request, 
-                            f"عذرًا، السيارة {item.car.make} {item.car.model} لم تعد متاحة في التواريخ المحددة."
-                        )
-                        return redirect('cart')
-                
-                # Clear the cart
-                cart_items.delete()
-                
-                messages.success(request, "تم إرسال طلب الحجز بنجاح! يرجى انتظار موافقة المسؤول.")
-                return redirect('confirmation')
-        else:
-            form = CheckoutForm()
-        
-        context = {
-            'form': form,
-            'cart_items': cart_items,
-            'cart_total': grand_total,
-            'total_days': sum(item.days for item in cart_items),
-        }
-        
-        template = get_template_by_language(request, 'checkout.html')
-        return render(request, template, context)
-
-@login_required
-def confirmation(request):
-    """Order confirmation page"""
-    # Check if there's a specific reservation ID in the session (for payments)
-    paid_reservation_id = request.session.get('last_paid_reservation_id')
-    
-    if paid_reservation_id:
-        # Get the specific reservation that was just paid for
-        reservation = get_object_or_404(Reservation, id=paid_reservation_id, user=request.user)
-        # Clear the session variable
-        del request.session['last_paid_reservation_id']
-    else:
-        # Otherwise get the most recent reservation for this user
-        reservation = Reservation.objects.filter(user=request.user).order_by('-created_at').first()
-    
-    if not reservation:
-        messages.warning(request, "لم يتم العثور على أي حجوزات!")
-        return redirect('index')
-    
-    context = {
-        'reservation': reservation,
-    }
-    
-    template = get_template_by_language(request, 'confirmation.html')
-    return render(request, template, context)
-
+        # Redirect to professional payment for cart items
+        return redirect('/payment/')
 @login_required
 def my_reservations(request):
     """User's reservations page with search capability"""
@@ -629,6 +510,32 @@ def my_reservations(request):
     
     # استخدام القالب الأصلي بتصميم أبسط
     return render(request, 'my_reservations_original.html', context)
+
+@login_required
+def confirmation(request):
+    """Order confirmation page"""
+    # Check if there's a specific reservation ID in the session (for payments)
+    paid_reservation_id = request.session.get('last_paid_reservation_id')
+    
+    if paid_reservation_id:
+        # Get the specific reservation that was just paid for
+        reservation = get_object_or_404(Reservation, id=paid_reservation_id, user=request.user)
+        # Clear the session variable
+        del request.session['last_paid_reservation_id']
+    else:
+        # Otherwise get the most recent reservation for this user
+        reservation = Reservation.objects.filter(user=request.user).order_by('-created_at').first()
+    
+    if not reservation:
+        messages.warning(request, _("لم يتم العثور على أي حجوزات!"))
+        return redirect('index')
+    
+    context = {
+        'reservation': reservation,
+    }
+    
+    template = get_template_by_language(request, 'confirmation.html')
+    return render(request, template, context)
 
 @login_required
 def reservation_detail(request, reservation_id):

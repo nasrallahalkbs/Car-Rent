@@ -1,0 +1,474 @@
+{% extends 'layout_django.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'إتمام الدفع' %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/payment.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="payment-container my-5">
+    <!-- Header Section -->
+    <div class="payment-header text-center">
+        <div class="mb-3">
+            <i class="fas fa-lock fa-3x text-primary"></i>
+        </div>
+        <h2>{% trans 'إتمام عملية الدفع الآمن' %}</h2>
+        <p>{% trans 'جميع المعاملات مشفرة وآمنة' %}</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Payment Form -->
+        <div class="col-lg-8">
+            <div class="payment-card mb-4">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">{% trans 'معلومات الدفع' %}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'professional_payment' %}{% if not from_cart %}?reservation_id={{ reservation.id }}{% endif %}" id="payment-form">
+                        {% csrf_token %}
+                        
+                        <!-- Payment Method Selection -->
+                        <h5 class="mb-3">{% trans 'اختر طريقة الدفع' %}</h5>
+                        <div class="method-selector mb-4">
+                            <div class="payment-method-option">
+                                <input type="radio" name="payment_method" id="credit_card" value="credit_card" class="payment-method-input" checked>
+                                <label for="credit_card" class="payment-method-card">
+                                    <img src="{% static 'images/credit_card.svg' %}" alt="Credit Card" class="img-fluid">
+                                    <span class="method-name">{% trans 'بطاقة ائتمان' %}</span>
+                                </label>
+                            </div>
+                            
+                            <div class="payment-method-option">
+                                <input type="radio" name="payment_method" id="paypal" value="paypal" class="payment-method-input">
+                                <label for="paypal" class="payment-method-card">
+                                    <img src="{% static 'images/paypal.svg' %}" alt="PayPal" class="img-fluid">
+                                    <span class="method-name">PayPal</span>
+                                </label>
+                            </div>
+                            
+                            <div class="payment-method-option">
+                                <input type="radio" name="payment_method" id="bank_transfer" value="bank_transfer" class="payment-method-input">
+                                <label for="bank_transfer" class="payment-method-card">
+                                    <img src="{% static 'images/bank.svg' %}" alt="Bank Transfer" class="img-fluid">
+                                    <span class="method-name">{% trans 'تحويل بنكي' %}</span>
+                                </label>
+                            </div>
+                            
+                            <div class="payment-method-option">
+                                <input type="radio" name="payment_method" id="cash" value="cash" class="payment-method-input">
+                                <label for="cash" class="payment-method-card">
+                                    <img src="{% static 'images/cash.svg' %}" alt="Cash" class="img-fluid">
+                                    <span class="method-name">{% trans 'نقداً عند الاستلام' %}</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Credit Card Form -->
+                        <div id="credit-card-form" class="payment-method-form active">
+                            <!-- Card Preview -->
+                            <div class="credit-card-wrapper">
+                                <div class="credit-card">
+                                    <div class="card-chip"></div>
+                                    <div class="card-number" id="card-number-display">**** **** **** ****</div>
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="text-uppercase card-label">{% trans 'حامل البطاقة' %}</div>
+                                            <div class="card-holder-name" id="card-holder-display">{% trans 'اسمك هنا' %}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-uppercase card-label">{% trans 'تنتهي في' %}</div>
+                                            <div class="card-expiry" id="card-expiry-display">MM/YY</div>
+                                        </div>
+                                    </div>
+                                    <img src="{% static 'images/visa.svg' %}" alt="Card Brand" class="card-brand" id="card-brand">
+                                </div>
+                            </div>
+                            
+                            <!-- Card Input Fields -->
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="card_number" placeholder="**** **** **** ****" maxlength="19">
+                                        <label for="card_number">{% trans 'رقم البطاقة' %}</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="card_name" placeholder="{% trans 'اسمك هنا' %}">
+                                        <label for="card_name">{% trans 'اسم حامل البطاقة' %}</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="expiry_date" placeholder="MM/YY" maxlength="5">
+                                        <label for="expiry_date">{% trans 'تاريخ الانتهاء' %}</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="cvv" placeholder="***" maxlength="4">
+                                        <label for="cvv">CVV</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Accepted Cards -->
+                            <div class="d-flex align-items-center justify-content-center mb-4">
+                                <div class="me-3">{% trans 'نقبل' %}:</div>
+                                <div class="d-flex gap-2">
+                                    <img src="{% static 'images/visa.svg' %}" alt="Visa" height="30">
+                                    <img src="{% static 'images/mastercard.svg' %}" alt="Mastercard" height="30">
+                                    <img src="{% static 'images/amex.svg' %}" alt="American Express" height="30">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- PayPal Form -->
+                        <div id="paypal-form" class="payment-method-form">
+                            <div class="paypal-content">
+                                <img src="{% static 'images/paypal.svg' %}" alt="PayPal" class="paypal-logo">
+                                <p class="paypal-message">{% trans 'سيتم تحويلك إلى موقع PayPal لإتمام عملية الدفع بعد الضغط على زر التأكيد أدناه.' %}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Bank Transfer Form -->
+                        <div id="bank-transfer-form" class="payment-method-form">
+                            <div class="bank-details">
+                                <h5 class="mb-3">{% trans 'معلومات الحساب البنكي' %}</h5>
+                                
+                                <div class="bank-detail-row">
+                                    <div class="bank-detail-label">{% trans 'اسم البنك' %}:</div>
+                                    <div class="bank-detail-value">XYZ National Bank</div>
+                                </div>
+                                
+                                <div class="bank-detail-row">
+                                    <div class="bank-detail-label">{% trans 'اسم المستفيد' %}:</div>
+                                    <div class="bank-detail-value">CarRental Company</div>
+                                </div>
+                                
+                                <div class="bank-detail-row">
+                                    <div class="bank-detail-label">{% trans 'رقم الحساب' %}:</div>
+                                    <div class="bank-detail-value">
+                                        SA12 3456 7890 1234 5678 9012
+                                        <button type="button" class="copy-btn" onclick="copyToClipboard('SA12 3456 7890 1234 5678 9012')">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="bank-detail-row">
+                                    <div class="bank-detail-label">{% trans 'رقم المرجع' %}:</div>
+                                    <div class="bank-detail-value">
+                                        {% if from_cart %}CART-{{ request.user.id }}{% else %}{{ reservation.reservation_number }}{% endif %}
+                                        <button type="button" class="copy-btn" onclick="copyToClipboard('{% if from_cart %}CART-{{ request.user.id }}{% else %}{{ reservation.reservation_number }}{% endif %}')">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info mt-3 mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {% trans 'يرجى تضمين رقم المرجع في تفاصيل التحويل البنكي. بعد إتمام التحويل، انقر على زر "تأكيد الدفع" أدناه.' %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cash Payment Form -->
+                        <div id="cash-form" class="payment-method-form">
+                            <div class="cash-content">
+                                <i class="fas fa-money-bill cash-icon"></i>
+                                <h5 class="cash-title">{% trans 'الدفع نقداً عند الاستلام' %}</h5>
+                                <p>{% trans 'سيتم تحصيل المبلغ المستحق نقداً عند استلام السيارة. يرجى التأكد من إحضار المبلغ المطلوب كاملاً.' %}</p>
+                                <div class="alert alert-success mt-3 mb-0">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    {% trans 'سيتم تأكيد حجزك بمجرد النقر على زر "تأكيد الدفع" أدناه.' %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Terms and Submit -->
+                        <div class="mt-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="terms_agreement" required>
+                                <label class="form-check-label" for="terms_agreement">
+                                    {% trans 'أوافق على الشروط والأحكام وسياسة الخصوصية' %}
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg btn-payment w-100">
+                                <i class="fas fa-lock me-2"></i>
+                                {% if from_cart %}
+                                    {% trans 'تأكيد الحجز ودفع' %} {{ total_amount }} {% trans 'ريال' %}
+                                {% else %}
+                                    {% trans 'تأكيد الدفع' %} {{ total_amount }} {% trans 'ريال' %}
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Payment Security Info -->
+            <div class="payment-security">
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <div class="security-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h5 class="security-title">{% trans 'دفع آمن 100%' %}</h5>
+                        <p class="security-text">{% trans 'جميع المعاملات مشفرة ومحمية' %}</p>
+                    </div>
+                    
+                    <div class="col-md-4 text-center">
+                        <div class="security-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h5 class="security-title">{% trans 'حماية البيانات' %}</h5>
+                        <p class="security-text">{% trans 'بياناتك محمية وفقًا للمعايير العالمية' %}</p>
+                    </div>
+                    
+                    <div class="col-md-4 text-center">
+                        <div class="security-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <h5 class="security-title">{% trans 'دعم 24/7' %}</h5>
+                        <p class="security-text">{% trans 'فريق دعم متاح على مدار الساعة' %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <!-- Order Summary Card -->
+            <div class="payment-card mb-4">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">{% trans 'ملخص الطلب' %}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="order-summary">
+                        {% if from_cart %}
+                            {% for item in cart_items %}
+                                <div class="summary-item">
+                                    <div class="summary-item-details">
+                                        <h6 class="mb-0">{{ item.car.make }} {{ item.car.model }}</h6>
+                                        <small class="text-muted d-block">
+                                            {{ item.start_date|date:"j F Y" }} - {{ item.end_date|date:"j F Y" }}
+                                        </small>
+                                        <small class="text-muted">{{ item.days }} {% trans 'يوم' %}</small>
+                                    </div>
+                                    <div class="summary-item-price">{{ item.total }} {% trans 'ريال' %}</div>
+                                </div>
+                                {% if not forloop.last %}<hr class="my-3">{% endif %}
+                            {% endfor %}
+                            
+                            <div class="summary-total d-flex justify-content-between">
+                                <span>{% trans 'المجموع الكلي' %}</span>
+                                <span>{{ total_amount }} {% trans 'ريال' %}</span>
+                            </div>
+                        {% else %}
+                            <div class="summary-item">
+                                <div class="summary-item-details">
+                                    <h6 class="mb-0">{{ reservation.car.make }} {{ reservation.car.model }}</h6>
+                                    <small class="text-muted d-block">
+                                        {{ reservation.start_date|date:"j F Y" }} - {{ reservation.end_date|date:"j F Y" }}
+                                    </small>
+                                    <small class="text-muted">{{ reservation.days }} {% trans 'يوم' %}</small>
+                                </div>
+                                <div class="summary-item-price">{{ reservation.total_price }} {% trans 'ريال' %}</div>
+                            </div>
+                            
+                            <div class="summary-total d-flex justify-content-between">
+                                <span>{% trans 'المجموع الكلي' %}</span>
+                                <span>{{ reservation.total_price }} {% trans 'ريال' %}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payment Features -->
+            <div class="payment-features">
+                <div class="payment-feature">
+                    <div class="feature-icon feature-icon-secure">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h4>{% trans 'دفع آمن ومشفر' %}</h4>
+                        <p>{% trans 'نستخدم أحدث تقنيات تشفير البيانات لحماية معلوماتك المالية' %}</p>
+                    </div>
+                </div>
+                
+                <div class="payment-feature">
+                    <div class="feature-icon feature-icon-fast">
+                        <i class="fas fa-undo-alt"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h4>{% trans 'سياسة إلغاء مرنة' %}</h4>
+                        <p>{% trans 'يمكنك إلغاء الحجز قبل 24 ساعة من وقت الاستلام واسترداد المبلغ كاملًا' %}</p>
+                    </div>
+                </div>
+                
+                <div class="payment-feature">
+                    <div class="feature-icon feature-icon-support">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h4>{% trans 'دعم متميز على مدار الساعة' %}</h4>
+                        <p>{% trans 'فريق خدمة العملاء متاح دائمًا للإجابة على استفساراتك وتقديم المساعدة' %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Payment Method Switching
+    const paymentMethods = document.querySelectorAll('.payment-method-input');
+    const paymentForms = document.querySelectorAll('.payment-method-form');
+    
+    function showSelectedPaymentForm() {
+        const selectedMethod = document.querySelector('.payment-method-input:checked').value;
+        
+        // Hide all forms
+        paymentForms.forEach(form => {
+            form.classList.remove('active');
+        });
+        
+        // Show the selected form
+        document.getElementById(`${selectedMethod}-form`).classList.add('active');
+    }
+    
+    // Initialize
+    showSelectedPaymentForm();
+    
+    // Add event listeners to payment method radios
+    paymentMethods.forEach(method => {
+        method.addEventListener('change', showSelectedPaymentForm);
+    });
+    
+    // Credit Card Interactive Preview
+    const cardNumberInput = document.getElementById('card_number');
+    const cardNumberDisplay = document.getElementById('card-number-display');
+    const cardNameInput = document.getElementById('card_name');
+    const cardNameDisplay = document.getElementById('card-holder-display');
+    const cardExpiryInput = document.getElementById('expiry_date');
+    const cardExpiryDisplay = document.getElementById('card-expiry-display');
+    const cardBrandImage = document.getElementById('card-brand');
+    
+    // Card number formatting and preview
+    if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', function(e) {
+            // Format card number with spaces after every 4 digits
+            let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            let formattedValue = '';
+            
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    formattedValue += ' ';
+                }
+                formattedValue += value[i];
+            }
+            
+            // Limit to 19 characters (16 digits + 3 spaces)
+            if (formattedValue.length <= 19) {
+                e.target.value = formattedValue;
+            } else {
+                e.target.value = formattedValue.substring(0, 19);
+            }
+            
+            // Update card preview
+            if (value.length > 0) {
+                cardNumberDisplay.textContent = formattedValue + '*'.repeat(19 - formattedValue.length);
+            } else {
+                cardNumberDisplay.textContent = '**** **** **** ****';
+            }
+            
+            // Show card brand based on first digits
+            if (value.startsWith('4')) {
+                cardBrandImage.src = "{% static 'images/visa.svg' %}";
+            } else if (/^5[1-5]/.test(value)) {
+                cardBrandImage.src = "{% static 'images/mastercard.svg' %}";
+            } else if (/^3[47]/.test(value)) {
+                cardBrandImage.src = "{% static 'images/amex.svg' %}";
+            } else {
+                cardBrandImage.src = "{% static 'images/credit_card.svg' %}";
+            }
+        });
+    }
+    
+    // Card name preview
+    if (cardNameInput) {
+        cardNameInput.addEventListener('input', function(e) {
+            if (e.target.value.length > 0) {
+                cardNameDisplay.textContent = e.target.value.toUpperCase();
+            } else {
+                cardNameDisplay.textContent = '{% trans "اسمك هنا" %}';
+            }
+        });
+    }
+    
+    // Expiry date formatting and preview
+    if (cardExpiryInput) {
+        cardExpiryInput.addEventListener('input', function(e) {
+            // Format expiry date as MM/YY
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length > 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            
+            e.target.value = value;
+            
+            // Update card preview
+            if (value.length > 0) {
+                cardExpiryDisplay.textContent = value;
+            } else {
+                cardExpiryDisplay.textContent = 'MM/YY';
+            }
+        });
+    }
+    
+    // CVV validation
+    const cvvInput = document.getElementById('cvv');
+    if (cvvInput) {
+        cvvInput.addEventListener('input', function(e) {
+            // Limit CVV to 3-4 digits
+            let value = e.target.value.replace(/\D/g, '');
+            e.target.value = value.substring(0, 4);
+        });
+    }
+});
+
+// Copy to clipboard function
+function copyToClipboard(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    
+    // Show copied message
+    const button = event.currentTarget;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    button.style.color = '#28a745';
+    
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.style.color = '';
+    }, 2000);
+}
+</script>
+{% endblock %}
