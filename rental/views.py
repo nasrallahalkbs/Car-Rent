@@ -446,16 +446,68 @@ def checkout_new(request):
     return render(request, 'checkout_minimal.html', context)
     
 def checkout(request):
-    """Checkout and payment view - redirects to professional payment gateway"""
-    # Redirect to the advanced payment interface with the same parameters
+    """Checkout and payment view - redirects to international payment gateway"""
+    from django.utils.translation import get_language
+    from django.contrib import messages
+    
+    current_language = get_language()
+    is_english = current_language == 'en'
+    
+    # Get reservation ID from request parameters
     reservation_id = request.GET.get('reservation_id')
     
     if reservation_id:
-        # Redirect to professional payment with reservation_id
-        return redirect(f'/payment/?reservation_id={reservation_id}')
+        # Check if reservation exists and belongs to current user
+        try:
+            reservation = Reservation.objects.get(
+                id=reservation_id,
+                user=request.user
+            )
+            
+            # Check if reservation is confirmed (payment is only allowed for confirmed reservations)
+            if reservation.status == 'confirmed' and reservation.payment_status == 'pending':
+                # Redirect to international payment with reservation_id
+                return redirect(f'/payment/international/?reservation_id={reservation_id}')
+            elif reservation.status == 'pending':
+                # Cannot pay for pending reservations
+                if is_english:
+                    message = "This reservation is still pending administrator approval. Payment can only be made after approval."
+                else:
+                    message = "هذا الحجز لا يزال في انتظار موافقة المسؤول. يمكن إجراء الدفع فقط بعد الموافقة."
+                
+                messages.warning(request, message)
+                return redirect('my_reservations')
+            elif reservation.payment_status == 'paid':
+                # Already paid
+                if is_english:
+                    message = "This reservation has already been paid."
+                else:
+                    message = "تم الدفع لهذا الحجز بالفعل."
+                
+                messages.info(request, message)
+                return redirect('reservation_detail', reservation_id=reservation_id)
+            else:
+                # Other status (e.g., cancelled)
+                if is_english:
+                    message = "Cannot process payment for this reservation."
+                else:
+                    message = "لا يمكن معالجة الدفع لهذا الحجز."
+                
+                messages.error(request, message)
+                return redirect('my_reservations')
+                
+        except Reservation.DoesNotExist:
+            # Reservation not found
+            if is_english:
+                message = "Reservation not found."
+            else:
+                message = "الحجز غير موجود."
+            
+            messages.error(request, message)
+            return redirect('my_reservations')
     else:
-        # Redirect to professional payment for cart items
-        return redirect('/payment/')
+        # Redirect to international payment for cart items
+        return redirect('/payment/international/')
 @login_required
 def my_reservations(request):
     """User's reservations page with search capability"""
@@ -806,14 +858,14 @@ def process_booking(request):
     # Calculate total price
     total_price = calculate_total_price(car, start_date, end_date)
     
-    # Create reservation with confirmed status for immediate payment
+    # Create reservation with pending status - admin must approve before payment
     reservation = Reservation.objects.create(
         user=request.user,
         car=car,
         start_date=start_date,
         end_date=end_date,
         total_price=total_price,
-        status='confirmed',  # Set as confirmed since we're going to payment immediately
+        status='pending',  # Set as pending - admin must confirm before payment
         payment_status='pending',
         notes=notes
     )
@@ -826,8 +878,11 @@ def process_booking(request):
         end_date=end_date
     ).delete()
     
-    # Redirect to professional payment page with this reservation
-    return redirect(f'{reverse("professional_payment")}?reservation_id={reservation.id}')
+    # Save reservation ID in session for the confirmation page
+    request.session['last_paid_reservation_id'] = reservation.id
+    
+    # Redirect to confirmation page to show pending status
+    return redirect('confirmation')
 
 def get_unavailable_dates_api(request, car_id):
     """API endpoint to get unavailable dates for a car"""
