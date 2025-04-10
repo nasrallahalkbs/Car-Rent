@@ -280,6 +280,10 @@ def paypal_payment(request):
     """
     واجهة دفع PayPal متطورة مطابقة للواجهة العالمية
     تحول المستخدم إلى PayPal لإتمام عملية الدفع
+    
+    يتم استدعاء هذه الدالة من قبل:
+    1. عند النقر على زر "متابعة الدفع عبر PayPal" مع goto_paypal=1 - لعرض واجهة PayPal المحسنة
+    2. عند تقديم نموذج PayPal - لمعالجة الدفع
     """
     # التحقق مما إذا كان المستخدم يأتي من حجز محدد
     reservation_id = request.GET.get('reservation_id')
@@ -288,6 +292,9 @@ def paypal_payment(request):
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
+    
+    # التحقق من وجود معلمة goto_paypal - تعني أن المستخدم اختار PayPal كطريقة دفع ونريد عرض واجهة PayPal المحسنة
+    goto_paypal = request.POST.get('goto_paypal') == '1'
     
     # التعامل مع عملية تسجيل الدخول PayPal وإتمام الدفع
     if request.method == 'POST' and (request.POST.get('paypal_submit') == 'login' or request.POST.get('paypal_submit') == 'card'):
