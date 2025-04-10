@@ -288,51 +288,173 @@ def paypal_payment(request):
     current_language = get_language()
     is_english = current_language == 'en'
     
-    if request.method != 'POST':
-        return redirect('professional_payment')
-    
-    # إنشاء نموذج واجهة PayPal وعرضه
-    if reservation_id:
-        # المستخدم يدفع لحجز محدد
-        reservation = get_object_or_404(
-            Reservation, 
-            id=reservation_id, 
-            user=request.user, 
-            status='confirmed', 
-            payment_status='pending'
-        )
+    # التعامل مع عملية تسجيل الدخول PayPal وإتمام الدفع
+    if request.method == 'POST' and request.POST.get('paypal_submit') == 'login':
+        # التحقق من تواجد الحقول المطلوبة
+        paypal_email = request.POST.get('paypal_email')
+        paypal_password = request.POST.get('paypal_password')
         
-        context = {
-            'reservation': reservation,
-            'total_amount': reservation.total_price,
-            'is_english': is_english,
-            'reservation_id': reservation_id
-        }
-    else:
-        # المستخدم يدفع لعناصر من السلة
-        cart_items = CartItem.objects.filter(user=request.user)
-        
-        if not cart_items:
+        if not paypal_email or not paypal_password:
             if is_english:
-                warning_message = "Your cart is empty!"
+                error_message = "Please enter your email and password."
             else:
-                warning_message = "سلة التسوق فارغة!"
+                error_message = "يرجى إدخال البريد الإلكتروني وكلمة المرور."
+            
+            messages.error(request, error_message)
+            
+            # إعادة تقديم نموذج PayPal مع بيانات السياق
+            if reservation_id:
+                return redirect(f'/payment/paypal/?reservation_id={reservation_id}')
+            else:
+                return redirect('/payment/paypal/')
+        
+        # في الواقع، هنا سنتواصل مع API الخاص بـ PayPal
+        # لكن في هذا المثال، سنفترض أن عملية الدفع تمت بنجاح
+        
+        # لكل من الحجز والسلة
+        if reservation_id:
+            # المستخدم يدفع لحجز محدد
+            reservation = get_object_or_404(
+                Reservation, 
+                id=reservation_id, 
+                user=request.user, 
+                status='confirmed', 
+                payment_status='pending'
+            )
+            
+            # إنشاء رقم مرجعي للدفع
+            payment_reference = f"PP-{uuid.uuid4().hex[:8].upper()}"
+            
+            # تحديث حالة الحجز
+            reservation.payment_status = 'paid'
+            reservation.payment_reference = payment_reference
+            reservation.payment_method = 'paypal'
+            reservation.payment_date = datetime.now()
+            
+            # إذا تم الدفع، قم بتحديث الحالة إلى "مكتمل" إذا كان "مؤكد"
+            if reservation.status == 'confirmed':
+                reservation.status = 'completed'
+            
+            reservation.save()
+            
+            # تخزين معرف الحجز في الجلسة لصفحة التأكيد
+            request.session['last_paid_reservation_id'] = reservation.id
+            
+            if is_english:
+                success_message = "Payment completed successfully via PayPal!"
+            else:
+                success_message = "تم إتمام عملية الدفع بنجاح عبر PayPal!"
+            
+            messages.success(request, success_message)
+            
+        else:
+            # المستخدم يدفع لعناصر من السلة
+            cart_items = CartItem.objects.filter(user=request.user)
+            
+            if not cart_items:
+                if is_english:
+                    warning_message = "Your cart is empty!"
+                else:
+                    warning_message = "سلة التسوق فارغة!"
+                    
+                messages.warning(request, warning_message)
+                return redirect('cart')
+            
+            # إنشاء رقم مرجعي للدفع
+            payment_reference = f"PP-{uuid.uuid4().hex[:8].upper()}"
+            
+            # إنشاء حجوزات لجميع عناصر السلة
+            for item in cart_items:
+                # التحقق من توفر السيارة
+                if get_car_availability(item.car.id, item.start_date, item.end_date):
+                    total_price = calculate_total_price(item.car, item.start_date, item.end_date)
+                    
+                    # إنشاء حجز جديد
+                    reservation = Reservation.objects.create(
+                        user=request.user,
+                        car=item.car,
+                        start_date=item.start_date,
+                        end_date=item.end_date,
+                        total_price=total_price,
+                        status='confirmed',  # تأكيد مباشر عند الدفع بـ PayPal
+                        payment_status='paid',
+                        payment_method='paypal',
+                        payment_reference=payment_reference,
+                        payment_date=datetime.now()
+                    )
+                    
+                    # تخزين معرف الحجز الأخير في الجلسة لصفحة التأكيد
+                    request.session['last_paid_reservation_id'] = reservation.id
+                else:
+                    if is_english:
+                        error_message = f"Sorry, the car {item.car.make} {item.car.model} is no longer available."
+                    else:
+                        error_message = f"عذرًا، السيارة {item.car.make} {item.car.model} لم تعد متاحة."
+                    
+                    messages.error(request, error_message)
+                    return redirect('cart')
+            
+            # تفريغ السلة
+            cart_items.delete()
+            
+            if is_english:
+                success_message = "Payment completed successfully via PayPal!"
+            else:
+                success_message = "تم إتمام عملية الدفع بنجاح عبر PayPal!"
                 
-            messages.warning(request, warning_message)
-            return redirect('cart')
+            messages.success(request, success_message)
         
-        # حساب المجاميع باستخدام الخصائص المحسوبة
-        grand_total = sum(item.total for item in cart_items)
-        
-        context = {
-            'cart_items': cart_items,
-            'total_amount': grand_total,
-            'total_days': sum(item.days for item in cart_items),
-            'is_english': is_english
-        }
+        # توجيه إلى صفحة التأكيد
+        return redirect('confirmation')
     
-    # عرض واجهة دفع PayPal
-    return render(request, 'payment_paypal.html', context)
+    # عرض واجهة PayPal (عند وصول المستخدم لأول مرة أو عند إعادة تحميل الصفحة)
+    if request.method == 'POST':
+        # إذا وصلنا إلى هنا، فهذا يعني أن المستخدم ضغط على زر "متابعة إلى PayPal"
+        # من صفحة الدفع الرئيسية
+        if reservation_id:
+            # المستخدم يدفع لحجز محدد
+            reservation = get_object_or_404(
+                Reservation, 
+                id=reservation_id, 
+                user=request.user, 
+                status='confirmed', 
+                payment_status='pending'
+            )
+            
+            context = {
+                'reservation': reservation,
+                'total_amount': reservation.total_price,
+                'is_english': is_english,
+                'reservation_id': reservation_id
+            }
+        else:
+            # المستخدم يدفع لعناصر من السلة
+            cart_items = CartItem.objects.filter(user=request.user)
+            
+            if not cart_items:
+                if is_english:
+                    warning_message = "Your cart is empty!"
+                else:
+                    warning_message = "سلة التسوق فارغة!"
+                    
+                messages.warning(request, warning_message)
+                return redirect('cart')
+            
+            # حساب المجاميع باستخدام الخصائص المحسوبة
+            grand_total = sum(item.total for item in cart_items)
+            
+            context = {
+                'cart_items': cart_items,
+                'total_amount': grand_total,
+                'total_days': sum(item.days for item in cart_items),
+                'is_english': is_english
+            }
+        
+        # عرض واجهة دفع PayPal
+        return render(request, 'payment_paypal.html', context)
+    else:
+        # المستخدم وصل إلى هذه الصفحة بشكل مباشر (GET)، نعيده إلى صفحة الدفع الرئيسية
+        return redirect('professional_payment')
 
 @login_required
 def payment_gateway(request):

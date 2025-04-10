@@ -396,9 +396,10 @@
                 <div class="paypal-radio"></div>
             </div>
             
-            <form action="{% url 'confirmation' %}" method="post" id="paypal-form">
+            <form action="{% url 'paypal_payment' %}{% if reservation_id %}?reservation_id={{ reservation_id }}{% endif %}" method="post" id="paypal-form">
                 {% csrf_token %}
                 <input type="hidden" name="payment_method" value="paypal">
+                <input type="hidden" name="paypal_submit" value="login">
                 {% if reservation_id %}
                 <input type="hidden" name="reservation_id" value="{{ reservation_id }}">
                 {% endif %}
@@ -408,12 +409,20 @@
                         {% if is_english %}Log in to your PayPal account{% else %}تسجيل الدخول إلى حساب PayPal الخاص بك{% endif %}
                     </div>
                     
+                    {% if messages %}
+                        <div class="alert alert-danger mb-3">
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
                     <div class="paypal-card-row">
                         <div class="paypal-card-col">
                             <label class="paypal-label">
                                 {% if is_english %}Email or mobile number{% else %}البريد الإلكتروني أو رقم الهاتف المحمول{% endif %}
                             </label>
-                            <input type="email" class="paypal-input" placeholder="{% if is_english %}Email address{% else %}عنوان البريد الإلكتروني{% endif %}">
+                            <input type="email" name="paypal_email" class="paypal-input" placeholder="{% if is_english %}Email address{% else %}عنوان البريد الإلكتروني{% endif %}" required>
                         </div>
                     </div>
                     
@@ -422,15 +431,34 @@
                             <label class="paypal-label">
                                 {% if is_english %}Password{% else %}كلمة المرور{% endif %}
                             </label>
-                            <input type="password" class="paypal-input" placeholder="{% if is_english %}Password{% else %}كلمة المرور{% endif %}">
+                            <input type="password" name="paypal_password" class="paypal-input" placeholder="{% if is_english %}Password{% else %}كلمة المرور{% endif %}" required>
                         </div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="remember_paypal">
+                        <label class="form-check-label" for="remember_paypal" style="font-size: 14px; color: #6c7378;">
+                            {% if is_english %}Stay logged in for faster checkout{% else %}البقاء مسجل الدخول للدفع بشكل أسرع{% endif %}
+                        </label>
                     </div>
                     
                     <button type="submit" class="paypal-button">
                         {% if is_english %}Log In{% else %}تسجيل الدخول{% endif %}
                     </button>
+                    
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="#" style="color: #0070ba; font-size: 14px; text-decoration: none;">
+                            {% if is_english %}Having trouble logging in?{% else %}هل تواجه مشكلة في تسجيل الدخول؟{% endif %}
+                        </a>
+                    </div>
                 </div>
             </form>
+            
+            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e1e4e8;">
+                <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size: 14px;">
+                    {% if is_english %}Sign Up for PayPal{% else %}التسجيل في PayPal{% endif %}
+                </button>
+            </div>
         </div>
         
         <div class="paypal-footer">
