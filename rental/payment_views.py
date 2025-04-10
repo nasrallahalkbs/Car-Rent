@@ -88,13 +88,9 @@ def professional_payment(request):
             messages.warning(request, _("سلة التسوق فارغة!"))
             return redirect('cart')
         
-        # حساب المجاميع
-        grand_total = 0
-        for item in cart_items:
-            delta = (item.end_date - item.start_date).days + 1
-            item.days = delta
-            item.total = item.car.daily_rate * delta
-            grand_total += item.total
+        # حساب المجاميع باستخدام الخصائص المحسوبة
+        # نستخدم الخواص المحسوبة days و total التي أضفناها لنموذج CartItem
+        grand_total = sum(item.total for item in cart_items)
         
         if request.method == 'POST':
             payment_method = request.POST.get('payment_method', 'credit_card')
@@ -220,13 +216,9 @@ def international_payment(request):
             messages.warning(request, warning_message)
             return redirect('cart')
         
-        # حساب المجاميع
-        grand_total = 0
-        for item in cart_items:
-            delta = (item.end_date - item.start_date).days + 1
-            item.days = delta
-            item.total = item.car.daily_rate * delta
-            grand_total += item.total
+        # حساب المجاميع باستخدام الخصائص المحسوبة
+        # نستخدم الخواص المحسوبة days و total التي أضفناها لنموذج CartItem
+        grand_total = sum(item.total for item in cart_items)
         
         if request.method == 'POST':
             payment_method = request.POST.get('payment_method', 'credit_card')
