@@ -1,1 +1,67 @@
-cancel_reservation.html
+{% extends 'layout_django.html' %}
+{% load i18n %}
+
+{% block title %}Cancel Reservation{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow mb-5">
+        <div class="card-header bg-danger text-white">
+            <h2 class="mb-0">Cancel Reservation</h2>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h4 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Warning!</h4>
+                <p>You are about to cancel your reservation for:</p>
+                <h5 class="mt-3">{{ reservation.car.make }} {{ reservation.car.model }} ({{ reservation.car.year }})</h5>
+                <p><strong>Pick-up Date:</strong> {{ reservation.start_date|date:"F d, Y" }}</p>
+                <p><strong>Return Date:</strong> {{ reservation.end_date|date:"F d, Y" }}</p>
+                <p><strong>Total Price:</strong> ${{ reservation.total_price|floatformat:2 }}</p>
+                <hr>
+                <p class="mb-0">This action cannot be undone. Are you sure you want to cancel this reservation?</p>
+            </div>
+            
+            <div class="refund-policy-section mt-4">
+                <h4>Refund Policy</h4>
+                <p>According to our cancellation policy:</p>
+                <ul>
+                    <li>Cancellations more than 48 hours before pickup: <strong>Full refund</strong></li>
+                    <li>Cancellations between 24-48 hours before pickup: <strong>80% refund</strong></li>
+                    <li>Cancellations less than 24 hours before pickup: <strong>50% refund</strong></li>
+                    <li>No-shows: <strong>No refund</strong></li>
+                </ul>
+                <p>Based on your cancellation time, you will receive: <strong>Full refund (${{ reservation.total_price|floatformat:2 }})</strong></p>
+            </div>
+            
+            <div class="d-flex justify-content-center mt-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger me-3">
+                        <i class="bi bi-x-circle"></i> Yes, Cancel My Reservation
+                    </button>
+                    <a href="{% url 'reservation_detail' reservation.id %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> No, Go Back
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mb-5">
+        <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to My Reservations
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .refund-policy-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        border-left: 5px solid #6c757d;
+    }
+</style>
+{% endblock %}
