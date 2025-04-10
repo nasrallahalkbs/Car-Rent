@@ -271,12 +271,11 @@ def cart_view(request):
     grand_total = 0
     total_days = 0
     for item in cart_items:
-        # Calculate days (inclusive)
-        delta = (item.end_date - item.start_date).days + 1
-        item.days = delta
-        total_days += delta
-        item.total = item.car.daily_rate * delta
-        grand_total += item.total
+        # Use the computed property days instead of setting it directly
+        days = item.days  # This will call the @property
+        total_days += days
+        # Use the computed property total instead of setting it
+        grand_total += item.total  # This will call the @property
     
     context = {
         'cart_items': cart_items,
@@ -401,10 +400,8 @@ def checkout_new(request):
         # Calculate totals
         grand_total = 0
         for item in cart_items:
-            delta = (item.end_date - item.start_date).days + 1
-            item.days = delta
-            item.total = item.car.daily_rate * delta
-            grand_total += item.total
+            # Use the computed properties instead of setting them directly
+            grand_total += item.total  # This will use the @property
         
         # Handle POST request (create reservations)
         if request.method == 'POST':
