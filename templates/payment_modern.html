@@ -928,9 +928,13 @@
                                         </div>
                                     </div>
                                     <div class="paypal-action-buttons">
-                                        <button type="button" class="paypal-continue-btn" onclick="document.getElementById('payment-form').submit();">
-                                            <i class="fas fa-lock me-2"></i>{% trans 'متابعة إلى PayPal' %}
-                                        </button>
+                                        <form action="{% url 'paypal_payment' %}{% if not from_cart %}?reservation_id={{ reservation.id }}{% endif %}" method="post" id="paypal-redirect-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="payment_method" value="paypal">
+                                            <button type="submit" class="paypal-continue-btn">
+                                                <i class="fas fa-lock me-2"></i>{% trans 'متابعة إلى PayPal' %}
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>

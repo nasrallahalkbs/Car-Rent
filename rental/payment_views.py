@@ -276,6 +276,65 @@ def international_payment(request):
     return render(request, 'payment_international.html', context)
 
 @login_required
+def paypal_payment(request):
+    """
+    واجهة دفع PayPal متطورة مطابقة للواجهة العالمية
+    تحول المستخدم إلى PayPal لإتمام عملية الدفع
+    """
+    # التحقق مما إذا كان المستخدم يأتي من حجز محدد
+    reservation_id = request.GET.get('reservation_id')
+    
+    # تحديد لغة المستخدم
+    current_language = get_language()
+    is_english = current_language == 'en'
+    
+    if request.method != 'POST':
+        return redirect('professional_payment')
+    
+    # إنشاء نموذج واجهة PayPal وعرضه
+    if reservation_id:
+        # المستخدم يدفع لحجز محدد
+        reservation = get_object_or_404(
+            Reservation, 
+            id=reservation_id, 
+            user=request.user, 
+            status='confirmed', 
+            payment_status='pending'
+        )
+        
+        context = {
+            'reservation': reservation,
+            'total_amount': reservation.total_price,
+            'is_english': is_english,
+            'reservation_id': reservation_id
+        }
+    else:
+        # المستخدم يدفع لعناصر من السلة
+        cart_items = CartItem.objects.filter(user=request.user)
+        
+        if not cart_items:
+            if is_english:
+                warning_message = "Your cart is empty!"
+            else:
+                warning_message = "سلة التسوق فارغة!"
+                
+            messages.warning(request, warning_message)
+            return redirect('cart')
+        
+        # حساب المجاميع باستخدام الخصائص المحسوبة
+        grand_total = sum(item.total for item in cart_items)
+        
+        context = {
+            'cart_items': cart_items,
+            'total_amount': grand_total,
+            'total_days': sum(item.days for item in cart_items),
+            'is_english': is_english
+        }
+    
+    # عرض واجهة دفع PayPal
+    return render(request, 'payment_paypal.html', context)
+
+@login_required
 def payment_gateway(request):
     """
     واجهة دفع عالمية متطورة تطابق معايير بوابات الدفع العالمية
