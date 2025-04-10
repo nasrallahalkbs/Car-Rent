@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.translation import gettext as _
+from django.utils.translation import get_language
 from .models import Reservation, CartItem
 from .utils import get_car_availability, calculate_total_price
 from datetime import datetime
@@ -142,3 +143,143 @@ def professional_payment(request):
         }
     
     return render(request, 'payment_modern.html', context)
+
+@login_required
+def international_payment(request):
+    """واجهة دفع دولية متطورة تتوافق مع معايير بوابات الدفع العالمية"""
+    # التحقق مما إذا كان المستخدم يأتي من حجز محدد
+    reservation_id = request.GET.get('reservation_id')
+    
+    # تحديد لغة المستخدم
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    if reservation_id:
+        # المستخدم يدفع لحجز محدد
+        reservation = get_object_or_404(
+            Reservation, 
+            id=reservation_id, 
+            user=request.user, 
+            status='confirmed', 
+            payment_status='pending'
+        )
+        
+        # حساب عدد الأيام
+        delta = (reservation.end_date - reservation.start_date).days + 1
+        reservation.days = delta
+        
+        # معالجة طلب الدفع
+        if request.method == 'POST':
+            payment_method = request.POST.get('payment_method', 'credit_card')
+            
+            # إنشاء رقم مرجعي للدفع
+            payment_reference = f"PAY-{uuid.uuid4().hex[:8].upper()}"
+            
+            # تحديث حالة الحجز
+            reservation.payment_status = 'paid'
+            reservation.payment_reference = payment_reference
+            reservation.payment_method = payment_method
+            reservation.payment_date = datetime.now()
+            
+            # إذا تم الدفع، قم بتحديث الحالة إلى "مكتمل" إذا كان "مؤكد"
+            if reservation.status == 'confirmed':
+                reservation.status = 'completed'
+            
+            reservation.save()
+            
+            # رسالة نجاح
+            if is_english:
+                success_message = "Payment completed successfully!"
+            else:
+                success_message = "تم إتمام عملية الدفع بنجاح!"
+            
+            messages.success(request, success_message)
+            
+            # تخزين معرف الحجز في الجلسة لصفحة التأكيد
+            request.session['last_paid_reservation_id'] = reservation.id
+            
+            return redirect('confirmation')
+        
+        context = {
+            'reservation': reservation,
+            'total_amount': reservation.total_price,
+            'from_cart': False,
+            'is_english': is_english,
+            'is_rtl': is_rtl
+        }
+    else:
+        # المستخدم يدفع لعناصر من السلة
+        cart_items = CartItem.objects.filter(user=request.user)
+        
+        if not cart_items:
+            if is_english:
+                warning_message = "Your cart is empty!"
+            else:
+                warning_message = "سلة التسوق فارغة!"
+                
+            messages.warning(request, warning_message)
+            return redirect('cart')
+        
+        # حساب المجاميع
+        grand_total = 0
+        for item in cart_items:
+            delta = (item.end_date - item.start_date).days + 1
+            item.days = delta
+            item.total = item.car.daily_rate * delta
+            grand_total += item.total
+        
+        if request.method == 'POST':
+            payment_method = request.POST.get('payment_method', 'credit_card')
+            
+            # إنشاء رقم مرجعي للدفع
+            payment_reference = f"PAY-{uuid.uuid4().hex[:8].upper()}"
+            
+            # إنشاء حجوزات لجميع عناصر السلة
+            for item in cart_items:
+                # التحقق من توفر السيارة
+                if get_car_availability(item.car.id, item.start_date, item.end_date):
+                    total_price = calculate_total_price(item.car, item.start_date, item.end_date)
+                    
+                    # إنشاء حجز بحالة معلقة في البداية
+                    reservation = Reservation.objects.create(
+                        user=request.user,
+                        car=item.car,
+                        start_date=item.start_date,
+                        end_date=item.end_date,
+                        total_price=total_price,
+                        status='pending',  # جميع الحجوزات تبدأ كمعلقة
+                        payment_status='pending',
+                        payment_method=payment_method,
+                        payment_reference=payment_reference
+                    )
+                else:
+                    if is_english:
+                        error_message = f"Sorry, the car {item.car.make} {item.car.model} is no longer available for the selected dates."
+                    else:
+                        error_message = f"عذرًا، السيارة {item.car.make} {item.car.model} لم تعد متاحة في التواريخ المحددة."
+                    
+                    messages.error(request, error_message)
+                    return redirect('cart')
+            
+            # تفريغ السلة
+            cart_items.delete()
+            
+            if is_english:
+                success_message = "Booking request submitted successfully! Please wait for administrator approval."
+            else:
+                success_message = "تم إرسال طلب الحجز بنجاح! يرجى انتظار موافقة المسؤول."
+                
+            messages.success(request, success_message)
+            return redirect('confirmation')
+        
+        context = {
+            'cart_items': cart_items,
+            'total_amount': grand_total,
+            'total_days': sum(item.days for item in cart_items),
+            'from_cart': True,
+            'is_english': is_english,
+            'is_rtl': is_rtl
+        }
+    
+    return render(request, 'payment_international.html', context)
