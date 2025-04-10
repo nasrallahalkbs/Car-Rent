@@ -287,31 +287,54 @@ def paypal_payment(request):
     # تحديد لغة المستخدم
     current_language = get_language()
     is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
     
     # التعامل مع عملية تسجيل الدخول PayPal وإتمام الدفع
-    if request.method == 'POST' and request.POST.get('paypal_submit') == 'login':
-        # التحقق من تواجد الحقول المطلوبة
-        paypal_email = request.POST.get('paypal_email')
-        paypal_password = request.POST.get('paypal_password')
+    if request.method == 'POST' and (request.POST.get('paypal_submit') == 'login' or request.POST.get('paypal_submit') == 'card'):
+        payment_method = request.POST.get('payment_method', 'paypal')
         
-        if not paypal_email or not paypal_password:
-            if is_english:
-                error_message = "Please enter your email and password."
-            else:
-                error_message = "يرجى إدخال البريد الإلكتروني وكلمة المرور."
+        # التحقق من تواجد الحقول المطلوبة حسب طريقة الدفع
+        if payment_method == 'paypal':
+            paypal_email = request.POST.get('paypal_email')
+            paypal_password = request.POST.get('paypal_password')
             
-            messages.error(request, error_message)
+            if not paypal_email or not paypal_password:
+                if is_english:
+                    error_message = "Please enter your email and password."
+                else:
+                    error_message = "يرجى إدخال البريد الإلكتروني وكلمة المرور."
+                
+                messages.error(request, error_message)
+                
+                # إعادة تقديم نموذج PayPal مع بيانات السياق
+                if reservation_id:
+                    return redirect(f'/payment/paypal/?reservation_id={reservation_id}')
+                else:
+                    return redirect('/payment/paypal/')
+        elif payment_method == 'credit_card':
+            card_number = request.POST.get('card_number')
+            card_expiry = request.POST.get('card_expiry')
+            card_cvv = request.POST.get('card_cvv')
+            card_name = request.POST.get('card_name')
             
-            # إعادة تقديم نموذج PayPal مع بيانات السياق
-            if reservation_id:
-                return redirect(f'/payment/paypal/?reservation_id={reservation_id}')
-            else:
-                return redirect('/payment/paypal/')
+            if not card_number or not card_expiry or not card_cvv or not card_name:
+                if is_english:
+                    error_message = "Please fill in all card details."
+                else:
+                    error_message = "يرجى ملء جميع تفاصيل البطاقة."
+                
+                messages.error(request, error_message)
+                
+                # إعادة تقديم نموذج البطاقة مع بيانات السياق
+                if reservation_id:
+                    return redirect(f'/payment/paypal/?reservation_id={reservation_id}')
+                else:
+                    return redirect('/payment/paypal/')
         
-        # في الواقع، هنا سنتواصل مع API الخاص بـ PayPal
+        # في الواقع، هنا سنتواصل مع API الخاص بـ PayPal أو معالج بطاقة الائتمان
         # لكن في هذا المثال، سنفترض أن عملية الدفع تمت بنجاح
         
-        # لكل من الحجز والسلة
+        # معالجة الدفع لكل من الحجز والسلة
         if reservation_id:
             # المستخدم يدفع لحجز محدد
             reservation = get_object_or_404(
@@ -322,13 +345,16 @@ def paypal_payment(request):
                 payment_status='pending'
             )
             
-            # إنشاء رقم مرجعي للدفع
-            payment_reference = f"PP-{uuid.uuid4().hex[:8].upper()}"
+            # إنشاء رقم مرجعي للدفع حسب طريقة الدفع
+            if payment_method == 'paypal':
+                payment_reference = f"PP-{uuid.uuid4().hex[:8].upper()}"
+            else:
+                payment_reference = f"CC-{uuid.uuid4().hex[:8].upper()}"
             
             # تحديث حالة الحجز
             reservation.payment_status = 'paid'
             reservation.payment_reference = payment_reference
-            reservation.payment_method = 'paypal'
+            reservation.payment_method = payment_method
             reservation.payment_date = datetime.now()
             
             # إذا تم الدفع، قم بتحديث الحالة إلى "مكتمل" إذا كان "مؤكد"
@@ -340,10 +366,17 @@ def paypal_payment(request):
             # تخزين معرف الحجز في الجلسة لصفحة التأكيد
             request.session['last_paid_reservation_id'] = reservation.id
             
-            if is_english:
-                success_message = "Payment completed successfully via PayPal!"
+            # رسالة نجاح حسب طريقة الدفع المستخدمة
+            if payment_method == 'paypal':
+                if is_english:
+                    success_message = "Payment completed successfully via PayPal!"
+                else:
+                    success_message = "تم إتمام عملية الدفع بنجاح عبر PayPal!"
             else:
-                success_message = "تم إتمام عملية الدفع بنجاح عبر PayPal!"
+                if is_english:
+                    success_message = "Payment completed successfully via Credit Card!"
+                else:
+                    success_message = "تم إتمام عملية الدفع بنجاح عبر بطاقة الائتمان!"
             
             messages.success(request, success_message)
             
@@ -360,8 +393,11 @@ def paypal_payment(request):
                 messages.warning(request, warning_message)
                 return redirect('cart')
             
-            # إنشاء رقم مرجعي للدفع
-            payment_reference = f"PP-{uuid.uuid4().hex[:8].upper()}"
+            # إنشاء رقم مرجعي للدفع حسب طريقة الدفع
+            if payment_method == 'paypal':
+                payment_reference = f"PP-{uuid.uuid4().hex[:8].upper()}"
+            else:
+                payment_reference = f"CC-{uuid.uuid4().hex[:8].upper()}"
             
             # إنشاء حجوزات لجميع عناصر السلة
             for item in cart_items:
@@ -376,9 +412,9 @@ def paypal_payment(request):
                         start_date=item.start_date,
                         end_date=item.end_date,
                         total_price=total_price,
-                        status='confirmed',  # تأكيد مباشر عند الدفع بـ PayPal
+                        status='confirmed',  # تأكيد مباشر عند الدفع
                         payment_status='paid',
-                        payment_method='paypal',
+                        payment_method=payment_method,
                         payment_reference=payment_reference,
                         payment_date=datetime.now()
                     )
@@ -397,10 +433,17 @@ def paypal_payment(request):
             # تفريغ السلة
             cart_items.delete()
             
-            if is_english:
-                success_message = "Payment completed successfully via PayPal!"
+            # رسالة نجاح حسب طريقة الدفع المستخدمة
+            if payment_method == 'paypal':
+                if is_english:
+                    success_message = "Payment completed successfully via PayPal!"
+                else:
+                    success_message = "تم إتمام عملية الدفع بنجاح عبر PayPal!"
             else:
-                success_message = "تم إتمام عملية الدفع بنجاح عبر PayPal!"
+                if is_english:
+                    success_message = "Payment completed successfully via Credit Card!"
+                else:
+                    success_message = "تم إتمام عملية الدفع بنجاح عبر بطاقة الائتمان!"
                 
             messages.success(request, success_message)
         
@@ -425,6 +468,7 @@ def paypal_payment(request):
                 'reservation': reservation,
                 'total_amount': reservation.total_price,
                 'is_english': is_english,
+                'is_rtl': is_rtl,
                 'reservation_id': reservation_id
             }
         else:
@@ -447,11 +491,12 @@ def paypal_payment(request):
                 'cart_items': cart_items,
                 'total_amount': grand_total,
                 'total_days': sum(item.days for item in cart_items),
-                'is_english': is_english
+                'is_english': is_english,
+                'is_rtl': is_rtl
             }
         
-        # عرض واجهة دفع PayPal
-        return render(request, 'payment_paypal.html', context)
+        # عرض واجهة دفع PayPal المحسنة
+        return render(request, 'payment_paypal_enhanced.html', context)
     else:
         # المستخدم وصل إلى هذه الصفحة بشكل مباشر (GET)، نعيده إلى صفحة الدفع الرئيسية
         return redirect('professional_payment')

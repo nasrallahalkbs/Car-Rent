@@ -1,0 +1,858 @@
+{% extends 'layout_django.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% if is_english %}PayPal Secure Payment{% else %}دفع آمن عبر PayPal{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern PayPal Payment Gateway Styles */
+    :root {
+        --pp-blue: #0070ba;
+        --pp-dark-blue: #003087;
+        --pp-light-blue: #f0f8ff;
+        --pp-hover-blue: #005ea6;
+        --pp-black: #2c2e2f;
+        --pp-dark-gray: #6c7378;
+        --pp-gray: #9da3a6;
+        --pp-light-gray: #f5f7fa;
+        --pp-border: #e1e4e8;
+        --pp-white: #ffffff;
+        --pp-error: #c72e2e;
+        --pp-success: #26a65b;
+    }
+
+    body {
+        background-color: var(--pp-light-gray);
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    .pp-container {
+        max-width: 550px;
+        margin: 40px auto;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .pp-header {
+        background: linear-gradient(135deg, var(--pp-dark-blue) 0%, var(--pp-blue) 100%);
+        padding: 20px 30px;
+        text-align: center;
+    }
+
+    .pp-logo {
+        height: 40px;
+        filter: brightness(0) invert(1);
+    }
+
+    .pp-body {
+        background-color: var(--pp-white);
+        padding: 30px;
+    }
+
+    .pp-section {
+        margin-bottom: 30px;
+    }
+
+    .pp-title {
+        font-size: 22px;
+        font-weight: 400;
+        color: var(--pp-black);
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .pp-subtitle {
+        font-size: 16px;
+        color: var(--pp-dark-gray);
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .pp-summary {
+        background-color: var(--pp-light-gray);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+
+    .pp-summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .pp-summary-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .pp-summary-label {
+        color: var(--pp-dark-gray);
+        font-size: 14px;
+    }
+
+    .pp-summary-value {
+        font-weight: 500;
+        color: var(--pp-black);
+        font-size: 14px;
+    }
+
+    .pp-summary-total {
+        border-top: 1px solid var(--pp-border);
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+
+    .pp-summary-total .pp-summary-label,
+    .pp-summary-total .pp-summary-value {
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .pp-login-form {
+        background-color: var(--pp-white);
+        border-radius: 8px;
+        border: 1px solid var(--pp-border);
+        padding: 25px;
+        margin-top: 20px;
+        position: relative;
+    }
+
+    .pp-form-group {
+        margin-bottom: 20px;
+    }
+
+    .pp-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--pp-black);
+        margin-bottom: 8px;
+    }
+
+    .pp-input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid var(--pp-border);
+        border-radius: 4px;
+        font-size: 15px;
+        color: var(--pp-black);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .pp-input:focus {
+        border-color: var(--pp-blue);
+        box-shadow: 0 0 0 2px rgba(0, 112, 186, 0.2);
+        outline: none;
+    }
+
+    .pp-input.error {
+        border-color: var(--pp-error);
+    }
+
+    .pp-error-message {
+        font-size: 13px;
+        color: var(--pp-error);
+        margin-top: 5px;
+        display: none;
+    }
+
+    .pp-error-message.visible {
+        display: block;
+    }
+
+    .pp-checkbox {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .pp-checkbox input[type="checkbox"] {
+        margin-right: 10px;
+        margin-top: 3px;
+    }
+
+    .pp-checkbox label {
+        font-size: 14px;
+        color: var(--pp-dark-gray);
+        line-height: 1.4;
+    }
+
+    .pp-button {
+        background-color: var(--pp-blue);
+        color: var(--pp-white);
+        border: none;
+        padding: 14px 20px;
+        font-size: 16px;
+        border-radius: 25px;
+        cursor: pointer;
+        width: 100%;
+        font-weight: 500;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        margin-bottom: 15px;
+    }
+
+    .pp-button:hover {
+        background-color: var(--pp-hover-blue);
+    }
+
+    .pp-button:active {
+        transform: scale(0.98);
+    }
+
+    .pp-secondary-button {
+        background-color: transparent;
+        color: var(--pp-blue);
+        border: 2px solid var(--pp-blue);
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 25px;
+        cursor: pointer;
+        width: 100%;
+        font-weight: 500;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .pp-secondary-button:hover {
+        background-color: var(--pp-light-blue);
+    }
+
+    .pp-link {
+        color: var(--pp-blue);
+        text-decoration: none;
+        font-size: 14px;
+        display: inline-block;
+        margin-top: 15px;
+    }
+
+    .pp-link:hover {
+        text-decoration: underline;
+    }
+
+    .pp-divider {
+        display: flex;
+        align-items: center;
+        margin: 25px 0;
+        color: var(--pp-gray);
+        font-size: 14px;
+    }
+
+    .pp-divider::before,
+    .pp-divider::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid var(--pp-border);
+    }
+
+    .pp-divider::before {
+        margin-right: 15px;
+    }
+
+    .pp-divider::after {
+        margin-left: 15px;
+    }
+
+    .pp-footer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 25px;
+        flex-wrap: wrap;
+    }
+
+    .pp-cards {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        width: 100%;
+    }
+
+    .pp-cards img {
+        height: 25px;
+        margin: 0 8px;
+        opacity: 0.7;
+    }
+
+    .pp-secure-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 15px;
+        width: 100%;
+        color: var(--pp-dark-gray);
+        font-size: 13px;
+    }
+
+    .pp-secure-badge i {
+        margin-right: 8px;
+        color: var(--pp-success);
+    }
+
+    .pp-notice {
+        font-size: 12px;
+        color: var(--pp-dark-gray);
+        text-align: center;
+        margin-top: 20px;
+        line-height: 1.5;
+    }
+
+    .pp-alert {
+        padding: 12px 15px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+    }
+
+    .pp-alert i {
+        margin-right: 10px;
+        font-size: 16px;
+    }
+
+    .pp-alert-danger {
+        background-color: #fdf2f2;
+        color: var(--pp-error);
+        border: 1px solid #fbd5d5;
+    }
+
+    /* Language specific styles */
+    .rtl .pp-checkbox input[type="checkbox"] {
+        margin-right: 0;
+        margin-left: 10px;
+    }
+
+    .rtl .pp-secure-badge i,
+    .rtl .pp-alert i {
+        margin-right: 0;
+        margin-left: 8px;
+    }
+
+    .rtl .pp-divider::before {
+        margin-right: 0;
+        margin-left: 15px;
+    }
+
+    .rtl .pp-divider::after {
+        margin-left: 0;
+        margin-right: 15px;
+    }
+
+    /* Credit card section */
+    .pp-card-form {
+        display: none;
+    }
+
+    .pp-card-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -10px;
+    }
+
+    .pp-card-col {
+        flex: 1;
+        padding: 0 10px;
+        min-width: 200px;
+    }
+
+    .pp-card-col-small {
+        flex: 0 0 calc(50% - 20px);
+        padding: 0 10px;
+    }
+    
+    .pp-card-icons {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .pp-card-icons img {
+        height: 30px;
+        margin-right: 10px;
+    }
+    
+    .rtl .pp-card-icons img {
+        margin-right: 0;
+        margin-left: 10px;
+    }
+
+    /* Payment methods */
+    .pp-payment-methods {
+        margin-bottom: 25px;
+    }
+
+    .pp-payment-method {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border: 1px solid var(--pp-border);
+        border-radius: 5px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .pp-payment-method:hover {
+        border-color: var(--pp-blue);
+    }
+
+    .pp-payment-method.selected {
+        border-color: var(--pp-blue);
+        background-color: var(--pp-light-blue);
+    }
+
+    .pp-payment-icon {
+        width: 50px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+
+    .pp-payment-icon img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .pp-payment-info {
+        flex-grow: 1;
+    }
+
+    .pp-payment-title {
+        font-weight: 500;
+        color: var(--pp-black);
+        margin-bottom: 4px;
+        font-size: 15px;
+    }
+
+    .pp-payment-subtitle {
+        font-size: 13px;
+        color: var(--pp-dark-gray);
+    }
+
+    .pp-payment-radio {
+        position: relative;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--pp-border);
+        border-radius: 50%;
+    }
+
+    .pp-payment-method.selected .pp-payment-radio {
+        border-color: var(--pp-blue);
+    }
+
+    .pp-payment-method.selected .pp-payment-radio::after {
+        content: '';
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: var(--pp-blue);
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .rtl .pp-payment-icon {
+        margin-right: 0;
+        margin-left: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pp-container {% if not is_english %}rtl{% endif %}">
+    <div class="pp-header">
+        <img src="{% static 'images/paypal.svg' %}" alt="PayPal" class="pp-logo">
+    </div>
+    
+    <div class="pp-body">
+        <!-- Summary Section -->
+        <div class="pp-section">
+            <h2 class="pp-title">
+                {% if is_english %}Complete your payment{% else %}أكمل عملية الدفع{% endif %}
+            </h2>
+            
+            <div class="pp-summary">
+                <div class="pp-summary-row">
+                    <div class="pp-summary-label">
+                        {% if is_english %}Merchant{% else %}التاجر{% endif %}
+                    </div>
+                    <div class="pp-summary-value">
+                        CarRental Services
+                    </div>
+                </div>
+                
+                {% if reservation %}
+                    <div class="pp-summary-row">
+                        <div class="pp-summary-label">
+                            {% if is_english %}Reservation{% else %}رقم الحجز{% endif %}
+                        </div>
+                        <div class="pp-summary-value">
+                            {{ reservation.reservation_number }}
+                        </div>
+                    </div>
+                
+                    <div class="pp-summary-row">
+                        <div class="pp-summary-label">
+                            {% if is_english %}Car{% else %}السيارة{% endif %}
+                        </div>
+                        <div class="pp-summary-value">
+                            {{ reservation.car.make }} {{ reservation.car.model }}
+                        </div>
+                    </div>
+                    
+                    <div class="pp-summary-row">
+                        <div class="pp-summary-label">
+                            {% if is_english %}Period{% else %}الفترة{% endif %}
+                        </div>
+                        <div class="pp-summary-value">
+                            {% if is_english %}
+                                {{ reservation.start_date|date:"M d, Y" }} - {{ reservation.end_date|date:"M d, Y" }}
+                            {% else %}
+                                {{ reservation.start_date|date:"Y/m/d" }} - {{ reservation.end_date|date:"Y/m/d" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="pp-summary-row">
+                        <div class="pp-summary-label">
+                            {% if is_english %}Items{% else %}العناصر{% endif %}
+                        </div>
+                        <div class="pp-summary-value">
+                            {{ cart_items.count }}
+                        </div>
+                    </div>
+                    
+                    <div class="pp-summary-row">
+                        <div class="pp-summary-label">
+                            {% if is_english %}Period{% else %}إجمالي الأيام{% endif %}
+                        </div>
+                        <div class="pp-summary-value">
+                            {{ total_days }} {% if is_english %}days{% else %}يوم{% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="pp-summary-row pp-summary-total">
+                    <div class="pp-summary-label">
+                        {% if is_english %}Total{% else %}المجموع{% endif %}
+                    </div>
+                    <div class="pp-summary-value">
+                        {{ total_amount }} {% if is_english %}JOD{% else %}دينار{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Method Section -->
+        <div class="pp-section">
+            <h3 class="pp-title">
+                {% if is_english %}Choose a way to pay{% else %}اختر طريقة الدفع{% endif %}
+            </h3>
+            
+            <div class="pp-payment-methods">
+                <div class="pp-payment-method selected" data-method="paypal">
+                    <div class="pp-payment-icon">
+                        <img src="{% static 'images/paypal.svg' %}" alt="PayPal">
+                    </div>
+                    <div class="pp-payment-info">
+                        <div class="pp-payment-title">PayPal</div>
+                        <div class="pp-payment-subtitle">
+                            {% if is_english %}Fast, secure, and convenient{% else %}سريع وآمن ومريح{% endif %}
+                        </div>
+                    </div>
+                    <div class="pp-payment-radio"></div>
+                </div>
+                
+                <div class="pp-payment-method" data-method="card">
+                    <div class="pp-payment-icon">
+                        <img src="{% static 'images/credit-card.svg' %}" alt="Credit Card">
+                    </div>
+                    <div class="pp-payment-info">
+                        <div class="pp-payment-title">
+                            {% if is_english %}Credit / Debit Card{% else %}بطاقة ائتمان / خصم{% endif %}
+                        </div>
+                        <div class="pp-payment-subtitle">
+                            {% if is_english %}Visa, Mastercard, American Express{% else %}فيزا، ماستركارد، أمريكان إكسبرس{% endif %}
+                        </div>
+                    </div>
+                    <div class="pp-payment-radio"></div>
+                </div>
+            </div>
+            
+            <!-- PayPal Login Form -->
+            <div id="paypal-form-section" class="pp-login-form">
+                {% if messages %}
+                    <div class="pp-alert pp-alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {% for message in messages %}
+                            {{ message }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <form action="{% url 'paypal_payment' %}{% if reservation_id %}?reservation_id={{ reservation_id }}{% endif %}" method="post" id="paypal-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="payment_method" value="paypal">
+                    <input type="hidden" name="paypal_submit" value="login">
+                    {% if reservation_id %}
+                        <input type="hidden" name="reservation_id" value="{{ reservation_id }}">
+                    {% endif %}
+                    
+                    <div class="pp-form-group">
+                        <label class="pp-label">
+                            {% if is_english %}Email or mobile number{% else %}البريد الإلكتروني أو رقم الهاتف المحمول{% endif %}
+                        </label>
+                        <input type="email" name="paypal_email" class="pp-input" required>
+                        <div class="pp-error-message" id="email-error">
+                            {% if is_english %}Please enter a valid email address{% else %}يرجى إدخال عنوان بريد إلكتروني صالح{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="pp-form-group">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="pp-label">
+                                {% if is_english %}Password{% else %}كلمة المرور{% endif %}
+                            </label>
+                            <a href="#" class="pp-link">
+                                {% if is_english %}Forgot password?{% else %}نسيت كلمة المرور؟{% endif %}
+                            </a>
+                        </div>
+                        <input type="password" name="paypal_password" class="pp-input" required>
+                        <div class="pp-error-message" id="password-error">
+                            {% if is_english %}Please enter your password{% else %}يرجى إدخال كلمة المرور{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="pp-checkbox">
+                        <input type="checkbox" id="stay-logged-in" name="remember">
+                        <label for="stay-logged-in">
+                            {% if is_english %}Stay logged in for faster checkout{% else %}البقاء متصلاً لدفع أسرع{% endif %}
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="pp-button">
+                        {% if is_english %}Log In{% else %}تسجيل الدخول{% endif %}
+                    </button>
+                </form>
+                
+                <div class="pp-divider">
+                    {% if is_english %}or{% else %}أو{% endif %}
+                </div>
+                
+                <a href="#" class="pp-secondary-button text-center">
+                    {% if is_english %}Sign Up{% else %}التسجيل{% endif %}
+                </a>
+            </div>
+            
+            <!-- Credit Card Form (Hidden by default) -->
+            <div id="card-form-section" class="pp-login-form pp-card-form">
+                <div class="pp-card-icons">
+                    <img src="{% static 'images/visa.svg' %}" alt="Visa">
+                    <img src="{% static 'images/mastercard.svg' %}" alt="Mastercard">
+                    <img src="{% static 'images/amex.svg' %}" alt="American Express">
+                    <img src="{% static 'images/discover.svg' %}" alt="Discover">
+                </div>
+                
+                <form action="{% url 'paypal_payment' %}{% if reservation_id %}?reservation_id={{ reservation_id }}{% endif %}" method="post" id="card-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="payment_method" value="credit_card">
+                    <input type="hidden" name="paypal_submit" value="card">
+                    {% if reservation_id %}
+                        <input type="hidden" name="reservation_id" value="{{ reservation_id }}">
+                    {% endif %}
+                    
+                    <div class="pp-form-group">
+                        <label class="pp-label">
+                            {% if is_english %}Card Number{% else %}رقم البطاقة{% endif %}
+                        </label>
+                        <input type="text" name="card_number" class="pp-input" id="card-number" placeholder="XXXX XXXX XXXX XXXX" maxlength="19" required>
+                    </div>
+                    
+                    <div class="pp-card-row">
+                        <div class="pp-card-col">
+                            <div class="pp-form-group">
+                                <label class="pp-label">
+                                    {% if is_english %}Expiration Date{% else %}تاريخ الانتهاء{% endif %}
+                                </label>
+                                <input type="text" name="card_expiry" class="pp-input" id="card-expiry" placeholder="MM / YY" maxlength="7" required>
+                            </div>
+                        </div>
+                        <div class="pp-card-col">
+                            <div class="pp-form-group">
+                                <label class="pp-label">
+                                    {% if is_english %}Security Code{% else %}رمز الأمان{% endif %}
+                                </label>
+                                <input type="text" name="card_cvv" class="pp-input" id="card-cvv" placeholder="CVV" maxlength="4" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pp-form-group">
+                        <label class="pp-label">
+                            {% if is_english %}Name on Card{% else %}الاسم على البطاقة{% endif %}
+                        </label>
+                        <input type="text" name="card_name" class="pp-input" required>
+                    </div>
+                    
+                    <div class="pp-checkbox">
+                        <input type="checkbox" id="save-card" name="save_card">
+                        <label for="save-card">
+                            {% if is_english %}Save this card for future purchases{% else %}حفظ هذه البطاقة للمشتريات المستقبلية{% endif %}
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="pp-button">
+                        {% if is_english %}Pay Now{% else %}ادفع الآن{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="pp-footer">
+            <div class="pp-cards">
+                <img src="{% static 'images/visa.svg' %}" alt="Visa">
+                <img src="{% static 'images/mastercard.svg' %}" alt="Mastercard">
+                <img src="{% static 'images/amex.svg' %}" alt="American Express">
+                <img src="{% static 'images/discover.svg' %}" alt="Discover">
+            </div>
+            
+            <div class="pp-secure-badge">
+                <i class="fas fa-lock"></i>
+                {% if is_english %}Secure Transaction{% else %}معاملة آمنة{% endif %}
+            </div>
+        </div>
+        
+        <div class="pp-notice">
+            {% if is_english %}
+                By continuing, you agree to the PayPal User Agreement and Privacy Policy.
+            {% else %}
+                بالمتابعة، فإنك توافق على اتفاقية مستخدم PayPal وسياسة الخصوصية.
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle payment methods
+        const paymentMethods = document.querySelectorAll('.pp-payment-method');
+        const paypalFormSection = document.getElementById('paypal-form-section');
+        const cardFormSection = document.getElementById('card-form-section');
+        
+        paymentMethods.forEach(method => {
+            method.addEventListener('click', function() {
+                // Remove selected class from all
+                paymentMethods.forEach(m => m.classList.remove('selected'));
+                
+                // Add selected class to clicked method
+                this.classList.add('selected');
+                
+                // Show/hide appropriate form
+                const selectedMethod = this.getAttribute('data-method');
+                if (selectedMethod === 'paypal') {
+                    paypalFormSection.style.display = 'block';
+                    cardFormSection.style.display = 'none';
+                } else if (selectedMethod === 'card') {
+                    paypalFormSection.style.display = 'none';
+                    cardFormSection.style.display = 'block';
+                }
+            });
+        });
+        
+        // Initialize - ensure the right form is shown
+        const selectedMethod = document.querySelector('.pp-payment-method.selected');
+        if (selectedMethod) {
+            const method = selectedMethod.getAttribute('data-method');
+            if (method === 'paypal') {
+                paypalFormSection.style.display = 'block';
+                cardFormSection.style.display = 'none';
+            } else if (method === 'card') {
+                paypalFormSection.style.display = 'none';
+                cardFormSection.style.display = 'block';
+            }
+        }
+        
+        // Form validation
+        const paypalForm = document.getElementById('paypal-form');
+        const emailInput = paypalForm.querySelector('input[name="paypal_email"]');
+        const passwordInput = paypalForm.querySelector('input[name="paypal_password"]');
+        const emailError = document.getElementById('email-error');
+        const passwordError = document.getElementById('password-error');
+        
+        paypalForm.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Validate email
+            if (!emailInput.value.trim() || !emailInput.value.includes('@')) {
+                emailInput.classList.add('error');
+                emailError.classList.add('visible');
+                isValid = false;
+            } else {
+                emailInput.classList.remove('error');
+                emailError.classList.remove('visible');
+            }
+            
+            // Validate password
+            if (!passwordInput.value.trim() || passwordInput.value.length < 6) {
+                passwordInput.classList.add('error');
+                passwordError.classList.add('visible');
+                isValid = false;
+            } else {
+                passwordInput.classList.remove('error');
+                passwordError.classList.remove('visible');
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+        
+        // Credit card formatting
+        const cardNumberInput = document.getElementById('card-number');
+        const cardExpiryInput = document.getElementById('card-expiry');
+        const cardCvvInput = document.getElementById('card-cvv');
+        
+        if (cardNumberInput) {
+            cardNumberInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                let formattedValue = '';
+                
+                for (let i = 0; i < value.length; i++) {
+                    if (i > 0 && i % 4 === 0) {
+                        formattedValue += ' ';
+                    }
+                    formattedValue += value[i];
+                }
+                
+                e.target.value = formattedValue;
+            });
+        }
+        
+        if (cardExpiryInput) {
+            cardExpiryInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                
+                if (value.length > 2) {
+                    value = value.substring(0, 2) + ' / ' + value.substring(2, 4);
+                }
+                
+                e.target.value = value;
+            });
+        }
+        
+        if (cardCvvInput) {
+            cardCvvInput.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/\D/g, '').substring(0, 4);
+            });
+        }
+    });
+</script>
+{% endblock %}
