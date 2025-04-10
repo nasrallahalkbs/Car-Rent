@@ -466,8 +466,8 @@ def checkout(request):
             
             # Check if reservation is confirmed (payment is only allowed for confirmed reservations)
             if reservation.status == 'confirmed' and reservation.payment_status == 'pending':
-                # Redirect to international payment with reservation_id
-                return redirect(f'/payment/international/?reservation_id={reservation_id}')
+                # Redirect to global payment gateway with reservation_id
+                return redirect(f'/payment/gateway/?reservation_id={reservation_id}')
             elif reservation.status == 'pending':
                 # Cannot pay for pending reservations
                 if is_english:
@@ -506,8 +506,8 @@ def checkout(request):
             messages.error(request, message)
             return redirect('my_reservations')
     else:
-        # Redirect to international payment for cart items
-        return redirect('/payment/international/')
+        # Redirect to global payment gateway for cart items
+        return redirect('/payment/gateway/')
 @login_required
 def my_reservations(request):
     """User's reservations page with search capability"""

@@ -21,6 +21,7 @@ urlpatterns = [
     path('reservations/', views.my_reservations, name='my_reservations'),
     path('payment/', payment_views.professional_payment, name='professional_payment'),
     path('payment/international/', payment_views.international_payment, name='international_payment'),
+    path('payment/gateway/', payment_views.payment_gateway, name='payment_gateway'),
     path('reservation/<int:reservation_id>/', views.reservation_detail, name='reservation_detail'),
     path('reservation/<int:reservation_id>/modify/', views.modify_reservation, name='modify_reservation'),
     path('reservation/<int:reservation_id>/cancel/', views.cancel_reservation, name='cancel_reservation'),
