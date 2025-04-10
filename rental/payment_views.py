@@ -165,9 +165,8 @@ def international_payment(request):
             payment_status='pending'
         )
         
-        # حساب عدد الأيام
-        delta = (reservation.end_date - reservation.start_date).days + 1
-        reservation.days = delta
+        # مسح السطرين التاليين لأن days هي خاصية محسوبة (@property)
+        # وسيتم حسابها تلقائيًا عند الوصول إليها
         
         # معالجة طلب الدفع
         if request.method == 'POST':

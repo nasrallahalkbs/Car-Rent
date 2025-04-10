@@ -148,5 +148,18 @@ class CartItem(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     
+    @property
+    def days(self):
+        """عدد أيام الحجز في عربة التسوق"""
+        if self.start_date and self.end_date:
+            delta = (self.end_date - self.start_date).days + 1
+            return delta
+        return 0
+        
+    @property
+    def total(self):
+        """المبلغ الإجمالي للسيارة في السلة"""
+        return self.car.daily_rate * self.days
+    
     def __str__(self):
         return f"Cart item: {self.car} for {self.user.username}"
