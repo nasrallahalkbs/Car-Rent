@@ -496,15 +496,25 @@
             });
         });
 
-        // Form submission handling (in production this would connect to PayPal API)
+        // Form submission handling (now validates fields before submission)
         const form = document.getElementById('paypal-form');
         form.addEventListener('submit', function(e) {
-            e.preventDefault();
+            const emailField = form.querySelector('input[name="paypal_email"]');
+            const passwordField = form.querySelector('input[name="paypal_password"]');
             
-            // Simulate PayPal processing
-            setTimeout(function() {
-                form.submit();
-            }, 1500);
+            // Check if fields are empty
+            if (!emailField.value.trim() || !passwordField.value.trim()) {
+                e.preventDefault();
+                alert(emailField.getAttribute('placeholder') ? 'Please enter your email and password.' : 'يرجى إدخال البريد الإلكتروني وكلمة المرور.');
+                return false;
+            }
+            
+            // Add a loading state but don't prevent the normal form submission
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = submitButton.innerHTML + ' <i class="fas fa-spinner fa-spin"></i>';
+            }
         });
     });
 </script>
