@@ -29,6 +29,7 @@ urlpatterns = [
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     path('toggle-language/', views.toggle_language, name='toggle_language'),
     path('about-us/', views.about_us, name='about_us'),
+    path('payment-test/', lambda request: render(request, 'payment_test.html'), name='payment_test'),
     
     # API endpoints
     path('api/car/<int:car_id>/unavailable-dates/', views.get_unavailable_dates_api, name='get_unavailable_dates_api'),
