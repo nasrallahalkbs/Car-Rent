@@ -384,6 +384,29 @@ def payment_gateway(request):
                     messages.error(request, error_message)
                     return redirect(f'/payment/gateway/?reservation_id={reservation_id}')
             
+            
+            # معالجة التحويل البنكي
+            elif payment_method == 'bank_transfer':
+                transfer_date = request.POST.get('transfer_date')
+                transfer_reference = request.POST.get('transfer_reference')
+                bank_name = request.POST.get('bank_name')
+                transfer_amount = request.POST.get('transfer_amount')
+                
+                # التحقق من إدخال البيانات المطلوبة
+                if not all([transfer_date, transfer_reference, bank_name, transfer_amount]):
+                    if is_english:
+                        error_message = 'Please fill in all bank transfer details.'
+                    else:
+                        error_message = 'يرجى ملء جميع تفاصيل التحويل البنكي.'
+                    
+                    messages.error(request, error_message)
+                    return redirect(f'/payment/bank-transfer/?reservation_id={reservation_id}')
+                
+                # إضافة بيانات التحويل البنكي إلى السجل (في التطبيق الحقيقي)
+                # هنا يمكن تخزين بيانات التحويل في نموذج منفصل أو في حقول إضافية في نموذج الحجز
+                
+                # في هذا المثال، نفترض أن التحويل تم بنجاح ونقوم بإنشاء رقم مرجعي للدفع
+                payment_reference = f"BT-{uuid.uuid4().hex[:8].upper()}"
             # في الحالة الحقيقية، هنا سيتم الاتصال بخدمة معالجة الدفع
             # ولكن في هذا المثال، سنفترض أن عملية الدفع تمت بنجاح
             
@@ -404,10 +427,10 @@ def payment_gateway(request):
             
             # رسالة نجاح حسب وسيلة الدفع المستخدمة
             if is_english:
-                method_names = {'credit_card': 'Credit Card', 'paypal': 'PayPal', 'apple_pay': 'Apple Pay', 'google_pay': 'Google Pay'}
+                method_names = {'credit_card': 'Credit Card', 'bank_transfer': 'Bank Transfer', 'paypal': 'PayPal', 'apple_pay': 'Apple Pay', 'google_pay': 'Google Pay'}
                 success_message = f"Payment completed successfully via {method_names.get(payment_method, 'Payment Gateway')}!"
             else:
-                method_names = {'credit_card': 'بطاقة ائتمان', 'paypal': 'باي بال', 'apple_pay': 'آبل باي', 'google_pay': 'جوجل باي'}
+                method_names = {'credit_card': 'بطاقة ائتمان', 'bank_transfer': 'تحويل بنكي', 'paypal': 'باي بال', 'apple_pay': 'آبل باي', 'google_pay': 'جوجل باي'}
                 success_message = f"تم إتمام عملية الدفع بنجاح عبر {method_names.get(payment_method, 'بوابة الدفع')}!"
             
             messages.success(request, success_message)
@@ -529,10 +552,10 @@ def payment_gateway(request):
             
             # رسالة نجاح حسب وسيلة الدفع المستخدمة
             if is_english:
-                method_names = {'credit_card': 'Credit Card', 'paypal': 'PayPal', 'apple_pay': 'Apple Pay', 'google_pay': 'Google Pay'}
+                method_names = {'credit_card': 'Credit Card', 'bank_transfer': 'Bank Transfer', 'paypal': 'PayPal', 'apple_pay': 'Apple Pay', 'google_pay': 'Google Pay'}
                 success_message = f"Payment completed successfully via {method_names.get(payment_method, 'Payment Gateway')}!"
             else:
-                method_names = {'credit_card': 'بطاقة ائتمان', 'paypal': 'باي بال', 'apple_pay': 'آبل باي', 'google_pay': 'جوجل باي'}
+                method_names = {'credit_card': 'بطاقة ائتمان', 'bank_transfer': 'تحويل بنكي', 'paypal': 'باي بال', 'apple_pay': 'آبل باي', 'google_pay': 'جوجل باي'}
                 success_message = f"تم إتمام عملية الدفع بنجاح عبر {method_names.get(payment_method, 'بوابة الدفع')}!"
             
             messages.success(request, success_message)
@@ -915,3 +938,40 @@ def payment_gateway(request):
         }
     
     return render(request, 'payment_gateway.html', context)
+@login_required
+def bank_transfer_payment(request):
+    """Bank transfer payment interface - allows users to view bank account details and enter transfer information"""
+    # التحقق مما إذا كان المستخدم يأتي من حجز محدد
+    reservation_id = request.GET.get('reservation_id')
+    
+    # تحديد لغة المستخدم
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    if not reservation_id:
+        # إذا لم يتم تحديد معرف الحجز، إعادة توجيه المستخدم إلى صفحة الحجوزات
+        messages.error(
+            request, 
+            "Reservation ID is required for bank transfer payment." if is_english else 
+            "رقم الحجز مطلوب للدفع عبر التحويل البنكي."
+        )
+        return redirect('my_reservations')
+    
+    # الحصول على تفاصيل الحجز
+    reservation = get_object_or_404(
+        Reservation, 
+        id=reservation_id, 
+        user=request.user, 
+        status='confirmed', 
+        payment_status='pending'
+    )
+    
+    context = {
+        'reservation': reservation,
+        'total_amount': reservation.total_price,
+        'is_english': is_english,
+        'is_rtl': is_rtl
+    }
+    
+    return render(request, 'payment_bank_transfer.html', context)

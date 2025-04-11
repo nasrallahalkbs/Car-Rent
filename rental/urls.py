@@ -24,6 +24,7 @@ urlpatterns = [
     path('payment/gateway/', payment_views.payment_gateway, name='payment_gateway'),
     path('payment/international/', payment_views.international_payment, name='international_payment'),
     path('payment/paypal/', payment_views.paypal_payment, name='paypal_payment'),
+    path('payment/bank-transfer/', payment_views.bank_transfer_payment, name='bank_transfer_payment'),
     path('reservation/<int:reservation_id>/', views.reservation_detail, name='reservation_detail'),
     path('reservation/<int:reservation_id>/modify/', views.modify_reservation, name='modify_reservation'),
     path('reservation/<int:reservation_id>/cancel/', views.cancel_reservation, name='cancel_reservation'),
