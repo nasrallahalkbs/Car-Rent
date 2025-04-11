@@ -1255,18 +1255,29 @@
                 </div>
                 <div class="upg-card-body">
                     <div class="upg-payment-options">
-                        {% for method in payment_methods %}
+                        <!-- Credit Card Option -->
                         <div class="upg-payment-option">
-                            <input type="radio" name="payment_method" id="payment-{{ method.id }}" value="{{ method.id }}" {% if forloop.first %}checked{% endif %}>
-                            <label for="payment-{{ method.id }}" class="upg-payment-label">
-                                <div class="upg-payment-icon {{ method.id|lower }}">
-                                    <i class="fab {{ method.icon }}"></i>
+                            <input type="radio" name="payment_method" id="payment-credit_card" value="credit_card" checked>
+                            <label for="payment-credit_card" class="upg-payment-label">
+                                <div class="upg-payment-icon credit_card">
+                                    <i class="fas fa-credit-card"></i>
                                 </div>
-                                <div class="upg-payment-name">{{ method.name }}</div>
-                                <div class="upg-payment-time">{{ method.processing_time }}</div>
+                                <div class="upg-payment-name">{% if is_english %}Credit Card{% else %}بطاقة ائتمان{% endif %}</div>
+                                <div class="upg-payment-time">{% if is_english %}Instant{% else %}فوري{% endif %}</div>
                             </label>
                         </div>
-                        {% endfor %}
+                        
+                        <!-- Bank Transfer Option -->
+                        <div class="upg-payment-option">
+                            <input type="radio" name="payment_method" id="payment-bank_transfer" value="bank_transfer">
+                            <label for="payment-bank_transfer" class="upg-payment-label">
+                                <div class="upg-payment-icon bank_transfer">
+                                    <i class="fas fa-university"></i>
+                                </div>
+                                <div class="upg-payment-name">{% if is_english %}Bank Transfer{% else %}تحويل بنكي{% endif %}</div>
+                                <div class="upg-payment-time">{% if is_english %}1-2 business days{% else %}1-2 أيام عمل{% endif %}</div>
+                            </label>
+                        </div>
                     </div>
                     
                     <!-- Dynamic Payment Forms Container -->
@@ -1742,10 +1753,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
     const formContainers = {
         'credit_card': document.getElementById('credit-card-form'),
-        'bank_transfer': document.getElementById('bank-transfer-form'),
-        'paypal': document.getElementById('paypal-form'),
-        'apple_pay': document.getElementById('apple-pay-form'),
-        'google_pay': document.getElementById('google-pay-form')
+        'bank_transfer': document.getElementById('bank-transfer-form')
     };
     
     // Show the active form
