@@ -443,7 +443,7 @@ def checkout_new(request):
     return render(request, 'checkout_minimal.html', context)
     
 def checkout(request):
-    """Checkout and payment view - redirects to international payment gateway"""
+    """Checkout and payment view - redirects to the new unified payment gateway"""
     from django.utils.translation import get_language
     from django.contrib import messages
     
@@ -463,8 +463,8 @@ def checkout(request):
             
             # Check if reservation is confirmed (payment is only allowed for confirmed reservations)
             if reservation.status == 'confirmed' and reservation.payment_status == 'pending':
-                # Redirect to professional payment with reservation_id
-                return redirect(f'/payment/?reservation_id={reservation_id}')
+                # Redirect to our new unified payment gateway
+                return redirect(f'/payment/gateway/?reservation_id={reservation_id}')
             elif reservation.status == 'pending':
                 # Cannot pay for pending reservations
                 if is_english:
@@ -503,8 +503,8 @@ def checkout(request):
             messages.error(request, message)
             return redirect('my_reservations')
     else:
-        # Redirect to professional payment for cart items
-        return redirect('/payment/')
+        # Redirect to our new unified payment gateway for cart items
+        return redirect('/payment/gateway/')
 @login_required
 def my_reservations(request):
     """User's reservations page with search capability"""
