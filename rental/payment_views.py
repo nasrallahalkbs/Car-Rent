@@ -299,6 +299,12 @@ def payment_gateway(request):
             'processing_time': '0-1 hours' if is_english else '0-1 ساعات'
         },
         {
+            'id': 'bank_transfer',
+            'name': 'Bank Transfer' if is_english else 'تحويل بنكي',
+            'icon': 'fa-university',
+            'processing_time': '1-2 days' if is_english else '1-2 أيام'
+        },
+        {
             'id': 'paypal',
             'name': 'PayPal',
             'icon': 'fa-paypal',

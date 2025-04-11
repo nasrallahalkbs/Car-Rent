@@ -1295,6 +1295,118 @@
                             </form>
                         </div>
                         
+                        <!-- Bank Transfer Form -->
+                        <div id="bank-transfer-form">
+                            <div class="upg-section-title">{% if is_english %}Bank Transfer Details{% else %}تفاصيل التحويل البنكي{% endif %}</div>
+                            
+                            <div class="upg-card" style="background-color: var(--pg-light-blue); margin-bottom: 1.5rem;">
+                                <div class="upg-card-body">
+                                    <h4 style="margin-bottom: 1rem; font-weight: 600; color: var(--pg-dark);">
+                                        {% if is_english %}Bank Account Information{% else %}معلومات الحساب البنكي{% endif %}
+                                    </h4>
+                                    
+                                    <div class="upg-summary-item" style="border-bottom-color: rgba(0,0,0,0.05);">
+                                        <div class="upg-summary-label">{% if is_english %}Bank Name{% else %}اسم البنك{% endif %}</div>
+                                        <div class="upg-summary-value">{% if is_english %}Saudi National Bank{% else %}البنك الأهلي السعودي{% endif %}</div>
+                                    </div>
+                                    
+                                    <div class="upg-summary-item" style="border-bottom-color: rgba(0,0,0,0.05);">
+                                        <div class="upg-summary-label">{% if is_english %}Account Holder{% else %}اسم صاحب الحساب{% endif %}</div>
+                                        <div class="upg-summary-value">{% if is_english %}Car Rental Company Ltd.{% else %}شركة تأجير السيارات المحدودة{% endif %}</div>
+                                    </div>
+                                    
+                                    <div class="upg-summary-item" style="border-bottom-color: rgba(0,0,0,0.05);">
+                                        <div class="upg-summary-label">{% if is_english %}IBAN Number{% else %}رقم الآيبان{% endif %}</div>
+                                        <div class="upg-summary-value" style="font-family: monospace; font-weight: 600;">SA03 8000 0000 6080 1016 7519</div>
+                                    </div>
+                                    
+                                    <div class="upg-summary-item" style="border-bottom-color: rgba(0,0,0,0.05);">
+                                        <div class="upg-summary-label">{% if is_english %}Account Number{% else %}رقم الحساب{% endif %}</div>
+                                        <div class="upg-summary-value" style="font-family: monospace; font-weight: 600;">608010167519</div>
+                                    </div>
+                                    
+                                    <div class="upg-summary-item">
+                                        <div class="upg-summary-label">{% if is_english %}SWIFT Code{% else %}رمز سويفت{% endif %}</div>
+                                        <div class="upg-summary-value" style="font-family: monospace; font-weight: 600;">SABBSARI</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="upg-alert" style="padding: 1rem; border-radius: 8px; background-color: #fff7ed; border: 1px solid #ffedd5; margin-bottom: 1.5rem;">
+                                <div style="display: flex; align-items: flex-start;">
+                                    <div style="margin-right: 0.75rem; color: var(--pg-warning);">
+                                        <i class="fas fa-exclamation-triangle" style="font-size: 1.25rem;"></i>
+                                    </div>
+                                    <div>
+                                        <h5 style="font-weight: 600; color: #9a3412; margin-bottom: 0.5rem;">
+                                            {% if is_english %}Important Instructions{% else %}تعليمات هامة{% endif %}
+                                        </h5>
+                                        <p style="font-size: 0.9rem; color: #9a3412; margin-bottom: 0.5rem;">
+                                            {% if is_english %}
+                                            Please include your Reservation ID or Order Number in the transfer reference to help us identify your payment.
+                                            {% else %}
+                                            يرجى تضمين رقم الحجز أو رقم الطلب في مرجع التحويل لمساعدتنا في تحديد دفعتك.
+                                            {% endif %}
+                                        </p>
+                                        <p style="font-size: 0.9rem; color: #9a3412; margin-bottom: 0;">
+                                            {% if is_english %}
+                                            After completing the transfer, please upload your receipt below or email a copy to payments@carrental.com.
+                                            {% else %}
+                                            بعد إتمام التحويل، يرجى تحميل إيصال الدفع أدناه أو إرسال نسخة إلى البريد الإلكتروني payments@carrental.com.
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <form method="POST" id="bank-transfer-payment-form" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="hidden" name="payment_method" value="bank_transfer">
+                                
+                                <div class="upg-form-group">
+                                    <label for="transfer_reference" class="upg-form-label">
+                                        {% if is_english %}Transfer Reference Number{% else %}رقم مرجع التحويل{% endif %}
+                                    </label>
+                                    <input type="text" id="transfer_reference" name="transfer_reference" class="upg-form-control" placeholder="{% if is_english %}e.g. TRF123456789{% else %}مثال: TRF123456789{% endif %}">
+                                </div>
+                                
+                                <div class="upg-form-group">
+                                    <label for="transfer_date" class="upg-form-label">
+                                        {% if is_english %}Transfer Date{% else %}تاريخ التحويل{% endif %}
+                                    </label>
+                                    <input type="date" id="transfer_date" name="transfer_date" class="upg-form-control">
+                                </div>
+                                
+                                <div class="upg-form-group">
+                                    <label for="transfer_amount" class="upg-form-label">
+                                        {% if is_english %}Transfer Amount (SAR){% else %}مبلغ التحويل (ر.س){% endif %}
+                                    </label>
+                                    <input type="text" id="transfer_amount" name="transfer_amount" class="upg-form-control" value="{{ total_amount }}">
+                                </div>
+                                
+                                <div class="upg-form-group">
+                                    <label for="transfer_receipt" class="upg-form-label">
+                                        {% if is_english %}Upload Transfer Receipt (optional){% else %}تحميل إيصال التحويل (اختياري){% endif %}
+                                    </label>
+                                    <input type="file" id="transfer_receipt" name="transfer_receipt" class="upg-form-control" accept="image/*,.pdf">
+                                    <small style="font-size: 0.8rem; color: var(--pg-gray); display: block; margin-top: 0.25rem;">
+                                        {% if is_english %}
+                                        Accepted formats: JPG, PNG, PDF. Max size: 5MB
+                                        {% else %}
+                                        الصيغ المقبولة: JPG، PNG، PDF. الحجم الأقصى: 5 ميجابايت
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                
+                                <div class="upg-form-group" style="margin-top: 2rem;">
+                                    <button type="submit" class="upg-btn upg-btn-primary upg-btn-lg upg-btn-block" style="background-color: var(--pg-success); border-color: var(--pg-success);">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        {% if is_english %}Confirm Bank Transfer {% else %}تأكيد التحويل البنكي {% endif %}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
                         <!-- PayPal Form -->
                         <div id="paypal-form">
                             <div class="upg-section-title">{% if is_english %}Pay with PayPal{% else %}الدفع باستخدام باي بال{% endif %}</div>
@@ -1577,6 +1689,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
     const formContainers = {
         'credit_card': document.getElementById('credit-card-form'),
+        'bank_transfer': document.getElementById('bank-transfer-form'),
         'paypal': document.getElementById('paypal-form'),
         'apple_pay': document.getElementById('apple-pay-form'),
         'google_pay': document.getElementById('google-pay-form')
@@ -1594,6 +1707,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show the selected form
         if (formContainers[methodId]) {
             formContainers[methodId].classList.add('active');
+        }
+        
+        // Hide card preview when not in credit card form
+        const cardPreview = document.getElementById('card-preview');
+        if (cardPreview) {
+            if (methodId === 'credit_card') {
+                cardPreview.style.display = 'block';
+            } else {
+                cardPreview.style.display = 'none';
+            }
         }
     }
     
