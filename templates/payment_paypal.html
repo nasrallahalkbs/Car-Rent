@@ -2,7 +2,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}PayPal Payment{% endblock %}
+{% block title %}{% if is_english %}PayPal & Credit Card Checkout{% else %}الدفع عبر PayPal وبطاقة الائتمان{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -172,14 +172,26 @@
     .paypal-card-row {
         display: flex;
         margin-bottom: 15px;
+        flex-wrap: wrap;
     }
     
     .paypal-card-col {
         flex: 1;
+        min-width: 220px;
+        margin-bottom: 10px;
     }
     
     .paypal-card-col:first-child {
         margin-right: 15px;
+    }
+    
+    .payment-content-section {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
     
     .paypal-label {
@@ -368,97 +380,165 @@
                 {% if is_english %}Choose a way to pay{% else %}اختر طريقة الدفع{% endif %}
             </h4>
             
-            <div class="paypal-payment-method selected">
-                <div class="paypal-payment-icon">
-                    <img src="{% static 'images/paypal.svg' %}" alt="PayPal">
-                </div>
-                <div class="paypal-payment-info">
-                    <div class="paypal-payment-title">PayPal</div>
-                    <div class="paypal-payment-subtitle">
-                        {% if is_english %}Pay with your PayPal account{% else %}ادفع باستخدام حساب PayPal الخاص بك{% endif %}
+            <div id="payment-tabs" class="mb-4">
+                <div class="paypal-payment-method selected" data-target="paypal-login-section">
+                    <div class="paypal-payment-icon">
+                        <img src="{% static 'images/paypal.svg' %}" alt="PayPal">
                     </div>
-                </div>
-                <div class="paypal-radio"></div>
-            </div>
-            
-            <div class="paypal-payment-method">
-                <div class="paypal-payment-icon">
-                    <img src="{% static 'images/credit-card.svg' %}" alt="Credit Card">
-                </div>
-                <div class="paypal-payment-info">
-                    <div class="paypal-payment-title">
-                        {% if is_english %}Credit or Debit Card{% else %}بطاقة ائتمان أو خصم{% endif %}
-                    </div>
-                    <div class="paypal-payment-subtitle">
-                        {% if is_english %}Pay with your card{% else %}ادفع باستخدام بطاقتك{% endif %}
-                    </div>
-                </div>
-                <div class="paypal-radio"></div>
-            </div>
-            
-            <form action="{% url 'paypal_payment' %}{% if reservation_id %}?reservation_id={{ reservation_id }}{% endif %}" method="post" id="paypal-form">
-                {% csrf_token %}
-                <input type="hidden" name="payment_method" value="paypal">
-                <input type="hidden" name="paypal_submit" value="login">
-                {% if reservation_id %}
-                <input type="hidden" name="reservation_id" value="{{ reservation_id }}">
-                {% endif %}
-                
-                <div class="paypal-login">
-                    <div class="paypal-login-title">
-                        {% if is_english %}Log in to your PayPal account{% else %}تسجيل الدخول إلى حساب PayPal الخاص بك{% endif %}
-                    </div>
-                    
-                    {% if messages %}
-                        <div class="alert alert-danger mb-3">
-                            {% for message in messages %}
-                                {{ message }}
-                            {% endfor %}
+                    <div class="paypal-payment-info">
+                        <div class="paypal-payment-title">PayPal</div>
+                        <div class="paypal-payment-subtitle">
+                            {% if is_english %}Pay with your PayPal account{% else %}ادفع باستخدام حساب PayPal الخاص بك{% endif %}
                         </div>
+                    </div>
+                    <div class="paypal-radio"></div>
+                </div>
+                
+                <div class="paypal-payment-method" data-target="credit-card-section">
+                    <div class="paypal-payment-icon">
+                        <img src="{% static 'images/credit-card.svg' %}" alt="Credit Card">
+                    </div>
+                    <div class="paypal-payment-info">
+                        <div class="paypal-payment-title">
+                            {% if is_english %}Credit or Debit Card{% else %}بطاقة ائتمان أو خصم{% endif %}
+                        </div>
+                        <div class="paypal-payment-subtitle">
+                            {% if is_english %}Pay with your card{% else %}ادفع باستخدام بطاقتك{% endif %}
+                        </div>
+                    </div>
+                    <div class="paypal-radio"></div>
+                </div>
+            </div>
+            
+            {% if messages %}
+                <div class="alert alert-danger mb-3">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <!-- PayPal Login Section -->
+            <div id="paypal-login-section" class="payment-content-section">
+                <form action="{% url 'paypal_payment' %}{% if reservation_id %}?reservation_id={{ reservation_id }}{% endif %}" method="post" id="paypal-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="payment_method" value="paypal">
+                    <input type="hidden" name="paypal_submit" value="login">
+                    {% if reservation_id %}
+                    <input type="hidden" name="reservation_id" value="{{ reservation_id }}">
                     {% endif %}
                     
+                    <div class="paypal-login">
+                        <div class="paypal-login-title">
+                            {% if is_english %}Log in to your PayPal account{% else %}تسجيل الدخول إلى حساب PayPal الخاص بك{% endif %}
+                        </div>
+                        
+                        <div class="paypal-card-row">
+                            <div class="paypal-card-col">
+                                <label class="paypal-label">
+                                    {% if is_english %}Email or mobile number{% else %}البريد الإلكتروني أو رقم الهاتف المحمول{% endif %}
+                                </label>
+                                <input type="email" name="paypal_email" class="paypal-input" placeholder="{% if is_english %}Email address{% else %}عنوان البريد الإلكتروني{% endif %}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="paypal-card-row">
+                            <div class="paypal-card-col">
+                                <label class="paypal-label">
+                                    {% if is_english %}Password{% else %}كلمة المرور{% endif %}
+                                </label>
+                                <input type="password" name="paypal_password" class="paypal-input" placeholder="{% if is_english %}Password{% else %}كلمة المرور{% endif %}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="remember_paypal">
+                            <label class="form-check-label" for="remember_paypal" style="font-size: 14px; color: #6c7378;">
+                                {% if is_english %}Stay logged in for faster checkout{% else %}البقاء مسجل الدخول للدفع بشكل أسرع{% endif %}
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="paypal-button">
+                            {% if is_english %}Log In{% else %}تسجيل الدخول{% endif %}
+                        </button>
+                        
+                        <div style="text-align: center; margin-top: 15px;">
+                            <a href="#" style="color: #0070ba; font-size: 14px; text-decoration: none;">
+                                {% if is_english %}Having trouble logging in?{% else %}هل تواجه مشكلة في تسجيل الدخول؟{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </form>
+                
+                <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e1e4e8;">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size: 14px;">
+                        {% if is_english %}Sign Up for PayPal{% else %}التسجيل في PayPal{% endif %}
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Credit Card Section -->
+            <div id="credit-card-section" class="payment-content-section" style="display: none;">
+                <form action="{% url 'paypal_payment' %}{% if reservation_id %}?reservation_id={{ reservation_id }}{% endif %}" method="post" id="credit-card-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="payment_method" value="credit_card">
+                    <input type="hidden" name="paypal_submit" value="card">
+                    {% if reservation_id %}
+                    <input type="hidden" name="reservation_id" value="{{ reservation_id }}">
+                    {% endif %}
+                    
+                    <div class="card-icons mb-4" style="display: flex; align-items: center; justify-content: center;">
+                        <img src="{% static 'images/visa.svg' %}" alt="Visa" style="height: 30px; margin: 0 8px;">
+                        <img src="{% static 'images/mastercard.svg' %}" alt="Mastercard" style="height: 30px; margin: 0 8px;">
+                        <img src="{% static 'images/amex.svg' %}" alt="American Express" style="height: 30px; margin: 0 8px;">
+                    </div>
+                    
                     <div class="paypal-card-row">
                         <div class="paypal-card-col">
                             <label class="paypal-label">
-                                {% if is_english %}Email or mobile number{% else %}البريد الإلكتروني أو رقم الهاتف المحمول{% endif %}
+                                {% if is_english %}Card Number{% else %}رقم البطاقة{% endif %}
                             </label>
-                            <input type="email" name="paypal_email" class="paypal-input" placeholder="{% if is_english %}Email address{% else %}عنوان البريد الإلكتروني{% endif %}" required>
+                            <input type="text" name="card_number" class="paypal-input" placeholder="1234 5678 9012 3456" required maxlength="19" pattern="\d{4} \d{4} \d{4} \d{4}">
+                        </div>
+                    </div>
+                    
+                    <div class="paypal-card-row">
+                        <div class="paypal-card-col" style="flex: 2;">
+                            <label class="paypal-label">
+                                {% if is_english %}Cardholder Name{% else %}اسم حامل البطاقة{% endif %}
+                            </label>
+                            <input type="text" name="card_name" class="paypal-input" placeholder="{% if is_english %}Full name on card{% else %}الاسم الكامل على البطاقة{% endif %}" required>
                         </div>
                     </div>
                     
                     <div class="paypal-card-row">
                         <div class="paypal-card-col">
                             <label class="paypal-label">
-                                {% if is_english %}Password{% else %}كلمة المرور{% endif %}
+                                {% if is_english %}Expiry Date{% else %}تاريخ الانتهاء{% endif %}
                             </label>
-                            <input type="password" name="paypal_password" class="paypal-input" placeholder="{% if is_english %}Password{% else %}كلمة المرور{% endif %}" required>
+                            <input type="text" name="card_expiry" class="paypal-input" placeholder="MM/YY" required maxlength="5" pattern="(0[1-9]|1[0-2])\/([0-9]{2})">
+                        </div>
+                        <div class="paypal-card-col">
+                            <label class="paypal-label">
+                                {% if is_english %}Security Code{% else %}رمز الأمان{% endif %}
+                            </label>
+                            <input type="text" name="card_cvv" class="paypal-input" placeholder="CVV" required maxlength="4" pattern="\d{3,4}">
                         </div>
                     </div>
                     
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="remember_paypal">
-                        <label class="form-check-label" for="remember_paypal" style="font-size: 14px; color: #6c7378;">
-                            {% if is_english %}Stay logged in for faster checkout{% else %}البقاء مسجل الدخول للدفع بشكل أسرع{% endif %}
+                    <div class="form-check mb-3 mt-3">
+                        <input class="form-check-input" type="checkbox" id="save_card">
+                        <label class="form-check-label" for="save_card" style="font-size: 14px; color: #6c7378;">
+                            {% if is_english %}Save card for future payments{% else %}حفظ البطاقة للدفع مستقبلاً{% endif %}
                         </label>
                     </div>
                     
                     <button type="submit" class="paypal-button">
-                        {% if is_english %}Log In{% else %}تسجيل الدخول{% endif %}
+                        {% if is_english %}Pay Now{% else %}ادفع الآن{% endif %} ({{ total_amount }} {% if is_english %}JOD{% else %}دينار{% endif %})
                     </button>
-                    
-                    <div style="text-align: center; margin-top: 15px;">
-                        <a href="#" style="color: #0070ba; font-size: 14px; text-decoration: none;">
-                            {% if is_english %}Having trouble logging in?{% else %}هل تواجه مشكلة في تسجيل الدخول؟{% endif %}
-                        </a>
-                    </div>
-                </div>
-            </form>
-            
-            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e1e4e8;">
-                <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size: 14px;">
-                    {% if is_english %}Sign Up for PayPal{% else %}التسجيل في PayPal{% endif %}
-                </button>
+                </form>
             </div>
+            
         </div>
         
         <div class="paypal-footer">
@@ -485,37 +565,125 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Toggle payment methods
+        // Toggle payment methods and show/hide content sections
         const paymentMethods = document.querySelectorAll('.paypal-payment-method');
+        const contentSections = document.querySelectorAll('.payment-content-section');
+        
+        // Function to show selected payment method content
+        function showSelectedSection(targetId) {
+            // Hide all sections
+            contentSections.forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show selected section
+            const selectedSection = document.getElementById(targetId);
+            if (selectedSection) {
+                selectedSection.style.display = 'block';
+            }
+        }
+        
+        // Initialize first tab as selected
+        showSelectedSection('paypal-login-section');
+        
+        // Add click events to payment methods
         paymentMethods.forEach(method => {
             method.addEventListener('click', function() {
                 // Remove selected class from all
                 paymentMethods.forEach(m => m.classList.remove('selected'));
+                
                 // Add selected class to clicked one
                 this.classList.add('selected');
+                
+                // Show corresponding content section
+                const targetSection = this.getAttribute('data-target');
+                showSelectedSection(targetSection);
             });
         });
 
-        // Form submission handling (now validates fields before submission)
-        const form = document.getElementById('paypal-form');
-        form.addEventListener('submit', function(e) {
-            const emailField = form.querySelector('input[name="paypal_email"]');
-            const passwordField = form.querySelector('input[name="paypal_password"]');
-            
-            // Check if fields are empty
-            if (!emailField.value.trim() || !passwordField.value.trim()) {
-                e.preventDefault();
-                alert(emailField.getAttribute('placeholder') ? 'Please enter your email and password.' : 'يرجى إدخال البريد الإلكتروني وكلمة المرور.');
-                return false;
+        // PayPal form validation
+        const paypalForm = document.getElementById('paypal-form');
+        if (paypalForm) {
+            paypalForm.addEventListener('submit', function(e) {
+                const emailField = this.querySelector('input[name="paypal_email"]');
+                const passwordField = this.querySelector('input[name="paypal_password"]');
+                
+                // Check if fields are empty
+                if (!emailField.value.trim() || !passwordField.value.trim()) {
+                    e.preventDefault();
+                    alert(emailField.getAttribute('placeholder').includes('Email') ? 'Please enter your email and password.' : 'يرجى إدخال البريد الإلكتروني وكلمة المرور.');
+                    return false;
+                }
+                
+                // Add a loading state
+                const submitButton = this.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = submitButton.innerHTML + ' <i class="fas fa-spinner fa-spin"></i>';
+                }
+            });
+        }
+        
+        // Credit Card form validation
+        const cardForm = document.getElementById('credit-card-form');
+        if (cardForm) {
+            // Card number formatting
+            const cardNumberInput = cardForm.querySelector('input[name="card_number"]');
+            if (cardNumberInput) {
+                cardNumberInput.addEventListener('input', function(e) {
+                    // Format card number with spaces
+                    let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+                    let formattedValue = '';
+                    
+                    for (let i = 0; i < value.length; i++) {
+                        if (i > 0 && i % 4 === 0) {
+                            formattedValue += ' ';
+                        }
+                        formattedValue += value[i];
+                    }
+                    
+                    // Update input value with formatted value
+                    e.target.value = formattedValue;
+                });
             }
             
-            // Add a loading state but don't prevent the normal form submission
-            const submitButton = form.querySelector('button[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.innerHTML = submitButton.innerHTML + ' <i class="fas fa-spinner fa-spin"></i>';
+            // Expiry date formatting
+            const expiryDateInput = cardForm.querySelector('input[name="card_expiry"]');
+            if (expiryDateInput) {
+                expiryDateInput.addEventListener('input', function(e) {
+                    // Format as MM/YY
+                    let value = e.target.value.replace(/\D/g, '');
+                    
+                    if (value.length > 2) {
+                        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                    }
+                    
+                    e.target.value = value;
+                });
             }
-        });
+            
+            // Form submission validation
+            cardForm.addEventListener('submit', function(e) {
+                const cardNumber = cardForm.querySelector('input[name="card_number"]').value.replace(/\s/g, '');
+                const cardName = cardForm.querySelector('input[name="card_name"]').value.trim();
+                const cardExpiry = cardForm.querySelector('input[name="card_expiry"]').value.trim();
+                const cardCvv = cardForm.querySelector('input[name="card_cvv"]').value.trim();
+                
+                // Validate all fields
+                if (cardNumber.length < 15 || !cardName || cardExpiry.length < 5 || cardCvv.length < 3) {
+                    e.preventDefault();
+                    alert(cardName.length > 0 ? 'Please fill in all card details correctly.' : 'يرجى ملء جميع تفاصيل البطاقة بشكل صحيح.');
+                    return false;
+                }
+                
+                // Add a loading state
+                const submitButton = this.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = submitButton.innerHTML + ' <i class="fas fa-spinner fa-spin"></i>';
+                }
+            });
+        }
     });
 </script>
 {% endblock %}
