@@ -3,10 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.translation import gettext as _
 from django.utils.translation import get_language
-from .models import Reservation, CartItem
+from .models import Reservation, CartItem, Car
 from .utils import get_car_availability, calculate_total_price
 from datetime import datetime
 import uuid
+import json
 
 def get_template_by_language(request, template_name):
     """اختيار القالب المناسب بناءً على اللغة"""
@@ -274,6 +275,280 @@ def international_payment(request):
         }
     
     return render(request, 'payment_international.html', context)
+
+@login_required
+def payment_gateway(request):
+    """
+    بوابة دفع متكاملة تدعم العديد من وسائل الدفع العالمية
+    تتضمن وسائل دفع مثل: PayPal، البطاقات الائتمانية، Apple Pay، Google Pay
+    """
+    # التحقق مما إذا كان المستخدم يأتي من حجز محدد
+    reservation_id = request.GET.get('reservation_id')
+    
+    # تحديد لغة المستخدم
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    # بيانات وسائل الدفع المتاحة
+    payment_methods = [
+        {
+            'id': 'credit_card',
+            'name': 'Credit Card' if is_english else 'بطاقة ائتمان',
+            'icon': 'fa-credit-card',
+            'processing_time': '0-1 hours' if is_english else '0-1 ساعات'
+        },
+        {
+            'id': 'paypal',
+            'name': 'PayPal',
+            'icon': 'fa-paypal',
+            'processing_time': 'Instant' if is_english else 'فوري'
+        },
+        {
+            'id': 'apple_pay',
+            'name': 'Apple Pay',
+            'icon': 'fa-apple',
+            'processing_time': 'Instant' if is_english else 'فوري'
+        },
+        {
+            'id': 'google_pay',
+            'name': 'Google Pay',
+            'icon': 'fa-google',
+            'processing_time': 'Instant' if is_english else 'فوري'
+        }
+    ]
+    
+    if reservation_id:
+        # المستخدم يدفع لحجز محدد
+        reservation = get_object_or_404(
+            Reservation, 
+            id=reservation_id, 
+            user=request.user, 
+            status='confirmed', 
+            payment_status='pending'
+        )
+        
+        # معالجة طلب الدفع
+        if request.method == 'POST':
+            payment_method = request.POST.get('payment_method', 'credit_card')
+            
+            # إنشاء رقم مرجعي للدفع حسب وسيلة الدفع المختارة
+            if payment_method == 'paypal':
+                payment_reference = f"PP-{uuid.uuid4().hex[:8].upper()}"
+            elif payment_method == 'apple_pay':
+                payment_reference = f"AP-{uuid.uuid4().hex[:8].upper()}"
+            elif payment_method == 'google_pay':
+                payment_reference = f"GP-{uuid.uuid4().hex[:8].upper()}"
+            else:
+                payment_reference = f"CC-{uuid.uuid4().hex[:8].upper()}"
+            
+            # التحقق من بيانات البطاقة إذا كانت وسيلة الدفع هي البطاقة الائتمانية
+            if payment_method == 'credit_card':
+                card_number = request.POST.get('card_number', '').replace(' ', '')
+                card_name = request.POST.get('card_name')
+                card_expiry = request.POST.get('card_expiry')
+                card_cvv = request.POST.get('card_cvv')
+                
+                # التحقق من إدخال البيانات
+                if not all([card_number, card_name, card_expiry, card_cvv]):
+                    if is_english:
+                        error_message = "Please fill in all card details."
+                    else:
+                        error_message = "يرجى ملء جميع تفاصيل البطاقة."
+                    
+                    messages.error(request, error_message)
+                    return redirect(f'/payment/gateway/?reservation_id={reservation_id}')
+                
+                # تنفيذ بعض عمليات التحقق البسيطة من البطاقة
+                if len(card_number) < 13 or len(card_number) > 19 or not card_number.isdigit():
+                    if is_english:
+                        error_message = "Invalid card number."
+                    else:
+                        error_message = "رقم البطاقة غير صالح."
+                    
+                    messages.error(request, error_message)
+                    return redirect(f'/payment/gateway/?reservation_id={reservation_id}')
+                
+                if len(card_cvv) < 3 or len(card_cvv) > 4 or not card_cvv.isdigit():
+                    if is_english:
+                        error_message = "Invalid security code (CVV)."
+                    else:
+                        error_message = "رمز الأمان (CVV) غير صالح."
+                    
+                    messages.error(request, error_message)
+                    return redirect(f'/payment/gateway/?reservation_id={reservation_id}')
+            
+            # في الحالة الحقيقية، هنا سيتم الاتصال بخدمة معالجة الدفع
+            # ولكن في هذا المثال، سنفترض أن عملية الدفع تمت بنجاح
+            
+            # تحديث حالة الحجز
+            reservation.payment_status = 'paid'
+            reservation.payment_reference = payment_reference
+            reservation.payment_method = payment_method
+            reservation.payment_date = datetime.now()
+            
+            # إذا تم الدفع، قم بتحديث الحالة إلى "مكتمل" إذا كان "مؤكد"
+            if reservation.status == 'confirmed':
+                reservation.status = 'completed'
+            
+            reservation.save()
+            
+            # تخزين معرف الحجز في الجلسة لصفحة التأكيد
+            request.session['last_paid_reservation_id'] = reservation.id
+            
+            # رسالة نجاح حسب وسيلة الدفع المستخدمة
+            if is_english:
+                method_names = {'credit_card': 'Credit Card', 'paypal': 'PayPal', 'apple_pay': 'Apple Pay', 'google_pay': 'Google Pay'}
+                success_message = f"Payment completed successfully via {method_names.get(payment_method, 'Payment Gateway')}!"
+            else:
+                method_names = {'credit_card': 'بطاقة ائتمان', 'paypal': 'باي بال', 'apple_pay': 'آبل باي', 'google_pay': 'جوجل باي'}
+                success_message = f"تم إتمام عملية الدفع بنجاح عبر {method_names.get(payment_method, 'بوابة الدفع')}!"
+            
+            messages.success(request, success_message)
+            
+            return redirect('confirmation')
+        
+        # عرض نموذج الدفع
+        context = {
+            'reservation': reservation,
+            'total_amount': reservation.total_price,
+            'from_cart': False,
+            'is_english': is_english,
+            'is_rtl': is_rtl,
+            'payment_methods': payment_methods
+        }
+    else:
+        # المستخدم يدفع لعناصر من السلة
+        cart_items = CartItem.objects.filter(user=request.user)
+        
+        if not cart_items:
+            if is_english:
+                warning_message = "Your cart is empty!"
+            else:
+                warning_message = "سلة التسوق فارغة!"
+                
+            messages.warning(request, warning_message)
+            return redirect('cart')
+        
+        # حساب المجاميع باستخدام الخصائص المحسوبة
+        grand_total = sum(item.total for item in cart_items)
+        
+        # معالجة طلب الدفع
+        if request.method == 'POST':
+            payment_method = request.POST.get('payment_method', 'credit_card')
+            
+            # إنشاء رقم مرجعي للدفع حسب وسيلة الدفع المختارة
+            if payment_method == 'paypal':
+                payment_reference = f"PP-{uuid.uuid4().hex[:8].upper()}"
+            elif payment_method == 'apple_pay':
+                payment_reference = f"AP-{uuid.uuid4().hex[:8].upper()}"
+            elif payment_method == 'google_pay':
+                payment_reference = f"GP-{uuid.uuid4().hex[:8].upper()}"
+            else:
+                payment_reference = f"CC-{uuid.uuid4().hex[:8].upper()}"
+            
+            # التحقق من بيانات البطاقة إذا كانت وسيلة الدفع هي البطاقة الائتمانية
+            if payment_method == 'credit_card':
+                card_number = request.POST.get('card_number', '').replace(' ', '')
+                card_name = request.POST.get('card_name')
+                card_expiry = request.POST.get('card_expiry')
+                card_cvv = request.POST.get('card_cvv')
+                
+                # التحقق من إدخال البيانات
+                if not all([card_number, card_name, card_expiry, card_cvv]):
+                    if is_english:
+                        error_message = "Please fill in all card details."
+                    else:
+                        error_message = "يرجى ملء جميع تفاصيل البطاقة."
+                    
+                    messages.error(request, error_message)
+                    return redirect('/payment/gateway/')
+                
+                # تنفيذ بعض عمليات التحقق البسيطة من البطاقة
+                if len(card_number) < 13 or len(card_number) > 19 or not card_number.isdigit():
+                    if is_english:
+                        error_message = "Invalid card number."
+                    else:
+                        error_message = "رقم البطاقة غير صالح."
+                    
+                    messages.error(request, error_message)
+                    return redirect('/payment/gateway/')
+                
+                if len(card_cvv) < 3 or len(card_cvv) > 4 or not card_cvv.isdigit():
+                    if is_english:
+                        error_message = "Invalid security code (CVV)."
+                    else:
+                        error_message = "رمز الأمان (CVV) غير صالح."
+                    
+                    messages.error(request, error_message)
+                    return redirect('/payment/gateway/')
+            
+            # إنشاء حجوزات لجميع عناصر السلة
+            created_reservations = []
+            for item in cart_items:
+                # التحقق من توفر السيارة
+                if get_car_availability(item.car.id, item.start_date, item.end_date):
+                    total_price = calculate_total_price(item.car, item.start_date, item.end_date)
+                    
+                    # إنشاء حجز بحالة معلقة في البداية
+                    reservation = Reservation.objects.create(
+                        user=request.user,
+                        car=item.car,
+                        start_date=item.start_date,
+                        end_date=item.end_date,
+                        total_price=total_price,
+                        status='completed',  # نعتبرها مكتملة عند الدفع من السلة
+                        payment_status='paid',
+                        payment_method=payment_method,
+                        payment_reference=payment_reference,
+                        payment_date=datetime.now()
+                    )
+                    created_reservations.append(reservation)
+                else:
+                    if is_english:
+                        error_message = f"Sorry, the car {item.car.make} {item.car.model} is no longer available for the selected dates."
+                    else:
+                        error_message = f"عذرًا، السيارة {item.car.make} {item.car.model} لم تعد متاحة في التواريخ المحددة."
+                    
+                    messages.error(request, error_message)
+                    
+                    # في حالة الخطأ، قم بحذف الحجوزات التي تم إنشاؤها
+                    for res in created_reservations:
+                        res.delete()
+                    
+                    return redirect('cart')
+            
+            # تفريغ السلة
+            cart_items.delete()
+            
+            # رسالة نجاح حسب وسيلة الدفع المستخدمة
+            if is_english:
+                method_names = {'credit_card': 'Credit Card', 'paypal': 'PayPal', 'apple_pay': 'Apple Pay', 'google_pay': 'Google Pay'}
+                success_message = f"Payment completed successfully via {method_names.get(payment_method, 'Payment Gateway')}!"
+            else:
+                method_names = {'credit_card': 'بطاقة ائتمان', 'paypal': 'باي بال', 'apple_pay': 'آبل باي', 'google_pay': 'جوجل باي'}
+                success_message = f"تم إتمام عملية الدفع بنجاح عبر {method_names.get(payment_method, 'بوابة الدفع')}!"
+            
+            messages.success(request, success_message)
+            
+            # تخزين معرف الحجز الأخير في الجلسة لصفحة التأكيد
+            if created_reservations:
+                request.session['last_paid_reservation_id'] = created_reservations[-1].id
+            
+            return redirect('confirmation')
+        
+        # عرض نموذج الدفع
+        context = {
+            'cart_items': cart_items,
+            'total_amount': grand_total,
+            'total_days': sum(item.days for item in cart_items),
+            'from_cart': True,
+            'is_english': is_english,
+            'is_rtl': is_rtl,
+            'payment_methods': payment_methods
+        }
+    
+    return render(request, 'payment_gateway.html', context)
 
 @login_required
 def paypal_payment(request):
