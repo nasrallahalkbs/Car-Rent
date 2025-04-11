@@ -1,6 +1,7 @@
 from django.urls import path
 from django.shortcuts import render
 from . import views, admin_views, payment_views
+from .csrf_debug import csrf_debug_view
 
 urlpatterns = [
     # User-facing views
@@ -58,4 +59,7 @@ urlpatterns = [
     path('dashboard/payments/<str:payment_id>/cancel/', admin_views.cancel_payment, name='cancel_payment'),
     path('dashboard/payments/<str:payment_id>/download/', admin_views.download_receipt, name='download_receipt'),
     path('api/users/<int:user_id>/reservations/', admin_views.get_user_reservations, name='get_user_reservations'),
+    
+    # Diagnostic routes
+    path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
 ]

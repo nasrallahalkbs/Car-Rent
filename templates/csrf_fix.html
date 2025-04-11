@@ -1,0 +1,50 @@
+{% load static %}
+<script>
+// هذا السكريبت يضيف تلقائيًا رمز CSRF إلى جميع طلبات AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    // الحصول على قيمة CSRF token من الصفحة
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // تخزين قيمة رمز CSRF في المتصفح
+    const csrfToken = getCookie('csrftoken');
+    if (!csrfToken) {
+        // إذا لم يتم العثور على رمز CSRF، قم بإعادة تحميل الصفحة
+        console.warn('CSRF token not found. Refreshing to get a new one.');
+        location.reload();
+    }
+    
+    // إضافة مستمع للطلبات قبل إرسالها لإضافة رمز CSRF إلى رؤوس الطلبات
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+        options = options || {};
+        options.headers = options.headers || {};
+        options.headers['X-CSRFToken'] = csrfToken;
+        return originalFetch(url, options);
+    };
+
+    // إضافة مستمع للطلبات XMLHttpRequest لإضافة رمز CSRF
+    const originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+        const xhr = this;
+        originalOpen.apply(xhr, arguments);
+        if (method.toLowerCase() !== 'get') {
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+        }
+    };
+    
+    console.log('CSRF protection initialized');
+});
+</script>
