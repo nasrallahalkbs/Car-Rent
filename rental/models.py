@@ -83,20 +83,50 @@ class Reservation(models.Model):
         ('paypal', 'PayPal'),
         ('cash', 'Cash at Pickup'),
         ('bank_transfer', 'Bank Transfer'),
+        ('electronic', 'Electronic Payment'),
+    ]
+    
+    RENTAL_TYPE_CHOICES = [
+        ('daily', 'Daily Rental'),
+        ('weekly', 'Weekly Rental'),
+        ('monthly', 'Monthly Rental'),
+        ('corporate', 'Corporate Rental'),
+        ('special', 'Special Event'),
+    ]
+    
+    GUARANTEE_TYPE_CHOICES = [
+        ('id_card', 'National ID Card'),
+        ('passport', 'Passport'),
+        ('driving_license', 'Driving License'),
+        ('deposit', 'Security Deposit'),
+        ('credit_card', 'Credit Card Hold'),
     ]
     
     # Generate a unique reservation number
     reservation_number = models.CharField(max_length=10, blank=True, null=True)
     
+    # Basic reservation details
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField() 
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     
-    # معلومات الدفع الإضافية
+    # معلومات العميل
+    full_name = models.CharField(max_length=100, blank=True, null=True, help_text="Full name of the customer")
+    national_id = models.CharField(max_length=20, blank=True, null=True, help_text="National ID number")
+    id_card_image = models.ImageField(upload_to='customer_ids/', blank=True, null=True, help_text="Photo of national ID card")
+    
+    # معلومات الحجز الإضافية
+    rental_type = models.CharField(max_length=20, choices=RENTAL_TYPE_CHOICES, blank=True, null=True)
+    guarantee_type = models.CharField(max_length=20, choices=GUARANTEE_TYPE_CHOICES, blank=True, null=True)
+    guarantee_details = models.TextField(blank=True, null=True, help_text="Additional details about the guarantee")
+    booking_date = models.DateTimeField(auto_now_add=True, help_text="Date and time of booking")
+    deposit_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    
+    # معلومات الدفع
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
     payment_reference = models.CharField(max_length=50, blank=True, null=True, help_text="Reference number for payment")
     payment_date = models.DateTimeField(blank=True, null=True)
