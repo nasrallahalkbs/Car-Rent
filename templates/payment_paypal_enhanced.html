@@ -557,32 +557,34 @@
             </h3>
             
             <div class="pp-payment-methods">
-                <div class="pp-payment-method selected" data-method="paypal">
-                    <div class="pp-payment-icon">
-                        <img src="{% static 'images/paypal.svg' %}" alt="PayPal">
-                    </div>
-                    <div class="pp-payment-info">
-                        <div class="pp-payment-title">PayPal</div>
-                        <div class="pp-payment-subtitle">
-                            {% if is_english %}Fast, secure, and convenient{% else %}سريع وآمن ومريح{% endif %}
+                <div id="payment-tabs" class="mb-4">
+                    <div class="pp-payment-method selected" data-target="paypal-login-section">
+                        <div class="pp-payment-icon">
+                            <img src="{% static 'images/paypal.svg' %}" alt="PayPal">
                         </div>
-                    </div>
-                    <div class="pp-payment-radio"></div>
-                </div>
-                
-                <div class="pp-payment-method" data-method="card">
-                    <div class="pp-payment-icon">
-                        <img src="{% static 'images/credit-card.svg' %}" alt="Credit Card">
-                    </div>
-                    <div class="pp-payment-info">
-                        <div class="pp-payment-title">
-                            {% if is_english %}Credit / Debit Card{% else %}بطاقة ائتمان / خصم{% endif %}
+                        <div class="pp-payment-info">
+                            <div class="pp-payment-title">PayPal</div>
+                            <div class="pp-payment-subtitle">
+                                {% if is_english %}Fast, secure, and convenient{% else %}سريع وآمن ومريح{% endif %}
+                            </div>
                         </div>
-                        <div class="pp-payment-subtitle">
-                            {% if is_english %}Visa, Mastercard, American Express{% else %}فيزا، ماستركارد، أمريكان إكسبرس{% endif %}
-                        </div>
+                        <div class="pp-payment-radio"></div>
                     </div>
-                    <div class="pp-payment-radio"></div>
+                    
+                    <div class="pp-payment-method" data-target="credit-card-section">
+                        <div class="pp-payment-icon">
+                            <img src="{% static 'images/credit-card.svg' %}" alt="Credit Card">
+                        </div>
+                        <div class="pp-payment-info">
+                            <div class="pp-payment-title">
+                                {% if is_english %}Credit / Debit Card{% else %}بطاقة ائتمان / خصم{% endif %}
+                            </div>
+                            <div class="pp-payment-subtitle">
+                                {% if is_english %}Visa, Mastercard, American Express{% else %}فيزا، ماستركارد، أمريكان إكسبرس{% endif %}
+                            </div>
+                        </div>
+                        <div class="pp-payment-radio"></div>
+                    </div>
                 </div>
             </div>
             
@@ -756,13 +758,17 @@
                 this.classList.add('selected');
                 
                 // Show/hide appropriate form
-                const selectedMethod = this.getAttribute('data-method');
-                if (selectedMethod === 'paypal') {
-                    paypalFormSection.style.display = 'block';
-                    cardFormSection.style.display = 'none';
-                } else if (selectedMethod === 'card') {
-                    paypalFormSection.style.display = 'none';
-                    cardFormSection.style.display = 'block';
+                const targetSection = this.getAttribute('data-target');
+                
+                // Hide all sections first
+                document.getElementById('paypal-form-section').style.display = 'none';
+                document.getElementById('card-form-section').style.display = 'none';
+                
+                // Show the target section
+                if (targetSection === 'paypal-login-section') {
+                    document.getElementById('paypal-form-section').style.display = 'block';
+                } else if (targetSection === 'credit-card-section') {
+                    document.getElementById('card-form-section').style.display = 'block';
                 }
             });
         });
@@ -770,13 +776,17 @@
         // Initialize - ensure the right form is shown
         const selectedMethod = document.querySelector('.pp-payment-method.selected');
         if (selectedMethod) {
-            const method = selectedMethod.getAttribute('data-method');
-            if (method === 'paypal') {
-                paypalFormSection.style.display = 'block';
-                cardFormSection.style.display = 'none';
-            } else if (method === 'card') {
-                paypalFormSection.style.display = 'none';
-                cardFormSection.style.display = 'block';
+            const targetSection = selectedMethod.getAttribute('data-target');
+            
+            // Hide all sections first
+            document.getElementById('paypal-form-section').style.display = 'none';
+            document.getElementById('card-form-section').style.display = 'none';
+            
+            // Show the target section
+            if (targetSection === 'paypal-login-section') {
+                document.getElementById('paypal-form-section').style.display = 'block';
+            } else if (targetSection === 'credit-card-section') {
+                document.getElementById('card-form-section').style.display = 'block';
             }
         }
         

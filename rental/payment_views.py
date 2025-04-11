@@ -501,7 +501,7 @@ def paypal_payment(request):
         }
     
     # عرض واجهة دفع PayPal المحسنة (سواء كان الطلب GET أو POST)
-    return render(request, 'payment_paypal.html', context)
+    return render(request, 'payment_paypal_enhanced.html', context)
 
 @login_required
 def payment_gateway(request):
