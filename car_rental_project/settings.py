@@ -97,6 +97,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'rental.csrf_middleware.CSRFFixMiddleware',  # MiddleWare جديد لإصلاح مشكلة CSRF في بيئة Replit
 ]
 
 # CSRF cookie settings for Replit environment
