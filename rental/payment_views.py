@@ -521,7 +521,7 @@ def payment_gateway_backup(request):
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
-    # بيانات وسائل الدفع المتاحة
+    # بيانات وسائل الدفع المتاحة - فقط بطاقة ائتمانية وتحويل بنكي
     payment_methods = [
         {
             'id': 'credit_card',
@@ -534,24 +534,6 @@ def payment_gateway_backup(request):
             'name': 'Bank Transfer' if is_english else 'تحويل بنكي',
             'icon': 'fa-university',
             'processing_time': '1-2 days' if is_english else '1-2 أيام'
-        },
-        {
-            'id': 'paypal',
-            'name': 'PayPal',
-            'icon': 'fa-paypal',
-            'processing_time': 'Instant' if is_english else 'فوري'
-        },
-        {
-            'id': 'apple_pay',
-            'name': 'Apple Pay',
-            'icon': 'fa-apple',
-            'processing_time': 'Instant' if is_english else 'فوري'
-        },
-        {
-            'id': 'google_pay',
-            'name': 'Google Pay',
-            'icon': 'fa-google',
-            'processing_time': 'Instant' if is_english else 'فوري'
         }
     ]
     
