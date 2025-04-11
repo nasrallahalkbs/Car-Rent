@@ -821,6 +821,40 @@ def payment_gateway(request):
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
+    # بيانات وسائل الدفع المتاحة
+    payment_methods = [
+        {
+            'id': 'credit_card',
+            'name': 'Credit Card' if is_english else 'بطاقة ائتمان',
+            'icon': 'fa-credit-card',
+            'processing_time': '0-1 hours' if is_english else '0-1 ساعات'
+        },
+        {
+            'id': 'bank_transfer',
+            'name': 'Bank Transfer' if is_english else 'تحويل بنكي',
+            'icon': 'fa-university',
+            'processing_time': '1-2 days' if is_english else '1-2 أيام'
+        },
+        {
+            'id': 'paypal',
+            'name': 'PayPal',
+            'icon': 'fa-paypal',
+            'processing_time': 'Instant' if is_english else 'فوري'
+        },
+        {
+            'id': 'apple_pay',
+            'name': 'Apple Pay',
+            'icon': 'fa-apple',
+            'processing_time': 'Instant' if is_english else 'فوري'
+        },
+        {
+            'id': 'google_pay',
+            'name': 'Google Pay',
+            'icon': 'fa-google',
+            'processing_time': 'Instant' if is_english else 'فوري'
+        }
+    ]
+    
     if reservation_id:
         # المستخدم يدفع لحجز محدد
         reservation = get_object_or_404(
@@ -866,7 +900,8 @@ def payment_gateway(request):
             'total_amount': reservation.total_price,
             'from_cart': False,
             'is_english': is_english,
-            'is_rtl': is_rtl
+            'is_rtl': is_rtl,
+            'payment_methods': payment_methods
         }
     else:
         # المستخدم يدفع لعناصر من السلة
@@ -934,10 +969,11 @@ def payment_gateway(request):
             'total_days': sum(item.days for item in cart_items),
             'from_cart': True,
             'is_english': is_english,
-            'is_rtl': is_rtl
+            'is_rtl': is_rtl,
+            'payment_methods': payment_methods
         }
     
-    return render(request, 'payment_gateway.html', context)
+    return render(request, get_template_by_language(request, 'payment_gateway.html'), context)
 @login_required
 def bank_transfer_payment(request):
     """Bank transfer payment interface - allows users to view bank account details and enter transfer information"""
