@@ -8,139 +8,415 @@
 {% block styles %}
 <link rel="stylesheet" href="{% static 'css/payment.css' %}">
 <style>
-    .bank-info {
-        background-color: var(--light-bg);
+    .bank-interface {
+        background-color: #f8fafc;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .bank-header {
+        background-color: #083344;
+        color: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .bank-header-logo {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .bank-header-logo i {
+        font-size: 24px;
+        margin-right: 12px;
+    }
+    
+    .bank-security-badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 13px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 4px 12px;
+        border-radius: 100px;
+    }
+    
+    .bank-security-badge i {
+        color: #10b981;
+        margin-right: 6px;
+    }
+    
+    .bank-body {
+        padding: 30px;
+    }
+    
+    .bank-section {
+        margin-bottom: 25px;
+    }
+    
+    .bank-section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .bank-section-title i {
+        color: #0369a1;
+        margin-right: 10px;
+        font-size: 20px;
+    }
+    
+    .bank-payment-details {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .bank-payment-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .bank-payment-row:last-child {
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .bank-payment-label {
+        color: #64748b;
+        font-size: 14px;
+    }
+    
+    .bank-payment-value {
+        font-weight: 600;
+        color: #0f172a;
+    }
+    
+    .bank-payment-value.large {
+        font-size: 24px;
+        color: #0369a1;
+    }
+    
+    .bank-alert {
+        background-color: #fff7ed;
+        border: 1px solid #ffedd5;
         border-radius: 8px;
-        padding: 20px;
+        padding: 15px;
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 25px;
+    }
+    
+    .bank-alert-icon {
+        color: #f59e0b;
+        margin-right: 15px;
+        margin-top: 2px;
+    }
+    
+    .bank-alert-content h5 {
+        color: #9a3412;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    
+    .bank-alert-content p {
+        color: #9a3412;
+        margin-bottom: 0;
+        font-size: 14px;
+    }
+    
+    .bank-status-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin: 40px 0;
+    }
+    
+    .bank-status-steps:before {
+        content: '';
+        position: absolute;
+        height: 2px;
+        background-color: #e2e8f0;
+        top: 15px;
+        left: 20px;
+        right: 20px;
+        z-index: 1;
+    }
+    
+    .bank-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .bank-step-icon {
+        width: 30px;
+        height: 30px;
+        background-color: #0369a1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin: 0 auto 8px;
+    }
+    
+    .bank-step-icon.completed {
+        background-color: #10b981;
+    }
+    
+    .bank-step-icon.current {
+        background-color: #0369a1;
+        box-shadow: 0 0 0 5px rgba(3, 105, 161, 0.2);
+    }
+    
+    .bank-step-label {
+        font-size: 13px;
+        color: #64748b;
+    }
+    
+    .bank-step.current .bank-step-label {
+        font-weight: 600;
+        color: #0369a1;
+    }
+    
+    .bank-step.completed .bank-step-label {
+        color: #10b981;
+    }
+    
+    .bank-form-group {
         margin-bottom: 20px;
     }
-    .bank-info p {
-        margin-bottom: 10px;
+    
+    .bank-form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #1e293b;
+        margin-bottom: 8px;
     }
-    .bank-note {
-        background-color: var(--bs-warning-bg-subtle);
-        border-left: 4px solid var(--bs-warning);
-        padding: 15px;
-        margin-top: 20px;
-        border-radius: 4px;
-    }
-    .verification-form {
-        background-color: var(--light-bg);
+    
+    .bank-form-control {
+        display: block;
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 15px;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #1e293b;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #cbd5e1;
         border-radius: 8px;
-        padding: 20px;
-        margin-top: 30px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    
+    .bank-form-control:focus {
+        border-color: #0369a1;
+        outline: 0;
+        box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.1);
+    }
+    
+    .bank-btn {
+        display: inline-block;
+        font-weight: 600;
+        text-align: center;
+        vertical-align: middle;
+        cursor: pointer;
+        padding: 12px 25px;
+        font-size: 16px;
+        line-height: 1.5;
+        border-radius: 8px;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+    
+    .bank-btn-primary {
+        color: white;
+        background-color: #0369a1;
+        border-color: #0369a1;
+    }
+    
+    .bank-btn-primary:hover {
+        background-color: #075985;
+        border-color: #075985;
+    }
+    
+    .bank-btn-block {
+        display: block;
+        width: 100%;
+    }
+    
+    .rtl .bank-header-logo i,
+    .rtl .bank-security-badge i,
+    .rtl .bank-section-title i,
+    .rtl .bank-alert-icon {
+        margin-right: 0;
+        margin-left: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .bank-payment-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        
+        .bank-status-steps {
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .bank-status-steps:before {
+            display: none;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow-sm">
-                <div class="card-body p-lg-5">
-                    <div class="text-center mb-4">
-                        <h2 class="card-title">
-                            {% if is_english %}Bank Transfer Payment{% else %}الدفع عبر التحويل البنكي{% endif %}
-                        </h2>
-                        <p class="text-muted">
-                            {% if is_english %}
-                            Please transfer the amount of <strong>${{ total_amount }}</strong> to our bank account.
-                            {% else %}
-                            يرجى تحويل مبلغ <strong>${{ total_amount }}</strong> إلى حسابنا البنكي.
-                            {% endif %}
-                        </p>
+    <div class="bank-interface">
+        <div class="bank-header">
+            <div class="bank-header-logo">
+                <i class="fas fa-university"></i>
+                <h2 class="h4 mb-0">
+                    {% if is_english %}Online Banking Payment{% else %}نظام الدفع المصرفي عبر الإنترنت{% endif %}
+                </h2>
+            </div>
+            <div class="bank-security-badge">
+                <i class="fas fa-lock"></i>
+                <span>{% if is_english %}Secure Connection{% else %}اتصال آمن{% endif %}</span>
+            </div>
+        </div>
+        
+        <div class="bank-body">
+            <div class="bank-status-steps">
+                <div class="bank-step completed">
+                    <div class="bank-step-icon completed">
+                        <i class="fas fa-check"></i>
                     </div>
-                    
-                    <div class="bank-info">
-                        <h4 class="mb-3">
-                            {% if is_english %}Bank Account Details{% else %}تفاصيل الحساب البنكي{% endif %}
-                        </h4>
-                        <p><strong>{% if is_english %}Bank Name{% else %}اسم البنك{% endif %}:</strong> International Bank of Car Rentals</p>
-                        <p><strong>{% if is_english %}Account Name{% else %}اسم الحساب{% endif %}:</strong> CarRental LLC</p>
-                        <p><strong>{% if is_english %}Account Number{% else %}رقم الحساب{% endif %}:</strong> 1234567890</p>
-                        <p><strong>{% if is_english %}IBAN{% else %}رقم الآيبان{% endif %}:</strong> SA12 3456 7890 1234 5678 9012</p>
-                        <p><strong>{% if is_english %}SWIFT/BIC Code{% else %}رمز السويفت{% endif %}:</strong> CRLBNK123</p>
-                        <p><strong>{% if is_english %}Branch{% else %}الفرع{% endif %}:</strong> Main Branch</p>
+                    <div class="bank-step-label">{% if is_english %}Login{% else %}تسجيل الدخول{% endif %}</div>
+                </div>
+                <div class="bank-step completed">
+                    <div class="bank-step-icon completed">
+                        <i class="fas fa-check"></i>
                     </div>
-                    
-                    <div class="bank-note">
-                        <h5 class="mb-2">
-                            {% if is_english %}Important{% else %}هام{% endif %}
-                        </h5>
-                        <p>
-                            {% if is_english %}
-                            Please include your reservation ID <strong>#{{ reservation.id }}</strong> in the payment reference field when making the transfer.
-                            {% else %}
-                            يرجى تضمين رقم الحجز <strong>#{{ reservation.id }}</strong> في حقل المرجع عند إجراء التحويل.
-                            {% endif %}
-                        </p>
-                        <p class="mb-0">
-                            {% if is_english %}
-                            After completing the transfer, please fill out the form below to confirm your payment.
-                            {% else %}
-                            بعد إتمام التحويل، يرجى ملء النموذج أدناه لتأكيد الدفع الخاص بك.
-                            {% endif %}
-                        </p>
+                    <div class="bank-step-label">{% if is_english %}Select Account{% else %}اختيار الحساب{% endif %}</div>
+                </div>
+                <div class="bank-step current">
+                    <div class="bank-step-icon current">
+                        <i class="fas fa-dollar-sign"></i>
                     </div>
-                    
-                    <div class="verification-form">
-                        <form method="post" action="{% url 'payment_gateway' %}?reservation_id={{ reservation.id }}">
-                            {% csrf_token %}
-                            <input type="hidden" name="payment_method" value="bank_transfer">
-                            
-                            <div class="mb-3">
-                                <label for="transfer_date" class="form-label">
-                                    {% if is_english %}Transfer Date{% else %}تاريخ التحويل{% endif %}
-                                </label>
-                                <input type="date" class="form-control" id="transfer_date" name="transfer_date" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="transfer_reference" class="form-label">
-                                    {% if is_english %}Transfer Reference Number{% else %}رقم مرجع التحويل{% endif %}
-                                </label>
-                                <input type="text" class="form-control" id="transfer_reference" name="transfer_reference" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="bank_name" class="form-label">
-                                    {% if is_english %}Your Bank Name{% else %}اسم البنك الخاص بك{% endif %}
-                                </label>
-                                <input type="text" class="form-control" id="bank_name" name="bank_name" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="transfer_amount" class="form-label">
-                                    {% if is_english %}Transfer Amount{% else %}مبلغ التحويل{% endif %}
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" step="0.01" class="form-control" id="transfer_amount" name="transfer_amount" 
-                                        value="{{ total_amount }}" required>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="notes" class="form-label">
-                                    {% if is_english %}Additional Notes{% else %}ملاحظات إضافية{% endif %}
-                                </label>
-                                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
-                            </div>
-                            
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary py-3">
-                                    {% if is_english %}
-                                    Confirm Bank Transfer
-                                    {% else %}
-                                    تأكيد التحويل البنكي
-                                    {% endif %}
-                                </button>
-                            </div>
-                        </form>
+                    <div class="bank-step-label">{% if is_english %}Payment Details{% else %}تفاصيل الدفع{% endif %}</div>
+                </div>
+                <div class="bank-step">
+                    <div class="bank-step-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="bank-step-label">{% if is_english %}Confirmation{% else %}التأكيد{% endif %}</div>
+                </div>
+            </div>
+            
+            <div class="bank-section">
+                <div class="bank-section-title">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    {% if is_english %}Payment Information{% else %}معلومات الدفع{% endif %}
+                </div>
+                
+                <div class="bank-payment-details">
+                    <div class="bank-payment-row">
+                        <div class="bank-payment-label">{% if is_english %}Merchant{% else %}التاجر{% endif %}</div>
+                        <div class="bank-payment-value">
+                            {% if is_english %}Car Rental Services Inc.{% else %}شركة خدمات تأجير السيارات{% endif %}
+                        </div>
+                    </div>
+                    <div class="bank-payment-row">
+                        <div class="bank-payment-label">{% if is_english %}Reference Number{% else %}رقم المرجع{% endif %}</div>
+                        <div class="bank-payment-value">
+                            {% if is_english %}REF-{% else %}مرجع-{% endif %}{{ reservation.id }}
+                        </div>
+                    </div>
+                    <div class="bank-payment-row">
+                        <div class="bank-payment-label">{% if is_english %}Description{% else %}الوصف{% endif %}</div>
+                        <div class="bank-payment-value">
+                            {% if is_english %}Car Rental Payment{% else %}دفع لتأجير سيارة{% endif %}
+                        </div>
+                    </div>
+                    <div class="bank-payment-row">
+                        <div class="bank-payment-label">{% if is_english %}Amount{% else %}المبلغ{% endif %}</div>
+                        <div class="bank-payment-value large">{{ total_amount }} {% if is_english %}SAR{% else %}ر.س{% endif %}</div>
                     </div>
                 </div>
             </div>
+            
+            <div class="bank-alert">
+                <div class="bank-alert-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="bank-alert-content">
+                    <h5>{% if is_english %}Important Notice{% else %}تنبيه هام{% endif %}</h5>
+                    <p>
+                        {% if is_english %}
+                        By proceeding with this payment, you authorize a transfer from your account to Car Rental Services Inc. This transaction will be processed immediately.
+                        {% else %}
+                        بالمتابعة في عملية الدفع هذه، فإنك تفوض تحويلاً من حسابك إلى شركة خدمات تأجير السيارات. ستتم معالجة هذه المعاملة على الفور.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <form method="post" action="{% url 'payment_gateway' %}?reservation_id={{ reservation.id }}">
+                {% csrf_token %}
+                <input type="hidden" name="payment_method" value="bank_transfer">
+                
+                <div class="bank-form-group">
+                    <label for="bank_account" class="bank-form-label">
+                        {% if is_english %}Select Account{% else %}اختر الحساب{% endif %}
+                    </label>
+                    <select class="bank-form-control" id="bank_account" name="bank_account" required>
+                        <option value="checking">{% if is_english %}Checking Account (****5678){% else %}الحساب الجاري (****5678){% endif %}</option>
+                        <option value="savings">{% if is_english %}Savings Account (****9012){% else %}حساب التوفير (****9012){% endif %}</option>
+                    </select>
+                </div>
+                
+                <div class="bank-form-group">
+                    <label for="transfer_reference" class="bank-form-label">
+                        {% if is_english %}Transfer Reference{% else %}مرجع التحويل{% endif %}
+                    </label>
+                    <input type="text" class="bank-form-control" id="transfer_reference" name="transfer_reference" 
+                           value="{% if is_english %}REF-{% else %}مرجع-{% endif %}{{ reservation.id }}" readonly>
+                </div>
+                
+                <div class="bank-form-group">
+                    <label for="transfer_amount" class="bank-form-label">
+                        {% if is_english %}Amount{% else %}المبلغ{% endif %}
+                    </label>
+                    <input type="text" class="bank-form-control" id="transfer_amount" name="transfer_amount" 
+                           value="{{ total_amount }}" readonly>
+                </div>
+                
+                <div class="bank-form-group">
+                    <button type="submit" class="bank-btn bank-btn-primary bank-btn-block">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        {% if is_english %}
+                        Confirm and Pay
+                        {% else %}
+                        تأكيد والدفع
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
