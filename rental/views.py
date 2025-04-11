@@ -827,6 +827,7 @@ def process_booking(request):
     car_id = request.POST.get('car_id')
     car = get_object_or_404(Car, id=car_id, is_available=True)
     
+    # استخراج المعلومات الأساسية للحجز
     start_date_str = request.POST.get('start_date')
     end_date_str = request.POST.get('end_date')
     notes = request.POST.get('notes', '')
@@ -855,6 +856,24 @@ def process_booking(request):
     # Calculate total price
     total_price = calculate_total_price(car, start_date, end_date)
     
+    # استخراج معلومات العميل
+    full_name = request.POST.get('full_name', '')
+    national_id = request.POST.get('national_id', '')
+    
+    # استخراج تفاصيل الحجز الإضافية
+    rental_type = request.POST.get('rental_type', '')
+    payment_method = request.POST.get('payment_method', '')
+    guarantee_type = request.POST.get('guarantee_type', '')
+    guarantee_details = request.POST.get('guarantee_details', '')
+    
+    # معالجة الوديعة (إذا كانت موجودة)
+    deposit_amount = request.POST.get('deposit_amount', None)
+    if deposit_amount:
+        try:
+            deposit_amount = float(deposit_amount)
+        except ValueError:
+            deposit_amount = None
+    
     # Create reservation with pending status - admin must approve before payment
     reservation = Reservation.objects.create(
         user=request.user,
@@ -864,8 +883,22 @@ def process_booking(request):
         total_price=total_price,
         status='pending',  # Set as pending - admin must confirm before payment
         payment_status='pending',
-        notes=notes
+        notes=notes,
+        # معلومات العميل الإضافية
+        full_name=full_name,
+        national_id=national_id,
+        # معلومات الحجز الإضافية
+        rental_type=rental_type,
+        payment_method=payment_method,
+        guarantee_type=guarantee_type,
+        guarantee_details=guarantee_details,
+        deposit_amount=deposit_amount
     )
+    
+    # معالجة ملف صورة الهوية
+    if 'id_card_image' in request.FILES:
+        reservation.id_card_image = request.FILES['id_card_image']
+        reservation.save()
     
     # Remove the item from cart if it exists
     CartItem.objects.filter(
