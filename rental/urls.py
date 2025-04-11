@@ -32,6 +32,7 @@ urlpatterns = [
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     path('toggle-language/', views.toggle_language, name='toggle_language'),
     path('about-us/', views.about_us, name='about_us'),
+    path('bank-transfer-info/', views.bank_transfer_info, name='bank_transfer_info'),
     path('payment-test/', lambda request: render(request, 'payment_test.html'), name='payment_test'),
     
     # API endpoints

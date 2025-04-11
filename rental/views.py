@@ -891,3 +891,17 @@ def get_unavailable_dates_api(request, car_id):
         formatted_dates.append(date_obj.strftime('%Y-%m-%d'))
     
     return JsonResponse({'unavailable_dates': formatted_dates})
+
+def bank_transfer_info(request):
+    # Get user language
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    context = {
+        'is_english': is_english,
+        'is_rtl': is_rtl
+    }
+    
+    return render(request, 'bank_transfer_info.html', context)

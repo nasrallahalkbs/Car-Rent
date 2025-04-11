@@ -17,24 +17,40 @@ def update_payment_method_names():
     with open(file_path, 'r', encoding='utf-8') as file:
         content = file.read()
     
-    # تحديث قاموس أسماء طرق الدفع باللغة الإنجليزية
-    content = content.replace(
-        "method_names = {'credit_card': 'Credit Card', 'paypal': 'PayPal', 'apple_pay': 'Apple Pay', 'google_pay': 'Google Pay'}",
-        "method_names = {'credit_card': 'Credit Card', 'bank_transfer': 'Bank Transfer', 'paypal': 'PayPal', 'apple_pay': 'Apple Pay', 'google_pay': 'Google Pay'}"
-    )
+    # البحث عن قاموس أسماء طرق الدفع باللغة الإنجليزية وإضافة التحويل البنكي
+    english_dict_pattern = r'PAYMENT_METHOD_NAMES_EN\s*=\s*{([^}]+)}'
+    english_dict_match = re.search(english_dict_pattern, content, re.DOTALL)
     
-    # تحديث قاموس أسماء طرق الدفع باللغة العربية
-    content = content.replace(
-        "method_names = {'credit_card': 'بطاقة ائتمان', 'paypal': 'باي بال', 'apple_pay': 'آبل باي', 'google_pay': 'جوجل باي'}",
-        "method_names = {'credit_card': 'بطاقة ائتمان', 'bank_transfer': 'تحويل بنكي', 'paypal': 'باي بال', 'apple_pay': 'آبل باي', 'google_pay': 'جوجل باي'}"
-    )
+    if english_dict_match:
+        english_dict_content = english_dict_match.group(1)
+        if "'bank_transfer':" not in english_dict_content:
+            new_english_dict_content = english_dict_content + "\n    'bank_transfer': 'Bank Transfer',"
+            new_content = content.replace(english_dict_content, new_english_dict_content)
+            content = new_content
     
-    # كتابة المحتوى المعدل إلى الملف
+    # البحث عن قاموس أسماء طرق الدفع باللغة العربية وإضافة التحويل البنكي
+    arabic_dict_pattern = r'PAYMENT_METHOD_NAMES_AR\s*=\s*{([^}]+)}'
+    arabic_dict_match = re.search(arabic_dict_pattern, content, re.DOTALL)
+    
+    if arabic_dict_match:
+        arabic_dict_content = arabic_dict_match.group(1)
+        if "'bank_transfer':" not in arabic_dict_content:
+            new_arabic_dict_content = arabic_dict_content + "\n    'bank_transfer': 'تحويل بنكي',"
+            new_content = content.replace(arabic_dict_content, new_arabic_dict_content)
+            content = new_content
+    
+    # حفظ التغييرات
     with open(file_path, 'w', encoding='utf-8') as file:
         file.write(content)
     
-    print("تم تحديث قواميس أسماء طرق الدفع بنجاح")
+    print("تم إضافة التحويل البنكي إلى قواميس أسماء طرق الدفع بنجاح")
     return True
 
-if __name__ == "__main__":
+def main():
+    """تنفيذ الدالة الرئيسية للسكريبت"""
+    print("بدء تحديث طرق الدفع المتاحة...")
     update_payment_method_names()
+    print("تم تحديث طرق الدفع المتاحة بنجاح!")
+
+if __name__ == "__main__":
+    main()
