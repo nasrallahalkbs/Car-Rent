@@ -131,16 +131,66 @@
                             </div>
                         </div>
                         {% endif %}
+                        
+                        {% if reservation.guarantee_type == 'credit_card' and reservation.guarantee_details %}
+                        <!-- Card Information (displayed elegantly when the guarantee type is credit card) -->
+                        <div class="card bg-light border-0 mb-3">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="me-2">
+                                        <i class="fas fa-credit-card text-primary fa-lg"></i>
+                                    </div>
+                                    <h6 class="mb-0">معلومات البطاقة</h6>
+                                </div>
+                                
+                                <div class="row g-0">
+                                    <div class="col-md-8">
+                                        {% if reservation.full_name %}
+                                        <div class="py-1 px-3">
+                                            <small class="text-muted">اسم حامل البطاقة</small>
+                                            <div class="fw-semibold">{{ reservation.full_name }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if 'card_number' in reservation.guarantee_details %}
+                                        <div class="py-1 px-3">
+                                            <small class="text-muted">رقم البطاقة</small>
+                                            <div class="fw-semibold">•••• •••• •••• {{ reservation.guarantee_details|slice:"-4:" }}</div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if reservation.id_card_image %}
+                                    <div class="col-md-4 text-center">
+                                        <div class="py-1">
+                                            <img src="{{ reservation.id_card_image.url }}" alt="صورة البطاقة" class="img-fluid rounded" style="max-height: 60px;">
+                                            <div class="mt-1">
+                                                <small><a href="{{ reservation.id_card_image.url }}" target="_blank">عرض الصورة</a></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% elif reservation.guarantee_details %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-semibold">تفاصيل الضمان:</div>
+                            <div class="col-sm-8">{{ reservation.guarantee_details }}</div>
+                        </div>
+                        {% endif %}
+                        
                         {% if reservation.deposit_amount %}
                         <div class="row mb-2">
                             <div class="col-sm-4 fw-semibold">مبلغ الوديعة:</div>
                             <div class="col-sm-8">{{ reservation.deposit_amount }} دينار</div>
                         </div>
                         {% endif %}
-                        {% if reservation.guarantee_details %}
+                        
+                        {% if reservation.national_id %}
                         <div class="row mb-2">
-                            <div class="col-sm-4 fw-semibold">تفاصيل الضمان:</div>
-                            <div class="col-sm-8">{{ reservation.guarantee_details }}</div>
+                            <div class="col-sm-4 fw-semibold">الرقم الوطني:</div>
+                            <div class="col-sm-8">{{ reservation.national_id }}</div>
                         </div>
                         {% endif %}
                         {% if reservation.notes %}
