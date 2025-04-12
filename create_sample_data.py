@@ -24,6 +24,11 @@ def create_sample_data():
     # إنشاء مستخدم تجريبي إذا لم يكن موجودًا
     try:
         test_user = User.objects.get(username='test_user')
+        # تحديث رقم الهاتف للمستخدم التجريبي
+        if hasattr(test_user, 'phone'):
+            test_user.phone = '+972-59-123-4567'
+            test_user.save()
+            print("تم تحديث رقم هاتف المستخدم التجريبي")
         print("المستخدم التجريبي موجود بالفعل")
     except User.DoesNotExist:
         test_user = User.objects.create_user(
@@ -33,6 +38,11 @@ def create_sample_data():
             first_name='محمد',
             last_name='أحمد'
         )
+        # إضافة رقم هاتف للمستخدم التجريبي إذا كان النموذج يدعم ذلك
+        if hasattr(test_user, 'phone'):
+            test_user.phone = '+972-59-123-4567'
+            test_user.save()
+            print("تم إضافة رقم هاتف للمستخدم التجريبي")
         print("تم إنشاء المستخدم التجريبي")
     
     # إنشاء سيارة تجريبية
@@ -83,6 +93,7 @@ def create_sample_data():
             'guarantee_type': 'credit_card',
             'guarantee_details': '4111111111111111',
             'payment_method': 'credit_card',
+            'id_card_image': 'customer_ids/id_card_sample.png',
             'notes': 'هذا حجز تجريبي مع ضمان بطاقة ائتمان',
         }
     )
