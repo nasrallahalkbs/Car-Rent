@@ -589,18 +589,22 @@ def confirmation(request):
 @login_required
 def reservation_detail(request, reservation_id):
     """Detailed view of a single reservation"""
-    reservation = get_object_or_404(Reservation, id=reservation_id, user=request.user)
-    
-    # Check if user has already reviewed this reservation
-    has_review = Review.objects.filter(reservation=reservation, user=request.user).exists()
-    
-    context = {
-        'reservation': reservation,
-        'has_review': has_review,
-    }
-    
-    template = get_template_by_language(request, 'reservation_detail.html')
-    return render(request, template, context)
+    try:
+        reservation = get_object_or_404(Reservation, id=reservation_id, user=request.user)
+        
+        # Check if user has already reviewed this reservation
+        has_review = Review.objects.filter(reservation=reservation, user=request.user).exists()
+        
+        context = {
+            'reservation': reservation,
+            'has_review': has_review,
+        }
+        
+        template = get_template_by_language(request, 'reservation_detail.html')
+        return render(request, template, context)
+    except:
+        messages.error(request, _("الحجز غير موجود أو لا يمكنك الوصول إليه"))
+        return redirect('my_reservations')
 
 @login_required
 def modify_reservation(request, reservation_id):
