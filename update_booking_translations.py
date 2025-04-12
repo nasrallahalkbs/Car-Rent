@@ -55,6 +55,7 @@ def update_translations():
         "Additional details about the guarantee provided": "تفاصيل إضافية عن الضمان المقدم",
         "Information about the guarantee: For ID Card/Passport - mention issuing authority; for Credit Card Hold - mention card type.": "معلومات عن الضمان: للبطاقة الشخصية/جواز السفر - اذكر جهة الإصدار؛ لبطاقة الائتمان - اذكر نوع البطاقة.",
         "Information about the guarantee: For ID Card/Passport - mention issuing authority; for Credit Card Hold - mention card type; for Property Document - mention document type and details.": "معلومات عن الضمان: للبطاقة الشخصية/جواز السفر - اذكر جهة الإصدار؛ لبطاقة الائتمان - اذكر نوع البطاقة؛ للمستند العقاري - اذكر نوع المستند وتفاصيله.",
+        "Information about the guarantee: For Credit Card Hold - mention card type; for Property Document - mention document type and details; for Security Deposit - mention payment method.": "معلومات عن الضمان: لبطاقة الائتمان - اذكر نوع البطاقة؛ للمستند العقاري - اذكر نوع المستند وتفاصيله؛ للوديعة التأمينية - اذكر طريقة الدفع.",
         "Return date must be after pick-up date": "تاريخ التسليم يجب أن يكون بعد تاريخ الاستلام",
         
         # الحالة

@@ -130,9 +130,6 @@
                                 <label for="guarantee_type" class="form-label">{% trans "Guarantee Type*" %}</label>
                                 <select id="guarantee_type" name="guarantee_type" class="form-control" required>
                                     <option value="">{% trans "-- Select Guarantee Type --" %}</option>
-                                    <option value="id_card">{% trans "National ID Card" %}</option>
-                                    <option value="passport">{% trans "Passport" %}</option>
-                                    <option value="driving_license">{% trans "Driving License" %}</option>
                                     <option value="deposit">{% trans "Security Deposit" %}</option>
                                     <option value="credit_card">{% trans "Credit Card Hold" %}</option>
                                     <option value="property_doc">{% trans "Property Document" %}</option>
@@ -148,9 +145,9 @@
                                       placeholder="{% trans "Additional details about the guarantee provided" %}"></textarea>
                                 <small class="form-text text-muted">
                                     {% if is_english %}
-                                    Information about the guarantee: For ID Card/Passport - mention issuing authority; for Credit Card Hold - mention card type; for Property Document - mention document type and details.
+                                    Information about the guarantee: For Credit Card Hold - mention card type; for Property Document - mention document type and details; for Security Deposit - mention payment method.
                                     {% else %}
-                                    معلومات عن الضمان: للبطاقة الشخصية/جواز السفر - اذكر جهة الإصدار؛ لبطاقة الائتمان - اذكر نوع البطاقة؛ للمستند العقاري - اذكر نوع المستند وتفاصيله.
+                                    معلومات عن الضمان: لبطاقة الائتمان - اذكر نوع البطاقة؛ للمستند العقاري - اذكر نوع المستند وتفاصيله؛ للوديعة التأمينية - اذكر طريقة الدفع.
                                     {% endif %}
                                 </small>
                             </div>
@@ -289,30 +286,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleIdFields() {
         const guaranteeType = guaranteeTypeSelect.value;
         
-        if (guaranteeType === 'id_card' || guaranteeType === 'passport') {
-            // Show ID fields and make them required for ID card or passport
+        // Hide ID Card image field for all guarantee types (since we removed ID card options)
+        idCardImageField.style.display = 'none';
+        idCardImageInput.required = false;
+        
+        if (guaranteeType === 'deposit') {
+            // For deposit guarantee, make deposit amount required
             nationalIdField.style.display = 'block';
-            idCardImageField.style.display = 'block';
             nationalIdInput.required = true;
-            idCardImageInput.required = true;
-            
-            // No deposit required for ID-based guarantees
+            depositAmountInput.required = true;
+        } else if (guaranteeType === 'property_doc') {
+            // For property document
+            nationalIdField.style.display = 'block';
+            nationalIdInput.required = true;
             depositAmountInput.required = false;
-        } else if (guaranteeType === 'deposit' || guaranteeType === 'property_doc') {
-            // Hide ID fields and make them not required for deposit or property document
+        } else if (guaranteeType === 'credit_card') {
+            // For credit card hold
             nationalIdField.style.display = 'block';
-            idCardImageField.style.display = 'none';
             nationalIdInput.required = true;
-            idCardImageInput.required = false;
-            
-            // Deposit amount required for deposit guarantee
-            depositAmountInput.required = (guaranteeType === 'deposit');
+            depositAmountInput.required = false;
         } else {
-            // Default behavior for other options
+            // Default behavior for empty selection
             nationalIdField.style.display = 'block';
-            idCardImageField.style.display = 'block';
             nationalIdInput.required = true;
-            idCardImageInput.required = true;
             depositAmountInput.required = false;
         }
     }
