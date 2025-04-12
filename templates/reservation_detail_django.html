@@ -108,6 +108,41 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% if reservation.payment_method %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-semibold">طريقة الدفع:</div>
+                            <div class="col-sm-8">
+                                {% if reservation.payment_method == 'cash' %}نقدي
+                                {% elif reservation.payment_method == 'electronic' %}دفع إلكتروني
+                                {% elif reservation.payment_method == 'credit_card' %}بطاقة ائتمان
+                                {% elif reservation.payment_method == 'bank_transfer' %}تحويل بنكي
+                                {% else %}{{ reservation.payment_method }}{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.guarantee_type %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-semibold">نوع الضمان:</div>
+                            <div class="col-sm-8">
+                                {% if reservation.guarantee_type == 'deposit' %}وديعة تأمين
+                                {% elif reservation.guarantee_type == 'credit_card' %}تعليق على بطاقة ائتمان
+                                {% elif reservation.guarantee_type == 'property_doc' %}مستند عقاري
+                                {% else %}{{ reservation.guarantee_type }}{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.deposit_amount %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-semibold">مبلغ الوديعة:</div>
+                            <div class="col-sm-8">{{ reservation.deposit_amount }} دينار</div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.guarantee_details %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-semibold">تفاصيل الضمان:</div>
+                            <div class="col-sm-8">{{ reservation.guarantee_details }}</div>
+                        </div>
+                        {% endif %}
                         {% if reservation.notes %}
                         <div class="row mb-2">
                             <div class="col-sm-4 fw-semibold">ملاحظات:</div>
@@ -138,7 +173,10 @@
                     <div class="action-buttons d-flex justify-content-center gap-2">
                         {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
                         <a href="{% url 'professional_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-success">
-                            <i class="fas fa-credit-card ms-2"></i>إتمام عملية الدفع
+                            <i class="fas fa-credit-card ms-2"></i>إتمام عملية الدفع الآمن
+                        </a>
+                        <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success">
+                            <i class="fas fa-university ms-2"></i>الدفع بالتحويل البنكي
                         </a>
                         {% endif %}
                         
