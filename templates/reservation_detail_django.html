@@ -1,4 +1,3 @@
-
 {% extends 'layout_django.html' %}
 {% load i18n %}
 {% load static %}
@@ -6,410 +5,337 @@
 {% block title %}{% trans "تفاصيل الحجز" %} #{{ reservation.reservation_number }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4 reservation-document-wrapper">
-    <div class="row justify-content-center">
-        <div class="col-12 col-xxl-10">
-            <!-- بداية المستند الرسمي -->
-            <div class="official-document shadow-lg">
-                <!-- رأس المستند الرسمي -->
-                <div class="document-header">
-                    <div class="header-bg"></div>
-                    <div class="header-content">
-                        <div class="row align-items-center">
-                            <div class="col-md-3">
-                                <div class="company-logo">
-                                    <img src="{% static 'images/car-rental-logo.svg' %}" alt="Car Rental" class="img-fluid">
-                                </div>
-                            </div>
-                            <div class="col-md-6 text-center">
-                                <h1 class="document-title">{% trans "عقد إيجار مركبة" %}</h1>
-                                <div class="document-number">{% trans "رقم العقد" %}: {{ reservation.reservation_number }}</div>
-                                <div class="document-date">{% trans "تاريخ الإصدار" %}: {{ reservation.created_at|date:"Y/m/d" }}</div>
-                            </div>
-                            <div class="col-md-3 text-end">
-                                <div class="document-status">
-                                    {% if reservation.status == 'pending' %}
-                                    <div class="status-seal pending">{% trans "قيد المراجعة" %}</div>
-                                    {% elif reservation.status == 'confirmed' %}
-                                    <div class="status-seal confirmed">{% trans "تمت الموافقة" %}</div>
-                                    {% elif reservation.status == 'completed' %}
-                                    <div class="status-seal completed">{% trans "مكتمل" %}</div>
-                                    {% elif reservation.status == 'cancelled' %}
-                                    <div class="status-seal cancelled">{% trans "ملغي" %}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow border-0 mb-4">
+                <!-- رأس المستند -->
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">{% trans "عقد إيجار مركبة" %} - {{ reservation.reservation_number }}</h3>
+                        <div class="reservation-status">
+                            {% if reservation.status == 'pending' %}
+                            <span class="badge bg-warning">{% trans "قيد المراجعة" %}</span>
+                            {% elif reservation.status == 'confirmed' %}
+                            <span class="badge bg-success">{% trans "تمت الموافقة" %}</span>
+                            {% elif reservation.status == 'completed' %}
+                            <span class="badge bg-info">{% trans "مكتمل" %}</span>
+                            {% elif reservation.status == 'cancelled' %}
+                            <span class="badge bg-danger">{% trans "ملغي" %}</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- معلومات العميل مع صورة الهوية - تصميم يشبه نموذج الهوية -->
-                <div class="customer-id-section">
-                    <div class="section-title"><i class="fas fa-user-shield me-2"></i>{% trans "بيانات المستأجر" %}</div>
-                    <div class="row">
-                        <div class="col-md-7">
-                            <div class="customer-details">
-                                <div class="row mb-3">
-                                    <div class="col-5 id-field-label">{% trans "الاسم الكامل" %}</div>
-                                    <div class="col-7 id-field-value">{{ reservation.full_name }}</div>
+                <div class="card-body p-4">
+                    <!-- معلومات العميل والسيارة -->
+                    <div class="row mb-4">
+                        <!-- معلومات العميل -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light py-3">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-user-circle me-2"></i>
+                                        {% trans "معلومات العميل" %}
+                                    </h5>
                                 </div>
-                                <div class="row mb-3">
-                                    <div class="col-5 id-field-label">{% trans "رقم الهوية" %}</div>
-                                    <div class="col-7 id-field-value">{{ reservation.national_id }}</div>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col-5 id-field-label">{% trans "البريد الإلكتروني" %}</div>
-                                    <div class="col-7 id-field-value">{{ reservation.user.email }}</div>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col-5 id-field-label">{% trans "رقم الهاتف" %}</div>
-                                    <div class="col-7 id-field-value">{{ reservation.user.phone|default:"غير متوفر" }}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-5 id-field-label">{% trans "نوع الضمان" %}</div>
-                                    <div class="col-7 id-field-value">{{ reservation.get_guarantee_type_display }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-5">
-                            <div class="identity-card">
-                                <div class="id-card-header">
-                                    <div class="id-card-title">{% trans "وثيقة إثبات الهوية" %}</div>
-                                </div>
-                                <div class="id-card-body">
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-5 text-muted">{% trans "الاسم الكامل" %}</div>
+                                        <div class="col-7 fw-bold">{{ reservation.full_name }}</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-5 text-muted">{% trans "رقم الهوية" %}</div>
+                                        <div class="col-7">{{ reservation.national_id }}</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-5 text-muted">{% trans "البريد الإلكتروني" %}</div>
+                                        <div class="col-7">{{ reservation.user.email }}</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-5 text-muted">{% trans "رقم الهاتف" %}</div>
+                                        <div class="col-7">{{ reservation.user.phone|default:"غير متوفر" }}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-5 text-muted">{% trans "نوع الضمان" %}</div>
+                                        <div class="col-7">{{ reservation.get_guarantee_type_display }}</div>
+                                    </div>
+
                                     {% if reservation.id_card_image %}
-                                    <div class="id-card-image-container">
-                                        <img src="{{ reservation.id_card_image.url }}" alt="{% trans 'صورة الهوية' %}" class="id-card-image">
-                                        <div class="id-card-overlay">
-                                            <a href="{{ reservation.id_card_image.url }}" target="_blank" class="id-card-zoom-btn">
-                                                <i class="fas fa-search-plus"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    {% else %}
-                                    <div class="id-card-placeholder">
-                                        <i class="fas fa-id-card"></i>
-                                        <div class="mt-2">{% trans "صورة الهوية غير متوفرة" %}</div>
+                                    <hr>
+                                    <div class="text-center">
+                                        <p class="text-muted mb-2">{% trans "صورة الهوية" %}</p>
+                                        <a href="{{ reservation.id_card_image.url }}" target="_blank">
+                                            <img src="{{ reservation.id_card_image.url }}" class="img-fluid rounded border" style="max-height: 120px;" alt="{% trans 'صورة الهوية' %}">
+                                        </a>
                                     </div>
                                     {% endif %}
                                 </div>
-                                <div class="id-card-footer">
-                                    <div class="id-card-verification">
-                                        <i class="fas fa-check-circle me-1"></i>
-                                        {% trans "تم التحقق" %}
+                            </div>
+                        </div>
+
+                        <!-- معلومات السيارة -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light py-3">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-car me-2"></i>
+                                        {% trans "معلومات المركبة" %}
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        {% if reservation.car.image %}
+                                        <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="img-fluid rounded" style="max-height: 150px;">
+                                        {% elif reservation.car.image_url %}
+                                        <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="img-fluid rounded" style="max-height: 150px;">
+                                        {% else %}
+                                        <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="img-fluid rounded" style="max-height: 150px;">
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="text-center mb-3">
+                                        <h5 class="mb-1">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</h5>
+                                        <span class="badge bg-secondary">{{ reservation.car.get_category_display }}</span>
+                                        <span class="badge bg-secondary">{{ reservation.car.get_transmission_display }}</span>
+                                        <span class="badge bg-secondary">{{ reservation.car.get_fuel_type_display }}</span>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-6 text-muted">{% trans "رقم اللوحة" %}</div>
+                                        <div class="col-6 fw-bold">{{ reservation.car.license_plate }}</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-6 text-muted">{% trans "عدد المقاعد" %}</div>
+                                        <div class="col-6">{{ reservation.car.seats }}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6 text-muted">{% trans "السعر اليومي" %}</div>
+                                        <div class="col-6 fw-bold">{{ reservation.car.daily_rate }} {% trans "دينار" %}</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- معلومات السيارة والحجز -->
-                <div class="car-details-section">
-                    <div class="section-title"><i class="fas fa-car me-2"></i>{% trans "تفاصيل المركبة" %}</div>
-                    <div class="row">
-                        <div class="col-md-5">
-                            <div class="vehicle-image-wrapper">
-                                {% if reservation.car.image %}
-                                <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="vehicle-image">
-                                {% elif reservation.car.image_url %}
-                                <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="vehicle-image">
-                                {% else %}
-                                <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="vehicle-image">
-                                {% endif %}
-                                <div class="car-plate-overlay">
-                                    <div class="car-plate">{{ reservation.car.license_plate }}</div>
-                                </div>
-                            </div>
-                            <div class="car-info text-center mt-3">
-                                <h3 class="car-model">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</h3>
-                                <div class="car-category">{{ reservation.car.get_category_display }}</div>
-                                <div class="car-specs-badges mt-2">
-                                    <span class="car-spec"><i class="fas fa-cog me-1"></i>{{ reservation.car.get_transmission_display }}</span>
-                                    <span class="car-spec"><i class="fas fa-gas-pump me-1"></i>{{ reservation.car.get_fuel_type_display }}</span>
-                                    <span class="car-spec"><i class="fas fa-users me-1"></i>{{ reservation.car.seats }} {% trans "مقاعد" %}</span>
-                                </div>
-                                {% if reservation.car.feature_list %}
-                                <div class="car-features mt-3 text-start">
-                                    <div class="features-title mb-2">{% trans "المميزات" %}:</div>
-                                    <div class="features-list">
-                                        {% for feature in reservation.car.feature_list %}
-                                        <span class="feature-item"><i class="fas fa-check me-1"></i>{{ feature }}</span>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
+                    <!-- تفاصيل الحجز -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-light py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                {% trans "تفاصيل الحجز" %}
+                            </h5>
                         </div>
-                        <div class="col-md-7">
-                            <div class="rental-details-table">
-                                <div class="detail-group">
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <div class="detail-item">
-                                                <div class="detail-label"><i class="far fa-calendar-plus me-2"></i>{% trans "تاريخ الاستلام" %}</div>
-                                                <div class="detail-value highlight">{{ reservation.start_date|date:"Y/m/d" }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="detail-item">
-                                                <div class="detail-label"><i class="far fa-calendar-minus me-2"></i>{% trans "تاريخ التسليم" %}</div>
-                                                <div class="detail-value highlight">{{ reservation.end_date|date:"Y/m/d" }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="text-muted" width="40%">{% trans "تاريخ الاستلام" %}</td>
+                                            <td class="fw-bold">{{ reservation.start_date|date:"Y/m/d" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">{% trans "تاريخ التسليم" %}</td>
+                                            <td class="fw-bold">{{ reservation.end_date|date:"Y/m/d" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">{% trans "مدة الإيجار" %}</td>
+                                            <td>{{ reservation.days }} {% trans "يوم" %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">{% trans "نوع الإيجار" %}</td>
+                                            <td>{{ reservation.get_rental_type_display }}</td>
+                                        </tr>
+                                    </table>
                                 </div>
-                                
-                                <div class="detail-group">
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <div class="detail-item">
-                                                <div class="detail-label"><i class="far fa-clock me-2"></i>{% trans "مدة الإيجار" %}</div>
-                                                <div class="detail-value">{{ reservation.days }} {% trans "يوم" %}</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="detail-item">
-                                                <div class="detail-label"><i class="fas fa-tag me-2"></i>{% trans "نوع الإيجار" %}</div>
-                                                <div class="detail-value">{{ reservation.get_rental_type_display }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="text-muted" width="40%">{% trans "تاريخ الحجز" %}</td>
+                                            <td>{{ reservation.created_at|date:"Y/m/d H:i" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">{% trans "مبلغ التأمين" %}</td>
+                                            <td>{{ reservation.deposit_amount|default:"--" }} {% if reservation.deposit_amount %}{% trans "دينار" %}{% endif %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">{% trans "المبلغ الإجمالي" %}</td>
+                                            <td class="fw-bold text-primary">{{ reservation.total_price }} {% trans "دينار" %}</td>
+                                        </tr>
+                                    </table>
                                 </div>
-
-                                <div class="detail-group">
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <div class="detail-item">
-                                                <div class="detail-label"><i class="fas fa-shield-alt me-2"></i>{% trans "مبلغ التأمين" %}</div>
-                                                <div class="detail-value">{{ reservation.deposit_amount|default:"--" }} {% if reservation.deposit_amount %}{% trans "دينار" %}{% endif %}</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="detail-item">
-                                                <div class="detail-label"><i class="fas fa-money-bill-wave me-2"></i>{% trans "السعر اليومي" %}</div>
-                                                <div class="detail-value">{{ reservation.car.daily_rate }} {% trans "دينار" %}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {% if reservation.guarantee_details %}
-                                <div class="detail-group">
-                                    <div class="detail-item full-width">
-                                        <div class="detail-label"><i class="fas fa-info-circle me-2"></i>{% trans "تفاصيل الضمان" %}</div>
-                                        <div class="detail-value">{{ reservation.guarantee_details }}</div>
-                                    </div>
-                                </div>
-                                {% endif %}
-
-                                {% if reservation.notes %}
-                                <div class="detail-group">
-                                    <div class="detail-item full-width">
-                                        <div class="detail-label"><i class="fas fa-sticky-note me-2"></i>{% trans "ملاحظات" %}</div>
-                                        <div class="detail-value">{{ reservation.notes }}</div>
-                                    </div>
-                                </div>
-                                {% endif %}
                             </div>
+
+                            {% if reservation.notes %}
+                            <div class="alert alert-light mt-3 mb-0">
+                                <h6 class="mb-2">{% trans "ملاحظات" %}</h6>
+                                <p class="mb-0">{{ reservation.notes }}</p>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
-                </div>
 
-                <!-- تفاصيل الدفع -->
-                <div class="payment-details-section">
-                    <div class="section-title"><i class="fas fa-credit-card me-2"></i>{% trans "بيانات الدفع" %}</div>
-                    
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="payment-info">
-                                <div class="row mb-3">
-                                    <div class="col-5 payment-field-label">{% trans "طريقة الدفع" %}</div>
-                                    <div class="col-7 payment-field-value">
-                                        {% if reservation.payment_method %}
-                                            <div class="payment-method-badge">
-                                                {% if reservation.payment_method == 'credit_card' %}
-                                                    <i class="fas fa-credit-card me-2"></i>
-                                                {% elif reservation.payment_method == 'paypal' %}
-                                                    <i class="fab fa-paypal me-2"></i>
-                                                {% elif reservation.payment_method == 'bank_transfer' %}
-                                                    <i class="fas fa-university me-2"></i>
-                                                {% elif reservation.payment_method == 'cash' %}
-                                                    <i class="fas fa-money-bill-wave me-2"></i>
-                                                {% elif reservation.payment_method == 'electronic' %}
-                                                    <i class="fas fa-mobile-alt me-2"></i>
+                    <!-- معلومات الدفع -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-light py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-credit-card me-2"></i>
+                                {% trans "معلومات الدفع" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="text-muted" width="40%">{% trans "طريقة الدفع" %}</td>
+                                            <td>
+                                                {% if reservation.payment_method %}
+                                                    <span class="fw-medium">
+                                                        {% if reservation.payment_method == 'credit_card' %}
+                                                            <i class="fas fa-credit-card me-1"></i>
+                                                        {% elif reservation.payment_method == 'paypal' %}
+                                                            <i class="fab fa-paypal me-1"></i>
+                                                        {% elif reservation.payment_method == 'bank_transfer' %}
+                                                            <i class="fas fa-university me-1"></i>
+                                                        {% elif reservation.payment_method == 'cash' %}
+                                                            <i class="fas fa-money-bill-wave me-1"></i>
+                                                        {% elif reservation.payment_method == 'electronic' %}
+                                                            <i class="fas fa-mobile-alt me-1"></i>
+                                                        {% endif %}
+                                                        {{ reservation.get_payment_method_display }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted fst-italic">{% trans "لم يتم تحديدها بعد" %}</span>
                                                 {% endif %}
-                                                {{ reservation.get_payment_method_display }}
-                                            </div>
-                                        {% else %}
-                                            <span class="not-specified">{% trans "لم يتم تحديدها بعد" %}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">{% trans "حالة الدفع" %}</td>
+                                            <td>
+                                                {% if reservation.payment_status == 'pending' %}
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        {% trans "في انتظار الدفع" %}
+                                                    </span>
+                                                {% elif reservation.payment_status == 'paid' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check-circle me-1"></i>
+                                                        {% trans "تم الدفع" %}
+                                                    </span>
+                                                {% elif reservation.payment_status == 'refunded' %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-undo me-1"></i>
+                                                        {% trans "تم استرداد المبلغ" %}
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% if reservation.payment_date %}
+                                        <tr>
+                                            <td class="text-muted">{% trans "تاريخ الدفع" %}</td>
+                                            <td>{{ reservation.payment_date|date:"Y/m/d H:i" }}</td>
+                                        </tr>
                                         {% endif %}
-                                    </div>
+                                    </table>
                                 </div>
-                                
-                                <div class="row mb-3">
-                                    <div class="col-5 payment-field-label">{% trans "حالة الدفع" %}</div>
-                                    <div class="col-7 payment-field-value">
-                                        {% if reservation.payment_status == 'pending' %}
-                                            <div class="payment-status pending">
-                                                <i class="fas fa-clock me-2"></i>
-                                                {% trans "في انتظار الدفع" %}
-                                            </div>
-                                        {% elif reservation.payment_status == 'paid' %}
-                                            <div class="payment-status paid">
-                                                <i class="fas fa-check-circle me-2"></i>
-                                                {% trans "تم الدفع" %}
-                                            </div>
-                                        {% elif reservation.payment_status == 'refunded' %}
-                                            <div class="payment-status refunded">
-                                                <i class="fas fa-undo me-2"></i>
-                                                {% trans "تم استرداد المبلغ" %}
-                                            </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        {% if reservation.payment_reference %}
+                                        <tr>
+                                            <td class="text-muted" width="40%">{% trans "رقم المرجع" %}</td>
+                                            <td><code>{{ reservation.payment_reference }}</code></td>
+                                        </tr>
                                         {% endif %}
-                                    </div>
-                                </div>
-                                
-                                {% if reservation.payment_date %}
-                                <div class="row mb-3">
-                                    <div class="col-5 payment-field-label">{% trans "تاريخ الدفع" %}</div>
-                                    <div class="col-7 payment-field-value">{{ reservation.payment_date|date:"Y/m/d H:i" }}</div>
-                                </div>
-                                {% endif %}
-                                
-                                {% if reservation.payment_reference %}
-                                <div class="row mb-3">
-                                    <div class="col-5 payment-field-label">{% trans "رقم المرجع" %}</div>
-                                    <div class="col-7 payment-field-value">
-                                        <div class="reference-code">{{ reservation.payment_reference }}</div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="payment-summary">
-                                <div class="summary-title">{% trans "ملخص التكاليف" %}</div>
-                                <div class="summary-item">
-                                    <div class="item-label">{% trans "سعر الإيجار اليومي" %}</div>
-                                    <div class="item-value">{{ reservation.car.daily_rate }} {% trans "دينار" %}</div>
-                                </div>
-                                <div class="summary-item">
-                                    <div class="item-label">{% trans "عدد الأيام" %}</div>
-                                    <div class="item-value">{{ reservation.days }}</div>
-                                </div>
-                                {% if reservation.deposit_amount %}
-                                <div class="summary-item">
-                                    <div class="item-label">{% trans "مبلغ التأمين" %}</div>
-                                    <div class="item-value">{{ reservation.deposit_amount }} {% trans "دينار" %}</div>
-                                </div>
-                                {% endif %}
-                                <div class="summary-item total">
-                                    <div class="item-label">{% trans "المبلغ الإجمالي" %}</div>
-                                    <div class="item-value">{{ reservation.total_price }} {% trans "دينار" %}</div>
+                                        <tr>
+                                            <td class="text-muted">{% trans "السعر اليومي" %}</td>
+                                            <td>{{ reservation.car.daily_rate }} {% trans "دينار" %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">{% trans "عدد الأيام" %} x {{ reservation.days }}</td>
+                                            <td>{{ reservation.car.daily_rate|floatformat:3 }} x {{ reservation.days }} = {{ reservation.total_price|floatformat:3 }} {% trans "دينار" %}</td>
+                                        </tr>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- الشروط والتوقيع -->
-                <div class="terms-signature-section">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="terms-section">
-                                <div class="terms-title">{% trans "الشروط والأحكام" %}</div>
-                                <div class="terms-content">
-                                    <p>{% trans "1. يجب إعادة السيارة في الموعد المحدد لتجنب غرامات التأخير." %}</p>
-                                    <p>{% trans "2. يتحمل المستأجر مسؤولية أي ضرر ناتج عن سوء الاستخدام." %}</p>
-                                    <p>{% trans "3. يجب الالتزام بقوانين المرور وتحمل مسؤولية أي مخالفات." %}</p>
-                                    <p>{% trans "4. يمنع منعاً باتاً تأجير السيارة من الباطن لأي طرف آخر." %}</p>
-                                </div>
-                            </div>
+                    <!-- الشروط والأحكام -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-light py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-gavel me-2"></i>
+                                {% trans "الشروط والأحكام" %}
+                            </h5>
                         </div>
-                        <div class="col-md-4">
-                            <div class="signature-section">
-                                <div class="signature-title">{% trans "التوقيعات" %}</div>
-                                <div class="signature-content">
-                                    <div class="company-signature">
-                                        {% if reservation.status == 'confirmed' or reservation.status == 'completed' %}
-                                        <div class="signature-stamp">
-                                            <i class="fas fa-check-double"></i>
-                                            <div class="stamp-text">{% trans "معتمد" %}</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <ol class="mb-0">
+                                        <li class="mb-2">{% trans "يجب إعادة السيارة في الموعد المحدد لتجنب غرامات التأخير." %}</li>
+                                        <li class="mb-2">{% trans "يتحمل المستأجر مسؤولية أي ضرر ناتج عن سوء الاستخدام." %}</li>
+                                        <li class="mb-2">{% trans "يجب الالتزام بقوانين المرور وتحمل مسؤولية أي مخالفات." %}</li>
+                                        <li>{% trans "يمنع منعاً باتاً تأجير السيارة من الباطن لأي طرف آخر." %}</li>
+                                    </ol>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-center justify-content-center">
+                                    <div class="text-center">
+                                        <div class="official-stamp mb-2">
+                                            {% if reservation.status == 'confirmed' or reservation.status == 'completed' %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                            {% else %}
+                                            <i class="fas fa-hourglass-half text-warning"></i>
+                                            {% endif %}
                                         </div>
-                                        <div class="signature-name">{% trans "إدارة الشركة" %}</div>
-                                        {% else %}
-                                        <div class="signature-pending">{% trans "بانتظار الموافقة" %}</div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="customer-signature">
-                                        <div class="signature-name">{% trans "المستأجر" %}</div>
-                                        <div class="signature-line">{{ reservation.full_name }}</div>
+                                        <p class="mb-0 fw-medium">
+                                            {% if reservation.status == 'confirmed' or reservation.status == 'completed' %}
+                                            {% trans "تمت الموافقة عليه" %}
+                                            {% else %}
+                                            {% trans "بانتظار الموافقة" %}
+                                            {% endif %}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- أزرار الإجراءات -->
-                <div class="document-actions">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="action-buttons">
-                                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                                <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn-action primary">
-                                    <i class="fas fa-credit-card me-2"></i>
-                                    {% trans "إتمام الدفع" %}
-                                </a>
-                                {% endif %}
+                    <!-- أزرار الإجراءات -->
+                    <div class="d-flex flex-wrap justify-content-end gap-2">
+                        {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                        <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success">
+                            <i class="fas fa-credit-card me-2"></i> {% trans "إتمام الدفع" %}
+                        </a>
+                        {% endif %}
 
-                                {% if reservation.status == 'pending' %}
-                                <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn-action secondary">
-                                    <i class="fas fa-edit me-2"></i>
-                                    {% trans "تعديل الحجز" %}
-                                </a>
-                                <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn-action danger">
-                                    <i class="fas fa-times me-2"></i>
-                                    {% trans "إلغاء الحجز" %}
-                                </a>
-                                {% endif %}
+                        {% if reservation.status == 'pending' %}
+                        <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i> {% trans "تعديل الحجز" %}
+                        </a>
+                        <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-danger">
+                            <i class="fas fa-times me-2"></i> {% trans "إلغاء الحجز" %}
+                        </a>
+                        {% endif %}
 
-                                <a href="{% url 'my_reservations' %}" class="btn-action outline">
-                                    <i class="fas fa-arrow-right me-2"></i>
-                                    {% trans "العودة للحجوزات" %}
-                                </a>
-                                
-                                <button onclick="window.print()" class="btn-action print">
-                                    <i class="fas fa-print me-2"></i>
-                                    {% trans "طباعة العقد" %}
-                                </button>
-                            </div>
-                        </div>
+                        <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-right me-2"></i> {% trans "العودة للحجوزات" %}
+                        </a>
+
+                        <button onclick="window.print()" class="btn btn-outline-dark">
+                            <i class="fas fa-print me-2"></i> {% trans "طباعة العقد" %}
+                        </button>
                     </div>
                 </div>
 
-                <!-- ختم الشركة وتذييل المستند -->
-                <div class="document-footer">
-                    <div class="document-stamp">
-                        <div class="stamp-inner">
-                            <div class="stamp-icon"><i class="fas fa-car"></i></div>
-                            <div class="stamp-text">{% trans "معتمد" %}</div>
-                        </div>
-                    </div>
-                    <div class="footer-note">
-                        {% trans "هذا المستند إلكتروني ومعتمد ولا يحتاج إلى توقيع يدوي" %}
-                    </div>
-                    <div class="footer-info">
-                        <div class="company-info">
-                            <i class="fas fa-phone-alt me-1"></i> +962 6 XXX XXXX &nbsp;|&nbsp;
-                            <i class="fas fa-envelope me-1"></i> info@carrental.jo &nbsp;|&nbsp;
-                            <i class="fas fa-map-marker-alt me-1"></i> {% trans "عمان، الأردن" %}
-                        </div>
-                    </div>
+                <div class="card-footer bg-light text-center py-3 text-muted">
+                    <small>
+                        <i class="fas fa-shield-alt me-1"></i> {% trans "هذا المستند إلكتروني ومعتمد من شركة تأجير السيارات" %} 
+                        &bull; 
+                        <i class="fas fa-phone-alt me-1"></i> +962 6 XXX XXXX
+                    </small>
                 </div>
             </div>
-            <!-- نهاية المستند الرسمي -->
         </div>
     </div>
 </div>
@@ -417,888 +343,43 @@
 
 {% block extra_css %}
 <style>
-    /* ===== تنسيقات المستند الرسمي الاحترافي ===== */
-    :root {
-        --document-primary: #1e3a8a;
-        --document-primary-light: #3b82f6;
-        --document-secondary: #0f172a;
-        --document-text: #1e293b;
-        --document-text-light: #64748b;
-        --document-background: #ffffff;
-        --document-border: #e2e8f0;
-        --document-success: #10b981;
-        --document-warning: #f59e0b;
-        --document-danger: #ef4444;
-        --document-info: #0ea5e9;
-        --document-header-bg: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        --document-section-bg: #f8fafc;
-    }
-    
-    body {
-        background-color: #f1f5f9;
-    }
-    
-    /* مستند عقد رسمي */
-    .reservation-document-wrapper {
-        padding: 20px;
-    }
-    
-    .official-document {
-        background-color: var(--document-background);
-        border-radius: 10px;
-        overflow: hidden;
-        font-family: 'Cairo', 'Almarai', sans-serif;
-        position: relative;
-        margin-bottom: 2rem;
-        border: 1px solid #e2e8f0;
-        color: var(--document-text);
-    }
-    
-    /* رأس المستند */
-    .document-header {
-        position: relative;
-        overflow: hidden;
-        padding: 0;
-        height: 180px;
-    }
-    
-    .header-bg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 100%;
-        background: var(--document-header-bg);
-        z-index: 0;
-    }
-    
-    .header-content {
-        position: relative;
-        z-index: 1;
-        padding: 30px;
-        color: white;
-        height: 100%;
+    /* تنسيقات مستند تفاصيل الحجز البسيط */
+    .official-stamp {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        margin: 0 auto;
         display: flex;
         align-items: center;
+        justify-content: center;
     }
-    
-    .company-logo {
-        background-color: white;
-        padding: 15px;
-        border-radius: 8px;
-        display: inline-block;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .document-title {
+
+    .official-stamp i {
         font-size: 2.5rem;
-        font-weight: 700;
-        margin: 0;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
-    
-    .document-number {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin-top: 5px;
-    }
-    
-    .document-date {
-        font-size: 1rem;
-        opacity: 0.9;
-        margin-top: 5px;
-    }
-    
-    .document-status {
-        display: flex;
-        justify-content: flex-end;
-    }
-    
-    .status-seal {
-        transform: rotate(12deg);
-        padding: 5px 20px;
-        border-radius: 4px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        text-transform: uppercase;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        position: relative;
-        border: 2px solid white;
-        text-align: center;
-        min-width: 150px;
-    }
-    
-    .status-seal.pending {
-        background-color: var(--document-warning);
-        color: #7c2d12;
-    }
-    
-    .status-seal.confirmed {
-        background-color: var(--document-success);
-        color: #064e3b;
-    }
-    
-    .status-seal.completed {
-        background-color: var(--document-info);
-        color: #0c4a6e;
-    }
-    
-    .status-seal.cancelled {
-        background-color: var(--document-danger);
-        color: #7f1d1d;
-    }
-    
-    /* أقسام المستند */
-    .section-title {
-        font-size: 1.3rem;
-        font-weight: 700;
-        padding: 15px 25px;
-        background-color: #f1f5f9;
-        border-bottom: 2px solid var(--document-border);
-        color: var(--document-primary);
-        margin: 0;
-    }
-    
-    /* بطاقة الهوية والعميل */
-    .customer-id-section {
-        padding: 0 0 20px;
-        margin-bottom: 20px;
-        background-color: white;
-    }
-    
-    .customer-details {
-        padding: 20px;
-        height: 100%;
-    }
-    
-    .id-field-label {
-        font-weight: 600;
-        color: var(--document-text-light);
-        padding: 8px 15px;
-        background-color: #f8fafc;
-        border-radius: 30px 0 0 30px;
-        border: 1px solid #e2e8f0;
-        border-right: none;
-        display: flex;
-        align-items: center;
-    }
-    
-    .id-field-value {
-        font-weight: 500;
-        padding: 8px 15px;
-        background-color: white;
-        border-radius: 0 30px 30px 0;
-        border: 1px solid #e2e8f0;
-        border-left: none;
-        display: flex;
-        align-items: center;
-    }
-    
-    /* نموذج الهوية */
-    .identity-card {
-        background-color: #f8fafc;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        margin: 20px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .id-card-header {
-        background-color: #1e293b;
-        color: white;
-        padding: 12px;
-        text-align: center;
-    }
-    
-    .id-card-title {
-        font-weight: 600;
-        font-size: 1rem;
-    }
-    
-    .id-card-body {
-        padding: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: white;
-    }
-    
-    .id-card-image-container {
-        position: relative;
-        overflow: hidden;
-        width: 100%;
-        height: 160px;
-        border-radius: 8px;
-        border: 3px solid #e2e8f0;
-    }
-    
-    .id-card-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    
-    .id-card-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.1);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    .id-card-image-container:hover .id-card-overlay {
-        opacity: 1;
-    }
-    
-    .id-card-zoom-btn {
-        width: 40px;
-        height: 40px;
-        background-color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #1e293b;
-        text-decoration: none;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-    }
-    
-    .id-card-zoom-btn:hover {
-        transform: scale(1.1);
-        background-color: var(--document-primary-light);
-        color: white;
-    }
-    
-    .id-card-placeholder {
-        width: 100%;
-        height: 160px;
-        background-color: #f1f5f9;
-        border-radius: 8px;
-        border: 2px dashed #cbd5e1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: #94a3b8;
-        font-size: 0.9rem;
-    }
-    
-    .id-card-placeholder i {
-        font-size: 3rem;
-        color: #cbd5e1;
-        margin-bottom: 10px;
-    }
-    
-    .id-card-footer {
-        padding: 10px;
-        background-color: #f1f5f9;
-        border-top: 1px solid #e2e8f0;
-        text-align: center;
-    }
-    
-    .id-card-verification {
-        display: inline-flex;
-        align-items: center;
-        font-size: 0.9rem;
-        color: var(--document-success);
-        font-weight: 500;
-    }
-    
-    /* معلومات السيارة */
-    .car-details-section {
-        padding: 0 0 20px;
-        margin-bottom: 20px;
-        background-color: white;
-    }
-    
-    .vehicle-image-wrapper {
-        position: relative;
-        margin: 20px;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .vehicle-image {
-        width: 100%;
-        height: auto;
-        display: block;
-    }
-    
-    .car-plate-overlay {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-    
-    .car-plate {
-        background-color: #ffdd57;
-        color: #806102;
-        padding: 5px 20px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        border-radius: 5px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border: 2px solid #ffd324;
-        text-align: center;
-        min-width: 120px;
-    }
-    
-    .car-model {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 5px;
-        color: var(--document-secondary);
-    }
-    
-    .car-category {
-        display: inline-block;
-        background: linear-gradient(135deg, #4a6fa5 0%, #2c5282 100%);
-        color: white;
-        padding: 5px 15px;
-        border-radius: 50px;
-        font-weight: 500;
-        font-size: 0.9rem;
-        margin-bottom: 10px;
-    }
-    
-    .car-specs-badges {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    
-    .car-spec {
-        display: inline-flex;
-        align-items: center;
-        background-color: #f1f5f9;
-        color: #334155;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .car-features {
-        padding: 0 15px;
-    }
-    
-    .features-title {
-        font-weight: 600;
-        color: var(--document-text-light);
-        font-size: 0.9rem;
-    }
-    
-    .features-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    
-    .feature-item {
-        display: inline-flex;
-        align-items: center;
-        background-color: #f8fafc;
-        color: #334155;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .feature-item i {
-        color: var(--document-success);
-        margin-right: 5px;
-    }
-    
-    /* جدول تفاصيل الإيجار */
-    .rental-details-table {
-        padding: 20px;
-    }
-    
-    .detail-group {
-        margin-bottom: 20px;
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 20px;
-    }
-    
-    .detail-group:last-child {
-        margin-bottom: 0;
-        border-bottom: none;
-        padding-bottom: 0;
-    }
-    
-    .detail-item {
-        margin-bottom: 15px;
-    }
-    
-    .detail-item.full-width {
-        margin-bottom: 0;
-    }
-    
-    .detail-label {
-        font-weight: 600;
-        color: var(--document-text-light);
-        margin-bottom: 5px;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-    }
-    
-    .detail-value {
-        font-weight: 500;
-        padding: 8px 15px;
-        background-color: #f8fafc;
-        border-radius: 5px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .detail-value.highlight {
-        background-color: #eff6ff;
-        border-color: #bfdbfe;
-        color: var(--document-primary);
-        font-weight: 600;
-    }
-    
-    /* قسم الدفع */
-    .payment-details-section {
-        padding: 0 0 20px;
-        margin-bottom: 20px;
-        background-color: white;
-    }
-    
-    .payment-info {
-        padding: 20px;
-    }
-    
-    .payment-field-label {
-        font-weight: 600;
-        color: var(--document-text-light);
-        padding: 8px 15px;
-        background-color: #f8fafc;
-        border-radius: 30px 0 0 30px;
-        border: 1px solid #e2e8f0;
-        border-right: none;
-        display: flex;
-        align-items: center;
-    }
-    
-    .payment-field-value {
-        font-weight: 500;
-        padding: 8px 15px;
-        background-color: white;
-        border-radius: 0 30px 30px 0;
-        border: 1px solid #e2e8f0;
-        border-left: none;
-        display: flex;
-        align-items: center;
-    }
-    
-    .payment-method-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 5px 12px;
-        background-color: #f1f5f9;
-        border-radius: 20px;
-        font-weight: 500;
-        font-size: 0.9rem;
-        color: #334155;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .payment-status {
-        display: inline-flex;
-        align-items: center;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-weight: 500;
-        font-size: 0.9rem;
-    }
-    
-    .payment-status.pending {
-        background-color: #fff7ed;
-        color: #c2410c;
-        border: 1px solid #ffedd5;
-    }
-    
-    .payment-status.paid {
-        background-color: #ecfdf5;
-        color: #047857;
-        border: 1px solid #d1fae5;
-    }
-    
-    .payment-status.refunded {
-        background-color: #f3e8ff;
-        color: #7e22ce;
-        border: 1px solid #e9d5ff;
-    }
-    
-    .reference-code {
-        font-family: 'Courier New', monospace;
-        font-weight: 600;
-        letter-spacing: 1px;
-        background-color: #f1f5f9;
-        padding: 5px 10px;
-        border-radius: 5px;
-        color: #334155;
-    }
-    
-    .not-specified {
-        color: #94a3b8;
-        font-style: italic;
-    }
-    
-    /* ملخص التكاليف */
-    .payment-summary {
-        background-color: #f8fafc;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 20px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .summary-title {
-        font-weight: 700;
-        font-size: 1.1rem;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #e2e8f0;
-        color: var(--document-primary);
-    }
-    
-    .summary-item {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 12px;
-    }
-    
-    .summary-item.total {
-        padding-top: 15px;
-        margin-top: 15px;
-        border-top: 2px dashed #e2e8f0;
-    }
-    
-    .item-label {
-        font-weight: 500;
-        color: var(--document-text-light);
-    }
-    
-    .summary-item.total .item-label {
-        font-weight: 700;
-        color: var(--document-text);
-        font-size: 1.1rem;
-    }
-    
-    .item-value {
-        font-weight: 600;
-    }
-    
-    .summary-item.total .item-value {
-        font-weight: 700;
-        color: var(--document-primary);
-        font-size: 1.1rem;
-    }
-    
-    /* الشروط والتوقيع */
-    .terms-signature-section {
-        padding: 0 20px 20px;
-        margin-bottom: 20px;
-        background-color: white;
-    }
-    
-    .terms-section {
-        padding: 20px;
-        background-color: #f8fafc;
-        border-radius: 10px;
-        margin-top: 20px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .terms-title {
-        font-weight: 700;
-        margin-bottom: 15px;
-        color: var(--document-primary);
-    }
-    
-    .terms-content {
-        font-size: 0.9rem;
-        line-height: 1.6;
-    }
-    
-    .terms-content p {
-        margin-bottom: 8px;
-    }
-    
-    .signature-section {
-        padding: 20px;
-        background-color: #f8fafc;
-        border-radius: 10px;
-        margin-top: 20px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .signature-title {
-        font-weight: 700;
-        margin-bottom: 15px;
-        color: var(--document-primary);
-    }
-    
-    .signature-content {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-    
-    .company-signature, .customer-signature {
-        text-align: center;
-    }
-    
-    .signature-name {
-        font-weight: 600;
-        margin-bottom: 10px;
-        color: var(--document-text-light);
-    }
-    
-    .signature-stamp {
-        display: inline-flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background-color: #e8f5e9;
-        border: 2px solid #c8e6c9;
-        margin-bottom: 10px;
-    }
-    
-    .signature-stamp i {
-        font-size: 2rem;
-        color: var(--document-success);
-        margin-bottom: 5px;
-    }
-    
-    .stamp-text {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: var(--document-success);
-    }
-    
-    .signature-pending {
-        color: var(--document-text-light);
-        font-style: italic;
-        padding: 10px;
-        background-color: #f1f5f9;
-        border-radius: 5px;
-        margin-bottom: 10px;
-    }
-    
-    .signature-line {
-        border-top: 2px solid #e2e8f0;
-        padding-top: 10px;
-        font-weight: 500;
-        color: var(--document-primary);
-    }
-    
-    /* أزرار الإجراءات */
-    .document-actions {
-        padding: 20px;
-        border-top: 1px solid #e2e8f0;
-        background-color: #f8fafc;
-    }
-    
-    .action-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: flex-end;
-    }
-    
-    .btn-action {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 20px;
-        border-radius: 50px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-    
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    .btn-action.primary {
-        background-color: var(--document-success);
-        color: white;
-        border: none;
-    }
-    
-    .btn-action.secondary {
-        background-color: var(--document-primary);
-        color: white;
-        border: none;
-    }
-    
-    .btn-action.danger {
-        background-color: var(--document-danger);
-        color: white;
-        border: none;
-    }
-    
-    .btn-action.outline {
-        background-color: transparent;
-        color: var(--document-text);
-        border: 1px solid #cbd5e1;
-    }
-    
-    .btn-action.outline:hover {
-        background-color: #f1f5f9;
-    }
-    
-    .btn-action.print {
-        background-color: #f8fafc;
-        color: var(--document-text);
-        border: 1px solid #cbd5e1;
-    }
-    
-    .btn-action.print:hover {
-        background-color: #f1f5f9;
-    }
-    
-    /* تذييل المستند وختم الشركة */
-    .document-footer {
-        position: relative;
-        padding: 30px 20px 20px;
-        border-top: 2px dashed #e2e8f0;
-        background-color: #f8fafc;
-        text-align: center;
-    }
-    
-    .document-stamp {
-        position: absolute;
-        top: -25px;
-        right: 50%;
-        transform: translateX(50%);
-    }
-    
-    .stamp-inner {
-        width: 80px;
-        height: 80px;
-        background-color: white;
-        border: 2px solid var(--document-primary);
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    .stamp-icon {
-        color: var(--document-primary);
-        font-size: 1.5rem;
-        margin-bottom: 5px;
-    }
-    
-    .footer-note {
-        font-size: 0.9rem;
-        color: var(--document-text-light);
-        margin-bottom: 15px;
-    }
-    
-    .footer-info {
-        font-size: 0.85rem;
-        color: var(--document-text-light);
-    }
-    
-    /* تحسينات طباعة المستند */
+
+    /* تحسينات للطباعة */
     @media print {
         body {
             background-color: white;
         }
-        
-        .navbar, .footer, .document-actions, 
-        .btn-action, .id-card-zoom-btn {
+
+        .navbar, .footer, 
+        .btn {
             display: none !important;
         }
-        
-        .official-document {
+
+        .card {
             box-shadow: none !important;
-            border: none !important;
+            border: 1px solid #dee2e6 !important;
         }
-        
-        .document-header {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-        
+
         .container-fluid {
             padding: 0 !important;
             margin: 0 !important;
             max-width: 100% !important;
-        }
-        
-        .header-bg {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-    }
-    
-    /* التكيف مع الشاشات الصغيرة */
-    @media (max-width: 767.98px) {
-        .document-title {
-            font-size: 1.8rem;
-        }
-        
-        .document-header {
-            height: auto;
-            padding-bottom: 20px;
-        }
-        
-        .header-content {
-            padding: 20px;
-        }
-        
-        .status-seal {
-            margin-top: 15px;
-        }
-        
-        .id-field-label, .id-field-value,
-        .payment-field-label, .payment-field-value {
-            border-radius: 5px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .id-field-value, .payment-field-value {
-            margin-top: 5px;
-            margin-bottom: 15px;
-        }
-        
-        .identity-card {
-            margin-top: 30px;
-        }
-        
-        .action-buttons {
-            justify-content: center;
-        }
-        
-        .signature-content {
-            gap: 30px;
         }
     }
 </style>
