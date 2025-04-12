@@ -2,6 +2,7 @@
 إنشاء بيانات تجريبية لقاعدة البيانات للاختبار
 """
 import os
+import sys
 import django
 import datetime
 from decimal import Decimal
@@ -11,8 +12,11 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'car_rental_project.settings')
 django.setup()
 
 # استيراد النماذج بعد إعداد البيئة
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from rental.models import Car, Reservation, Review
+
+# الحصول على نموذج المستخدم المناسب
+User = get_user_model()
 
 def create_sample_data():
     """إنشاء بيانات تجريبية"""
