@@ -867,12 +867,14 @@ def process_booking(request):
     guarantee_details = request.POST.get('guarantee_details', '')
     
     # معالجة الوديعة (إذا كانت موجودة)
-    deposit_amount = request.POST.get('deposit_amount', None)
-    if deposit_amount:
+    deposit_amount = request.POST.get('deposit_amount', '')
+    if deposit_amount and deposit_amount.strip():
         try:
             deposit_amount = float(deposit_amount)
         except ValueError:
             deposit_amount = None
+    else:
+        deposit_amount = None  # تحديد قيمة None بدلاً من النص الفارغ
     
     # Create reservation with pending status - admin must approve before payment
     reservation = Reservation.objects.create(
