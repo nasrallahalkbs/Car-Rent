@@ -1,3 +1,4 @@
+
 {% extends 'layout_django.html' %}
 {% load i18n %}
 {% load static %}
@@ -40,36 +41,52 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="row mb-3">
-                                        <div class="col-5 text-muted">{% trans "الاسم الكامل" %}</div>
-                                        <div class="col-7 fw-bold">{{ reservation.full_name }}</div>
+                                    <!-- تصميم بطاقة الهوية -->
+                                    <div class="id-card-style p-3 border rounded bg-light">
+                                        <div class="row align-items-center">
+                                            {% if reservation.id_card_image %}
+                                            <div class="col-4 text-center mb-3">
+                                                <a href="{{ reservation.id_card_image.url }}" target="_blank">
+                                                    <img src="{{ reservation.id_card_image.url }}" class="img-fluid rounded border" style="max-height: 120px; max-width: 100%;" alt="{% trans 'صورة الهوية' %}">
+                                                </a>
+                                            </div>
+                                            <div class="col-8">
+                                            {% else %}
+                                            <div class="col-12">
+                                            {% endif %}
+                                                <div class="id-card-header border-bottom pb-2 mb-3">
+                                                    <h6 class="text-primary mb-1">{% trans "بطاقة معلومات المستأجر" %}</h6>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="text-muted">{% trans "الرقم" %}: {{ reservation.reservation_number }}</span>
+                                                        <span class="text-muted">{% trans "التاريخ" %}: {{ reservation.created_at|date:"Y/m/d" }}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="id-card-content">
+                                                    <div class="row mb-2">
+                                                        <div class="col-5 text-muted">{% trans "الاسم الكامل" %}</div>
+                                                        <div class="col-7 fw-bold">{{ reservation.full_name }}</div>
+                                                    </div>
+                                                    <div class="row mb-2">
+                                                        <div class="col-5 text-muted">{% trans "رقم الهوية" %}</div>
+                                                        <div class="col-7 fw-bold">{{ reservation.national_id }}</div>
+                                                    </div>
+                                                    <div class="row mb-2">
+                                                        <div class="col-5 text-muted">{% trans "البريد الإلكتروني" %}</div>
+                                                        <div class="col-7">{{ reservation.user.email }}</div>
+                                                    </div>
+                                                    <div class="row mb-2">
+                                                        <div class="col-5 text-muted">{% trans "رقم الهاتف" %}</div>
+                                                        <div class="col-7">{{ reservation.user.phone|default:"غير متوفر" }}</div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-5 text-muted">{% trans "نوع الضمان" %}</div>
+                                                        <div class="col-7">{{ reservation.get_guarantee_type_display }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="row mb-3">
-                                        <div class="col-5 text-muted">{% trans "رقم الهوية" %}</div>
-                                        <div class="col-7">{{ reservation.national_id }}</div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <div class="col-5 text-muted">{% trans "البريد الإلكتروني" %}</div>
-                                        <div class="col-7">{{ reservation.user.email }}</div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <div class="col-5 text-muted">{% trans "رقم الهاتف" %}</div>
-                                        <div class="col-7">{{ reservation.user.phone|default:"غير متوفر" }}</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-5 text-muted">{% trans "نوع الضمان" %}</div>
-                                        <div class="col-7">{{ reservation.get_guarantee_type_display }}</div>
-                                    </div>
-
-                                    {% if reservation.id_card_image %}
-                                    <hr>
-                                    <div class="text-center">
-                                        <p class="text-muted mb-2">{% trans "صورة الهوية" %}</p>
-                                        <a href="{{ reservation.id_card_image.url }}" target="_blank">
-                                            <img src="{{ reservation.id_card_image.url }}" class="img-fluid rounded border" style="max-height: 120px;" alt="{% trans 'صورة الهوية' %}">
-                                        </a>
-                                    </div>
-                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -158,10 +175,6 @@
                                             <td class="text-muted">{% trans "مبلغ التأمين" %}</td>
                                             <td>{{ reservation.deposit_amount|default:"--" }} {% if reservation.deposit_amount %}{% trans "دينار" %}{% endif %}</td>
                                         </tr>
-                                        <tr>
-                                            <td class="text-muted">{% trans "المبلغ الإجمالي" %}</td>
-                                            <td class="fw-bold text-primary">{{ reservation.total_price }} {% trans "دينار" %}</td>
-                                        </tr>
                                     </table>
                                 </div>
                             </div>
@@ -175,7 +188,7 @@
                         </div>
                     </div>
 
-                    <!-- معلومات الدفع -->
+                    <!-- معلومات الدفع والمبلغ الإجمالي -->
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-light py-3">
                             <h5 class="mb-0">
@@ -237,16 +250,16 @@
                                             <td>{{ reservation.payment_date|date:"Y/m/d H:i" }}</td>
                                         </tr>
                                         {% endif %}
+                                        {% if reservation.payment_reference %}
+                                        <tr>
+                                            <td class="text-muted">{% trans "رقم المرجع" %}</td>
+                                            <td><code>{{ reservation.payment_reference }}</code></td>
+                                        </tr>
+                                        {% endif %}
                                     </table>
                                 </div>
                                 <div class="col-md-6">
                                     <table class="table table-borderless">
-                                        {% if reservation.payment_reference %}
-                                        <tr>
-                                            <td class="text-muted" width="40%">{% trans "رقم المرجع" %}</td>
-                                            <td><code>{{ reservation.payment_reference }}</code></td>
-                                        </tr>
-                                        {% endif %}
                                         <tr>
                                             <td class="text-muted">{% trans "السعر اليومي" %}</td>
                                             <td>{{ reservation.car.daily_rate }} {% trans "دينار" %}</td>
@@ -256,45 +269,15 @@
                                             <td>{{ reservation.car.daily_rate|floatformat:3 }} x {{ reservation.days }} = {{ reservation.total_price|floatformat:3 }} {% trans "دينار" %}</td>
                                         </tr>
                                     </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- تنبيهات هامة -->
-                    <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-header bg-light py-3">
-                            <h5 class="mb-0">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                {% trans "تنبيهات هامة" %}
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <ol class="mb-0">
-                                        <li class="mb-2">{% trans "يجب إعادة السيارة في الموعد المحدد لتجنب غرامات التأخير." %}</li>
-                                        <li class="mb-2">{% trans "يتحمل المستأجر مسؤولية أي ضرر ناتج عن سوء الاستخدام." %}</li>
-                                        <li class="mb-2">{% trans "يجب الالتزام بقوانين المرور وتحمل مسؤولية أي مخالفات." %}</li>
-                                        <li>{% trans "يمنع منعاً باتاً تأجير السيارة من الباطن لأي طرف آخر." %}</li>
-                                    </ol>
-                                </div>
-                                <div class="col-md-4 d-flex align-items-center justify-content-center">
-                                    <div class="text-center">
-                                        <div class="status-indicator mb-2">
-                                            {% if reservation.status == 'confirmed' or reservation.status == 'completed' %}
-                                            <span class="badge bg-success p-3"><i class="fas fa-check-circle fa-2x"></i></span>
-                                            {% else %}
-                                            <span class="badge bg-warning p-3"><i class="fas fa-hourglass-half fa-2x"></i></span>
-                                            {% endif %}
+                                    
+                                    <!-- إبراز المبلغ الإجمالي -->
+                                    <div class="card bg-primary text-white mt-3">
+                                        <div class="card-body py-3">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">{% trans "المبلغ الإجمالي" %}</h5>
+                                                <h4 class="mb-0">{{ reservation.total_price }} {% trans "دينار" %}</h4>
+                                            </div>
                                         </div>
-                                        <p class="mb-0 fw-medium">
-                                            {% if reservation.status == 'confirmed' or reservation.status == 'completed' %}
-                                            {% trans "تمت الموافقة" %}
-                                            {% else %}
-                                            {% trans "بانتظار الموافقة" %}
-                                            {% endif %}
-                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -321,10 +304,6 @@
                         <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-right me-2"></i> {% trans "العودة للحجوزات" %}
                         </a>
-
-                        <button onclick="window.print()" class="btn btn-outline-dark">
-                            <i class="fas fa-print me-2"></i> {% trans "طباعة تفاصيل الحجز" %}
-                        </button>
                     </div>
                 </div>
 
@@ -344,38 +323,25 @@
 {% block extra_css %}
 <style>
     /* تنسيقات صفحة تفاصيل الحجز */
+    .id-card-style {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .id-card-header {
+        color: #333;
+    }
+    
+    .id-card-content {
+        font-size: 0.95rem;
+    }
+    
     .status-indicator {
         margin: 0 auto;
         display: flex;
         align-items: center;
         justify-content: center;
-    }
-
-    .status-indicator i {
-        font-size: 2rem;
-    }
-
-    /* تحسينات للطباعة */
-    @media print {
-        body {
-            background-color: white;
-        }
-
-        .navbar, .footer, 
-        .btn {
-            display: none !important;
-        }
-
-        .card {
-            box-shadow: none !important;
-            border: 1px solid #dee2e6 !important;
-        }
-
-        .container-fluid {
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 100% !important;
-        }
     }
 </style>
 {% endblock %}
