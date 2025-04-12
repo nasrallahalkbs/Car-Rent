@@ -3,325 +3,250 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}التفاصيل الكاملة للحجز #{{ reservation.reservation_number }}{% endblock %}
+{% block title %}{% trans "تفاصيل الحجز" %} #{{ reservation.reservation_number }}{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-lg-10 mx-auto">
-            <div class="card shadow border-0 mb-4">
-                <div class="card-header bg-primary text-white py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h3 class="mb-0 fs-4">التفاصيل الكاملة للحجز #{{ reservation.reservation_number }}</h3>
-                        <div>
-                            {% if reservation.status == 'pending' %}
-                            <span class="badge bg-warning">قيد المراجعة</span>
-                            {% elif reservation.status == 'confirmed' %}
-                            <span class="badge bg-success">تمت الموافقة</span>
-                            {% elif reservation.status == 'completed' %}
-                            <span class="badge bg-info">مكتمل</span>
-                            {% elif reservation.status == 'cancelled' %}
-                            <span class="badge bg-danger">ملغي</span>
-                            {% endif %}
-
-                            {% if reservation.payment_status == 'pending' %}
-                            <span class="badge bg-secondary">في انتظار الدفع</span>
-                            {% elif reservation.payment_status == 'paid' %}
-                            <span class="badge bg-success">مدفوع</span>
-                            {% elif reservation.payment_status == 'refunded' %}
-                            <span class="badge bg-danger">مسترجع</span>
-                            {% endif %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="reservation-document card border-0 shadow-sm mb-4">
+                <!-- رأس المستند -->
+                <div class="document-header p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="logo mb-3 mb-md-0">
+                                <img src="{% static 'images/car-rental-logo.svg' %}" alt="Car Rental" height="60">
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h1 class="document-title mb-1">{% trans "إشعار حجز مركبة" %}</h1>
+                            <p class="document-subtitle mb-0">{% trans "رقم الحجز" %}: <strong>{{ reservation.reservation_number }}</strong></p>
+                            <p class="document-date mb-0">{% trans "تاريخ الإصدار" %}: {{ reservation.created_at|date:"Y/m/d" }}</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="card-body p-4">
-                    <!-- بطاقة معلومات رئيسية -->
-                    <div class="row border-bottom pb-4 mb-4">
-                        <div class="col-md-3 text-center">
-                            <div class="reservation-id-box border bg-light p-3 rounded mb-3">
-                                <h5 class="text-muted mb-1">رقم الحجز</h5>
-                                <div class="fs-4 fw-bold">{{ reservation.reservation_number }}</div>
-                            </div>
-                            <div class="reservation-date-box border bg-light p-3 rounded">
-                                <h5 class="text-muted mb-1">تاريخ الحجز</h5>
-                                <div class="fs-5 fw-bold">{{ reservation.created_at|date:"Y/m/d" }}</div>
-                                <div class="small text-muted">{{ reservation.created_at|date:"H:i" }}</div>
+                <!-- حالة الحجز -->
+                <div class="reservation-status-bar p-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="status-label me-2">{% trans "حالة الحجز" %}:</div>
+                            <div class="status-badges">
+                                {% if reservation.status == 'pending' %}
+                                <span class="status-badge pending">{% trans "قيد المراجعة" %}</span>
+                                {% elif reservation.status == 'confirmed' %}
+                                <span class="status-badge confirmed">{% trans "تمت الموافقة" %}</span>
+                                {% elif reservation.status == 'completed' %}
+                                <span class="status-badge completed">{% trans "مكتمل" %}</span>
+                                {% elif reservation.status == 'cancelled' %}
+                                <span class="status-badge cancelled">{% trans "ملغي" %}</span>
+                                {% endif %}
+
+                                {% if reservation.payment_status == 'pending' %}
+                                <span class="status-badge payment-pending">{% trans "في انتظار الدفع" %}</span>
+                                {% elif reservation.payment_status == 'paid' %}
+                                <span class="status-badge payment-paid">{% trans "مدفوع" %}</span>
+                                {% elif reservation.payment_status == 'refunded' %}
+                                <span class="status-badge payment-refunded">{% trans "مسترجع" %}</span>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="col-md-9">
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <div class="data-field border-start ps-3 h-100">
-                                        <h5 class="text-muted mb-1">الحالة</h5>
-                                        <div class="fw-bold">
-                                            {% if reservation.status == 'pending' %}
-                                                <span class="text-warning">قيد المراجعة</span>
-                                            {% elif reservation.status == 'confirmed' %}
-                                                <span class="text-success">تمت الموافقة</span>
-                                            {% elif reservation.status == 'completed' %}
-                                                <span class="text-info">مكتمل</span>
-                                            {% elif reservation.status == 'cancelled' %}
-                                                <span class="text-danger">ملغي</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-4">
-                                    <div class="data-field border-start ps-3 h-100">
-                                        <h5 class="text-muted mb-1">حالة الدفع</h5>
-                                        <div class="fw-bold">
-                                            {% if reservation.payment_status == 'pending' %}
-                                                <span class="text-warning">في انتظار الدفع</span>
-                                            {% elif reservation.payment_status == 'paid' %}
-                                                <span class="text-success">تم الدفع</span>
-                                            {% elif reservation.payment_status == 'refunded' %}
-                                                <span class="text-danger">تم استرداد المبلغ</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-4">
-                                    <div class="data-field ps-3 h-100">
-                                        <h5 class="text-muted mb-1">المبلغ الإجمالي</h5>
-                                        <div class="fw-bold fs-4 text-primary">{{ reservation.total_price }} دينار</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-4">
-                                    <div class="data-field border-start ps-3 h-100">
-                                        <h5 class="text-muted mb-1">تاريخ الاستلام</h5>
-                                        <div class="fw-bold">{{ reservation.start_date|date:"Y/m/d" }}</div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-4">
-                                    <div class="data-field border-start ps-3 h-100">
-                                        <h5 class="text-muted mb-1">تاريخ التسليم</h5>
-                                        <div class="fw-bold">{{ reservation.end_date|date:"Y/m/d" }}</div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-4">
-                                    <div class="data-field ps-3 h-100">
-                                        <h5 class="text-muted mb-1">مدة الإيجار</h5>
-                                        <div class="fw-bold">{{ reservation.days }} يوم</div>
-                                    </div>
-                                </div>
+                        <div class="col-md-6 text-md-end">
+                            <div class="total-amount">
+                                <span class="total-label">{% trans "المبلغ الإجمالي" %}:</span>
+                                <span class="total-value">{{ reservation.total_price }} {% trans "دينار" %}</span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- معلومات السيارة -->
-                    <div class="section mb-4">
-                        <div class="section-header mb-3">
-                            <h4 class="section-title">معلومات السيارة</h4>
+                <!-- محتوى المستند -->
+                <div class="document-body p-4">
+                    <!-- الجدول الأول: معلومات الحجز الأساسية -->
+                    <div class="info-table-section mb-4">
+                        <h2 class="section-title">{% trans "معلومات الحجز" %}</h2>
+                        <div class="table-responsive">
+                            <table class="table table-bordered reservation-info-table">
+                                <tr>
+                                    <th width="25%">{% trans "تاريخ الاستلام" %}</th>
+                                    <td width="25%">{{ reservation.start_date|date:"Y/m/d" }}</td>
+                                    <th width="25%">{% trans "تاريخ التسليم" %}</th>
+                                    <td width="25%">{{ reservation.end_date|date:"Y/m/d" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "مدة الإيجار" %}</th>
+                                    <td>{{ reservation.days }} {% trans "يوم" %}</td>
+                                    <th>{% trans "نوع الإيجار" %}</th>
+                                    <td>{{ reservation.get_rental_type_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "نوع الضمان" %}</th>
+                                    <td>{{ reservation.get_guarantee_type_display }}</td>
+                                    <th>{% trans "مبلغ التأمين" %}</th>
+                                    <td>{{ reservation.deposit_amount|default:"--" }} {% if reservation.deposit_amount %}{% trans "دينار" %}{% endif %}</td>
+                                </tr>
+                            </table>
                         </div>
-                        <div class="section-content border p-3 rounded">
-                            <div class="row align-items-center">
-                                <div class="col-md-3">
-                                    {% if reservation.car.image %}
-                                    <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.make }}" class="img-fluid rounded shadow-sm">
-                                    {% else %}
-                                    <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="img-fluid rounded shadow-sm">
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-9">
-                                    <h4 class="mb-3">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</h4>
-                                    <div class="row mb-3">
-                                        <div class="col-md-4">
-                                            <span class="d-block mb-2">
-                                                <i class="fas fa-car text-primary ms-1"></i>
-                                                <span class="fw-bold">الفئة:</span> {{ reservation.car.get_category_display }}
-                                            </span>
-                                            <span class="d-block mb-2">
-                                                <i class="fas fa-cog text-primary ms-1"></i>
-                                                <span class="fw-bold">ناقل الحركة:</span> {{ reservation.car.get_transmission_display }}
-                                            </span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <span class="d-block mb-2">
-                                                <i class="fas fa-gas-pump text-primary ms-1"></i>
-                                                <span class="fw-bold">نوع الوقود:</span> {{ reservation.car.get_fuel_type_display }}
-                                            </span>
-                                            <span class="d-block mb-2">
-                                                <i class="fas fa-palette text-primary ms-1"></i>
-                                                <span class="fw-bold">اللون:</span> {{ reservation.car.color }}
-                                            </span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <span class="d-block mb-2">
-                                                <i class="fas fa-users text-primary ms-1"></i>
-                                                <span class="fw-bold">عدد المقاعد:</span> {{ reservation.car.seats }}
-                                            </span>
-                                            <span class="d-block mb-2">
-                                                <i class="fas fa-id-card text-primary ms-1"></i>
-                                                <span class="fw-bold">رقم اللوحة:</span> {{ reservation.car.license_plate }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    </div>
+
+                    <!-- الجدول الثاني: معلومات المركبة -->
+                    <div class="info-table-section mb-4">
+                        <h2 class="section-title">{% trans "معلومات المركبة" %}</h2>
+                        <div class="table-responsive">
+                            <table class="table table-bordered vehicle-info-table">
+                                <tr>
+                                    <th colspan="4" class="vehicle-name">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</th>
+                                </tr>
+                                <tr>
+                                    <th width="25%">{% trans "الفئة" %}</th>
+                                    <td width="25%">{{ reservation.car.get_category_display }}</td>
+                                    <th width="25%">{% trans "رقم اللوحة" %}</th>
+                                    <td width="25%">{{ reservation.car.license_plate }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "ناقل الحركة" %}</th>
+                                    <td>{{ reservation.car.get_transmission_display }}</td>
+                                    <th>{% trans "نوع الوقود" %}</th>
+                                    <td>{{ reservation.car.get_fuel_type_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "اللون" %}</th>
+                                    <td>{{ reservation.car.color }}</td>
+                                    <th>{% trans "عدد المقاعد" %}</th>
+                                    <td>{{ reservation.car.seats }}</td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
 
                     <div class="row">
                         <!-- معلومات العميل -->
                         <div class="col-md-6">
-                            <div class="section mb-4">
-                                <div class="section-header mb-3">
-                                    <h4 class="section-title">معلومات العميل</h4>
-                                </div>
-                                <div class="section-content border p-3 rounded">
-                                    <table class="table table-striped table-bordered mb-0">
-                                        <tbody>
-                                            <tr>
-                                                <th class="bg-light" width="35%">الاسم الكامل</th>
-                                                <td>{{ reservation.full_name }}</td>
-                                            </tr>
-                                            <tr>
-                                                <th class="bg-light">رقم الهوية</th>
-                                                <td>{{ reservation.national_id }}</td>
-                                            </tr>
-                                            <tr>
-                                                <th class="bg-light">البريد الإلكتروني</th>
-                                                <td>{{ reservation.user.email }}</td>
-                                            </tr>
-                                            <tr>
-                                                <th class="bg-light">رقم الهاتف</th>
-                                                <td>{{ reservation.user.phone|default:"غير متوفر" }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            
-                            <!-- معلومات إضافية -->
-                            <div class="section mb-4">
-                                <div class="section-header mb-3">
-                                    <h4 class="section-title">معلومات إضافية</h4>
-                                </div>
-                                <div class="section-content border p-3 rounded">
-                                    <table class="table table-striped table-bordered mb-0">
-                                        <tbody>
-                                            <tr>
-                                                <th class="bg-light" width="35%">نوع الإيجار</th>
-                                                <td>{{ reservation.get_rental_type_display }}</td>
-                                            </tr>
-                                            <tr>
-                                                <th class="bg-light">نوع الضمان</th>
-                                                <td>{{ reservation.get_guarantee_type_display }}</td>
-                                            </tr>
-                                            {% if reservation.deposit_amount %}
-                                            <tr>
-                                                <th class="bg-light">مبلغ التأمين</th>
-                                                <td>{{ reservation.deposit_amount }} دينار</td>
-                                            </tr>
-                                            {% endif %}
-                                            {% if reservation.guarantee_details %}
-                                            <tr>
-                                                <th class="bg-light">تفاصيل الضمان</th>
-                                                <td>{{ reservation.guarantee_details }}</td>
-                                            </tr>
-                                            {% endif %}
-                                            {% if reservation.notes %}
-                                            <tr>
-                                                <th class="bg-light">ملاحظات</th>
-                                                <td>{{ reservation.notes }}</td>
-                                            </tr>
-                                            {% endif %}
-                                        </tbody>
+                            <div class="info-table-section mb-4">
+                                <h2 class="section-title">{% trans "معلومات العميل" %}</h2>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered customer-info-table">
+                                        <tr>
+                                            <th width="40%">{% trans "الاسم الكامل" %}</th>
+                                            <td>{{ reservation.full_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>{% trans "رقم الهوية" %}</th>
+                                            <td>{{ reservation.national_id }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>{% trans "البريد الإلكتروني" %}</th>
+                                            <td>{{ reservation.user.email }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>{% trans "رقم الهاتف" %}</th>
+                                            <td>{{ reservation.user.phone|default:"غير متوفر" }}</td>
+                                        </tr>
                                     </table>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- معلومات الدفع -->
                         <div class="col-md-6">
-                            <!-- بطاقة صورة الهوية -->
-                            {% if reservation.id_card_image %}
-                            <div class="section mb-4">
-                                <div class="section-header mb-3">
-                                    <h4 class="section-title">صورة الهوية</h4>
-                                </div>
-                                <div class="section-content border p-3 rounded text-center">
-                                    <img src="{{ reservation.id_card_image.url }}" alt="صورة الهوية" class="img-fluid rounded shadow-sm" style="max-height: 250px;">
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            <!-- معلومات الدفع -->
-                            <div class="section mb-4">
-                                <div class="section-header mb-3">
-                                    <h4 class="section-title">معلومات الدفع</h4>
-                                </div>
-                                <div class="section-content border p-3 rounded">
-                                    <table class="table table-striped table-bordered mb-0">
-                                        <tbody>
-                                            <tr>
-                                                <th class="bg-light" width="35%">طريقة الدفع</th>
-                                                <td>{{ reservation.get_payment_method_display|default:"لم يتم تحديدها بعد" }}</td>
-                                            </tr>
-                                            <tr>
-                                                <th class="bg-light">حالة الدفع</th>
-                                                <td>
-                                                    {% if reservation.payment_status == 'pending' %}
-                                                        <span class="text-warning">في انتظار الدفع</span>
-                                                    {% elif reservation.payment_status == 'paid' %}
-                                                        <span class="text-success">تم الدفع</span>
-                                                    {% elif reservation.payment_status == 'refunded' %}
-                                                        <span class="text-danger">تم استرداد المبلغ</span>
-                                                    {% endif %}
-                                                </td>
-                                            </tr>
-                                            {% if reservation.payment_reference %}
-                                            <tr>
-                                                <th class="bg-light">رقم المرجع</th>
-                                                <td>{{ reservation.payment_reference }}</td>
-                                            </tr>
-                                            {% endif %}
-                                            {% if reservation.payment_date %}
-                                            <tr>
-                                                <th class="bg-light">تاريخ الدفع</th>
-                                                <td>{{ reservation.payment_date|date:"Y/m/d H:i" }}</td>
-                                            </tr>
-                                            {% endif %}
-                                            {% if reservation.transaction_id %}
-                                            <tr>
-                                                <th class="bg-light">رقم المعاملة</th>
-                                                <td>{{ reservation.transaction_id }}</td>
-                                            </tr>
-                                            {% endif %}
-                                        </tbody>
+                            <div class="info-table-section mb-4">
+                                <h2 class="section-title">{% trans "معلومات الدفع" %}</h2>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered payment-info-table">
+                                        <tr>
+                                            <th width="40%">{% trans "طريقة الدفع" %}</th>
+                                            <td>{{ reservation.get_payment_method_display|default:"لم يتم تحديدها بعد" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>{% trans "حالة الدفع" %}</th>
+                                            <td>
+                                                {% if reservation.payment_status == 'pending' %}
+                                                <span class="text-warning">{% trans "في انتظار الدفع" %}</span>
+                                                {% elif reservation.payment_status == 'paid' %}
+                                                <span class="text-success">{% trans "تم الدفع" %}</span>
+                                                {% elif reservation.payment_status == 'refunded' %}
+                                                <span class="text-danger">{% trans "تم استرداد المبلغ" %}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% if reservation.payment_date %}
+                                        <tr>
+                                            <th>{% trans "تاريخ الدفع" %}</th>
+                                            <td>{{ reservation.payment_date|date:"Y/m/d" }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if reservation.payment_reference %}
+                                        <tr>
+                                            <th>{% trans "رقم المرجع" %}</th>
+                                            <td>{{ reservation.payment_reference }}</td>
+                                        </tr>
+                                        {% endif %}
                                     </table>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- أزرار الإجراءات -->
-                    <div class="section mt-4 text-center">
-                        <div class="border-top pt-4 d-flex justify-content-center gap-3">
-                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                            <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success px-4">
-                                <i class="fas fa-credit-card ms-2"></i>
-                                إتمام الدفع
-                            </a>
-                            {% endif %}
+                    <!-- تفاصيل أخرى -->
+                    {% if reservation.guarantee_details or reservation.notes %}
+                    <div class="info-table-section mb-4">
+                        <h2 class="section-title">{% trans "تفاصيل إضافية" %}</h2>
+                        <div class="table-responsive">
+                            <table class="table table-bordered additional-info-table">
+                                {% if reservation.guarantee_details %}
+                                <tr>
+                                    <th width="25%">{% trans "تفاصيل الضمان" %}</th>
+                                    <td>{{ reservation.guarantee_details }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if reservation.notes %}
+                                <tr>
+                                    <th width="25%">{% trans "ملاحظات" %}</th>
+                                    <td>{{ reservation.notes }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
 
-                            {% if reservation.status == 'pending' %}
-                            <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn btn-primary px-4">
-                                <i class="fas fa-edit ms-2"></i>
-                                تعديل الحجز
-                            </a>
-                            <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-danger px-4">
-                                <i class="fas fa-times ms-2"></i>
-                                إلغاء الحجز
-                            </a>
+                <!-- أسفل المستند -->
+                <div class="document-footer p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% if reservation.id_card_image %}
+                            <div class="id-card-section">
+                                <h3 class="section-title-sm">{% trans "صورة الهوية" %}</h3>
+                                <img src="{{ reservation.id_card_image.url }}" alt="{% trans 'صورة الهوية' %}" class="id-card-image">
+                            </div>
                             {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="footer-actions text-md-end mt-4">
+                                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                                <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success btn-lg">
+                                    <i class="fas fa-credit-card me-2"></i>
+                                    {% trans "إتمام الدفع" %}
+                                </a>
+                                {% endif %}
 
-                            <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary px-4">
-                                <i class="fas fa-arrow-right ms-2"></i>
-                                العودة للحجوزات
-                            </a>
+                                {% if reservation.status == 'pending' %}
+                                <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>
+                                    {% trans "تعديل الحجز" %}
+                                </a>
+                                <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-danger">
+                                    <i class="fas fa-times me-2"></i>
+                                    {% trans "إلغاء الحجز" %}
+                                </a>
+                                {% endif %}
+
+                                <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-right me-2"></i>
+                                    {% trans "العودة للحجوزات" %}
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -333,77 +258,212 @@
 
 {% block extra_css %}
 <style>
-    /* تنسيق قسم التفاصيل الرئيسية */
-    .section-title {
-        color: #3c4b64;
-        font-size: 1.25rem;
+    /* تنسيقات المستند الرسمي */
+    .reservation-document {
+        background-color: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    /* رأس المستند */
+    .document-header {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .document-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0;
+    }
+    
+    .document-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+    
+    .document-date {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    /* شريط الحالة */
+    .reservation-status-bar {
+        background-color: #f0f4f8;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .status-badges {
+        display: inline-flex;
+        gap: 0.5rem;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
         font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .status-badge.pending {
+        background-color: #fff8e1;
+        color: #f57c00;
+        border: 1px solid #ffe082;
+    }
+    
+    .status-badge.confirmed {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+    }
+    
+    .status-badge.completed {
+        background-color: #e3f2fd;
+        color: #1565c0;
+        border: 1px solid #bbdefb;
+    }
+    
+    .status-badge.cancelled {
+        background-color: #ffebee;
+        color: #c62828;
+        border: 1px solid #ffcdd2;
+    }
+    
+    .status-badge.payment-pending {
+        background-color: #fff3e0;
+        color: #e65100;
+        border: 1px solid #ffe0b2;
+    }
+    
+    .status-badge.payment-paid {
+        background-color: #e0f2f1;
+        color: #00695c;
+        border: 1px solid #b2dfdb;
+    }
+    
+    .status-badge.payment-refunded {
+        background-color: #f3e5f5;
+        color: #6a1b9a;
+        border: 1px solid #e1bee7;
+    }
+    
+    .status-label {
+        display: inline-block;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+    
+    .total-amount {
+        font-size: 1.2rem;
+    }
+    
+    .total-label {
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+    
+    .total-value {
+        font-weight: 700;
+        color: #1976d2;
+    }
+    
+    /* أقسام المستند */
+    .section-title {
         position: relative;
-        padding-right: 1rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
     }
     
     .section-title:before {
         content: "";
         position: absolute;
+        bottom: -2px;
         right: 0;
-        top: 50%;
-        width: 5px;
-        height: 20px;
-        background-color: #0d6efd;
-        transform: translateY(-50%);
-        border-radius: 5px;
+        width: 60px;
+        height: 2px;
+        background-color: #1976d2;
     }
     
-    .section-header {
-        border-bottom: 1px solid #e9ecef;
-        padding-bottom: 0.5rem;
+    .section-title-sm {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #333;
     }
     
-    .section-content {
-        background-color: #fff;
+    /* الجداول */
+    .table-responsive {
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
     }
     
-    /* تنسيق الجداول والخلايا */
-    .table-striped > tbody > tr:nth-of-type(odd) > * {
-        background-color: rgba(0, 0, 0, 0.02);
+    .table {
+        margin-bottom: 0;
     }
     
     .table th {
+        background-color: #f1f8ff;
+        color: #345;
         font-weight: 600;
-        color: #495057;
+        border-color: #dee2e6;
+        padding: 0.75rem;
+        vertical-align: middle;
     }
     
-    /* تنسيق الحالات والمعلومات الرئيسية */
-    .data-field {
-        padding: 0.5rem 0;
+    .table td {
+        padding: 0.75rem;
+        border-color: #dee2e6;
+        vertical-align: middle;
     }
     
-    .reservation-id-box, .reservation-date-box {
-        border-radius: 8px;
-    }
-    
-    /* تنسيق الأيقونات */
-    .fas {
-        width: 18px;
+    .vehicle-name {
+        background-color: #e8f0fe !important;
+        color: #1a73e8 !important;
+        font-size: 1.1rem;
         text-align: center;
-        color: #0d6efd;
     }
     
-    /* تنسيق البطاقة الرئيسية */
-    .card {
-        border-radius: 0.5rem;
-        overflow: hidden;
+    /* صورة الهوية */
+    .id-card-image {
+        max-width: 100%;
+        max-height: 200px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
     }
     
-    .card-header {
-        border-radius: 0 !important;
+    /* أزرار الإجراءات */
+    .footer-actions {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: flex-end;
     }
-
-    /* تنسيق الأزرار */
-    .btn {
+    
+    .footer-actions .btn {
+        padding: 0.5rem 1rem;
         font-weight: 500;
-        padding: 0.5rem 1.5rem;
-        border-radius: 0.25rem;
+    }
+    
+    /* التكيف مع الشاشات الصغيرة */
+    @media (max-width: 767.98px) {
+        .footer-actions {
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        
+        .total-amount, .status-badges {
+            margin-top: 0.5rem;
+            text-align: start;
+        }
     }
 </style>
 {% endblock %}
