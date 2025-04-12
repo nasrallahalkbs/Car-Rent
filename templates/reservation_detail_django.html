@@ -3,15 +3,15 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}تفاصيل الحجز #{{ reservation.reservation_number }}{% endblock %}
+{% block title %}التفاصيل الكاملة للحجز #{{ reservation.reservation_number }}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <div class="row">
         <div class="col-lg-8 mx-auto">
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center py-3">
-                    <h4 class="mb-0">تفاصيل الحجز #{{ reservation.reservation_number }}</h4>
+                <div class="card-header d-flex justify-content-between align-items-center py-3 bg-dark text-white">
+                    <h4 class="mb-0">التفاصيل الكاملة للحجز #{{ reservation.reservation_number }}</h4>
                     <div>
                         {% if reservation.status == 'pending' %}
                         <span class="badge bg-warning">قيد المراجعة</span>
@@ -61,6 +61,13 @@
                                         {{ reservation.car.get_fuel_type_display }}
                                     </span>
                                 </div>
+                                <p class="text-muted">
+                                    <i class="fas fa-palette ms-1"></i> اللون: {{ reservation.car.color }} | 
+                                    <i class="fas fa-users ms-1"></i> عدد المقاعد: {{ reservation.car.seats }}
+                                </p>
+                                <p class="text-muted">
+                                    <i class="fas fa-id-card ms-1"></i> رقم اللوحة: {{ reservation.car.license_plate }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -74,11 +81,19 @@
                                     <label class="text-muted">تاريخ الاستلام</label>
                                     <div class="fw-bold">{{ reservation.start_date|date:"Y/m/d" }}</div>
                                 </div>
+                                <div class="mb-3">
+                                    <label class="text-muted">رقم الحجز</label>
+                                    <div class="fw-bold">{{ reservation.reservation_number }}</div>
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="text-muted">تاريخ التسليم</label>
                                     <div class="fw-bold">{{ reservation.end_date|date:"Y/m/d" }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="text-muted">تاريخ إنشاء الحجز</label>
+                                    <div class="fw-bold">{{ reservation.created_at|date:"Y/m/d H:i" }}</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -108,6 +123,14 @@
                                 <div class="mb-3">
                                     <label class="text-muted">رقم الهوية</label>
                                     <div class="fw-bold">{{ reservation.national_id }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="text-muted">البريد الإلكتروني</label>
+                                    <div class="fw-bold">{{ reservation.user.email }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="text-muted">رقم الهاتف</label>
+                                    <div class="fw-bold">{{ reservation.user.phone|default:"غير متوفر" }}</div>
                                 </div>
                             </div>
                             {% if reservation.id_card_image %}
@@ -150,6 +173,12 @@
                                     <div>{{ reservation.guarantee_details }}</div>
                                 </div>
                                 {% endif %}
+                                {% if reservation.notes %}
+                                <div class="mb-3">
+                                    <label class="text-muted">ملاحظات</label>
+                                    <div>{{ reservation.notes }}</div>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -161,26 +190,38 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="text-muted">طريقة الدفع</label>
-                                    <div class="fw-bold">{{ reservation.get_payment_method_display }}</div>
+                                    <div class="fw-bold">{{ reservation.get_payment_method_display|default:"لم يتم تحديدها بعد" }}</div>
                                 </div>
+                                <div class="mb-3">
+                                    <label class="text-muted">حالة الدفع</label>
+                                    <div class="fw-bold">
+                                        {% if reservation.payment_status == 'pending' %}
+                                            <span class="text-warning">في انتظار الدفع</span>
+                                        {% elif reservation.payment_status == 'paid' %}
+                                            <span class="text-success">تم الدفع</span>
+                                        {% elif reservation.payment_status == 'refunded' %}
+                                            <span class="text-danger">تم استرداد المبلغ</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
                                 {% if reservation.payment_reference %}
                                 <div class="mb-3">
                                     <label class="text-muted">رقم المرجع</label>
                                     <div class="fw-bold">{{ reservation.payment_reference }}</div>
                                 </div>
                                 {% endif %}
-                            </div>
-                            <div class="col-md-6">
                                 {% if reservation.payment_date %}
                                 <div class="mb-3">
                                     <label class="text-muted">تاريخ الدفع</label>
-                                    <div class="fw-bold">{{ reservation.payment_date|date:"Y/m/d" }}</div>
+                                    <div class="fw-bold">{{ reservation.payment_date|date:"Y/m/d H:i" }}</div>
                                 </div>
                                 {% endif %}
-                                {% if reservation.notes %}
+                                {% if reservation.transaction_id %}
                                 <div class="mb-3">
-                                    <label class="text-muted">ملاحظات</label>
-                                    <div>{{ reservation.notes }}</div>
+                                    <label class="text-muted">رقم المعاملة</label>
+                                    <div class="fw-bold">{{ reservation.transaction_id }}</div>
                                 </div>
                                 {% endif %}
                             </div>
@@ -222,7 +263,7 @@
 {% block extra_css %}
 <style>
     .section-title {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         color: #495057;
         padding-bottom: 0.5rem;
         margin-bottom: 1rem;
@@ -232,13 +273,27 @@
         background-color: #f8f9fa;
         border-radius: 0.5rem;
         padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
     label.text-muted {
         font-size: 0.9rem;
         margin-bottom: 0.25rem;
+        display: block;
     }
     .fw-bold {
         font-size: 1.1rem;
+    }
+    .card-header {
+        border-radius: 0.25rem 0.25rem 0 0 !important;
+    }
+    .card {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    .badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
     }
 </style>
 {% endblock %}
