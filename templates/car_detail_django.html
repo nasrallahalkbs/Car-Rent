@@ -494,31 +494,16 @@
                 
                 <div class="reservation-card-body">
                     {% if car.is_available and user.is_authenticated %}
-                    <form id="bookNowForm" method="post" action="{% url 'add_to_cart' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="car_id" value="{{ car.id }}">
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-3">
-                                <label for="start_date" class="form-label">{% trans "Pick-up Date" %}</label>
-                                <input type="date" class="form-control" id="start_date" name="start_date" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="end_date" class="form-label">{% trans "Return Date" %}</label>
-                                <input type="date" class="form-control" id="end_date" name="end_date" required>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="action-button d-block text-center text-decoration-none w-100 py-3">
-                            <i class="fas fa-calendar-check {% trans "me-2" %}"></i> {% trans "Request Booking" %}
-                        </button>
-                    </form>
+                    <a href="{% url 'book_car' car_id=car.id %}" class="action-button d-block text-center text-decoration-none py-3">
+                        <i class="fas fa-calendar-check {% trans "me-2" %}"></i> {% trans "Request Booking" %}
+                    </a>
                     {% elif car.is_available %}
-                    <a href="{% url 'login' %}?next={% url 'car_detail' car_id=car.id %}" class="action-button d-block text-center text-decoration-none">
-                        <i class="fas fa-user ms-2"></i> تسجيل الدخول للحجز
+                    <a href="{% url 'login' %}?next={% url 'car_detail' car_id=car.id %}" class="action-button d-block text-center text-decoration-none py-3">
+                        <i class="fas fa-user {% trans "me-2" %}"></i> {% trans "Login to Book" %}
                     </a>
                     {% else %}
                     <div class="alert alert-warning mb-0">
-                        <i class="fas fa-exclamation-triangle ms-2"></i> عذراً، هذه السيارة غير متاحة للحجز حالياً.
+                        <i class="fas fa-exclamation-triangle {% trans "me-2" %}"></i> {% trans "Sorry, this car is not available for booking at the moment." %}
                     </div>
                     {% endif %}
                 </div>
