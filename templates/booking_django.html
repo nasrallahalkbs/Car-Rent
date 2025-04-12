@@ -91,11 +91,11 @@
                                 <input type="tel" id="phone" name="phone" class="form-control" 
                                        value="{{ request.user.phone|default:'' }}" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="national_id_field">
                                 <label for="national_id" class="form-label">{% trans "National ID Number*" %}</label>
                                 <input type="text" id="national_id" name="national_id" class="form-control" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="id_card_image_field">
                                 <label for="id_card_image" class="form-label">{% trans "National ID Card Image*" %}</label>
                                 <input type="file" id="id_card_image" name="id_card_image" class="form-control" accept="image/*" required>
                                 <small class="form-text text-muted">{% trans "Upload a clear image of your national ID card" %}</small>
@@ -135,6 +135,7 @@
                                     <option value="driving_license">{% trans "Driving License" %}</option>
                                     <option value="deposit">{% trans "Security Deposit" %}</option>
                                     <option value="credit_card">{% trans "Credit Card Hold" %}</option>
+                                    <option value="property_doc">{% trans "Property Document" %}</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -146,7 +147,11 @@
                                 <textarea id="guarantee_details" name="guarantee_details" class="form-control" rows="2" 
                                       placeholder="{% trans "Additional details about the guarantee provided" %}"></textarea>
                                 <small class="form-text text-muted">
-                                    {% trans "Information about the guarantee: For ID Card/Passport - mention issuing authority; for Credit Card Hold - mention card type." %}
+                                    {% if is_english %}
+                                    Information about the guarantee: For ID Card/Passport - mention issuing authority; for Credit Card Hold - mention card type; for Property Document - mention document type and details.
+                                    {% else %}
+                                    معلومات عن الضمان: للبطاقة الشخصية/جواز السفر - اذكر جهة الإصدار؛ لبطاقة الائتمان - اذكر نوع البطاقة؛ للمستند العقاري - اذكر نوع المستند وتفاصيله.
+                                    {% endif %}
                                 </small>
                             </div>
                         </div>
@@ -247,6 +252,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const endDateInput = document.getElementById('end_date');
     const totalDaysElement = document.getElementById('totalDays');
     const totalPriceElement = document.getElementById('totalPrice');
+    const guaranteeTypeSelect = document.getElementById('guarantee_type');
+    const nationalIdField = document.getElementById('national_id_field');
+    const idCardImageField = document.getElementById('id_card_image_field');
+    const nationalIdInput = document.getElementById('national_id');
+    const idCardImageInput = document.getElementById('id_card_image');
+    const depositAmountInput = document.getElementById('deposit_amount');
     const dailyRate = {{ car.daily_rate |escapejs }};
     
     // Calculate number of days and total price
@@ -257,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Check if end date is after start date
             if (endDate < startDate) {
-                alert('تاريخ التسليم يجب أن يكون بعد تاريخ الاستلام');
+                alert('{% if is_english %}Return date must be after pick-up date{% else %}تاريخ التسليم يجب أن يكون بعد تاريخ الاستلام{% endif %}');
                 endDateInput.value = '';
                 totalDaysElement.textContent = '--';
                 totalPriceElement.textContent = '--';
@@ -270,16 +281,50 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update display
             totalDaysElement.textContent = daysDiff;
-            totalPriceElement.textContent = (dailyRate * daysDiff).toFixed(2) + ' دينار';
+            totalPriceElement.textContent = (dailyRate * daysDiff).toFixed(2) + ' {% if is_english %}JOD{% else %}دينار{% endif %}';
+        }
+    }
+    
+    // Toggle fields based on guarantee type
+    function toggleIdFields() {
+        const guaranteeType = guaranteeTypeSelect.value;
+        
+        if (guaranteeType === 'id_card' || guaranteeType === 'passport') {
+            // Show ID fields and make them required for ID card or passport
+            nationalIdField.style.display = 'block';
+            idCardImageField.style.display = 'block';
+            nationalIdInput.required = true;
+            idCardImageInput.required = true;
+            
+            // No deposit required for ID-based guarantees
+            depositAmountInput.required = false;
+        } else if (guaranteeType === 'deposit' || guaranteeType === 'property_doc') {
+            // Hide ID fields and make them not required for deposit or property document
+            nationalIdField.style.display = 'block';
+            idCardImageField.style.display = 'none';
+            nationalIdInput.required = true;
+            idCardImageInput.required = false;
+            
+            // Deposit amount required for deposit guarantee
+            depositAmountInput.required = (guaranteeType === 'deposit');
+        } else {
+            // Default behavior for other options
+            nationalIdField.style.display = 'block';
+            idCardImageField.style.display = 'block';
+            nationalIdInput.required = true;
+            idCardImageInput.required = true;
+            depositAmountInput.required = false;
         }
     }
     
     // Event listeners
     startDateInput.addEventListener('change', calculateTotals);
     endDateInput.addEventListener('change', calculateTotals);
+    guaranteeTypeSelect.addEventListener('change', toggleIdFields);
     
-    // Calculate on page load if dates are pre-filled
+    // Initialize on page load
     calculateTotals();
+    toggleIdFields();
 });
 </script>
 {% endblock %}

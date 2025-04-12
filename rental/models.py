@@ -100,6 +100,7 @@ class Reservation(models.Model):
         ('driving_license', 'Driving License'),
         ('deposit', 'Security Deposit'),
         ('credit_card', 'Credit Card Hold'),
+        ('property_doc', 'Property Document'),
     ]
     
     # Generate a unique reservation number
@@ -122,7 +123,7 @@ class Reservation(models.Model):
     rental_type = models.CharField(max_length=20, choices=RENTAL_TYPE_CHOICES, blank=True, null=True)
     guarantee_type = models.CharField(max_length=20, choices=GUARANTEE_TYPE_CHOICES, blank=True, null=True)
     guarantee_details = models.TextField(blank=True, null=True, help_text="Additional details about the guarantee")
-    booking_date = models.DateTimeField(auto_now_add=True, help_text="Date and time of booking")
+    booking_date = models.DateTimeField(auto_now_add=True, null=True, blank=True, help_text="Date and time of booking")
     deposit_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     
     # معلومات الدفع

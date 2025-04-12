@@ -46,6 +46,7 @@ def update_translations():
         "Driving License": "رخصة القيادة",
         "Security Deposit": "وديعة تأمين",
         "Credit Card Hold": "حجز على بطاقة الائتمان",
+        "Property Document": "مستند عقاري",
         "Guarantee Type:": "نوع الضمان:",
         "Deposit Amount (if applicable)": "مبلغ الوديعة (إن وجد)",
         "Deposit Amount:": "مبلغ الوديعة:",
@@ -53,6 +54,8 @@ def update_translations():
         "Guarantee Details:": "تفاصيل الضمان:",
         "Additional details about the guarantee provided": "تفاصيل إضافية عن الضمان المقدم",
         "Information about the guarantee: For ID Card/Passport - mention issuing authority; for Credit Card Hold - mention card type.": "معلومات عن الضمان: للبطاقة الشخصية/جواز السفر - اذكر جهة الإصدار؛ لبطاقة الائتمان - اذكر نوع البطاقة.",
+        "Information about the guarantee: For ID Card/Passport - mention issuing authority; for Credit Card Hold - mention card type; for Property Document - mention document type and details.": "معلومات عن الضمان: للبطاقة الشخصية/جواز السفر - اذكر جهة الإصدار؛ لبطاقة الائتمان - اذكر نوع البطاقة؛ للمستند العقاري - اذكر نوع المستند وتفاصيله.",
+        "Return date must be after pick-up date": "تاريخ التسليم يجب أن يكون بعد تاريخ الاستلام",
         
         # الحالة
         "Status": "الحالة",
