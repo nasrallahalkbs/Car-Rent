@@ -298,41 +298,39 @@
                     </div>
             </div>
 
-            <!-- تم تبسيط عرض أزرار العمليات خارج البطاقة -->
-            <div class="action-buttons-container py-3">
-                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                <a href="{% url 'professional_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-success me-2">
-                    <i class="fas fa-credit-card ms-2"></i>إتمام عملية الدفع الآمن
-                </a>
-                <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success me-2">
-                    <i class="fas fa-university ms-2"></i>الدفع بالتحويل البنكي
-                </a>
-                {% endif %}
+            <!-- أزرار العمليات بشكل مباشر تحت البطاقة -->
+            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+            <a href="{% url 'professional_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-success btn-lg w-100 mb-2 mt-3">
+                <i class="fas fa-credit-card ms-2"></i>إتمام عملية الدفع الآمن
+            </a>
+            <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success btn-lg w-100 mb-3">
+                <i class="fas fa-university ms-2"></i>الدفع بالتحويل البنكي
+            </a>
+            {% endif %}
 
-                {% if reservation.status == 'pending' %}
-                <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn btn-primary me-2">
-                    <i class="fas fa-edit ms-2"></i>تعديل الحجز
-                </a>
-                <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-danger me-2">
-                    <i class="fas fa-times ms-2"></i>إلغاء الحجز
-                </a>
-                {% endif %}
+            {% if reservation.status == 'pending' %}
+            <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn btn-primary btn-lg w-100 mb-2 mt-3">
+                <i class="fas fa-edit ms-2"></i>تعديل الحجز
+            </a>
+            <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-danger btn-lg w-100 mb-3">
+                <i class="fas fa-times ms-2"></i>إلغاء الحجز
+            </a>
+            {% endif %}
 
-                {% if reservation.status == 'completed' and reservation.payment_status == 'paid' %}
-                <a href="#" class="btn btn-primary me-2">
-                    <i class="fas fa-file-pdf ms-2"></i>طباعة الإيصال
-                </a>
-                {% if not has_review %}
-                <a href="{% url 'add_review' reservation_id=reservation.id %}" class="btn btn-outline-primary me-2">
-                    <i class="fas fa-star ms-2"></i>إضافة تقييم
-                </a>
-                {% endif %}
-                {% endif %}
+            {% if reservation.status == 'completed' and reservation.payment_status == 'paid' %}
+            <a href="#" class="btn btn-primary btn-lg w-100 mb-2 mt-3">
+                <i class="fas fa-file-pdf ms-2"></i>طباعة الإيصال
+            </a>
+            {% if not has_review %}
+            <a href="{% url 'add_review' reservation_id=reservation.id %}" class="btn btn-outline-primary btn-lg w-100 mb-3">
+                <i class="fas fa-star ms-2"></i>إضافة تقييم
+            </a>
+            {% endif %}
+            {% endif %}
 
-                <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-right ms-2"></i>العودة للحجوزات
-                </a>
-            </div>
+            <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary btn-lg w-100 mt-1 mb-3">
+                <i class="fas fa-arrow-right ms-2"></i>العودة للحجوزات
+            </a>
 
             {% if reservation.status == 'pending' %}
             <div class="alert alert-info">
@@ -354,14 +352,14 @@
         font-size: 1.2rem;
         color: #495057;
     }
-    .action-buttons-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center; /* Center the buttons horizontally */
+    /* أزرار العمليات تظهر بعرض كامل وبشكل أوضح */
+    .btn-lg {
+        padding: 0.8rem 1.5rem;
+        font-size: 1.1rem;
     }
-    .action-buttons-container a {
-        margin: 0.5rem; /* Add some space between buttons */
+    
+    .btn i {
+        font-size: 1.2rem;
     }
-
 </style>
 {% endblock %}
