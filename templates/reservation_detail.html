@@ -12,7 +12,7 @@
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">تفاصيل الحجز #{{ reservation.id }}</h4>
-                    
+
                     <div>
                         {% if reservation.status == 'pending' %}
                         <span class="badge bg-warning">قيد المراجعة</span>
@@ -23,7 +23,7 @@
                         {% elif reservation.status == 'cancelled' %}
                         <span class="badge bg-danger">ملغي</span>
                         {% endif %}
-                        
+
                         {% if reservation.payment_status == 'pending' %}
                         <span class="badge bg-secondary">في انتظار الدفع</span>
                         {% elif reservation.payment_status == 'paid' %}
@@ -33,7 +33,7 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <div class="card-body">
                     <!-- Car Information -->
                     <div class="car-info mb-4">
@@ -59,7 +59,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- معلومات العميل -->
                     <div class="reservation-details mb-4">
                         <h5 class="section-title mb-3 border-bottom pb-2">معلومات العميل</h5>
@@ -182,7 +182,7 @@
                             </div>
                         </div>
                         {% endif %}
-                        
+
                         {% if reservation.guarantee_type == 'credit_card' %}
                         <!-- معلومات البطاقة - تعرض بشكل جذاب عندما يكون نوع الضمان بطاقة ائتمان -->
                         <div class="card shadow-sm border-0 mb-3">
@@ -209,7 +209,7 @@
                                         </div>
                                     </div>
                                     {% endif %}
-                                    
+
                                     {% if reservation.guarantee_details %}
                                     <div class="col-md-6 mb-3">
                                         <div class="d-flex">
@@ -223,7 +223,7 @@
                                         </div>
                                     </div>
                                     {% endif %}
-                                    
+
                                     {% if reservation.id_card_image %}
                                     <div class="col-12 mt-2">
                                         <div class="card bg-light border-0">
@@ -255,14 +255,14 @@
                             <div class="col-sm-8">{{ reservation.guarantee_details }}</div>
                         </div>
                         {% endif %}
-                        
+
                         {% if reservation.deposit_amount %}
                         <div class="row mb-2">
                             <div class="col-sm-4 fw-semibold">مبلغ الوديعة:</div>
                             <div class="col-sm-8">{{ reservation.deposit_amount }} دينار</div>
                         </div>
                         {% endif %}
-                        
+
                         {% if reservation.national_id %}
                         <div class="row mb-2">
                             <div class="col-sm-4 fw-semibold">الرقم الوطني:</div>
@@ -276,7 +276,7 @@
                         </div>
                         {% endif %}
                     </div>
-                    
+
                     <!-- Price Summary -->
                     <div class="price-summary mb-4">
                         <h5 class="section-title mb-3 border-bottom pb-2">ملخص التكاليف</h5>
@@ -294,44 +294,46 @@
                             <span>{{ reservation.total_price }} دينار</span>
                         </div>
                     </div>
-                    
+
                     </div>
             </div>
 
-            <!-- أزرار الإجراءات خارج البطاقة بتنسيق أبسط -->
-            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-            <a href="{% url 'professional_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-success mt-4 me-2">
-                <i class="fas fa-credit-card ms-2"></i>إتمام عملية الدفع الآمن
-            </a>
-            <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success mt-4 me-2">
-                <i class="fas fa-university ms-2"></i>الدفع بالتحويل البنكي
-            </a>
-            {% endif %}
-            
-            {% if reservation.status == 'pending' %}
-            <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn btn-primary mt-4 me-2">
-                <i class="fas fa-edit ms-2"></i>تعديل الحجز
-            </a>
-            <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-danger mt-4 me-2">
-                <i class="fas fa-times ms-2"></i>إلغاء الحجز
-            </a>
-            {% endif %}
-            
-            {% if reservation.status == 'completed' and reservation.payment_status == 'paid' %}
-            <a href="#" class="btn btn-primary mt-4 me-2">
-                <i class="fas fa-file-pdf ms-2"></i>طباعة الإيصال
-            </a>
-            {% if not has_review %}
-            <a href="{% url 'add_review' reservation_id=reservation.id %}" class="btn btn-outline-primary mt-4 me-2">
-                <i class="fas fa-star ms-2"></i>إضافة تقييم
-            </a>
-            {% endif %}
-            {% endif %}
-            
-            <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary mt-4">
-                <i class="fas fa-arrow-right ms-2"></i>العودة للحجوزات
-            </a>
-            
+            <!-- تم تبسيط عرض أزرار العمليات خارج البطاقة -->
+            <div class="action-buttons-container py-3">
+                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                <a href="{% url 'professional_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-success me-2">
+                    <i class="fas fa-credit-card ms-2"></i>إتمام عملية الدفع الآمن
+                </a>
+                <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success me-2">
+                    <i class="fas fa-university ms-2"></i>الدفع بالتحويل البنكي
+                </a>
+                {% endif %}
+
+                {% if reservation.status == 'pending' %}
+                <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn btn-primary me-2">
+                    <i class="fas fa-edit ms-2"></i>تعديل الحجز
+                </a>
+                <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-danger me-2">
+                    <i class="fas fa-times ms-2"></i>إلغاء الحجز
+                </a>
+                {% endif %}
+
+                {% if reservation.status == 'completed' and reservation.payment_status == 'paid' %}
+                <a href="#" class="btn btn-primary me-2">
+                    <i class="fas fa-file-pdf ms-2"></i>طباعة الإيصال
+                </a>
+                {% if not has_review %}
+                <a href="{% url 'add_review' reservation_id=reservation.id %}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-star ms-2"></i>إضافة تقييم
+                </a>
+                {% endif %}
+                {% endif %}
+
+                <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-right ms-2"></i>العودة للحجوزات
+                </a>
+            </div>
+
             {% if reservation.status == 'pending' %}
             <div class="alert alert-info">
                 <h5 class="alert-heading"><i class="fas fa-info-circle ms-2"></i>الحجز قيد المراجعة</h5>
@@ -352,5 +354,14 @@
         font-size: 1.2rem;
         color: #495057;
     }
+    .action-buttons-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center; /* Center the buttons horizontally */
+    }
+    .action-buttons-container a {
+        margin: 0.5rem; /* Add some space between buttons */
+    }
+
 </style>
 {% endblock %}
