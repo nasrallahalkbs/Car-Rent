@@ -1,0 +1,474 @@
+{% extends 'layout_django.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Reservation Confirmation" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow border-0">
+                <div class="card-body p-5 text-center">
+                    {% if reservation.status == 'pending' %}
+                    <!-- Pending Reservation -->
+                    <div class="icon-circle icon-circle-warning mb-4">
+                        <i class="fas fa-clock fa-4x text-warning"></i>
+                    </div>
+                    <h2 class="mb-4">{% trans "Reservation Request Received!" %}</h2>
+                    <p class="lead mb-4">
+                        {% blocktrans trimmed %}Thank you, your reservation request has been received and is under review. You will be notified when your request is approved.{% endblocktrans %}
+                    </p>
+                    
+                    <!-- Payment Deadline Notice -->
+                    <div class="alert alert-warning payment-deadline-alert">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle {% if is_english %}me-3{% else %}ms-3{% endif %} fa-2x"></i>
+                            <div class="{% if is_english %}text-start{% else %}text-end{% endif %}">
+                                <h5 class="alert-heading mb-1">{% trans "Payment Due Within 24 Hours" %}</h5>
+                                <p class="mb-0">
+                                    {% blocktrans trimmed %}Please complete your payment within 24 hours to secure your reservation. Unpaid reservations will be automatically cancelled after this period.{% endblocktrans %}
+                                    {% if reservation.confirmation_expiry %}
+                                    <br>
+                                    <strong>{% trans "Deadline:" %}</strong> 
+                                    {{ reservation.confirmation_expiry|date:"Y-m-d" }} {{ reservation.confirmation_expiry|time:"H:i" }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reservation-details p-4 mb-4 bg-light rounded text-start">
+                        <h5 class="border-bottom pb-2 mb-3">{% trans "Reservation Details" %}</h5>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Reservation Number:" %}</div>
+                            <div class="col-sm-8">{{ reservation.reservation_number|default:reservation.id }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Car:" %}</div>
+                            <div class="col-sm-8">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Pick-up Date:" %}</div>
+                            <div class="col-sm-8">{{ reservation.start_date|date:"d F Y" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Return Date:" %}</div>
+                            <div class="col-sm-8">{{ reservation.end_date|date:"d F Y" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Total Amount:" %}</div>
+                            <div class="col-sm-8">{{ reservation.total_price }} {% trans "JOD" %}</div>
+                        </div>
+                        
+                        <!-- Customer Information -->
+                        <h6 class="pt-3 pb-2 mb-3 border-bottom">{% trans "Customer Information" %}</h6>
+                        {% if reservation.full_name %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Full Name:" %}</div>
+                            <div class="col-sm-8">{{ reservation.full_name }}</div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.national_id %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "National ID:" %}</div>
+                            <div class="col-sm-8">{{ reservation.national_id }}</div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.id_card_image %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "ID Card Image:" %}</div>
+                            <div class="col-sm-8">
+                                <i class="fas fa-check-circle text-success"></i> {% trans "Provided" %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Rental Details -->
+                        <h6 class="pt-3 pb-2 mb-3 border-bottom">{% trans "Rental Details" %}</h6>
+                        {% if reservation.rental_type %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Rental Type:" %}</div>
+                            <div class="col-sm-8">
+                                {% if reservation.rental_type == 'daily' %}{% trans "Daily Rental" %}
+                                {% elif reservation.rental_type == 'weekly' %}{% trans "Weekly Rental" %}
+                                {% elif reservation.rental_type == 'monthly' %}{% trans "Monthly Rental" %}
+                                {% elif reservation.rental_type == 'corporate' %}{% trans "Corporate Rental" %}
+                                {% elif reservation.rental_type == 'special' %}{% trans "Special Event" %}
+                                {% else %}{{ reservation.rental_type }}{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.payment_method %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Payment Method:" %}</div>
+                            <div class="col-sm-8">
+                                {% if reservation.payment_method == 'cash' %}{% trans "Cash Payment" %}
+                                {% elif reservation.payment_method == 'electronic' %}{% trans "Electronic Payment" %}
+                                {% elif reservation.payment_method == 'credit_card' %}{% trans "Credit/Debit Card" %}
+                                {% elif reservation.payment_method == 'bank_transfer' %}{% trans "Bank Transfer" %}
+                                {% else %}{{ reservation.payment_method }}{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.guarantee_type %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Guarantee Type:" %}</div>
+                            <div class="col-sm-8">
+                                {% if reservation.guarantee_type == 'deposit' %}{% trans "Security Deposit" %}
+                                {% elif reservation.guarantee_type == 'credit_card' %}{% trans "Credit Card Hold" %}
+                                {% elif reservation.guarantee_type == 'property_doc' %}{% trans "Property Document" %}
+                                {% else %}{{ reservation.guarantee_type }}{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.deposit_amount %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Deposit Amount:" %}</div>
+                            <div class="col-sm-8">{{ reservation.deposit_amount }} {% trans "JOD" %}</div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.guarantee_details %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Guarantee Details:" %}</div>
+                            <div class="col-sm-8">{{ reservation.guarantee_details }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Reservation Status -->
+                        <h6 class="pt-3 pb-2 mb-3 border-bottom">{% trans "Status" %}</h6>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Reservation Status:" %}</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-warning">{% trans "Under Review" %}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 fw-bold">{% trans "Payment Status:" %}</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-secondary">{% trans "Pending Approval" %}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle ms-2"></i> سيتم إشعارك عبر البريد الإلكتروني عند الموافقة على طلب الحجز. يمكنك أيضاً متابعة حالة الحجز من خلال صفحة "حجوزاتي".
+                    </div>
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+                        <a href="{% url 'my_reservations' %}" class="btn btn-primary btn-lg px-4 gap-3">
+                            <i class="fas fa-list ms-2"></i> عرض حجوزاتي
+                        </a>
+                        <a href="{% url 'cars' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-car ms-2"></i> متابعة التصفح
+                        </a>
+                    </div>
+                    {% elif reservation.status == 'confirmed' %}
+                    <!-- Confirmed Reservation -->
+                    <div class="icon-circle icon-circle-success mb-4">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h2 class="mb-4">تمت الموافقة على الحجز!</h2>
+                    <p class="lead mb-4">
+                        تمت الموافقة على حجزك بنجاح! يمكنك الآن إكمال عملية الدفع لتأكيد الحجز.
+                    </p>
+                    
+                    <!-- Payment Deadline Notice -->
+                    <div class="alert alert-warning payment-deadline-alert">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle {% if is_english %}me-3{% else %}ms-3{% endif %} fa-2x"></i>
+                            <div class="{% if is_english %}text-start{% else %}text-end{% endif %}">
+                                <h5 class="alert-heading mb-1">{% trans "Payment Due Within 24 Hours" %}</h5>
+                                <p class="mb-0">
+                                    {% blocktrans trimmed %}Please complete your payment within 24 hours to secure your reservation. Unpaid reservations will be automatically cancelled after this period.{% endblocktrans %}
+                                    {% if reservation.confirmation_expiry %}
+                                    <br>
+                                    <strong>{% trans "Deadline:" %}</strong> 
+                                    {{ reservation.confirmation_expiry|date:"Y-m-d" }} {{ reservation.confirmation_expiry|time:"H:i" }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reservation-details p-4 mb-4 bg-light rounded text-start">
+                        <h5 class="border-bottom pb-2 mb-3">{% trans "Reservation Details" %}</h5>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Reservation Number:" %}</div>
+                            <div class="col-sm-8">{{ reservation.reservation_number|default:reservation.id }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Car:" %}</div>
+                            <div class="col-sm-8">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Pick-up Date:" %}</div>
+                            <div class="col-sm-8">{{ reservation.start_date|date:"d F Y" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Return Date:" %}</div>
+                            <div class="col-sm-8">{{ reservation.end_date|date:"d F Y" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Total Amount:" %}</div>
+                            <div class="col-sm-8">{{ reservation.total_price }} {% trans "JOD" %}</div>
+                        </div>
+                        
+                        <!-- Customer Information -->
+                        <h6 class="pt-3 pb-2 mb-3 border-bottom">{% trans "Customer Information" %}</h6>
+                        {% if reservation.full_name %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Full Name:" %}</div>
+                            <div class="col-sm-8">{{ reservation.full_name }}</div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.national_id %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "National ID:" %}</div>
+                            <div class="col-sm-8">{{ reservation.national_id }}</div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.id_card_image %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "ID Card Image:" %}</div>
+                            <div class="col-sm-8">
+                                <i class="fas fa-check-circle text-success"></i> {% trans "Provided" %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Rental Details -->
+                        <h6 class="pt-3 pb-2 mb-3 border-bottom">{% trans "Rental Details" %}</h6>
+                        {% if reservation.rental_type %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Rental Type:" %}</div>
+                            <div class="col-sm-8">
+                                {% if reservation.rental_type == 'daily' %}{% trans "Daily Rental" %}
+                                {% elif reservation.rental_type == 'weekly' %}{% trans "Weekly Rental" %}
+                                {% elif reservation.rental_type == 'monthly' %}{% trans "Monthly Rental" %}
+                                {% elif reservation.rental_type == 'corporate' %}{% trans "Corporate Rental" %}
+                                {% elif reservation.rental_type == 'special' %}{% trans "Special Event" %}
+                                {% else %}{{ reservation.rental_type }}{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.payment_method %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Payment Method:" %}</div>
+                            <div class="col-sm-8">
+                                {% if reservation.payment_method == 'cash' %}{% trans "Cash Payment" %}
+                                {% elif reservation.payment_method == 'electronic' %}{% trans "Electronic Payment" %}
+                                {% elif reservation.payment_method == 'credit_card' %}{% trans "Credit/Debit Card" %}
+                                {% elif reservation.payment_method == 'bank_transfer' %}{% trans "Bank Transfer" %}
+                                {% else %}{{ reservation.payment_method }}{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.guarantee_type %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Guarantee Type:" %}</div>
+                            <div class="col-sm-8">
+                                {% if reservation.guarantee_type == 'deposit' %}{% trans "Security Deposit" %}
+                                {% elif reservation.guarantee_type == 'credit_card' %}{% trans "Credit Card Hold" %}
+                                {% elif reservation.guarantee_type == 'property_doc' %}{% trans "Property Document" %}
+                                {% else %}{{ reservation.guarantee_type }}{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.deposit_amount %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Deposit Amount:" %}</div>
+                            <div class="col-sm-8">{{ reservation.deposit_amount }} {% trans "JOD" %}</div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.guarantee_details %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Guarantee Details:" %}</div>
+                            <div class="col-sm-8">{{ reservation.guarantee_details }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Reservation Status -->
+                        <h6 class="pt-3 pb-2 mb-3 border-bottom">{% trans "Status" %}</h6>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Reservation Status:" %}</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-success">{% trans "Confirmed" %}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 fw-bold">{% trans "Payment Status:" %}</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-warning">{% trans "Pending Payment" %}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle ms-2"></i> يمكنك الدفع عبر صفحة "حجوزاتي" أو الضغط على زر الدفع أدناه.
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+                        <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success btn-lg px-4 gap-3">
+                            <i class="fas fa-credit-card ms-2"></i> إتمام الدفع
+                        </a>
+                        <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success btn-lg px-4">
+                            <i class="fas fa-university ms-2"></i> الدفع بالتحويل البنكي
+                        </a>
+                        <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-list ms-2"></i> عرض حجوزاتي
+                        </a>
+                    </div>
+                    {% elif reservation.status == 'cancelled' %}
+                    <!-- Cancelled Reservation -->
+                    <div class="icon-circle icon-circle-danger mb-4">
+                        <i class="fas fa-times-circle fa-4x text-danger"></i>
+                    </div>
+                    <h2 class="mb-4">{% trans "Reservation Cancelled" %}</h2>
+                    <p class="lead mb-4">
+                        {% blocktrans trimmed %}Your car reservation has been cancelled. If you need a vehicle, please make a new reservation.{% endblocktrans %}
+                    </p>
+                    <div class="alert alert-light border">
+                        {% if reservation.notes %}
+                        <h6 class="mb-2">{% trans "Cancellation Reason:" %}</h6>
+                        <p class="mb-0">{{ reservation.notes }}</p>
+                        {% else %}
+                        <p class="mb-0">{% trans "This reservation was cancelled per your request or due to payment not being completed within the required time frame." %}</p>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+                        <a href="{% url 'cars' %}" class="btn btn-primary btn-lg px-4 gap-3">
+                            <i class="fas fa-car ms-2"></i> {% trans "Make a New Reservation" %}
+                        </a>
+                        <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-list ms-2"></i> {% trans "View My Reservations" %}
+                        </a>
+                    </div>
+                    {% elif reservation.status == 'completed' and reservation.payment_status == 'paid' %}
+                    <!-- Completed Reservation -->
+                    <div class="icon-circle icon-circle-primary mb-4">
+                        <i class="fas fa-check-circle fa-4x text-primary"></i>
+                    </div>
+                    <h2 class="mb-4">{% trans "Reservation Completed" %}</h2>
+                    <p class="lead mb-4">
+                        {% blocktrans trimmed %}Your car rental reservation has been successfully completed and payment has been processed.{% endblocktrans %}
+                    </p>
+                    <div class="alert alert-success">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle me-3 fa-2x"></i>
+                            <div>
+                                <h5 class="alert-heading mb-1">{% trans "Payment Confirmed" %}</h5>
+                                <p class="mb-0">{% trans "Thank you for your payment. Your reservation is now fully confirmed." %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reservation-details p-4 mb-4 bg-light rounded text-start">
+                        <h5 class="border-bottom pb-2 mb-3">{% trans "Reservation Details" %}</h5>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Reservation Number:" %}</div>
+                            <div class="col-sm-8">{{ reservation.reservation_number|default:reservation.id }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Car:" %}</div>
+                            <div class="col-sm-8">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Pick-up Date:" %}</div>
+                            <div class="col-sm-8">{{ reservation.start_date|date:"d F Y" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Return Date:" %}</div>
+                            <div class="col-sm-8">{{ reservation.end_date|date:"d F Y" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Total Amount:" %}</div>
+                            <div class="col-sm-8">{{ reservation.total_price }} {% trans "JOD" %}</div>
+                        </div>
+                        
+                        <!-- Payment Information -->
+                        <h6 class="pt-3 pb-2 mb-3 border-bottom">{% trans "Payment Information" %}</h6>
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Payment Method:" %}</div>
+                            <div class="col-sm-8">
+                                {% if reservation.payment_method == 'cash' %}{% trans "Cash Payment" %}
+                                {% elif reservation.payment_method == 'electronic' %}{% trans "Electronic Payment" %}
+                                {% elif reservation.payment_method == 'credit_card' %}{% trans "Credit/Debit Card" %}
+                                {% elif reservation.payment_method == 'bank_transfer' %}{% trans "Bank Transfer" %}
+                                {% else %}{{ reservation.payment_method }}{% endif %}
+                            </div>
+                        </div>
+                        {% if reservation.payment_reference %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Payment Reference:" %}</div>
+                            <div class="col-sm-8">{{ reservation.payment_reference }}</div>
+                        </div>
+                        {% endif %}
+                        {% if reservation.payment_date %}
+                        <div class="row mb-2">
+                            <div class="col-sm-4 fw-bold">{% trans "Payment Date:" %}</div>
+                            <div class="col-sm-8">{{ reservation.payment_date|date:"d F Y" }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+                        <a href="{% url 'payment_receipt' reservation_id=reservation.id %}" class="btn btn-primary btn-lg px-4 gap-3" target="_blank">
+                            <i class="fas fa-receipt ms-2"></i> {% trans "View Receipt" %}
+                        </a>
+                        <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-list ms-2"></i> {% trans "View All Reservations" %}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-light text-center py-3 text-muted">
+                    <small>
+                        <i class="fas fa-shield-alt me-1"></i> {% trans "This information is secured by our advanced encryption system." %} 
+                        &bull; 
+                        <i class="fas fa-phone-alt me-1"></i> +962 6 XXX XXXX
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-deadline-alert {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .icon-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .icon-circle-success {
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+    
+    .icon-circle-warning {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    
+    .icon-circle-danger {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+    
+    .icon-circle-primary {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    .reservation-details {
+        font-size: 0.95rem;
+    }
+    
+    @media (min-width: 768px) {
+        .reservation-details {
+            padding: 2rem !important;
+        }
+    }
+</style>
+{% endblock %}
