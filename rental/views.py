@@ -17,7 +17,54 @@ import logging
 import json
 import os.path
 
+# تفعيل التسجيل لمتابعة العمليات المهمة
 logger = logging.getLogger(__name__)
+
+def check_expired_confirmations():
+    """
+    فحص الحجوزات المؤكدة التي انتهت صلاحيتها ولم يتم الدفع لها
+    يتم استدعاء هذه الدالة عند الصفحات الرئيسية لتحديث حالات الحجوزات
+    """
+    # الحصول على الوقت الحالي
+    now = timezone.now()
+    
+    # البحث عن الحجوزات المؤكدة التي انتهت صلاحية تأكيدها ولم يتم الدفع لها
+    expired_reservations = Reservation.objects.filter(
+        status='confirmed',
+        payment_status='pending',
+        confirmation_expiry__lt=now,  # تاريخ انتهاء الصلاحية قبل الوقت الحالي
+        confirmation_expiry__isnull=False  # تأكد من وجود تاريخ انتهاء
+    )
+    
+    # تسجيل عدد الحجوزات المنتهية للتتبع
+    logger.info(f"Found {expired_reservations.count()} expired confirmed reservations.")
+    
+    # الإلغاء التلقائي للحجوزات المنتهية
+    for reservation in expired_reservations:
+        # تحديث حالة الحجز إلى "ملغي"
+        reservation.status = 'cancelled'
+        
+        # تسجيل سبب الإلغاء في الملاحظات
+        notes = reservation.notes or ""
+        cancellation_reason = "تم الإلغاء تلقائياً بسبب عدم الدفع خلال 24 ساعة."
+        if notes:
+            notes += f"\n{cancellation_reason}"
+        else:
+            notes = cancellation_reason
+        reservation.notes = notes
+        
+        # حفظ التغييرات
+        reservation.save()
+        
+        # استعادة حالة السيارة إلى "متاحة"
+        car = reservation.car
+        car.is_available = True
+        car.save()
+        
+        logger.info(f"Auto-cancelled reservation #{reservation.id} for car {car.id} due to payment timeout.")
+    
+    # إرجاع عدد الحجوزات التي تم إلغاؤها
+    return expired_reservations.count()
 
 def get_template_by_language(request, base_template):
     """
@@ -75,6 +122,11 @@ def get_template_by_language(request, base_template):
 
 def index(request):
     """Home page view"""
+    # قبل عرض الصفحة، تحقق من الحجوزات المنتهية وقم بإلغائها تلقائيًا
+    expired_count = check_expired_confirmations()
+    if expired_count > 0:
+        logger.info(f"Auto-cancelled {expired_count} expired reservations during index view.")
+    
     # Get featured cars (newest 6 cars)
     featured_cars = Car.objects.filter(is_available=True).order_by('-id')[:6]
     
@@ -508,6 +560,11 @@ def checkout(request):
 @login_required
 def my_reservations(request):
     """User's reservations page with search capability"""
+    # تحقق من الحجوزات المنتهية قبل عرض الصفحة
+    expired_count = check_expired_confirmations()
+    if expired_count > 0:
+        logger.info(f"Auto-cancelled {expired_count} expired reservations during my_reservations view.")
+    
     # الحصول على كافة حجوزات المستخدم الحالي
     reservations_query = Reservation.objects.filter(user=request.user)
     

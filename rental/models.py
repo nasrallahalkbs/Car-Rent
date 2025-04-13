@@ -133,6 +133,9 @@ class Reservation(models.Model):
     payment_date = models.DateTimeField(blank=True, null=True)
     transaction_id = models.CharField(max_length=100, blank=True, null=True)
     
+    # معلومات انتهاء صلاحية التأكيد (للحجوزات المؤكدة التي لم يتم الدفع لها)
+    confirmation_expiry = models.DateTimeField(blank=True, null=True, help_text="وقت انتهاء صلاحية التأكيد (24 ساعة)")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True, help_text="Additional notes or payment details")
     

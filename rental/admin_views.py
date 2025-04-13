@@ -271,6 +271,20 @@ def delete_car(request, car_id):
 @admin_required
 def admin_reservations(request):
     """Admin view to manage reservations"""
+    # استدعاء دالة فحص الحجوزات المنتهية من views.py
+    from rental.views import check_expired_confirmations
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # تحقق من الحجوزات المنتهية قبل عرض الصفحة
+    expired_count = check_expired_confirmations()
+    if expired_count > 0:
+        logger.info(f"Automatically cancelled {expired_count} expired reservations during admin_reservations view.")
+        # إضافة رسالة للمسؤول
+        from django.contrib import messages
+        messages.info(request, f"تم إلغاء {expired_count} حجز منتهي الصلاحية تلقائيًا (بسبب عدم الدفع خلال 24 ساعة).")
+    
     # Get filter values from query parameters
     status = request.GET.get('status', '')
     payment_status = request.GET.get('payment_status', '')
