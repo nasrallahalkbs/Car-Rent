@@ -7,6 +7,57 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/status_badges_fixed.css' %}">
 <style>
+    /* تنسيقات العداد التنازلي */
+    .countdown-timer {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 1rem;
+        font-weight: 600;
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 3px 8px;
+        border-radius: 4px;
+        letter-spacing: 1px;
+    }
+    
+    .countdown-timer .hours,
+    .countdown-timer .minutes,
+    .countdown-timer .seconds {
+        display: inline-block;
+        min-width: 1.5rem;
+        text-align: center;
+    }
+    
+    .countdown-timer.text-warning {
+        color: #ff9800 !important;
+        background-color: rgba(255, 152, 0, 0.1);
+    }
+    
+    .countdown-timer.text-danger {
+        color: #ff2a2a !important;
+        background-color: rgba(255, 42, 42, 0.1);
+    }
+    
+    .payment-warning .alert {
+        border-radius: 6px;
+        margin-top: 8px;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .payment-warning .alert.expired-alert {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 6px rgba(220, 53, 69, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
+    }
+    
     /* تحسين أسلوب صفحة الحجوزات */
     .page-header {
         background: linear-gradient(135deg, var(--primary-color), var(--primary-color-light));
@@ -838,21 +889,25 @@
                                         <i class="fas fa-university"></i>
                                     </a>
                                     <div class="payment-warning mt-2">
-                                        <small class="text-danger">
-                                            <i class="fas fa-exclamation-circle me-1"></i>
-                                            {% if is_english %}
-                                            Reservation will be automatically cancelled if payment is not completed within 24 hours.
-                                            {% else %}
-                                            سيتم إلغاء الحجز تلقائياً إذا لم يتم الدفع خلال 24 ساعة.
-                                            {% endif %}
-                                            {% if reservation.confirmation_expiry %}
-                                            <br>
-                                            <strong>
-                                                {% if is_english %}Deadline:{% else %}تاريخ انتهاء المهلة:{% endif %} 
-                                                {{ reservation.confirmation_expiry|date:"Y-m-d" }} {{ reservation.confirmation_expiry|time:"H:i" }}
-                                            </strong>
-                                            {% endif %}
-                                        </small>
+                                        <div class="alert alert-danger py-1 px-2 mb-0">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                                    {% if is_english %}
+                                                    Payment required within:
+                                                    {% else %}
+                                                    الوقت المتبقي للدفع:
+                                                    {% endif %}
+                                                </div>
+                                                {% if reservation.confirmation_expiry %}
+                                                <div class="countdown-timer font-weight-bold" 
+                                                    data-expire-time="{{ reservation.confirmation_expiry|date:'c' }}"
+                                                    data-reservation-id="{{ reservation.id }}">
+                                                    <span class="hours">--</span>:<span class="minutes">--</span>:<span class="seconds">--</span>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
                                     </div>
                                     {% endif %}
                                     
@@ -939,6 +994,65 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.position = '';
         });
     });
+    
+    // تشغيل العداد التنازلي لمهلة الدفع
+    const countdownTimers = document.querySelectorAll('.countdown-timer');
+    
+    function updateCountdown() {
+        const now = new Date().getTime();
+        
+        countdownTimers.forEach(timer => {
+            const expireTime = new Date(timer.getAttribute('data-expire-time')).getTime();
+            const timeLeft = expireTime - now;
+            
+            const hoursElement = timer.querySelector('.hours');
+            const minutesElement = timer.querySelector('.minutes');
+            const secondsElement = timer.querySelector('.seconds');
+            
+            if (timeLeft > 0) {
+                // حساب الساعات والدقائق والثواني المتبقية
+                const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                
+                // تحديث العناصر في واجهة المستخدم
+                hoursElement.textContent = hours.toString().padStart(2, '0');
+                minutesElement.textContent = minutes.toString().padStart(2, '0');
+                secondsElement.textContent = seconds.toString().padStart(2, '0');
+                
+                // تغيير لون العداد حسب الوقت المتبقي
+                if (timeLeft < 1000 * 60 * 60) { // أقل من ساعة
+                    timer.classList.add('text-danger');
+                    timer.classList.add('fw-bold');
+                } else if (timeLeft < 1000 * 60 * 60 * 3) { // أقل من 3 ساعات
+                    timer.classList.add('text-warning');
+                }
+            } else {
+                // انتهت المهلة
+                hoursElement.textContent = '00';
+                minutesElement.textContent = '00';
+                secondsElement.textContent = '00';
+                timer.classList.add('text-danger');
+                timer.classList.add('expired');
+                
+                // إضافة نص "انتهت المهلة"
+                const parentAlert = timer.closest('.alert');
+                if (parentAlert && !parentAlert.classList.contains('expired-alert')) {
+                    parentAlert.classList.add('expired-alert', 'bg-danger', 'text-white');
+                    const textElement = parentAlert.querySelector('div > div:first-child');
+                    if (textElement) {
+                        textElement.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> {% if is_english %}Payment deadline expired!{% else %}انتهت مهلة الدفع!{% endif %}';
+                    }
+                }
+            }
+        });
+    }
+    
+    // تحديث العداد كل ثانية
+    if (countdownTimers.length > 0) {
+        updateCountdown(); // تحديث فوري
+        setInterval(updateCountdown, 1000); // تحديث كل ثانية
+    }
 });
 </script>
 {% endblock %}
