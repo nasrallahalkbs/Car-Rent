@@ -46,7 +46,22 @@
         margin-bottom: 1rem;
     }
     
-    .car-hero-badges {
+    /* تنظيم حاويات الشارات */
+    .car-badges-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+    
+    .car-badges-specifications {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .car-badges-availability {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
@@ -59,8 +74,16 @@
         font-weight: 500;
         display: inline-flex;
         align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
     }
     
+    .car-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* دعم الاتجاه RTL للأيقونات */
     .car-badge i {
         margin-right: 0.5rem;
     }
@@ -377,26 +400,71 @@
             <h1 class="car-hero-title">{{ car.make }} {{ car.model }}</h1>
             <p class="car-hero-subtitle">{{ car.year }} • {{ car.color }}</p>
             
-            <div class="car-hero-badges">
-                <div class="car-badge badge-category">
-                    <i class="fas fa-car {% trans "me-2" %}"></i> {% if is_english %}{% if car.category == "Economy" %}Economy{% elif car.category == "Compact" %}Compact{% elif car.category == "Mid-size" %}Mid-size{% elif car.category == "Luxury" %}Luxury{% elif car.category == "SUV" %}SUV{% elif car.category == "Truck" %}Truck{% else %}{{ car.category }}{% endif %}{% else %}{% if car.category == "Economy" %}اقتصادية{% elif car.category == "Compact" %}مدمجة{% elif car.category == "Mid-size" %}متوسطة{% elif car.category == "Luxury" %}فاخرة{% elif car.category == "SUV" %}دفع رباعي{% elif car.category == "Truck" %}شاحنات{% else %}{{ car.category }}{% endif %}{% endif %}
-                </div>
-                <div class="car-badge badge-transmission">
-                    <i class="fas fa-cog {% trans "me-2" %}"></i> {% if is_english %}{% if car.transmission == "Automatic" %}Automatic{% elif car.transmission == "Manual" %}Manual{% else %}{{ car.transmission }}{% endif %}{% else %}{% if car.transmission == "Automatic" %}أوتوماتيك{% elif car.transmission == "Manual" %}يدوي{% else %}{{ car.transmission }}{% endif %}{% endif %}
-                </div>
-                <div class="car-badge badge-fuel">
-                    <i class="fas fa-gas-pump {% trans "me-2" %}"></i> {% if is_english %}{% if car.fuel_type == "Gas" %}Gas{% elif car.fuel_type == "Diesel" %}Diesel{% elif car.fuel_type == "Electric" %}Electric{% elif car.fuel_type == "Hybrid" %}Hybrid{% else %}{{ car.fuel_type }}{% endif %}{% else %}{% if car.fuel_type == "Gas" %}بنزين{% elif car.fuel_type == "Diesel" %}ديزل{% elif car.fuel_type == "Electric" %}كهربائي{% elif car.fuel_type == "Hybrid" %}هجين{% else %}{{ car.fuel_type }}{% endif %}{% endif %}
+            <div class="car-badges-container">
+                <!-- بطاقات خصائص السيارة -->
+                <div class="car-badges-specifications">
+                    <div class="car-badge badge-category">
+                        <i class="fas fa-car {% if is_english %}me-2{% else %}ms-2{% endif %}"></i> 
+                        {% if is_english %}
+                            {% if car.category == "Economy" %}Economy
+                            {% elif car.category == "Compact" %}Compact
+                            {% elif car.category == "Mid-size" %}Mid-size
+                            {% elif car.category == "Luxury" %}Luxury
+                            {% elif car.category == "SUV" %}SUV
+                            {% elif car.category == "Truck" %}Truck
+                            {% else %}{{ car.category }}{% endif %}
+                        {% else %}
+                            {% if car.category == "Economy" %}اقتصادية
+                            {% elif car.category == "Compact" %}مدمجة
+                            {% elif car.category == "Mid-size" %}متوسطة
+                            {% elif car.category == "Luxury" %}فاخرة
+                            {% elif car.category == "SUV" %}دفع رباعي
+                            {% elif car.category == "Truck" %}شاحنات
+                            {% else %}{{ car.category }}{% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="car-badge badge-transmission">
+                        <i class="fas fa-cog {% if is_english %}me-2{% else %}ms-2{% endif %}"></i> 
+                        {% if is_english %}
+                            {% if car.transmission == "Automatic" %}Automatic
+                            {% elif car.transmission == "Manual" %}Manual
+                            {% else %}{{ car.transmission }}{% endif %}
+                        {% else %}
+                            {% if car.transmission == "Automatic" %}أوتوماتيك
+                            {% elif car.transmission == "Manual" %}يدوي
+                            {% else %}{{ car.transmission }}{% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="car-badge badge-fuel">
+                        <i class="fas fa-gas-pump {% if is_english %}me-2{% else %}ms-2{% endif %}"></i> 
+                        {% if is_english %}
+                            {% if car.fuel_type == "Gas" %}Gas
+                            {% elif car.fuel_type == "Diesel" %}Diesel
+                            {% elif car.fuel_type == "Electric" %}Electric
+                            {% elif car.fuel_type == "Hybrid" %}Hybrid
+                            {% else %}{{ car.fuel_type }}{% endif %}
+                        {% else %}
+                            {% if car.fuel_type == "Gas" %}بنزين
+                            {% elif car.fuel_type == "Diesel" %}ديزل
+                            {% elif car.fuel_type == "Electric" %}كهربائي
+                            {% elif car.fuel_type == "Hybrid" %}هجين
+                            {% else %}{{ car.fuel_type }}{% endif %}
+                        {% endif %}
+                    </div>
                 </div>
                 
-                {% if car.is_available %}
-                <div class="car-badge badge-available">
-                    <i class="fas fa-check-circle {% trans "me-2" %}"></i> {% trans "Available" %}
+                <!-- بطاقة التوافر -->
+                <div class="car-badges-availability">
+                    {% if car.is_available %}
+                    <div class="car-badge badge-available">
+                        <i class="fas fa-check-circle {% if is_english %}me-2{% else %}ms-2{% endif %}"></i> {% trans "Available" %}
+                    </div>
+                    {% else %}
+                    <div class="car-badge badge-unavailable">
+                        <i class="fas fa-times-circle {% if is_english %}me-2{% else %}ms-2{% endif %}"></i> {% trans "Not Available" %}
+                    </div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <div class="car-badge badge-unavailable">
-                    <i class="fas fa-times-circle {% trans "me-2" %}"></i> {% trans "Not Available" %}
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
