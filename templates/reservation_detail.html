@@ -295,57 +295,78 @@
                         </div>
                     </div>
 
-                    </div>
+                </div>
             </div>
+        </div>
+    </div>
+</div>
 
-            <!-- أزرار العمليات بشكل مباشر تحت البطاقة -->
+<!-- أزرار الإجراءات بدون قالب أسفل النموذج مباشرة -->
+<div class="container py-3">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
             {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-            <a href="{% url 'professional_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-success btn-lg w-100 mb-2 mt-3">
-                <i class="fas fa-credit-card ms-2"></i>إتمام عملية الدفع الآمن
+            <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success btn-lg w-100 mb-2">
+                <i class="fas fa-credit-card ms-2"></i> {% trans "إتمام الدفع" %}
             </a>
             <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success btn-lg w-100 mb-3">
-                <i class="fas fa-university ms-2"></i>الدفع بالتحويل البنكي
+                <i class="fas fa-university ms-2"></i> {% trans "الدفع بالتحويل البنكي" %}
             </a>
             {% endif %}
 
             {% if reservation.status == 'pending' %}
-            <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn btn-primary btn-lg w-100 mb-2 mt-3">
-                <i class="fas fa-edit ms-2"></i>تعديل الحجز
+            <a href="{% url 'modify_reservation' reservation_id=reservation.id %}" class="btn btn-primary btn-lg w-100 mb-2">
+                <i class="fas fa-edit ms-2"></i> {% trans "تعديل الحجز" %}
             </a>
             <a href="{% url 'cancel_reservation' reservation_id=reservation.id %}" class="btn btn-danger btn-lg w-100 mb-3">
-                <i class="fas fa-times ms-2"></i>إلغاء الحجز
+                <i class="fas fa-times ms-2"></i> {% trans "إلغاء الحجز" %}
             </a>
             {% endif %}
 
             {% if reservation.status == 'completed' and reservation.payment_status == 'paid' %}
-            <a href="#" class="btn btn-primary btn-lg w-100 mb-2 mt-3">
-                <i class="fas fa-file-pdf ms-2"></i>طباعة الإيصال
+            <a href="#" class="btn btn-primary btn-lg w-100 mb-2">
+                <i class="fas fa-file-pdf ms-2"></i> {% trans "طباعة الإيصال" %}
             </a>
             {% if not has_review %}
             <a href="{% url 'add_review' reservation_id=reservation.id %}" class="btn btn-outline-primary btn-lg w-100 mb-3">
-                <i class="fas fa-star ms-2"></i>إضافة تقييم
+                <i class="fas fa-star ms-2"></i> {% trans "إضافة تقييم" %}
             </a>
             {% endif %}
             {% endif %}
 
-            <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary btn-lg w-100 mt-1 mb-3">
-                <i class="fas fa-arrow-right ms-2"></i>العودة للحجوزات
+            <a href="{% url 'my_reservations' %}" class="btn btn-outline-secondary btn-lg w-100 mb-3">
+                <i class="fas fa-arrow-right ms-2"></i> {% trans "العودة للحجوزات" %}
             </a>
 
             {% if reservation.status == 'pending' %}
-            <div class="alert alert-info">
-                <h5 class="alert-heading"><i class="fas fa-info-circle ms-2"></i>الحجز قيد المراجعة</h5>
-                <p>طلب الحجز الخاص بك قيد المراجعة حاليًا من قبل فريق خدمة العملاء. سيتم إشعارك عند الموافقة على طلبك.</p>
+            <div class="alert alert-info mt-3">
+                <h5 class="alert-heading"><i class="fas fa-info-circle ms-2"></i>{% trans "الحجز قيد المراجعة" %}</h5>
+                <p>{% trans "طلب الحجز الخاص بك قيد المراجعة حاليًا من قبل فريق خدمة العملاء. سيتم إشعارك عند الموافقة على طلبك." %}</p>
             </div>
             {% elif reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-            <div class="alert alert-success">
-                <h5 class="alert-heading"><i class="fas fa-check-circle ms-2"></i>تمت الموافقة على الحجز!</h5>
-                <p>تمت الموافقة على طلب الحجز الخاص بك. يرجى إتمام عملية الدفع لتأكيد الحجز.</p>
+            <div class="alert alert-success mt-3">
+                <h5 class="alert-heading"><i class="fas fa-check-circle ms-2"></i>{% trans "تمت الموافقة على الحجز!" %}</h5>
+                <p>{% trans "تمت الموافقة على طلب الحجز الخاص بك. يرجى إتمام عملية الدفع لتأكيد الحجز." %}</p>
             </div>
             {% endif %}
         </div>
     </div>
 </div>
+
+<div class="container py-4 mb-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card-footer bg-light text-center py-3 text-muted">
+                <small>
+                    <i class="fas fa-shield-alt me-1"></i> {% trans "هذه المعلومات خاصة بحجزك لدى شركة تأجير السيارات" %} 
+                    &bull; 
+                    <i class="fas fa-phone-alt me-1"></i> +962 6 XXX XXXX
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 <style>
     .section-title {
@@ -357,9 +378,8 @@
         padding: 0.8rem 1.5rem;
         font-size: 1.1rem;
     }
-    
+
     .btn i {
         font-size: 1.2rem;
     }
 </style>
-{% endblock %}
