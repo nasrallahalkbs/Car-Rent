@@ -326,7 +326,10 @@ def admin_reservations(request):
 @admin_required
 def update_reservation_status(request, reservation_id, status):
     """Admin view to update reservation status"""
+    from datetime import datetime, timedelta
+    
     reservation = get_object_or_404(Reservation, id=reservation_id)
+    car = reservation.car
     
     valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled']
     if status not in valid_statuses:
@@ -336,16 +339,34 @@ def update_reservation_status(request, reservation_id, status):
     # Update reservation status
     reservation.status = status
     
-    # If cancelling, handle special case
-    if status == 'cancelled':
-        reservation.payment_status = 'pending'  # Reset payment status
+    # Handle different status changes
+    if status == 'confirmed':
+        # Mark car as unavailable (reserved)
+        car.is_available = False
+        car.save()
+        
+        # Set auto-expiry time (24 hours from now)
+        expiry_time = datetime.now() + timedelta(hours=24)
+        reservation.confirmation_expiry = expiry_time
+        
+    elif status == 'cancelled':
+        # Make car available again
+        car.is_available = True
+        car.save()
+        
+        # Reset payment status
+        reservation.payment_status = 'pending'
+        
+    elif status == 'completed':
+        # No need to change car availability on completion
+        pass
     
     reservation.save()
     
     # Generate status messages
     status_messages = {
         'pending': "تم تعيين حالة الحجز إلى قيد المراجعة!",
-        'confirmed': "تم تأكيد الحجز بنجاح!",
+        'confirmed': "تم تأكيد الحجز بنجاح! سيبقى الحجز مفعلاً لمدة 24 ساعة حتى يتم الدفع.",
         'completed': "تم إكمال الحجز بنجاح!",
         'cancelled': "تم إلغاء الحجز!"
     }
