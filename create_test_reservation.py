@@ -39,7 +39,10 @@ def create_test_reservation():
         start_date = timezone.now() + datetime.timedelta(days=1)
         end_date = start_date + datetime.timedelta(days=3)
         
-        # إنشاء حجز جديد مؤكد مع تاريخ انتهاء صلاحية بعد 12 ساعة
+        # إنشاء حجز جديد مؤكد مع تاريخ انتهاء صلاحية بعد 24 ساعة
+        # نستخدم تاريخ انتهاء معين في عام 2025 (وهو 2025-04-15 00:00:00 UTC)
+        # تحديد تاريخ انتهاء ثابت في المستقبل (15 أبريل 2025)
+        expiry_date = timezone.make_aware(datetime.datetime(2025, 4, 15))
         reservation = Reservation.objects.create(
             user=user,
             car=car,
@@ -47,7 +50,7 @@ def create_test_reservation():
             end_date=end_date,
             status='confirmed',
             payment_status='pending',
-            confirmation_expiry=timezone.now() + datetime.timedelta(hours=12),
+            confirmation_expiry=expiry_date,
             total_price=car.daily_rate * 3
         )
         
