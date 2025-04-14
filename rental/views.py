@@ -565,6 +565,9 @@ def my_reservations(request):
     if expired_count > 0:
         logger.info(f"Auto-cancelled {expired_count} expired reservations during my_reservations view.")
     
+    # الحصول على الوقت الحالي (مطلوب للعداد التنازلي)
+    now = timezone.now()
+    
     # الحصول على كافة حجوزات المستخدم الحالي
     reservations_query = Reservation.objects.filter(user=request.user)
     
@@ -612,10 +615,12 @@ def my_reservations(request):
         'date_to': date_to,
         'status_choices': Reservation.STATUS_CHOICES,
         'today': date.today(),
+        'now': now,  # إضافة الوقت الحالي للقالب (مطلوب للعداد التنازلي)
     }
     
-    # استخدام القالب الأصلي بتصميم أبسط
-    return render(request, 'my_reservations_original.html', context)
+    # استخدام القالب الجديد الذي يدعم العد التنازلي
+    template = get_template_by_language(request, 'my_reservations.html')
+    return render(request, template, context)
 
 @login_required
 def confirmation(request):

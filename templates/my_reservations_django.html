@@ -396,13 +396,26 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- تحميل ملف العد التنازلي -->
-<script src="{% static 'js/countdown-timer.js' %}?v={{ request.session.session_key|default:'1' }}"></script>
+<!-- تحميل ملف العد التنازلي المحدث -->
+<script src="{% static 'js/countdown-timer-fix.js' %}?v={{ now|date:'U' }}"></script>
 <script>
-    // التأكد من تنفيذ الكود بعد تحميل الصفحة
+    // إضافة معرفات للحجوزات لتسهيل التعامل معها في JavaScript
     document.addEventListener('DOMContentLoaded', function() {
-        // تسجيل التنفيذ للتأكد من أن الملف تم تحميله
         console.log('تم تحميل صفحة الحجوزات وتشغيل الأكواد اللازمة');
+        
+        // إضافة معرفات للصفوف
+        const rows = document.querySelectorAll('.reservation-item, tr');
+        rows.forEach(function(row, index) {
+            if (!row.id) {
+                const reservationId = row.querySelector('a[href*="reservation_detail"]');
+                if (reservationId) {
+                    const id = reservationId.textContent.trim().replace('#', '');
+                    row.id = 'reservation-' + id;
+                } else {
+                    row.id = 'reservation-row-' + (index + 1);
+                }
+            }
+        });
     });
 </script>
 {% endblock %}
