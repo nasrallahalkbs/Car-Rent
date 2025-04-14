@@ -46,11 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const secondsElement = timer.querySelector('.seconds');
                 
                 if (!hoursElement || !minutesElement || !secondsElement) {
-                    // إذا لم تكن العناصر موجودة، قم بإنشائها
-                    timer.innerHTML = `
-                        <span class="hours">00</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
-                    `;
-                    return updateCountdown(); // أعد المحاولة بعد إنشاء العناصر
+                    console.error('لم يتم العثور على عناصر العرض (ساعات، دقائق، ثواني)');
+                    return;
                 }
                 
                 if (timeLeft > 0) {
@@ -67,13 +64,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     // تغيير لون العداد حسب الوقت المتبقي
                     if (timeLeft < 1000 * 60 * 60) { // أقل من ساعة
                         timer.classList.add('text-danger');
-                        timer.classList.remove('text-warning');
+                        timer.classList.add('fw-bold');
                     } else if (timeLeft < 1000 * 60 * 60 * 3) { // أقل من 3 ساعات
                         timer.classList.add('text-warning');
-                        timer.classList.remove('text-danger');
-                    } else {
-                        timer.classList.remove('text-warning');
-                        timer.classList.remove('text-danger');
                     }
                 } else {
                     // انتهت المهلة
@@ -81,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     minutesElement.textContent = '00';
                     secondsElement.textContent = '00';
                     timer.classList.add('text-danger');
-                    timer.classList.remove('text-warning');
+                    timer.classList.add('expired');
                     
                     // إضافة نص "انتهت المهلة"
                     const parentAlert = timer.closest('.alert');
@@ -108,4 +101,68 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.log("لم يتم العثور على أي عداد تنازلي للعرض");
     }
+});
+// CountdownTimer.js - مشغل العداد التنازلي لمهلة الدفع
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("تم تحميل صفحة العداد التنازلي");
+    
+    // التحقق من وجود عناصر العداد التنازلي
+    const countdownTimers = document.querySelectorAll('[data-countdown]');
+    console.log("تم العثور على " + countdownTimers.length + " عداد تنازلي");
+    
+    if (countdownTimers.length === 0) {
+        console.log("لم يتم العثور على أي عداد تنازلي للعرض");
+        return;
+    }
+    
+    // تحديث كل عداد تنازلي
+    countdownTimers.forEach(function(timerElement) {
+        // الحصول على تاريخ الانتهاء من السمة
+        const deadlineStr = timerElement.getAttribute('data-countdown');
+        
+        // تحويل النص إلى كائن تاريخ
+        const deadline = new Date(deadlineStr).getTime();
+        
+        // تحديث العداد كل ثانية
+        const countdownInterval = setInterval(function() {
+            // الحصول على الوقت الحالي
+            const now = new Date().getTime();
+            
+            // حساب الوقت المتبقي
+            const timeLeft = deadline - now;
+            
+            // إذا انتهى الوقت
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                timerElement.innerHTML = "انتهت المهلة";
+                timerElement.classList.remove('text-warning');
+                timerElement.classList.add('text-danger');
+                
+                // إضافة فئة منتهية للتنبيه
+                const alertElement = timerElement.closest('.payment-deadline-alert');
+                if (alertElement) {
+                    alertElement.classList.add('expired-alert');
+                }
+                
+                return;
+            }
+            
+            // حساب الساعات والدقائق والثواني
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            // تحديث العداد بتنسيق ساعة:دقيقة:ثانية
+            timerElement.innerHTML = `
+                <span class="hours">${hours.toString().padStart(2, '0')}</span>:<span class="minutes">${minutes.toString().padStart(2, '0')}</span>:<span class="seconds">${seconds.toString().padStart(2, '0')}</span>
+            `;
+            
+            // تغيير اللون بناءً على الوقت المتبقي
+            if (timeLeft < 1000 * 60 * 60) { // أقل من ساعة
+                timerElement.classList.remove('text-warning');
+                timerElement.classList.add('text-danger');
+            }
+        }, 1000);
+    });
 });
