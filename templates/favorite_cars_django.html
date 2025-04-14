@@ -1,0 +1,96 @@
+{% extends 'layout_django.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% if is_english %}Favorite Cars{% else %}السيارات المفضلة{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4 text-center">
+                <i class="fas fa-heart text-danger {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
+                {% if is_english %}Favorite Cars{% else %}السيارات المفضلة{% endif %}
+            </h1>
+            
+            {% if favorites %}
+                <div class="row">
+                    {% for favorite in favorites %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                {% if favorite.car.image %}
+                                    <img src="{{ favorite.car.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ favorite.car.make }} {{ favorite.car.model }}">
+                                {% elif favorite.car.image_url %}
+                                    <img src="{{ favorite.car.image_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ favorite.car.make }} {{ favorite.car.model }}">
+                                {% else %}
+                                    <img src="{% static 'img/car-placeholder.png' %}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Car Placeholder">
+                                {% endif %}
+                                
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ favorite.car.make }} {{ favorite.car.model }} ({{ favorite.car.year }})</h5>
+                                    <p class="card-text">
+                                        <span class="badge bg-primary">
+                                            {% if is_english %}
+                                                {{ favorite.car.get_category_display }}
+                                            {% else %}
+                                                {{ favorite.car.get_category_display }}
+                                            {% endif %}
+                                        </span>
+                                        <span class="badge bg-info">
+                                            {% if is_english %}
+                                                {{ favorite.car.get_transmission_display }}
+                                            {% else %}
+                                                {{ favorite.car.get_transmission_display }}
+                                            {% endif %}
+                                        </span>
+                                        <span class="badge bg-warning">
+                                            {% if is_english %}
+                                                {{ favorite.car.get_fuel_type_display }}
+                                            {% else %}
+                                                {{ favorite.car.get_fuel_type_display }}
+                                            {% endif %}
+                                        </span>
+                                    </p>
+                                    <p class="card-text">
+                                        {% if is_english %}Daily Rate{% else %}السعر اليومي{% endif %}: 
+                                        {{ favorite.car.daily_rate }} {% if is_english %}SAR{% else %}ريال{% endif %}
+                                    </p>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            {% if is_english %}Added to favorites on{% else %}أضيف إلى المفضلة في{% endif %}: 
+                                            {{ favorite.date_added|date:"Y-m-d" }}
+                                        </small>
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{% url 'car_detail' favorite.car.id %}" class="btn btn-outline-primary">
+                                            {% if is_english %}Details{% else %}التفاصيل{% endif %}
+                                        </a>
+                                        <a href="{% url 'toggle_favorite' favorite.car.id %}" class="btn btn-outline-danger">
+                                            <i class="fas fa-heart-broken"></i> 
+                                            {% if is_english %}Remove from Favorites{% else %}إزالة من المفضلة{% endif %}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center py-5">
+                    <i class="fas fa-info-circle fa-3x mb-3"></i>
+                    <h4>{% if is_english %}No Favorite Cars{% else %}لا توجد سيارات مفضلة{% endif %}</h4>
+                    <p>
+                        {% if is_english %}You haven't added any cars to your favorites yet.{% else %}لم تقم بإضافة أي سيارة إلى المفضلة حتى الآن.{% endif %}
+                    </p>
+                    <a href="{% url 'cars' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-car {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
+                        {% if is_english %}Browse Cars{% else %}استعرض السيارات{% endif %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
