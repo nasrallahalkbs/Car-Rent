@@ -886,9 +886,6 @@ def book_car(request, car_id):
             'today': date.today(),
             'cart_item': cart_item,
         }
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            except ValueError:
-                pass
 
     context = {
         'car': car,
