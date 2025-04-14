@@ -1079,6 +1079,6 @@ def favorite_cars(request):
         'is_rtl': is_rtl
     }
     
-    # استخدام قالب خاص بالسيارات المفضلة مع اختيار القالب المناسب للغة
-    template = get_template_by_language(request, 'favorite_cars.html')
-    return render(request, template, context)
+    # استخدام قالب جديد مباشرة لعرض المفضلة، دون الرجوع لنظام التحويل 
+    # لتجنب مشاكل التخزين المؤقت
+    return render(request, 'favorite_cars_new.html', context)
