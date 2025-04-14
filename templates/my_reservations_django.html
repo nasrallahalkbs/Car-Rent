@@ -98,9 +98,23 @@
         border-radius: 4px;
     }
 
-    .countdown-timer {
-        font-weight: bold;
-        margin-top: 5px;
+    .countdown-container {
+        margin-top: 10px;
+        padding: 5px;
+        border-radius: 4px;
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .countdown-container .text-success {
+        color: #28a745 !important;
+    }
+    
+    .countdown-container .text-warning {
+        color: #ffc107 !important;
+    }
+    
+    .countdown-container .text-danger {
+        color: #dc3545 !important;
     }
 
     /* For mobile view */
@@ -299,7 +313,7 @@
                 </thead>
                 <tbody>
                     {% for reservation in reservations %}
-                    <tr class="reservation-item" data-expiry="{% if reservation.status == 'confirmed' and reservation.confirmation_expiry %}{{ reservation.confirmation_expiry|date:'c' }}{% endif %}">
+                    <tr class="reservation-item" data-expiry="{% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}{{ reservation.confirmation_expiry|date:'c' }}{% endif %}">
                         <td data-label="{% trans 'RESERVATION ID' %}" class="fw-bold text-primary">
                             <a href="{% url 'reservation_detail' reservation.id %}" class="text-decoration-none">
                                 #{{ reservation.id }}
@@ -318,9 +332,9 @@
                         </td>
                         <td data-label="{% trans 'DATES' %}" class="date-cell">
                             <div>{{ reservation.start_date|date:"d/m/Y" }}</div>
-                            <div class="text-muted">إلى</div>
+                            <div class="text-muted">{% if is_english %}to{% else %}إلى{% endif %}</div>
                             <div>{{ reservation.end_date|date:"d/m/Y" }}</div>
-                            {% if reservation.status == 'confirmed' and reservation.confirmation_expiry %}
+                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
                             <div class="countdown-container"></div>
                             {% endif %}
                         </td>
@@ -382,6 +396,13 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/countdown-timer.js' %}"></script>
-<!-- تم إزالة السطر الإضافي حيث أن ملف countdown-timer.js يقوم بتنفيذ العمليات اللازمة -->
+<!-- تحميل ملف العد التنازلي -->
+<script src="{% static 'js/countdown-timer.js' %}?v={{ request.session.session_key|default:'1' }}"></script>
+<script>
+    // التأكد من تنفيذ الكود بعد تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        // تسجيل التنفيذ للتأكد من أن الملف تم تحميله
+        console.log('تم تحميل صفحة الحجوزات وتشغيل الأكواد اللازمة');
+    });
+</script>
 {% endblock %}
