@@ -430,38 +430,23 @@
             <div class="d-flex flex-wrap justify-content-center gap-2 mt-2 mb-3">
                 {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
                 <!-- تحذير مهلة الدفع -->
-                {% if reservation.confirmation_expiry %}
-                <div class="alert alert-danger mt-3 mb-4 w-100">
-                    <div class="d-flex flex-column justify-content-between">
-                        <div class="mb-2">
-                            <h5 class="alert-heading d-flex align-items-center mb-1">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                {% if is_english %}Important Payment Notice!{% else %}تنبيه هام بخصوص الدفع!{% endif %}
-                            </h5>
-                            <p class="mb-0">
-                                {% if is_english %}
-                                Your reservation will be automatically cancelled if payment is not completed within 24 hours of confirmation.
-                                {% else %}
-                                سيتم إلغاء حجزك تلقائياً إذا لم يتم الدفع خلال 24 ساعة من تاريخ التأكيد.
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div class="mt-2">
-                            <strong>
-                                {% if is_english %}Payment Deadline:{% else %}تاريخ انتهاء المهلة:{% endif %} 
-                                {{ reservation.confirmation_expiry|date:"Y-m-d" }} {{ reservation.confirmation_expiry|time:"H:i" }}
-                            </strong>
-                        </div>
-                    </div>
-                </div>
+                <!-- سيتم عرض العداد بجانب زر الدفع بدلاً من هذا القسم -->
                 {% endif %}
                 
-                <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success px-3">
-                    <i class="fas fa-credit-card me-1"></i> {% trans "إتمام الدفع" %}
-                </a>
-                <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success px-3">
-                    <i class="fas fa-university me-1"></i> {% trans "الدفع بالتحويل البنكي" %}
-                </a>
+                <div class="d-flex flex-column flex-md-row align-items-center gap-2">
+                    {% if reservation.confirmation_expiry %}
+                    <div class="countdown-container" data-expiry="{{ reservation.confirmation_expiry|date:'c' }}"></div>
+                    {% endif %}
+                    
+                    <div>
+                        <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success px-3">
+                            <i class="fas fa-credit-card me-1"></i> {% trans "إتمام الدفع" %}
+                        </a>
+                        <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success px-3">
+                            <i class="fas fa-university me-1"></i> {% trans "الدفع بالتحويل البنكي" %}
+                        </a>
+                    </div>
+                </div>
                 {% endif %}
 
                 {% if reservation.status == 'pending' %}
