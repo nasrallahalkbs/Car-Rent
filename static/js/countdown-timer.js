@@ -7,10 +7,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("تم العثور على " + reservationItems.length + " حجز");
 
     reservationItems.forEach(function(item) {
-        // التحقق من وجود سمة تاريخ انتهاء الصلاحية
-        const expiryDateAttr = item.getAttribute('data-expiry');
-        
-        if (expiryDateAttr && expiryDateAttr !== 'None' && expiryDateAttr !== '') {
+        // التحقق من حالة الحجز إذا كان مؤكدًا
+        const statusElement = item.querySelector('.reservation-status');
+        if (statusElement && statusElement.textContent.includes('تم التأكيد')) {
             // إنشاء عنصر العداد التنازلي إذا لم يكن موجودًا
             let countdownElement = item.querySelector('.countdown-container');
             if (!countdownElement) {
@@ -22,9 +21,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // تحويل تاريخ الانتهاء إلى كائن Date
-            const expiryDate = new Date(expiryDateAttr);
-            
+            // الحصول على تاريخ انتهاء تأكيد الحجز من سمة data-expiry
+            const expiryDateAttr = item.getAttribute('data-expiry');
+            let expiryDate;
+
+            if (expiryDateAttr && expiryDateAttr !== 'None' && expiryDateAttr !== '') {
+                expiryDate = new Date(expiryDateAttr);
+            } else {
+                // إذا لم يتم تحديد تاريخ انتهاء، استخدم 24 ساعة من الآن كوقت افتراضي
+                expiryDate = new Date();
+                expiryDate.setHours(expiryDate.getHours() + 24);
+            }
+
             if (!isNaN(expiryDate.getTime())) {
                 // تحديث العداد التنازلي كل ثانية
                 updateCountdown(countdownElement, expiryDate);
