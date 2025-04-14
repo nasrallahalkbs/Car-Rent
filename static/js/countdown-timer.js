@@ -1,4 +1,3 @@
-
 /**
  * ملف العداد التنازلي - يستخدم للعد التنازلي للحجوزات المؤكدة التي تنتظر الدفع
  * تم تحسينه للتأكد من ظهور العداد دائمًا وعمله بشكل صحيح
@@ -7,102 +6,55 @@
 // تنفيذ الكود عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
     console.log("تم تحميل صفحة العداد التنازلي");
-    
-    // المحاولة المباشرة للعثور على عناصر التحذير أولاً
-    const paymentWarnings = document.querySelectorAll('.payment-warning');
-    if (paymentWarnings.length > 0) {
-        console.log("تم العثور على " + paymentWarnings.length + " تحذير دفع");
-        
-        paymentWarnings.forEach(function(warningDiv, index) {
-            // البحث عن عناصر البيانات التي قد تحتوي على وقت انتهاء الصلاحية
-            const reservationElement = warningDiv.closest('tr');
-            let reservationId = "default";
-            
-            if (reservationElement) {
-                // محاولة العثور على معرّف الحجز
-                const reservationIdElement = reservationElement.querySelector('.reservation-id');
-                if (reservationIdElement) {
-                    reservationId = reservationIdElement.textContent.trim().replace('#', '');
-                }
-            }
-            
-            // إنشاء أو تحديث عنصر العداد
-            let countdownElement = warningDiv.querySelector('[id^="countdown-"]');
-            if (!countdownElement) {
-                const alertDiv = warningDiv.querySelector('.alert');
-                if (alertDiv) {
-                    // عنصر العداد غير موجود، نقوم بإنشائه
-                    countdownElement = document.createElement('div');
-                    countdownElement.id = `countdown-${reservationId}`;
-                    countdownElement.className = 'countdown-timer';
-                    countdownElement.setAttribute('data-reservation-id', reservationId);
-                    
-                    // الحصول على توقيت انتهاء الصلاحية - استخدم الوقت الحالي + 24 ساعة كقيمة افتراضية
-                    const now = new Date();
-                    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-                    countdownElement.setAttribute('data-expire-time', tomorrow.toISOString());
-                    
-                    countdownElement.innerHTML = '<span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>';
-                    
-                    // إضافة العداد إلى التحذير
-                    alertDiv.appendChild(countdownElement);
-                    console.log("تم إنشاء عداد جديد للحجز #" + reservationId);
-                }
-            } else {
-                // العداد موجود بالفعل، نتأكد من أنه مرئي
-                countdownElement.style.display = 'inline-block';
-                countdownElement.style.visibility = 'visible';
-                countdownElement.style.opacity = '1';
-                console.log("تم تحديث العداد الموجود للحجز #" + reservationId);
-            }
-        });
-    } else {
-        console.log("لم يتم العثور على أي تحذير دفع");
-        
-        // محاولة ثانية للبحث عن أي عناصر تحتوي على العداد
-        const countdownContainers = document.querySelectorAll('.countdown-container, .alert-danger');
-        if (countdownContainers.length > 0) {
-            console.log("تم العثور على " + countdownContainers.length + " حاوية محتملة للعداد");
-            
-            countdownContainers.forEach(function(container, index) {
-                let reservationId = "default" + index;
-                
-                // البحث عن معرّف الحجز في أقرب عنصر
-                const row = container.closest('tr');
-                if (row) {
-                    const idElement = row.querySelector('[id^="#"], .reservation-id');
-                    if (idElement) {
-                        reservationId = idElement.textContent.trim().replace('#', '');
+
+    // البحث عن جميع عناصر العداد التنازلي في الصفحة
+    const countdownElements = document.querySelectorAll('[id^="countdown-"]');
+    console.log("تم العثور على " + countdownElements.length + " عداد تنازلي");
+
+    if (countdownElements.length === 0) {
+        console.log("لم يتم العثور على أي عداد تنازلي، سيتم محاولة إنشاءها");
+
+        // البحث عن عناصر قد تحتوي على عدادات
+        const paymentWarnings = document.querySelectorAll('.payment-warning');
+        if (paymentWarnings.length > 0) {
+            paymentWarnings.forEach(function(warningDiv, index) {
+                // البحث عن عناصر البيانات التي قد تحتوي على وقت انتهاء الصلاحية
+                const reservationElement = warningDiv.closest('tr');
+                if (reservationElement) {
+                    // محاولة العثور على معرّف الحجز
+                    const reservationIdElement = reservationElement.querySelector('.reservation-id');
+                    if (reservationIdElement) {
+                        const reservationId = reservationIdElement.textContent.replace('#', '');
+
+                        // إنشاء عنصر عداد جديد إذا لم يكن موجودًا
+                        let countdownElement = warningDiv.querySelector('[id^="countdown-"]');
+                        if (!countdownElement) {
+                            const alertDiv = warningDiv.querySelector('.alert');
+                            if (alertDiv) {
+                                const countdownDiv = document.createElement('div');
+                                countdownDiv.id = `countdown-${reservationId}`;
+                                countdownDiv.className = 'countdown-timer';
+                                countdownDiv.setAttribute('data-reservation-id', reservationId);
+
+                                // الحصول على توقيت انتهاء الصلاحية - استخدم الوقت الحالي + 24 ساعة كقيمة افتراضية
+                                const now = new Date();
+                                const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                                countdownDiv.setAttribute('data-expire-time', tomorrow.toISOString());
+
+                                countdownDiv.innerHTML = '<span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>';
+
+                                // إضافة العداد إلى التحذير
+                                alertDiv.appendChild(countdownDiv);
+                                console.log("تم إنشاء عداد جديد للحجز #" + reservationId);
+                            }
+                        }
                     }
-                }
-                
-                // إنشاء عنصر العداد إذا لم يكن موجودًا
-                if (!container.querySelector('.countdown-timer')) {
-                    const countdownElement = document.createElement('div');
-                    countdownElement.id = `countdown-${reservationId}`;
-                    countdownElement.className = 'countdown-timer';
-                    countdownElement.setAttribute('data-reservation-id', reservationId);
-                    
-                    // توقيت افتراضي
-                    const now = new Date();
-                    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-                    countdownElement.setAttribute('data-expire-time', tomorrow.toISOString());
-                    
-                    countdownElement.innerHTML = '<span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>';
-                    
-                    // إضافة العداد للحاوية
-                    container.appendChild(countdownElement);
-                    console.log("تم إنشاء عداد في حاوية بديلة للحجز #" + reservationId);
                 }
             });
         } else {
-            console.log("لم يتم العثور على أي حاويات محتملة للعداد");
+            console.log("لم يتم العثور على أي عداد تنازلي للعرض");
         }
     }
-
-    // البحث عن العدادات التي تم إنشاؤها
-    const countdownElements = document.querySelectorAll('[id^="countdown-"]');
-    console.log("تم العثور على " + countdownElements.length + " عداد تنازلي بعد المحاولات");
 
     // تحديث العدادات كل ثانية
     setInterval(updateAllCountdowns, 1000);
@@ -117,11 +69,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function updateAllCountdowns() {
     // البحث عن جميع عناصر العداد التنازلي في الصفحة (للتأكد من التقاط العناصر المضافة ديناميكيًا)
     const countdownElements = document.querySelectorAll('[id^="countdown-"]');
-    
-    if (countdownElements.length === 0) {
-        console.log("لا توجد عدادات لتحديثها");
-        return;
-    }
 
     countdownElements.forEach(function(element) {
         updateCountdown(element);
@@ -133,12 +80,10 @@ function updateAllCountdowns() {
  * @param {HTMLElement} countdownElement - عنصر العداد التنازلي
  */
 function updateCountdown(countdownElement) {
-    // العداد يجب أن يكون مرئيًا دائمًا - تعزيز الظهور
+    // العداد يجب أن يكون مرئيًا دائمًا
     countdownElement.style.display = 'inline-block';
     countdownElement.style.visibility = 'visible';
     countdownElement.style.opacity = '1';
-    countdownElement.style.position = 'relative';
-    countdownElement.style.zIndex = '9999';
 
     // الحصول على وقت انتهاء الصلاحية من خاصية البيانات
     const expireTimeStr = countdownElement.getAttribute('data-expire-time');
@@ -164,17 +109,7 @@ function updateCountdown(countdownElement) {
     // التأكد من وجود عناصر العداد
     if (!hoursElement || !minutesElement || !secondsElement) {
         console.log("لم يتم العثور على عناصر العداد في العنصر:", countdownElement.id);
-        // محاولة إنشاء عناصر العداد
-        countdownElement.innerHTML = '<span class="hours">00</span>:<span class="minutes">00</span>:<span class="seconds">00</span>';
-        
-        // الحصول على العناصر مرة أخرى
-        const hoursElement = countdownElement.querySelector('.hours');
-        const minutesElement = countdownElement.querySelector('.minutes');
-        const secondsElement = countdownElement.querySelector('.seconds');
-        
-        if (!hoursElement || !minutesElement || !secondsElement) {
-            return; // لا يمكن إنشاء العناصر
-        }
+        return;
     }
 
     if (remainingTime <= 0) {
