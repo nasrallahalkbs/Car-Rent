@@ -1065,10 +1065,19 @@ def favorite_cars(request):
     # الحصول على جميع السيارات المفضلة للمستخدم الحالي
     favorites = FavoriteCar.objects.filter(user=request.user).select_related('car').order_by('-date_added')
     
+    # الحصول على اللغة الحالية مباشرة من django i18n
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = (current_language == 'en')
+    is_rtl = (current_language == 'ar')
+    
     context = {
         'favorites': favorites,
         'today': date.today(),
+        'is_english': is_english,
+        'is_rtl': is_rtl
     }
     
-    # استخدام قالب خاص بالسيارات المفضلة
-    return render(request, 'favorite_cars.html', context)
+    # استخدام قالب خاص بالسيارات المفضلة مع اختيار القالب المناسب للغة
+    template = get_template_by_language(request, 'favorite_cars.html')
+    return render(request, template, context)
