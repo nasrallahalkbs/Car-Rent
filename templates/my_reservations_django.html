@@ -24,21 +24,6 @@
         display: inline-block !important;
         visibility: visible !important;
         opacity: 1 !important;
-        position: relative;
-        z-index: 100;
-    }
-    
-    /* تحسينات إضافية للتأكد من ظهور العداد */
-    .payment-warning {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-    
-    .payment-warning .alert {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
     }
     
     .countdown-timer .hours,
@@ -911,8 +896,8 @@
                                     <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-info rounded-circle action-button ms-1" title="{% if is_english %}Bank Transfer{% else %}تحويل بنكي{% endif %}">
                                         <i class="fas fa-university"></i>
                                     </a>
-                                    <div class="payment-warning mt-2" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
-                                        <div class="alert alert-danger py-2 px-3 mb-0" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
+                                    <div class="payment-warning mt-2">
+                                        <div class="alert alert-danger py-2 px-3 mb-0">
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div>
                                                     <i class="fas fa-exclamation-triangle me-1"></i>
@@ -922,14 +907,19 @@
                                                     <strong>الوقت المتبقي للدفع:</strong>
                                                     {% endif %}
                                                 </div>
-                                                
-                                                <!-- عنصر العداد التنازلي مع تحسينات للظهور -->
-                                                <div id="countdown-{{ reservation.id }}" class="countdown-timer ms-2" 
-                                                    style="display: inline-block !important; visibility: visible !important; opacity: 1 !important; z-index: 100;" 
-                                                    data-expire-time="{% if reservation.confirmation_expiry %}{{ reservation.confirmation_expiry|date:'Y-m-d\TH:i:s' }}{% else %}{{ now|date:'Y-m-d' }}T{{ now|time:'H:i:s' }}{% endif %}"
+                                                {% if reservation.confirmation_expiry %}
+                                                <div class="countdown-timer ms-2" style="display: inline-block !important; visibility: visible !important;" 
+                                                    data-expire-time="{{ reservation.confirmation_expiry|date:'Y-m-d\TH:i:s' }}"
                                                     data-reservation-id="{{ reservation.id }}">
                                                     <span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
                                                 </div>
+                                                {% else %}
+                                                <div class="countdown-timer ms-2" style="display: inline-block !important; visibility: visible !important;" 
+                                                    data-expire-time="{{ now|date:'Y-m-d' }}T{{ now|time:'H:i:s' }}"
+                                                    data-reservation-id="{{ reservation.id }}">
+                                                    <span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
+                                                </div>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>
