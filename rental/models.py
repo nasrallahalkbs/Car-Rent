@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 class User(AbstractUser):
     """Extended User model for car rental app"""
@@ -197,3 +198,21 @@ class CartItem(models.Model):
     
     def __str__(self):
         return f"Cart item: {self.car} for {self.user.username}"
+
+
+class FavoriteCar(models.Model):
+    """نموذج السيارات المفضلة للمستخدمين"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_cars',
+                           verbose_name=_('المستخدم'))
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name='favorited_by',
+                          verbose_name=_('السيارة'))
+    date_added = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإضافة'))
+    
+    class Meta:
+        verbose_name = _('سيارة مفضلة')
+        verbose_name_plural = _('السيارات المفضلة')
+        # ضمان أن كل مستخدم يمكنه إضافة سيارة واحدة فقط إلى المفضلة
+        unique_together = ('user', 'car')
+    
+    def __str__(self):
+        return f"{self.user.username} فضّل {self.car}"
