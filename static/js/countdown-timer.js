@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log("تم تحميل صفحة العداد التنازلي");
 
@@ -6,38 +7,39 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("تم العثور على " + reservationItems.length + " حجز");
 
     reservationItems.forEach(function(item) {
-        if (item.querySelector('.reservation-status') && 
-            item.querySelector('.reservation-status').textContent.includes('انتظار')) {
-
-            // إنشاء عنصر العداد التنازلي إذا لم يكن موجودًا
-            let countdownElement = item.querySelector('.countdown-container');
-            if (!countdownElement) {
-                countdownElement = document.createElement('div');
-                countdownElement.className = 'countdown-container';
+        // تحقق ما إذا كان الحجز في حالة انتظار (معلق) وله تاريخ انتهاء
+        if (item.getAttribute('data-expiry')) {
+            // إنشاء عنصر العداد التنازلي
+            let countdownContainer = item.querySelector('.countdown-container');
+            if (!countdownContainer) {
+                countdownContainer = document.createElement('div');
+                countdownContainer.className = 'countdown-container mt-2';
                 const dateCell = item.querySelector('.date-cell');
                 if (dateCell) {
-                    dateCell.appendChild(countdownElement);
+                    dateCell.appendChild(countdownContainer);
                 }
             }
 
-            // الحصول على تاريخ الانتهاء (استخدام data-expiry إذا كان موجودًا، أو إنشاء تاريخ بعد 24 ساعة من الآن)
+            // الحصول على تاريخ الانتهاء
             const expiryDateAttr = item.getAttribute('data-expiry');
-            let expiryDate;
-
+            
             if (expiryDateAttr && expiryDateAttr !== 'None' && expiryDateAttr !== '') {
-                expiryDate = new Date(expiryDateAttr);
-            } else {
-                // إذا لم يتم تحديد تاريخ انتهاء، استخدم 24 ساعة من الآن كوقت افتراضي
-                expiryDate = new Date();
-                expiryDate.setHours(expiryDate.getHours() + 24);
-            }
-
-            if (!isNaN(expiryDate.getTime())) {
-                // تحديث العداد التنازلي كل ثانية
-                updateCountdown(countdownElement, expiryDate);
-                const interval = setInterval(function() {
-                    updateCountdown(countdownElement, expiryDate);
-                }, 1000);
+                const expiryDate = new Date(expiryDateAttr);
+                
+                if (!isNaN(expiryDate.getTime())) {
+                    // تحديث العداد التنازلي فورًا
+                    updateCountdown(countdownContainer, expiryDate);
+                    
+                    // تحديث العداد كل ثانية
+                    const interval = setInterval(function() {
+                        updateCountdown(countdownContainer, expiryDate);
+                    }, 1000);
+                    
+                    // تخزين الفاصل الزمني في عنصر DOM ليتم تنظيفه لاحقًا إذا لزم الأمر
+                    item.setAttribute('data-interval-id', interval);
+                } else {
+                    console.log("تاريخ انتهاء غير صالح: " + expiryDateAttr);
+                }
             }
         }
     });
@@ -48,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const remainingTime = endTime - now;
 
         if (remainingTime <= 0) {
-            element.innerHTML = '<span class="text-danger fw-bold">انتهى وقت الدفع</span>';
+            element.innerHTML = '<div class="alert alert-danger p-1 mb-0"><small>انتهى وقت الدفع</small></div>';
             return;
         }
 
@@ -73,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
             colorClass = 'text-warning';
         }
 
-        element.innerHTML = `<div class="mt-2 text-center"><span class="${colorClass} fw-bold">وقت الدفع المتبقي: ${countdownText}</span></div>`;
+        element.innerHTML = `<div class="countdown-timer ${colorClass} fw-bold small"><i class="fas fa-clock me-1"></i> وقت الدفع المتبقي: ${countdownText}</div>`;
     }
 
     function padZero(num) {
