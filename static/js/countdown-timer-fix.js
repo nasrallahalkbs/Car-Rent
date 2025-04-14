@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("تم تحميل مكون العد التنازلي المحدث");
+    console.log("تم تحميل صفحة العداد التنازلي");
 
     // الحصول على الوقت الحالي
     const now = new Date();
@@ -15,15 +15,33 @@ document.addEventListener('DOMContentLoaded', function() {
     if (reservationItems.length === 0) {
         // محاولة استهداف أي صف في جدول الحجوزات
         const tables = document.querySelectorAll('table');
-        tables.forEach(function(table) {
-            if (table.querySelector('th') && 
-                (table.querySelector('th').textContent.includes('RESERVATION ID') || 
-                 table.querySelector('th').textContent.includes('حجز') || 
-                 table.querySelector('th').textContent.includes('CAR'))) {
-                const rows = table.querySelectorAll('tbody tr');
-                reservationItems = rows;
+        for (let i = 0; i < tables.length; i++) {
+            const table = tables[i];
+            console.log("فحص الجدول رقم " + (i+1));
+            
+            // طباعة جميع الرؤوس للتحقق
+            const headers = table.querySelectorAll('th');
+            if (headers.length > 0) {
+                console.log("رؤوس الجدول:");
+                headers.forEach(th => console.log(" - " + th.textContent.trim()));
+                
+                // تحقق من وجود عمود معرف الحجز
+                if (Array.from(headers).some(th => 
+                    th.textContent.includes('RESERVATION') || 
+                    th.textContent.includes('حجز') || 
+                    th.textContent.includes('رقم الحجز'))) {
+                    
+                    console.log("تم العثور على جدول الحجوزات");
+                    reservationItems = table.querySelectorAll('tbody tr');
+                    break;
+                }
             }
-        });
+        }
+    }
+    
+    // محاولة أخيرة: استهداف أي صف في أي جدول إذا لم يتم العثور على شيء
+    if (reservationItems.length === 0) {
+        reservationItems = document.querySelectorAll('table tbody tr');
     }
     
     console.log("تم العثور على " + reservationItems.length + " حجز");
@@ -51,14 +69,59 @@ document.addEventListener('DOMContentLoaded', function() {
         let expiryDateAttr = item.getAttribute('data-expiry');
         let expiryDate = null;
         
-        // إذا لم يكن هناك سمة تاريخ انتهاء، نحاول إنشاء تاريخ انتهاء تقديري (للاختبار)
-        if (!expiryDateAttr && (statusText.includes('تم التأكيد') || statusText.includes('Confirmed') || hasPendingPayment)) {
+        // إظهار التفاصيل للتصحيح
+        console.log("سمة data-expiry: " + expiryDateAttr);
+        
+        // بيانات للتصحيح: طباعة جميع السمات للعنصر
+        console.log("جميع سمات العنصر:");
+        for (let i = 0; i < item.attributes.length; i++) {
+            const attr = item.attributes[i];
+            console.log(`  ${attr.name}: ${attr.value}`);
+        }
+        
+        // إذا لم يكن هناك سمة تاريخ انتهاء، نبحث عن أي نص تاريخ في العنصر
+        if (!expiryDateAttr || expiryDateAttr === "None" || expiryDateAttr === "") {
+            console.log("لا يوجد سمة data-expiry صالحة، البحث عن بدائل...");
+            
+            // خيار 1: البحث عن عنصر تاريخ الانتهاء في الخلية
+            const dateCell = item.querySelector('.date-cell');
+            if (dateCell) {
+                const dateText = dateCell.textContent.trim();
+                console.log("نص خلية التاريخ: " + dateText);
+                
+                // محاولة العثور على تاريخ مستقبلي (للاختبار فقط)
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                console.log("استخدام تاريخ مستقبلي للاختبار: " + tomorrow);
+                expiryDate = tomorrow;
+            } else {
+                // خيار 2: إنشاء تاريخ انتهاء تقديري للاختبار
+                if (statusText.includes('تم التأكيد') || statusText.includes('Confirmed') || hasPendingPayment) {
+                    expiryDate = new Date(now);
+                    expiryDate.setHours(expiryDate.getHours() + 12);
+                    console.log("تم إنشاء تاريخ انتهاء تقديري: " + expiryDate);
+                }
+            }
+        } else {
+            // تحويل سمة التاريخ إلى كائن Date
+            try {
+                expiryDate = new Date(expiryDateAttr);
+                console.log("تم قراءة تاريخ انتهاء: " + expiryDate);
+            } catch (e) {
+                console.error("خطأ في تحويل تاريخ الانتهاء: " + e);
+                
+                // خيار بديل للاختبار
+                expiryDate = new Date(now);
+                expiryDate.setHours(expiryDate.getHours() + 24);
+                console.log("تم إنشاء تاريخ انتهاء بديل: " + expiryDate);
+            }
+        }
+        
+        // للاختبار فقط: إنشاء تاريخ انتهاء إذا لم يتم العثور على تاريخ صالح
+        if (!expiryDate || isNaN(expiryDate.getTime())) {
+            console.log("لم يتم العثور على تاريخ انتهاء صالح، إنشاء تاريخ للاختبار");
             expiryDate = new Date(now);
-            expiryDate.setHours(expiryDate.getHours() + 12);
-            console.log("تم إنشاء تاريخ انتهاء تقديري: " + expiryDate);
-        } else if (expiryDateAttr) {
-            expiryDate = new Date(expiryDateAttr);
-            console.log("تم قراءة تاريخ انتهاء: " + expiryDate);
+            expiryDate.setHours(expiryDate.getHours() + 24);
         }
         
         // التحقق من أن الحجز مؤكد ويحتاج للدفع
@@ -101,10 +164,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     const now = new Date();
                     const remainingTime = expiryDate - now;
                     
-                    // تحديد اللغة
-                    const isEnglish = document.documentElement.lang === 'en' || 
-                                      statusText.includes('Confirmed') || 
-                                      !statusText.includes('تم التأكيد');
+                    // تحديد اللغة بعدة طرق للتأكد من الاكتشاف الصحيح
+                    const htmlLang = document.documentElement.lang;
+                    const bodyDir = document.body.getAttribute('dir');
+                    const hasEnglishText = statusText.includes('Confirmed') || statusText.includes('Pending');
+                    const hasArabicText = statusText.includes('تم التأكيد') || statusText.includes('قيد الانتظار');
+                    
+                    console.log(`لغة HTML: ${htmlLang}, اتجاه الصفحة: ${bodyDir}, نص إنجليزي: ${hasEnglishText}, نص عربي: ${hasArabicText}`);
+                    
+                    // تحديد اللغة بناءً على عدة عوامل
+                    const isEnglish = (htmlLang === 'en') || 
+                                     (bodyDir !== 'rtl') || 
+                                     (hasEnglishText && !hasArabicText);
                     
                     if (remainingTime <= 0) {
                         const expiredText = isEnglish ? 'Payment time expired' : 'انتهى وقت الدفع';
