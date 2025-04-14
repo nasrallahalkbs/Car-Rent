@@ -1,211 +1,245 @@
-// العداد التنازلي للحجوزات
-(function() {
-    // الدالة الرئيسية للعثور على العدادات التنازلية وتهيئتها
-    function initializeCountdowns() {
-        console.log("تم تحميل صفحة العداد التنازلي");
 
-        // البحث عن صفوف الحجوزات المؤكدة مع دفع معلق
-        const pendingPaymentRows = document.querySelectorAll('tr:has(.status-badge.status-confirmed):has(.payment-badge.payment-pending)');
-        console.log("تم العثور على " + pendingPaymentRows.length + " صف يحتاج عداد تنازلي");
+/**
+ * ملف العداد التنازلي - يستخدم للعد التنازلي للحجوزات المؤكدة التي تنتظر الدفع
+ */
 
-        if (pendingPaymentRows.length === 0) {
-            console.log("لم يتم العثور على أي عداد تنازلي، سيتم محاولة إنشاءها");
+// تنفيذ الكود عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("تم تحميل صفحة العداد التنازلي");
+    
+    // البحث عن عناصر العداد في الصفحة
+    initializeCountdowns();
+    
+    // تحديث العدادات كل ثانية
+    setInterval(updateAllCountdowns, 1000);
+    
+    // تحديث العدادات عند تحميل الصفحة
+    updateAllCountdowns();
+});
 
-            // طريقة ثانية للبحث عن العناصر
-            document.querySelectorAll('.payment-warning').forEach(element => {
-                const countdownElement = element.querySelector('[id^="countdown-"]');
-                if (countdownElement) {
-                    // تعيين وقت انتهاء الصلاحية إذا لم يكن معينًا
-                    if (!countdownElement.getAttribute('data-expire-time')) {
-                        const now = new Date();
-                        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-                        countdownElement.setAttribute('data-expire-time', tomorrow.toISOString());
-                    }
+/**
+ * تهيئة جميع العدادات في الصفحة
+ */
+function initializeCountdowns() {
+    // البحث عن تحذيرات الدفع
+    const paymentWarnings = document.querySelectorAll('.payment-warning');
+    console.log("تم العثور على " + paymentWarnings.length + " تحذير دفع");
+    
+    if (paymentWarnings.length > 0) {
+        // معالجة كل تحذير دفع
+        paymentWarnings.forEach(function(warningDiv) {
+            // البحث عن معرف الحجز
+            const reservationRow = warningDiv.closest('tr');
+            let reservationId = "unknown";
+            
+            if (reservationRow) {
+                const idElement = reservationRow.querySelector('.reservation-id');
+                if (idElement) {
+                    reservationId = idElement.textContent.trim().replace('#', '');
                 }
-            });
-        }
-
-        // إنشاء العدادات لكل صف
-        pendingPaymentRows.forEach(function(row) {
-            const reservationIdElement = row.querySelector('.reservation-id');
-            if (!reservationIdElement) return;
-
-            const reservationId = reservationIdElement.textContent.trim().replace('#', '');
-            const actionsCell = row.querySelector('td:last-child');
-            if (!actionsCell) return;
-
-            // البحث عن عنصر العداد الموجود أو إنشاء عنصر جديد
-            let countdownElement = actionsCell.querySelector(`#countdown-${reservationId}`);
-
+            }
+            
+            // البحث عن عنصر التنبيه
+            const alertDiv = warningDiv.querySelector('.alert');
+            if (!alertDiv) {
+                console.log("لم يتم العثور على عنصر التنبيه في تحذير الدفع");
+                return;
+            }
+            
+            // البحث عن حاوية العداد
+            let countdownContainer = alertDiv.querySelector('.countdown-container');
+            if (!countdownContainer) {
+                // إنشاء حاوية العداد إذا لم تكن موجودة
+                countdownContainer = document.createElement('div');
+                countdownContainer.className = 'countdown-container d-flex align-items-center justify-content-between';
+                alertDiv.appendChild(countdownContainer);
+            }
+            
+            // البحث عن عنصر النص
+            let textElement = countdownContainer.querySelector('div');
+            if (!textElement) {
+                textElement = document.createElement('div');
+                textElement.innerHTML = '<i class="fas fa-exclamation-triangle ms-1"></i> <strong>مدة الدفع:</strong>';
+                countdownContainer.appendChild(textElement);
+            }
+            
+            // البحث عن عنصر العداد
+            let countdownElement = countdownContainer.querySelector('[id^="countdown-"]');
             if (!countdownElement) {
-                // إنشاء عنصر تحذير الدفع إذا لم يكن موجودًا
-                let paymentWarning = actionsCell.querySelector('.payment-warning');
-                if (!paymentWarning) {
-                    paymentWarning = document.createElement('div');
-                    paymentWarning.className = 'payment-warning mt-2';
-                    paymentWarning.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; width: 100%;';
-
-                    const alertHtml = `
-                        <div class="alert alert-danger py-2 px-3 mb-0" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
-                            <div class="countdown-container d-flex align-items-center justify-content-between">
-                                <div>
-                                    <i class="fas fa-exclamation-triangle me-1"></i>
-                                    <strong>مدة الدفع:</strong>
-                                </div>
-                                <div id="countdown-${reservationId}" class="countdown-timer me-2" 
-                                    style="display: inline-block !important; visibility: visible !important; opacity: 1 !important; z-index: 999; position: relative; background-color: rgba(220, 53, 69, 0.1); padding: 3px 8px; border-radius: 4px; font-weight: bold;" 
-                                    data-reservation-id="${reservationId}">
-                                    <span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    paymentWarning.innerHTML = alertHtml;
-
-                    // إضافة عنصر التحذير بعد أزرار الدفع
-                    const paymentButtons = actionsCell.querySelectorAll('.action-button');
-                    if (paymentButtons.length > 0) {
-                        const lastButton = paymentButtons[paymentButtons.length - 1];
-                        lastButton.parentNode.insertBefore(paymentWarning, lastButton.nextSibling);
-                    } else {
-                        actionsCell.appendChild(paymentWarning);
-                    }
-
-                    // تحديث المرجع لعنصر العداد
-                    countdownElement = actionsCell.querySelector(`#countdown-${reservationId}`);
-                }
-            }
-
-            if (countdownElement) {
-                // تعيين وقت انتهاء الصلاحية إذا لم يكن معينًا
-                if (!countdownElement.getAttribute('data-expire-time')) {
-                    const now = new Date();
-                    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-                    countdownElement.setAttribute('data-expire-time', tomorrow.toISOString());
-                }
-            }
-        });
-
-        // تحديث جميع العدادات
-        updateAllCountdowns();
-    }
-
-    // دالة لتحديث جميع العدادات التنازلية
-    function updateAllCountdowns() {
-        const countdownElements = document.querySelectorAll('[id^="countdown-"]');
-
-        if (countdownElements.length === 0) {
-            console.log("لم يتم العثور على أي عداد تنازلي للعرض");
-            return;
-        }
-
-        countdownElements.forEach(function(element) {
-            updateCountdown(element);
-        });
-    }
-
-    // دالة لتحديث عداد تنازلي واحد
-    function updateCountdown(element) {
-        // الحصول على معرف الحجز
-        const reservationId = element.getAttribute('data-reservation-id');
-
-        // الحصول على وقت انتهاء الصلاحية
-        let expireTimeStr = element.getAttribute('data-expire-time');
-
-        // إذا لم يكن هناك وقت انتهاء الصلاحية، استخدم 24 ساعة من الآن
-        if (!expireTimeStr) {
-            const now = new Date();
-            const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            expireTimeStr = tomorrow.toISOString();
-            element.setAttribute('data-expire-time', expireTimeStr);
-        }
-
-        const expireTime = new Date(expireTimeStr);
-        const now = new Date();
-
-        // حساب الوقت المتبقي
-        let remainingTime = expireTime - now;
-
-        // البحث عن عناصر العرض
-        const hoursElement = element.querySelector('.hours');
-        const minutesElement = element.querySelector('.minutes');
-        const secondsElement = element.querySelector('.seconds');
-
-        // التأكد من وجود عناصر العرض
-        if (!hoursElement || !minutesElement || !secondsElement) {
-            console.log("لا تتوفر عناصر العرض للعداد #" + reservationId);
-            element.innerHTML = '<span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>';
-            return;
-        }
-
-        // إذا انتهى الوقت
-        if (remainingTime <= 0) {
-            hoursElement.textContent = '00';
-            minutesElement.textContent = '00';
-            secondsElement.textContent = '00';
-            element.classList.add('text-danger');
-            return;
-        }
-
-        // حساب الساعات والدقائق والثواني
-        const hours = Math.floor(remainingTime / (1000 * 60 * 60));
-        remainingTime -= hours * (1000 * 60 * 60);
-
-        const minutes = Math.floor(remainingTime / (1000 * 60));
-        remainingTime -= minutes * (1000 * 60);
-
-        const seconds = Math.floor(remainingTime / 1000);
-
-        // تغيير لون العداد بناءً على الوقت المتبقي
-        if (hours < 2) {
-            element.classList.add('text-warning');
-        }
-        if (hours === 0 && minutes < 30) {
-            element.classList.remove('text-warning');
-            element.classList.add('text-danger');
-        }
-
-        // تحديث العداد
-        hoursElement.textContent = hours.toString().padStart(2, '0');
-        minutesElement.textContent = minutes.toString().padStart(2, '0');
-        secondsElement.textContent = seconds.toString().padStart(2, '0');
-    }
-
-    // تحديث جميع العدادات كل ثانية
-    function startCountdownTimer() {
-        setInterval(function() {
-            const countdowns = document.querySelectorAll('[id^="countdown-"]');
-            if (countdowns.length > 0) {
-                updateAllCountdowns();
+                // إنشاء عنصر العداد إذا لم يكن موجوداً
+                countdownElement = document.createElement('div');
+                countdownElement.id = `countdown-${reservationId}`;
+                countdownElement.className = 'countdown-timer ms-2';
+                countdownElement.setAttribute('data-reservation-id', reservationId);
+                
+                // توقيت افتراضي - 24 ساعة من الآن
+                const now = new Date();
+                const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                countdownElement.setAttribute('data-expire-time', tomorrow.toISOString());
+                
+                countdownElement.innerHTML = '<span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>';
+                
+                // إضافة عنصر العداد إلى الحاوية
+                countdownContainer.appendChild(countdownElement);
+                
+                console.log("تم إنشاء عداد جديد للحجز #" + reservationId);
             } else {
-                console.log("لا توجد عدادات لتحديثها");
+                // التأكد من أن العداد مرئي
+                countdownElement.style.display = 'inline-block';
+                countdownElement.style.visibility = 'visible';
+                countdownElement.style.opacity = '1';
+                console.log("تم تحديث العداد الموجود للحجز #" + reservationId);
             }
-        }, 1000);
-    }
-
-    // محاولة تهيئة العدادات بمجرد تحميل المستند
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeCountdowns();
-            startCountdownTimer();
         });
     } else {
-        // تم تحميل المستند بالفعل
-        initializeCountdowns();
-        startCountdownTimer();
-    }
-
-    // إعادة تهيئة العدادات عند تحديث المحتوى بشكل ديناميكي
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                initializeCountdowns();
+        console.log("لم يتم العثور على أي تحذير دفع، سيتم محاولة إنشاءها");
+        
+        // البحث عن حاويات محتملة للعداد
+        const pendingPaymentRows = document.querySelectorAll('tr:has(.status-badge.status-confirmed):has(.payment-badge.payment-pending)');
+        
+        pendingPaymentRows.forEach(function(row) {
+            // البحث عن خلية الإجراءات
+            const actionsCell = row.querySelector('td:last-child');
+            if (!actionsCell) return;
+            
+            // البحث عن معرف الحجز
+            const idElement = row.querySelector('.reservation-id');
+            let reservationId = "unknown";
+            if (idElement) {
+                reservationId = idElement.textContent.trim().replace('#', '');
+            }
+            
+            // إنشاء عنصر تحذير الدفع إذا لم يكن موجوداً
+            let paymentWarning = actionsCell.querySelector('.payment-warning');
+            if (!paymentWarning) {
+                paymentWarning = document.createElement('div');
+                paymentWarning.className = 'payment-warning mt-2';
+                paymentWarning.style.display = 'block';
+                paymentWarning.style.visibility = 'visible';
+                paymentWarning.style.opacity = '1';
+                paymentWarning.style.width = '100%';
+                
+                const alertHtml = `
+                    <div class="alert alert-danger py-2 px-3 mb-0" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
+                        <div class="countdown-container d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-exclamation-triangle ms-1"></i>
+                                <strong>مدة الدفع:</strong>
+                            </div>
+                            <div id="countdown-${reservationId}" class="countdown-timer ms-2" 
+                                style="display: inline-block !important; visibility: visible !important; opacity: 1 !important; z-index: 999; position: relative;" 
+                                data-reservation-id="${reservationId}">
+                                <span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                paymentWarning.innerHTML = alertHtml;
+                actionsCell.appendChild(paymentWarning);
+                
+                console.log("تم إنشاء تحذير دفع جديد للحجز #" + reservationId);
             }
         });
-    });
+    }
+}
 
-    // تهيئة مراقب التغييرات
-    const config = { childList: true, subtree: true };
-    observer.observe(document.body, config);
-})();
+/**
+ * تحديث جميع العدادات التنازلية في الصفحة
+ */
+function updateAllCountdowns() {
+    // البحث عن جميع عناصر العداد التنازلي في الصفحة
+    const countdownElements = document.querySelectorAll('[id^="countdown-"]');
+    
+    if (countdownElements.length === 0) {
+        console.log("لا توجد عدادات لتحديثها");
+        return;
+    }
+
+    countdownElements.forEach(function(element) {
+        updateCountdown(element);
+    });
+}
+
+/**
+ * تحديث عداد تنازلي محدد
+ * @param {HTMLElement} countdownElement - عنصر العداد التنازلي
+ */
+function updateCountdown(countdownElement) {
+    // التأكد من أن العداد مرئي
+    countdownElement.style.display = 'inline-block';
+    countdownElement.style.visibility = 'visible';
+    countdownElement.style.opacity = '1';
+    
+    // الحصول على وقت انتهاء الصلاحية
+    let expireTimeStr = countdownElement.getAttribute('data-expire-time');
+    
+    // إذا لم يكن هناك وقت انتهاء، استخدم 24 ساعة من الآن
+    if (!expireTimeStr) {
+        const now = new Date();
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        expireTimeStr = tomorrow.toISOString();
+        countdownElement.setAttribute('data-expire-time', expireTimeStr);
+    }
+
+    const expireTime = new Date(expireTimeStr);
+    const now = new Date();
+    
+    // حساب الوقت المتبقي
+    let remainingTime = expireTime - now;
+    
+    // البحث عن عناصر العرض
+    const hoursElement = countdownElement.querySelector('.hours');
+    const minutesElement = countdownElement.querySelector('.minutes');
+    const secondsElement = countdownElement.querySelector('.seconds');
+    
+    // التأكد من وجود عناصر العرض
+    if (!hoursElement || !minutesElement || !secondsElement) {
+        console.log("لم يتم العثور على عناصر العداد في: " + countdownElement.id);
+        // إعادة إنشاء عناصر العداد
+        countdownElement.innerHTML = '<span class="hours">00</span>:<span class="minutes">00</span>:<span class="seconds">00</span>';
+        return;
+    }
+    
+    // إذا انتهى الوقت
+    if (remainingTime <= 0) {
+        hoursElement.textContent = '00';
+        minutesElement.textContent = '00';
+        secondsElement.textContent = '00';
+        
+        // تغيير شكل العداد
+        countdownElement.classList.remove('text-warning');
+        countdownElement.classList.add('text-danger');
+        
+        // تحديث عنصر التنبيه
+        const alertElement = countdownElement.closest('.alert');
+        if (alertElement) {
+            alertElement.classList.add('expired-alert');
+        }
+        
+        return;
+    }
+    
+    // حساب الساعات والدقائق والثواني
+    const hours = Math.floor(remainingTime / (1000 * 60 * 60));
+    remainingTime -= hours * (1000 * 60 * 60);
+    
+    const minutes = Math.floor(remainingTime / (1000 * 60));
+    remainingTime -= minutes * (1000 * 60);
+    
+    const seconds = Math.floor(remainingTime / 1000);
+    
+    // تغيير لون العداد بناءً على الوقت المتبقي
+    if (hours < 2) {
+        countdownElement.classList.add('text-warning');
+    }
+    if (hours === 0 && minutes < 30) {
+        countdownElement.classList.remove('text-warning');
+        countdownElement.classList.add('text-danger');
+    }
+    
+    // تحديث العداد
+    hoursElement.textContent = hours.toString().padStart(2, '0');
+    minutesElement.textContent = minutes.toString().padStart(2, '0');
+    secondsElement.textContent = seconds.toString().padStart(2, '0');
+}
