@@ -618,8 +618,8 @@ def my_reservations(request):
         'now': now,  # إضافة الوقت الحالي للقالب (مطلوب للعداد التنازلي)
     }
 
-    # استخدام القالب مع التصميم السابق
-    return render(request, 'my_reservations.html', context)
+    # استخدام القالب الأصلي مع التصميم السابق
+    return render(request, 'my_reservations_original.html', context)
 
 @login_required
 def confirmation(request):
@@ -862,7 +862,7 @@ def book_car(request, car_id):
 
         if start_date_str:
             try:
-                start_date = datetime.strptime(start_date_str, '%Ym-%d').date()
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             except ValueError:
                 pass
 
