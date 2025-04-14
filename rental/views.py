@@ -618,9 +618,8 @@ def my_reservations(request):
         'now': now,  # إضافة الوقت الحالي للقالب (مطلوب للعداد التنازلي)
     }
 
-    # استخدام القالب الأصلي مع التصميم السابق وإضافة العد التنازلي
-    # استخدام القالب مباشرة لتجنب تحويله بواسطة get_template_by_language
-    return render(request, 'my_reservations_original.html', context)
+    # استخدام القالب مع التصميم السابق
+    return render(request, 'my_reservations.html', context)
 
 @login_required
 def confirmation(request):
