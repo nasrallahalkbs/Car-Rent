@@ -6,298 +6,156 @@
 
 {% block extra_css %}
 <style>
-    .favorites-page {
-        background-color: #f9f9f9;
-        padding: 30px 0;
-        min-height: 60vh;
-    }
-    
-    .favorites-header {
-        position: relative;
-        margin-bottom: 40px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid rgba(58, 134, 255, 0.2);
-    }
-    
-    .favorites-header::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        {% if is_rtl %}right{% else %}left{% endif %}: 0;
-        width: 80px;
-        height: 2px;
-        background-color: var(--primary-color);
+    .favorite-header {
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
     }
     
     .car-card {
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         border: none;
     }
     
-    .car-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-    
-    .car-image-container {
-        position: relative;
-        height: 200px;
-        overflow: hidden;
-    }
-    
     .car-image {
-        width: 100%;
-        height: 100%;
+        height: 180px;
         object-fit: cover;
-        transition: transform 0.3s ease;
     }
     
-    .car-card:hover .car-image {
-        transform: scale(1.05);
-    }
-    
-    .favorite-badge {
+    .heart-icon {
         position: absolute;
         top: 10px;
-        {% if is_rtl %}left{% else %}right{% endif %}: 10px;
-        background-color: rgba(220, 53, 69, 0.8);
-        color: white;
-        border-radius: 50px;
-        padding: 5px 12px;
-        font-size: 0.8rem;
-        z-index: 1;
-    }
-    
-    .car-details {
-        padding: 20px;
-    }
-    
-    .car-title {
-        font-weight: 600;
-        margin-bottom: 10px;
-        font-size: 1.25rem;
-        line-height: 1.4;
-        color: #333;
-    }
-    
-    .tag-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-        margin-bottom: 12px;
-    }
-    
-    .car-tag {
-        padding: 4px 10px;
-        border-radius: 50px;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .daily-rate {
-        font-size: 1.2rem;
-        color: var(--primary-color);
-        font-weight: 600;
-        margin: 12px 0;
-    }
-    
-    .car-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
-    }
-    
-    .btn-car-action {
-        flex: 1;
-        border-radius: 50px;
-        padding: 8px 15px;
-        font-weight: 500;
-        transition: all 0.2s;
-    }
-    
-    .btn-car-action:hover {
-        transform: translateY(-2px);
-    }
-    
-    .empty-favorites {
-        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-        border-radius: 15px;
-        padding: 50px 30px;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-    }
-    
-    .empty-favorites .icon-container {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 20px;
-        background-color: rgba(58, 134, 255, 0.1);
+        right: 10px;
+        background-color: rgba(255,255,255,0.7);
         border-radius: 50%;
+        width: 30px;
+        height: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
     
-    .empty-favorites i {
-        font-size: 2.5rem;
-        color: var(--primary-color);
+    .heart-icon i {
+        color: #dc3545;
     }
     
-    .empty-favorites h4 {
+    .car-info {
+        padding: 15px;
+    }
+    
+    .car-title {
+        font-size: 1.1rem;
         font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .car-price {
+        font-size: 1.2rem;
+        color: #3a86ff;
+        font-weight: 600;
+        margin: 10px 0;
+    }
+    
+    .car-badges {
+        margin-bottom: 10px;
+    }
+    
+    .btn-details {
+        background-color: #3a86ff;
+        color: white;
+        border: none;
+    }
+    
+    .btn-details:hover {
+        background-color: #2970d6;
+        color: white;
+    }
+    
+    .btn-remove {
+        color: #dc3545;
+        border-color: #dc3545;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 30px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #3a86ff;
         margin-bottom: 15px;
-        color: #333;
-    }
-    
-    .empty-favorites p {
-        color: #666;
-        margin-bottom: 25px;
-        max-width: 500px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    .btn-browse {
-        border-radius: 50px;
-        padding: 10px 25px;
-        font-weight: 500;
-        box-shadow: 0 4px 10px rgba(58, 134, 255, 0.2);
-    }
-    
-    /* Animation for cards */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .car-card {
-        animation: fadeIn 0.6s ease forwards;
-    }
-    
-    {% for i in "123456789"|make_list %}
-    .car-card:nth-child({{ i }}) {
-        animation-delay: {{ i|add:"-1" }}00ms;
-    }
-    {% endfor %}
-    
-    /* Responsive adjustments */
-    @media (max-width: 992px) {
-        .favorites-header {
-            margin-bottom: 25px;
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .car-actions {
-            flex-direction: column;
-        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="favorites-page">
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <div class="favorites-header text-center text-md-{% if is_rtl %}end{% else %}start{% endif %}">
-                    <h2 class="mb-2">
-                        <i class="fas fa-heart text-danger {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
-                        {% if is_english %}My Favorite Cars{% else %}سياراتي المفضلة{% endif %}
-                    </h2>
-                    <p class="text-muted">
-                        {% if is_english %}Your personalized collection of dream cars{% else %}مجموعتك الشخصية من سيارات الأحلام{% endif %}
-                    </p>
-                </div>
-                
-                {% if favorites %}
-                    <div class="row g-4">
-                        {% for favorite in favorites %}
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card car-card h-100">
-                                    <div class="car-image-container">
-                                        <span class="favorite-badge">
-                                            <i class="fas fa-heart {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                                            {% if is_english %}Favorite{% else %}مفضلة{% endif %}
-                                        </span>
-                                        {% if favorite.car.image %}
-                                            <img src="{{ favorite.car.image.url }}" class="car-image" alt="{{ favorite.car.make }} {{ favorite.car.model }}">
-                                        {% elif favorite.car.image_url %}
-                                            <img src="{{ favorite.car.image_url }}" class="car-image" alt="{{ favorite.car.make }} {{ favorite.car.model }}">
-                                        {% else %}
-                                            <img src="{% static 'img/car-placeholder.png' %}" class="car-image" alt="Car Placeholder">
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="car-details">
-                                        <h5 class="car-title">{{ favorite.car.make }} {{ favorite.car.model }} <span class="text-muted">({{ favorite.car.year }})</span></h5>
-                                        
-                                        <div class="tag-container">
-                                            <span class="car-tag bg-primary text-white">
-                                                {{ favorite.car.get_category_display }}
-                                            </span>
-                                            <span class="car-tag bg-info text-white">
-                                                {{ favorite.car.get_transmission_display }}
-                                            </span>
-                                            <span class="car-tag bg-warning text-dark">
-                                                {{ favorite.car.get_fuel_type_display }}
-                                            </span>
-                                        </div>
-                                        
-                                        <div class="daily-rate">
-                                            <i class="fas fa-tag {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                                            {{ favorite.car.daily_rate }} 
-                                            <span class="fs-6 text-muted">{% if is_english %}SAR/day{% else %}ريال/يوم{% endif %}</span>
-                                        </div>
-                                        
-                                        <p class="card-text mb-0">
-                                            <small class="text-muted">
-                                                <i class="fas fa-calendar-alt {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                                                {% if is_english %}Added on{% else %}أضيف في{% endif %} 
-                                                {{ favorite.date_added|date:"Y-m-d" }}
-                                            </small>
-                                        </p>
-                                        
-                                        <div class="car-actions mt-3">
-                                            <a href="{% url 'car_detail' favorite.car.id %}" class="btn btn-primary btn-car-action">
-                                                <i class="fas fa-info-circle {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                                                {% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}
-                                            </a>
-                                            <a href="{% url 'toggle_favorite' favorite.car.id %}" class="btn btn-outline-danger btn-car-action">
-                                                <i class="fas fa-heart-broken {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                                                {% if is_english %}Remove{% else %}إزالة{% endif %}
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="empty-favorites mt-4">
-                        <div class="icon-container">
-                            <i class="fas fa-heart"></i>
-                        </div>
-                        <h4>{% if is_english %}Your Favorites List is Empty{% else %}قائمة المفضلة فارغة{% endif %}</h4>
-                        <p>
-                            {% if is_english %}
-                            Start exploring our collection and add your dream cars to your favorites. You can easily access them anytime from here.
-                            {% else %}
-                            ابدأ باستكشاف مجموعتنا وأضف سيارات أحلامك إلى المفضلة. يمكنك الوصول إليها بسهولة في أي وقت من هنا.
-                            {% endif %}
-                        </p>
-                        <a href="{% url 'cars' %}" class="btn btn-primary btn-browse">
-                            <i class="fas fa-car {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
-                            {% if is_english %}Explore Cars{% else %}استكشف السيارات{% endif %}
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
+<div class="container mt-4 mb-5">
+    <div class="favorite-header">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-heart text-danger {% if is_rtl %}ms-2{% else %}me-2{% endif %} fs-4"></i>
+            <h2 class="mb-0">{% if is_english %}My Favorite Cars{% else %}سياراتي المفضلة{% endif %}</h2>
         </div>
     </div>
+    
+    {% if favorites %}
+        <div class="row">
+            {% for favorite in favorites %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card car-card">
+                        <div class="position-relative">
+                            {% if favorite.car.image %}
+                                <img src="{{ favorite.car.image.url }}" class="card-img-top car-image" alt="{{ favorite.car.make }} {{ favorite.car.model }}">
+                            {% elif favorite.car.image_url %}
+                                <img src="{{ favorite.car.image_url }}" class="card-img-top car-image" alt="{{ favorite.car.make }} {{ favorite.car.model }}">
+                            {% else %}
+                                <img src="{% static 'img/car-placeholder.png' %}" class="card-img-top car-image" alt="Car Placeholder">
+                            {% endif %}
+                            <div class="heart-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="car-info">
+                            <h5 class="car-title">{{ favorite.car.make }} {{ favorite.car.model }} ({{ favorite.car.year }})</h5>
+                            
+                            <div class="car-badges">
+                                <span class="badge bg-primary">{{ favorite.car.get_category_display }}</span>
+                                <span class="badge bg-info">{{ favorite.car.get_transmission_display }}</span>
+                                <span class="badge bg-warning text-dark">{{ favorite.car.get_fuel_type_display }}</span>
+                            </div>
+                            
+                            <div class="car-price">
+                                {{ favorite.car.daily_rate }} {% if is_english %}SAR/day{% else %}ريال/يوم{% endif %}
+                            </div>
+                            
+                            <div class="d-flex mt-3">
+                                <a href="{% url 'car_detail' favorite.car.id %}" class="btn btn-details flex-grow-1 {% if is_rtl %}ms-2{% else %}me-2{% endif %}">
+                                    {% if is_english %}Details{% else %}التفاصيل{% endif %}
+                                </a>
+                                <a href="{% url 'toggle_favorite' favorite.car.id %}" class="btn btn-remove flex-grow-1">
+                                    {% if is_english %}Remove{% else %}إزالة{% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="far fa-heart"></i>
+            <h4>{% if is_english %}No favorite cars yet{% else %}لا توجد سيارات مفضلة حتى الآن{% endif %}</h4>
+            <p>{% if is_english %}Browse our collection and add cars to your favorites{% else %}تصفح مجموعتنا وأضف سيارات إلى المفضلة{% endif %}</p>
+            <a href="{% url 'cars' %}" class="btn btn-primary mt-2">
+                <i class="fas fa-car {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
+                {% if is_english %}Browse Cars{% else %}تصفح السيارات{% endif %}
+            </a>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
