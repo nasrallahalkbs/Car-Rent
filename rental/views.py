@@ -766,7 +766,14 @@ def add_review(request, reservation_id):
     # Check if user has already reviewed this reservation
     existing_review = Review.objects.filter(reservation=reservation, user=request.user).first()
     if existing_review:
-        messages.warning(request, "لقد قمت بتقييم هذه الرحلة بالفعل!")
+        # تحديد رسالة الخطأ بناءً على لغة المستخدم
+        current_language = get_language()
+        is_english = current_language == 'en'
+        
+        if is_english:
+            messages.warning(request, "You have already reviewed this trip!")
+        else:
+            messages.warning(request, "لقد قمت بتقييم هذه الرحلة بالفعل!")
         return redirect('reservation_detail', reservation_id=reservation.id)
 
     if request.method == 'POST':
@@ -778,14 +785,36 @@ def add_review(request, reservation_id):
             review.reservation = reservation
             review.save()
 
-            messages.success(request, "شكراً لتقييمك!")
+            # تحديث متوسط التقييم للسيارة
+            car = reservation.car
+            avg_rating = Review.objects.filter(car=car).aggregate(Avg('rating'))['rating__avg'] or 0
+            car.avg_rating = round(avg_rating, 1)
+            car.save()
+            
+            # تحديد رسالة النجاح بناءً على لغة المستخدم
+            current_language = get_language()
+            is_english = current_language == 'en'
+            
+            if is_english:
+                messages.success(request, "Thank you for your review!")
+            else:
+                messages.success(request, "شكراً لتقييمك!")
+            
+            # إعادة التوجيه إلى صفحة تفاصيل السيارة
             return redirect('car_detail', car_id=reservation.car.id)
     else:
         form = ReviewForm()
 
+    # احصل على لغة المستخدم لعرض الرسائل المناسبة
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+
     context = {
         'form': form,
         'reservation': reservation,
+        'is_english': is_english,
+        'is_rtl': is_rtl
     }
 
     template = get_template_by_language(request, 'add_review.html')
