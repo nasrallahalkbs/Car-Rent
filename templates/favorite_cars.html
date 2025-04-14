@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "السيارات المفضلة" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4 text-center">
+                <i class="fas fa-heart text-danger me-2"></i>
+                {% trans "السيارات المفضلة" %}
+            </h1>
+            
+            {% if favorites %}
+                <div class="row">
+                    {% for favorite in favorites %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                {% if favorite.car.image %}
+                                    <img src="{{ favorite.car.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ favorite.car.make }} {{ favorite.car.model }}">
+                                {% elif favorite.car.image_url %}
+                                    <img src="{{ favorite.car.image_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ favorite.car.make }} {{ favorite.car.model }}">
+                                {% else %}
+                                    <img src="{% static 'img/car-placeholder.png' %}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Car Placeholder">
+                                {% endif %}
+                                
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ favorite.car.make }} {{ favorite.car.model }} ({{ favorite.car.year }})</h5>
+                                    <p class="card-text">
+                                        <span class="badge bg-primary">{{ favorite.car.get_category_display }}</span>
+                                        <span class="badge bg-info">{{ favorite.car.get_transmission_display }}</span>
+                                        <span class="badge bg-warning">{{ favorite.car.get_fuel_type_display }}</span>
+                                    </p>
+                                    <p class="card-text">{% trans "السعر اليومي" %}: {{ favorite.car.daily_rate }} {% trans "ريال" %}</p>
+                                    <p class="card-text">
+                                        <small class="text-muted">{% trans "أضيف إلى المفضلة في" %}: {{ favorite.date_added|date:"Y-m-d" }}</small>
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{% url 'car_detail' favorite.car.id %}" class="btn btn-outline-primary">{% trans "التفاصيل" %}</a>
+                                        <a href="{% url 'toggle_favorite' favorite.car.id %}" class="btn btn-outline-danger">
+                                            <i class="fas fa-heart-broken"></i> {% trans "إزالة من المفضلة" %}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center py-5">
+                    <i class="fas fa-info-circle fa-3x mb-3"></i>
+                    <h4>{% trans "لا توجد سيارات مفضلة" %}</h4>
+                    <p>{% trans "لم تقم بإضافة أي سيارة إلى المفضلة حتى الآن." %}</p>
+                    <a href="{% url 'cars' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-car me-2"></i>{% trans "استعرض السيارات" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

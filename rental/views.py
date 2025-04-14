@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 from django.conf import settings
 from django.utils.translation import gettext as _
 from .forms import LoginForm, RegisterForm, CarSearchForm, ReservationForm, CheckoutForm, ReviewForm, ProfileForm
-from .models import User, Car, Reservation, Review, CartItem
+from .models import User, Car, Reservation, Review, CartItem, FavoriteCar
 from .utils import calculate_total_price, get_car_availability, get_unavailable_dates
 from datetime import datetime, date, timedelta
 import logging
@@ -300,6 +300,11 @@ def car_detail(request, car_id):
 
     # Get similar cars (same category, exclude current car)
     similar_cars = Car.objects.filter(category=car.category).exclude(id=car.id)[:3]
+    
+    # Check if the car is in user's favorites
+    is_favorite = False
+    if request.user.is_authenticated:
+        is_favorite = FavoriteCar.objects.filter(user=request.user, car=car).exists()
 
     context = {
         'car': car,
@@ -309,6 +314,7 @@ def car_detail(request, car_id):
         'rating_distribution': rating_distribution,
         'similar_cars': similar_cars,
         'today': date.today(),
+        'is_favorite': is_favorite,
     }
 
     template = get_template_by_language(request, 'car_detail.html')
@@ -1019,3 +1025,42 @@ def bank_transfer_info(request):
     }
 
     return render(request, 'bank_transfer_info.html', context)
+
+@login_required
+def toggle_favorite(request, car_id):
+    """إضافة أو إزالة سيارة من المفضلة"""
+    # الحصول على السيارة أو إرجاع خطأ 404
+    car = get_object_or_404(Car, id=car_id)
+    
+    # التحقق مما إذا كانت السيارة بالفعل في المفضلة
+    favorite = FavoriteCar.objects.filter(user=request.user, car=car).first()
+    
+    if favorite:
+        # إذا كانت موجودة، قم بإزالتها
+        favorite.delete()
+        messages.success(request, _("تمت إزالة السيارة من المفضلة"))
+    else:
+        # إذا لم تكن موجودة، قم بإضافتها
+        FavoriteCar.objects.create(user=request.user, car=car)
+        messages.success(request, _("تمت إضافة السيارة إلى المفضلة"))
+    
+    # العودة إلى الصفحة السابقة أو صفحة تفاصيل السيارة
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    else:
+        return redirect('car_detail', car_id=car_id)
+
+@login_required
+def favorite_cars(request):
+    """عرض السيارات المفضلة للمستخدم الحالي"""
+    # الحصول على جميع السيارات المفضلة للمستخدم الحالي
+    favorites = FavoriteCar.objects.filter(user=request.user).select_related('car').order_by('-date_added')
+    
+    context = {
+        'favorites': favorites,
+        'today': date.today(),
+    }
+    
+    # استخدام قالب خاص بالسيارات المفضلة
+    return render(request, 'favorite_cars.html', context)

@@ -35,6 +35,8 @@ urlpatterns = [
     path('about-us/', views.about_us, name='about_us'),
     path('bank-transfer-info/', views.bank_transfer_info, name='bank_transfer_info'),
     path('payment-test/', lambda request: render(request, 'payment_test.html'), name='payment_test'),
+    path('favorites/', views.favorite_cars, name='favorite_cars'),
+    path('favorites/toggle/<int:car_id>/', views.toggle_favorite, name='toggle_favorite'),
     
     # API endpoints
     path('api/car/<int:car_id>/unavailable-dates/', views.get_unavailable_dates_api, name='get_unavailable_dates_api'),
