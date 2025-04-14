@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log("تم تحميل صفحة العداد التنازلي");
 
@@ -6,9 +7,10 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("تم العثور على " + reservationItems.length + " حجز");
 
     reservationItems.forEach(function(item) {
-        if (item.querySelector('.reservation-status') && 
-            item.querySelector('.reservation-status').textContent.includes('انتظار')) {
-
+        // التحقق من وجود سمة تاريخ انتهاء الصلاحية
+        const expiryDateAttr = item.getAttribute('data-expiry');
+        
+        if (expiryDateAttr && expiryDateAttr !== 'None' && expiryDateAttr !== '') {
             // إنشاء عنصر العداد التنازلي إذا لم يكن موجودًا
             let countdownElement = item.querySelector('.countdown-container');
             if (!countdownElement) {
@@ -20,24 +22,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // الحصول على تاريخ الانتهاء (استخدام data-expiry إذا كان موجودًا، أو إنشاء تاريخ بعد 24 ساعة من الآن)
-            const expiryDateAttr = item.getAttribute('data-expiry');
-            let expiryDate;
-
-            if (expiryDateAttr && expiryDateAttr !== 'None' && expiryDateAttr !== '') {
-                expiryDate = new Date(expiryDateAttr);
-            } else {
-                // إذا لم يتم تحديد تاريخ انتهاء، استخدم 24 ساعة من الآن كوقت افتراضي
-                expiryDate = new Date();
-                expiryDate.setHours(expiryDate.getHours() + 24);
-            }
-
+            // تحويل تاريخ الانتهاء إلى كائن Date
+            const expiryDate = new Date(expiryDateAttr);
+            
             if (!isNaN(expiryDate.getTime())) {
                 // تحديث العداد التنازلي كل ثانية
                 updateCountdown(countdownElement, expiryDate);
                 const interval = setInterval(function() {
                     updateCountdown(countdownElement, expiryDate);
                 }, 1000);
+                
+                // حفظ معرف الفاصل الزمني في العنصر لتنظيفه لاحقًا
+                item.setAttribute('data-interval-id', interval);
             }
         }
     });
@@ -48,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const remainingTime = endTime - now;
 
         if (remainingTime <= 0) {
-            element.innerHTML = '<span class="text-danger fw-bold">انتهى وقت الدفع</span>';
+            element.innerHTML = '<div class="alert alert-danger p-2 mb-0"><small>انتهى وقت الدفع</small></div>';
             return;
         }
 
