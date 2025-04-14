@@ -43,22 +43,42 @@ document.addEventListener('DOMContentLoaded', function() {
  * @returns {boolean} - يعود true إذا كان الحجز مدفوعاً، وإلا يعود false
  */
 function checkIfReservationIsPaid(row) {
-    // البحث عن عنصر الحالة
-    const statusBadge = row.querySelector('.status-paid, .status-badge.status-paid');
-    
     // التحقق من وجود بطاقة "مدفوع"
+    const statusBadge = row.querySelector('.status-paid, .status-badge.status-paid');
     if (statusBadge) {
         return true;
     }
     
-    // البحث عن نص "مدفوع" في خلية الحالة
-    const statusText = row.textContent || '';
-    const hasPaidStatus = statusText.includes('مدفوع') || statusText.includes('Paid');
+    // التحقق من نص status و payment_status
+    const statusColumn = row.querySelector('td[data-label*="STATUS"]');
+    if (statusColumn) {
+        const statusText = statusColumn.textContent || '';
+        // التحقق من وجود كلمة مدفوع أو Paid في النص
+        if (statusText.includes('مدفوع') || statusText.includes('Paid')) {
+            return true;
+        }
+    }
     
-    // البحث عن زر "مدفوع" في صف الحجز
-    const paidButton = row.querySelector('a:contains("مدفوع"), a:contains("Paid")');
+    // البحث عن جميع البطاقات في الصف
+    const allBadges = row.querySelectorAll('.status-badge');
+    for (const badge of allBadges) {
+        const badgeText = badge.textContent || '';
+        if (badgeText.includes('مدفوع') || badgeText.includes('Paid')) {
+            return true;
+        }
+    }
     
-    return hasPaidStatus || (paidButton !== null);
+    // التحقق من وجود عنصر بالكلاس 'btn-pay'
+    // إذا لم يكن موجوداً فهذا يعني أن الحجز مدفوع أو ملغي
+    // نتحقق أيضاً أن الحجز ليس ملغياً
+    const payButton = row.querySelector('.btn-pay');
+    const isCancelled = (row.textContent || '').includes('ملغ') || (row.textContent || '').includes('Cancel');
+    
+    if (!payButton && !isCancelled) {
+        return true;
+    }
+    
+    return false;
 }
 
 /**
@@ -135,7 +155,7 @@ function startCountdown(countdownElement, expiryDate) {
             countdownElement.innerHTML = `
                 <div class="alert alert-danger p-2 mb-0 text-center">
                     <i class="fas fa-exclamation-triangle ms-1"></i>
-                    <small>انتهت مدة الدفع</small>
+                    <strong>انتهت مهلة الدفع</strong>
                 </div>
             `;
 
@@ -174,7 +194,7 @@ function startCountdown(countdownElement, expiryDate) {
         countdownElement.innerHTML = `
             <div class="alert ${alertClass} p-2 mb-0 text-center">
                 <i class="fas fa-clock me-1 ${textClass}"></i>
-                <small>وقت الدفع المتبقي: ${timeDisplay}</small>
+                <small><strong>ينتهي وقت الدفع خلال:</strong> ${timeDisplay}</small>
             </div>
         `;
     }

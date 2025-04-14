@@ -594,9 +594,6 @@
                             <div class="date-value">{{ reservation.start_date|date:"d/m/Y" }}</div>
                             <div class="date-separator">{% if is_english %}to{% else %}إلى{% endif %}</div>
                             <div class="date-value">{{ reservation.end_date|date:"d/m/Y" }}</div>
-                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
-                            <div class="countdown-container"></div>
-                            {% endif %}
                         </td>
                         
                         <!-- المدة -->
@@ -646,6 +643,10 @@
                             <a href="{% url 'checkout' reservation.id %}" class="btn btn-pay">
                                 <i class="fas fa-credit-card"></i> {% trans "Pay" %}
                             </a>
+                            
+                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
+                            <div class="countdown-container mt-2" data-expiry="{{ reservation.confirmation_expiry|date:'c' }}"></div>
+                            {% endif %}
                             {% endif %}
 
                             {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
