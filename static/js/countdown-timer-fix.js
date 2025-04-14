@@ -153,9 +153,9 @@ function startCountdown(countdownElement, expiryDate) {
         if (timeRemaining <= 0) {
             // عرض رسالة انتهاء الصلاحية
             countdownElement.innerHTML = `
-                <div class="alert alert-danger p-2 mb-0 text-center">
-                    <i class="fas fa-exclamation-triangle ms-1"></i>
-                    <strong>انتهت مهلة الدفع</strong>
+                <div class="text-danger mb-0 text-start">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    <small><strong>انتهت مهلة الدفع</strong></small>
                 </div>
             `;
 
@@ -192,9 +192,9 @@ function startCountdown(countdownElement, expiryDate) {
 
         // تحديث نص العد التنازلي بتصميم محسن
         countdownElement.innerHTML = `
-            <div class="alert ${alertClass} p-2 mb-0 text-center">
-                <i class="fas fa-clock me-1 ${textClass}"></i>
-                <small><strong>ينتهي وقت الدفع خلال:</strong> ${timeDisplay}</small>
+            <div class="${textClass} mb-0 text-start">
+                <i class="fas fa-clock me-1"></i>
+                <small><strong>ينتهي خلال:</strong> ${timeDisplay}</small>
             </div>
         `;
     }
