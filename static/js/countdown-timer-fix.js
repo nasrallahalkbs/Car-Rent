@@ -4,6 +4,86 @@ document.addEventListener('DOMContentLoaded', function() {
     // الحصول على الوقت الحالي
     const now = new Date();
     
+    // البحث عن حاويات العد التنازلي المضافة من HTML مباشرة
+    const countdownContainers = document.querySelectorAll('.countdown-container[data-reservation-id]');
+    if (countdownContainers.length > 0) {
+        console.log("تم العثور على " + countdownContainers.length + " حاوية عد تنازلي جاهزة");
+        
+        countdownContainers.forEach(function(container) {
+            const reservationId = container.getAttribute('data-reservation-id');
+            console.log(`معالجة العد التنازلي للحجز رقم ${reservationId}`);
+            
+            // معالجة تاريخ الانتهاء
+            let expiryDateAttr = container.getAttribute('data-expiry');
+            let expiryDate = null;
+            
+            if (expiryDateAttr && expiryDateAttr !== "None") {
+                try {
+                    expiryDate = new Date(expiryDateAttr);
+                    console.log(`تاريخ انتهاء الحجز ${reservationId}: ${expiryDate}`);
+                } catch (e) {
+                    console.error(`خطأ في تحويل تاريخ الانتهاء للحجز ${reservationId}: ${e}`);
+                }
+            }
+            
+            // إذا لم نجد تاريخ صالح، نستخدم تاريخ افتراضي (بعد 24 ساعة من الآن)
+            if (!expiryDate || isNaN(expiryDate.getTime())) {
+                expiryDate = new Date(now);
+                expiryDate.setHours(expiryDate.getHours() + 24);
+                console.log(`تم استخدام تاريخ افتراضي للحجز ${reservationId}: ${expiryDate}`);
+            }
+            
+            // هل هي باللغة الإنجليزية أم العربية
+            const isEnglish = document.documentElement.lang === 'en' || document.body.getAttribute('dir') !== 'rtl';
+            
+            // إضافة العد التنازلي لهذا العنصر
+            function updateCountdown() {
+                const now = new Date();
+                const remainingTime = expiryDate - now;
+                
+                if (remainingTime <= 0) {
+                    const expiredText = isEnglish ? 'Payment time expired' : 'انتهى وقت الدفع';
+                    container.innerHTML = `<small class="text-danger">${expiredText}</small>`;
+                    return;
+                }
+                
+                // حساب الوقت المتبقي
+                const hours = Math.floor(remainingTime / (1000 * 60 * 60));
+                const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+                
+                // تنسيق النص
+                const padZero = (num) => num.toString().padStart(2, '0');
+                let countdownText = `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
+                
+                // تحديد اللون بناء على الوقت المتبقي
+                let colorClass = 'text-success';
+                if (remainingTime < 3600000) { // أقل من ساعة
+                    colorClass = 'text-danger';
+                } else if (remainingTime < 86400000) { // أقل من يوم
+                    colorClass = 'text-warning';
+                }
+                
+                container.innerHTML = `
+                    <div class="${colorClass} fw-bold d-inline-block">
+                        <i class="fas fa-clock me-1"></i>
+                        ${countdownText}
+                    </div>
+                `;
+            }
+            
+            // التحديث الأولي
+            updateCountdown();
+            
+            // تحديث العد التنازلي كل ثانية
+            const timerId = setInterval(updateCountdown, 1000);
+            console.log(`تم بدء العد التنازلي للحجز ${reservationId}`);
+            
+            // تخزين معرف المؤقت للتنظيف لاحقًا
+            container.setAttribute('data-timer-id', timerId);
+        });
+    }
+    
     // تحديد جميع الحجوزات في الصفحة - اختبار العديد من المحددات للتأكد من العمل في أي قالب
     let reservationItems = document.querySelectorAll('.reservation-item');
     
