@@ -873,23 +873,6 @@ def book_car(request, car_id):
             except ValueError:
                 pass
 
-        # Calculate total price if dates are available
-        total_price = None
-        if start_date and end_date:
-            total_price = calculate_total_price(car, start_date, end_date)
-
-        context = {
-            'car': car,
-            'start_date': start_date,
-            'end_date': end_date,
-            'total_price': total_price,
-            'today': date.today(),
-            'cart_item': cart_item,
-        }
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            except ValueError:
-                pass
-
     context = {
         'car': car,
         'start_date': start_date,
