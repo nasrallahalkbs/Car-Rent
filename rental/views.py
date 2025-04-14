@@ -253,6 +253,13 @@ def car_listing(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Get user's favorite cars if user is authenticated
+    favorite_car_ids = []
+    if request.user.is_authenticated:
+        favorite_car_ids = FavoriteCar.objects.filter(
+            user=request.user
+        ).values_list('car_id', flat=True)
+
     # الحصول على اللغة الحالية مباشرة من django i18n
     from django.utils.translation import get_language
     current_language = get_language()
@@ -269,6 +276,7 @@ def car_listing(request):
         'is_arabic': is_arabic,
         'margin_right_class': margin_right_class,
         'margin_left_class': margin_left_class,
+        'favorite_car_ids': favorite_car_ids,
     }
 
     template = get_template_by_language(request, 'cars.html')
