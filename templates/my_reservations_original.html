@@ -548,4 +548,41 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+{% block extra_js %}
+<!-- تحميل ملف العد التنازلي المحدث -->
+<script src="{% static 'js/countdown-timer-fix.js' %}?v={{ now|date:'U' }}"></script>
+<script>
+    // إضافة معرفات للصفوف
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('تم تحميل صفحة الحجوزات الأصلية');
+        
+        // إضافة معرفات للصفوف
+        const rows = document.querySelectorAll('table tbody tr');
+        rows.forEach(function(row, index) {
+            if (!row.id) {
+                // البحث عن معرف الحجز في الصف
+                const reservationIdCell = row.querySelector('td:first-child');
+                if (reservationIdCell) {
+                    const match = reservationIdCell.textContent.match(/#(\d+)/);
+                    if (match && match[1]) {
+                        const id = match[1];
+                        row.id = 'reservation-' + id;
+                        
+                        // إضافة سمة تاريخ انتهاء الصلاحية لحجوزات الحالة "confirmed" مع "payment_status = pending"
+                        const statusCell = row.querySelector('.status-badge.status-confirmed');
+                        const paymentCell = row.querySelector('.payment-badge.payment-pending');
+                        
+                        if (statusCell && paymentCell) {
+                            // للاختبار نضيف تاريخ انتهاء افتراضي (بعد 24 ساعة من الآن)
+                            const expiryDate = new Date();
+                            expiryDate.setHours(expiryDate.getHours() + 24);
+                            row.setAttribute('data-expiry', expiryDate.toISOString());
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}
