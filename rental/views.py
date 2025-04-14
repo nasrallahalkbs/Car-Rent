@@ -862,10 +862,10 @@ def book_car(request, car_id):
         end_date_str = request.GET.get('end_date')
 
         if start_date_str:
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            pass
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
 
         if end_date_str:
             try:
