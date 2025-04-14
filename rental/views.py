@@ -290,9 +290,14 @@ def car_detail(request, car_id):
     # Get reviews for this car
     reviews = Review.objects.filter(car=car).order_by('-created_at')
 
-    # Calculate average rating
+    # Calculate average rating and update it in the car model
     avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
     avg_rating = round(avg_rating, 1)
+    
+    # اذا كان متوسط التقييم في الكائن مختلف عما تم حسابه، قم بتحديثه
+    if car.avg_rating != avg_rating:
+        car.avg_rating = avg_rating
+        car.save()
 
     # Calculate rating distribution (percentage for each star level)
     total_reviews = reviews.count()
@@ -315,6 +320,12 @@ def car_detail(request, car_id):
     if request.user.is_authenticated:
         is_favorite = FavoriteCar.objects.filter(user=request.user, car=car).exists()
 
+    # احصل على معلومات اللغة للقالب
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+
     context = {
         'car': car,
         'reviews': reviews,
@@ -324,6 +335,8 @@ def car_detail(request, car_id):
         'similar_cars': similar_cars,
         'today': date.today(),
         'is_favorite': is_favorite,
+        'is_english': is_english,
+        'is_rtl': is_rtl
     }
 
     template = get_template_by_language(request, 'car_detail.html')
@@ -767,6 +780,7 @@ def add_review(request, reservation_id):
     existing_review = Review.objects.filter(reservation=reservation, user=request.user).first()
     if existing_review:
         # تحديد رسالة الخطأ بناءً على لغة المستخدم
+        from django.utils.translation import get_language
         current_language = get_language()
         is_english = current_language == 'en'
         
@@ -792,6 +806,7 @@ def add_review(request, reservation_id):
             car.save()
             
             # تحديد رسالة النجاح بناءً على لغة المستخدم
+            # استخدام الدالة المستوردة سابقًا
             current_language = get_language()
             is_english = current_language == 'en'
             
@@ -806,6 +821,7 @@ def add_review(request, reservation_id):
         form = ReviewForm()
 
     # احصل على لغة المستخدم لعرض الرسائل المناسبة
+    # استخدام الدالة المستوردة سابقًا
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
