@@ -1,336 +1,139 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("تم تحميل صفحة العداد التنازلي");
+    console.log('تم تحميل صفحة العداد التنازلي');
 
-    // الحصول على الوقت الحالي
-    const now = new Date();
-    
-    // البحث عن حاويات العد التنازلي المضافة من HTML مباشرة
-    const countdownContainers = document.querySelectorAll('.countdown-container[data-reservation-id]');
-    if (countdownContainers.length > 0) {
-        console.log("تم العثور على " + countdownContainers.length + " حاوية عد تنازلي جاهزة");
-        
-        countdownContainers.forEach(function(container) {
-            const reservationId = container.getAttribute('data-reservation-id');
-            console.log(`معالجة العد التنازلي للحجز رقم ${reservationId}`);
-            
-            // معالجة تاريخ الانتهاء
-            let expiryDateAttr = container.getAttribute('data-expiry');
-            let expiryDate = null;
-            
-            if (expiryDateAttr && expiryDateAttr !== "None") {
-                try {
-                    expiryDate = new Date(expiryDateAttr);
-                    console.log(`تاريخ انتهاء الحجز ${reservationId}: ${expiryDate}`);
-                } catch (e) {
-                    console.error(`خطأ في تحويل تاريخ الانتهاء للحجز ${reservationId}: ${e}`);
-                }
-            }
-            
-            // إذا لم نجد تاريخ صالح، نستخدم تاريخ افتراضي (بعد 24 ساعة من الآن)
-            if (!expiryDate || isNaN(expiryDate.getTime())) {
-                expiryDate = new Date(now);
-                expiryDate.setHours(expiryDate.getHours() + 24);
-                console.log(`تم استخدام تاريخ افتراضي للحجز ${reservationId}: ${expiryDate}`);
-            }
-            
-            // هل هي باللغة الإنجليزية أم العربية
-            const isEnglish = document.documentElement.lang === 'en' || document.body.getAttribute('dir') !== 'rtl';
-            
-            // إضافة العد التنازلي لهذا العنصر
-            function updateCountdown() {
-                const now = new Date();
-                const remainingTime = expiryDate - now;
-                
-                if (remainingTime <= 0) {
-                    const expiredText = isEnglish ? 'Payment time expired' : 'انتهى وقت الدفع';
-                    container.innerHTML = `<small class="text-danger">${expiredText}</small>`;
-                    return;
-                }
-                
-                // حساب الوقت المتبقي
-                const hours = Math.floor(remainingTime / (1000 * 60 * 60));
-                const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
-                
-                // تنسيق النص
-                const padZero = (num) => num.toString().padStart(2, '0');
-                let countdownText = `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
-                
-                // تحديد اللون بناء على الوقت المتبقي
-                let colorClass = 'text-success';
-                if (remainingTime < 3600000) { // أقل من ساعة
-                    colorClass = 'text-danger';
-                } else if (remainingTime < 86400000) { // أقل من يوم
-                    colorClass = 'text-warning';
-                }
-                
-                container.innerHTML = `
-                    <div class="${colorClass} fw-bold d-inline-block">
-                        <i class="fas fa-clock me-1"></i>
-                        ${countdownText}
-                    </div>
-                `;
-            }
-            
-            // التحديث الأولي
-            updateCountdown();
-            
-            // تحديث العد التنازلي كل ثانية
-            const timerId = setInterval(updateCountdown, 1000);
-            console.log(`تم بدء العد التنازلي للحجز ${reservationId}`);
-            
-            // تخزين معرف المؤقت للتنظيف لاحقًا
-            container.setAttribute('data-timer-id', timerId);
-        });
-    }
-    
-    // تحديد جميع الحجوزات في الصفحة - اختبار العديد من المحددات للتأكد من العمل في أي قالب
-    let reservationItems = document.querySelectorAll('.reservation-item');
-    
-    if (reservationItems.length === 0) {
-        // محاولة استهداف عناصر أخرى محتملة
-        reservationItems = document.querySelectorAll('tr[id^="reservation-"]');
-    }
-    
-    if (reservationItems.length === 0) {
-        // محاولة استهداف أي صف في جدول الحجوزات
-        const tables = document.querySelectorAll('table');
-        for (let i = 0; i < tables.length; i++) {
-            const table = tables[i];
-            console.log("فحص الجدول رقم " + (i+1));
-            
-            // طباعة جميع الرؤوس للتحقق
-            const headers = table.querySelectorAll('th');
-            if (headers.length > 0) {
-                console.log("رؤوس الجدول:");
-                headers.forEach(th => console.log(" - " + th.textContent.trim()));
-                
-                // تحقق من وجود عمود معرف الحجز
-                if (Array.from(headers).some(th => 
-                    th.textContent.includes('RESERVATION') || 
-                    th.textContent.includes('حجز') || 
-                    th.textContent.includes('رقم الحجز'))) {
-                    
-                    console.log("تم العثور على جدول الحجوزات");
-                    reservationItems = table.querySelectorAll('tbody tr');
-                    break;
-                }
-            }
-        }
-    }
-    
-    // محاولة أخيرة: استهداف أي صف في أي جدول إذا لم يتم العثور على شيء
-    if (reservationItems.length === 0) {
-        reservationItems = document.querySelectorAll('table tbody tr');
-    }
-    
-    console.log("تم العثور على " + reservationItems.length + " حجز");
-    
-    // معالجة كل حجز
-    reservationItems.forEach(function(item, index) {
-        console.log("معالجة الحجز رقم " + (index + 1));
-        
-        // البحث عن حالة الحجز وتاريخ انتهاء الصلاحية
-        let statusElement = item.querySelector('.status-badge, .reservation-status, .status');
-        let statusText = statusElement ? statusElement.textContent.trim() : '';
-        
-        // البحث عن زر الدفع كدليل على حجز في انتظار الدفع
-        const hasPendingPayment = item.querySelector('a[href*="checkout"], a[href*="payment"], .btn-success');
-        
-        if (!statusText && statusElement) {
-            const statusBadge = statusElement.querySelector('.status-badge, .badge');
-            statusText = statusBadge ? statusBadge.textContent.trim() : '';
-        }
-        
-        console.log("نص حالة الحجز: " + statusText);
-        console.log("هل يحتاج للدفع: " + (hasPendingPayment ? "نعم" : "لا"));
-        
-        // التحقق من وجود تاريخ انتهاء الصلاحية
-        let expiryDateAttr = item.getAttribute('data-expiry');
-        let expiryDate = null;
-        
-        // إظهار التفاصيل للتصحيح
-        console.log("سمة data-expiry: " + expiryDateAttr);
-        
-        // بيانات للتصحيح: طباعة جميع السمات للعنصر
-        console.log("جميع سمات العنصر:");
-        for (let i = 0; i < item.attributes.length; i++) {
-            const attr = item.attributes[i];
-            console.log(`  ${attr.name}: ${attr.value}`);
-        }
-        
-        // إذا لم يكن هناك سمة تاريخ انتهاء، نبحث عن أي نص تاريخ في العنصر
-        if (!expiryDateAttr || expiryDateAttr === "None" || expiryDateAttr === "") {
-            console.log("لا يوجد سمة data-expiry صالحة، البحث عن بدائل...");
-            
-            // خيار 1: البحث عن عنصر تاريخ الانتهاء في الخلية
-            const dateCell = item.querySelector('.date-cell');
-            if (dateCell) {
-                const dateText = dateCell.textContent.trim();
-                console.log("نص خلية التاريخ: " + dateText);
-                
-                // محاولة العثور على تاريخ مستقبلي (للاختبار فقط)
-                const tomorrow = new Date(now);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                console.log("استخدام تاريخ مستقبلي للاختبار: " + tomorrow);
-                expiryDate = tomorrow;
-            } else {
-                // خيار 2: إنشاء تاريخ انتهاء تقديري للاختبار
-                if (statusText.includes('تم التأكيد') || statusText.includes('Confirmed') || hasPendingPayment) {
-                    expiryDate = new Date(now);
-                    expiryDate.setHours(expiryDate.getHours() + 12);
-                    console.log("تم إنشاء تاريخ انتهاء تقديري: " + expiryDate);
-                }
-            }
-        } else {
-            // تحويل سمة التاريخ إلى كائن Date
-            try {
-                expiryDate = new Date(expiryDateAttr);
-                console.log("تم قراءة تاريخ انتهاء: " + expiryDate);
-            } catch (e) {
-                console.error("خطأ في تحويل تاريخ الانتهاء: " + e);
-                
-                // خيار بديل للاختبار
-                expiryDate = new Date(now);
-                expiryDate.setHours(expiryDate.getHours() + 24);
-                console.log("تم إنشاء تاريخ انتهاء بديل: " + expiryDate);
-            }
-        }
-        
-        // للاختبار فقط: إنشاء تاريخ انتهاء إذا لم يتم العثور على تاريخ صالح
-        if (!expiryDate || isNaN(expiryDate.getTime())) {
-            console.log("لم يتم العثور على تاريخ انتهاء صالح، إنشاء تاريخ للاختبار");
-            expiryDate = new Date(now);
-            expiryDate.setHours(expiryDate.getHours() + 24);
-        }
-        
-        // التحقق من أن الحجز مؤكد ويحتاج للدفع
-        if ((statusText.includes('تم التأكيد') || statusText.includes('Confirmed') || hasPendingPayment) && expiryDate) {
-            console.log("هذا الحجز مؤهل للعد التنازلي");
-            
-            // البحث عن خلية الإجراءات (حيث توجد أزرار الدفع)
-            const actionsCell = item.querySelector('td:last-child');
+    // البحث عن جميع الحجوزات التي تحتاج إلى عداد تنازلي
+    const reservationRows = document.querySelectorAll('tr[data-expiry]');
+    console.log(`تم العثور على ${reservationRows.length} حجز`);
 
-            if (!actionsCell) {
-                console.error("لم يتم العثور على خلية الإجراءات");
-                return;
-            }
+    // إعداد العداد التنازلي لكل حجز
+    reservationRows.forEach(function(row) {
+        initializeCountdown(row);
+    });
 
-            // البحث عن أزرار الإجراءات
-            const actionButtons = actionsCell.querySelector('.action-buttons');
-            
-            if (!actionButtons) {
-                console.error("لم يتم العثور على حاوية أزرار الإجراءات");
-                return;
-            }
-            
-            // البحث عن زر الدفع
-            const payButton = actionButtons.querySelector('.btn-pay');
-            
-            if (!payButton) {
-                console.log("لم يتم العثور على زر الدفع");
-                return;
-            }
-            
-            console.log("تم العثور على زر الدفع، سيتم إضافة العد التنازلي بجانبه");
+    // البحث عن عناصر العد التنازلي المستقلة
+    const countdownContainers = document.querySelectorAll('.countdown-container[data-expiry]');
 
-            // نستخدم حاوية أزرار الإجراءات لإضافة العد التنازلي
-            let dateCell = actionsCell;
-            
-            if (dateCell) {
-                console.log("تم العثور على خلية مناسبة للعد التنازلي");
-                
-                // التحقق من وجود عنصر العد التنازلي
-                let countdownContainer = dateCell.querySelector('.countdown-container');
-                
-                if (!countdownContainer) {
-                    console.log("إنشاء عنصر العد التنازلي");
-                    countdownContainer = document.createElement('div');
-                    countdownContainer.className = 'countdown-container';
-                    
-                    // إضافة العد التنازلي بجانب زر الدفع
-                    const paymentButton = actionButtons.querySelector('.btn-pay');
-                    if (paymentButton) {
-                        countdownContainer.className = 'countdown-container ms-2 d-inline-block';
-                        paymentButton.after(countdownContainer);
-                    } else {
-                        // في حالة عدم وجود زر الدفع، أضف العد التنازلي إلى خلية الإجراءات
-                        dateCell.appendChild(countdownContainer);
-                    }
-                }
-                
-                // تحديث العد التنازلي
-                function updateCountdown() {
-                    const now = new Date();
-                    const remainingTime = expiryDate - now;
-                    
-                    // تحديد اللغة بعدة طرق للتأكد من الاكتشاف الصحيح
-                    const htmlLang = document.documentElement.lang;
-                    const bodyDir = document.body.getAttribute('dir');
-                    const hasEnglishText = statusText.includes('Confirmed') || statusText.includes('Pending');
-                    const hasArabicText = statusText.includes('تم التأكيد') || statusText.includes('قيد الانتظار');
-                    
-                    console.log(`لغة HTML: ${htmlLang}, اتجاه الصفحة: ${bodyDir}, نص إنجليزي: ${hasEnglishText}, نص عربي: ${hasArabicText}`);
-                    
-                    // تحديد اللغة بناءً على عدة عوامل
-                    const isEnglish = (htmlLang === 'en') || 
-                                     (bodyDir !== 'rtl') || 
-                                     (hasEnglishText && !hasArabicText);
-                    
-                    if (remainingTime <= 0) {
-                        const expiredText = isEnglish ? 'Payment time expired' : 'انتهى وقت الدفع';
-                        countdownContainer.innerHTML = `<div class="alert alert-danger p-2 mb-0"><small>${expiredText}</small></div>`;
-                        return;
-                    }
-                    
-                    // حساب الوقت المتبقي
-                    const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
-                    
-                    // تنسيق نص العد التنازلي
-                    let countdownText = '';
-                    if (days > 0) {
-                        countdownText += isEnglish ? `${days} day${days > 1 ? 's' : ''} ` : `${days} يوم `;
-                    }
-                    const padZero = (num) => num.toString().padStart(2, '0');
-                    countdownText += `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
-                    
-                    // تنسيق لون النص بناءً على الوقت المتبقي
-                    let colorClass = 'text-success';
-                    if (remainingTime < 3600000) { // أقل من ساعة
-                        colorClass = 'text-danger';
-                    } else if (remainingTime < 86400000) { // أقل من يوم
-                        colorClass = 'text-warning';
-                    }
-                    
-                    const remainingText = isEnglish ? 'Remaining payment time: ' : 'وقت الدفع المتبقي: ';
-                    const borderColor = colorClass.replace('text-', '');
-                    
-                    // نعدل طريقة العرض ليناسب موقع العد بجانب زر الدفع
-                    countdownContainer.innerHTML = `
-                        <div class="${colorClass} fw-bold d-inline-block ms-2 me-2">
-                            <i class="fas fa-clock me-1"></i>
-                            ${countdownText}
-                        </div>
-                    `;
-                }
-                
-                // التحديث الأولي
-                updateCountdown();
-                
-                // تحديث العد التنازلي كل ثانية
-                const timerId = setInterval(updateCountdown, 1000);
-                console.log("تم بدء العد التنازلي بنجاح");
-                
-                // تخزين معرف المؤقت للتنظيف لاحقًا
-                item.setAttribute('data-timer-id', timerId);
-            } else {
-                console.error("لم يتم العثور على خلية مناسبة لإضافة العد التنازلي");
+    // إعداد العداد التنازلي لكل عنصر مستقل
+    countdownContainers.forEach(function(container) {
+        if (!container.hasAttribute('data-initialized')) {
+            const expiryDateStr = container.getAttribute('data-expiry');
+            if (expiryDateStr) {
+                const expiryDate = new Date(expiryDateStr);
+                startCountdown(container, expiryDate);
+                container.setAttribute('data-initialized', 'true');
             }
-        } else {
-            console.log("هذا الحجز غير مؤهل للعد التنازلي أو انتهت صلاحيته");
         }
     });
 });
+
+/**
+ * تهيئة العداد التنازلي لصف حجز معين
+ * @param {HTMLElement} row - صف الحجز الذي يحتوي على بيانات تاريخ الانتهاء
+ */
+function initializeCountdown(row) {
+    // الحصول على تاريخ انتهاء الصلاحية من سمات الصف
+    const expiryDateStr = row.getAttribute('data-expiry');
+
+    if (!expiryDateStr) {
+        console.log('لا يوجد تاريخ انتهاء للحجز:', row.id);
+        return;
+    }
+
+    // تحويل نص التاريخ إلى كائن تاريخ
+    const expiryDate = new Date(expiryDateStr);
+
+    // التحقق من صحة التاريخ
+    if (isNaN(expiryDate.getTime())) {
+        console.log('تاريخ انتهاء الصلاحية غير صالح:', expiryDateStr);
+        return;
+    }
+
+    // البحث عن حاوية العداد التنازلي داخل الصف
+    let countdownContainer = row.querySelector('.countdown-container');
+
+    // إذا لم يكن هناك حاوية للعد التنازلي، نقوم بإنشائها
+    if (!countdownContainer) {
+        // البحث عن خلية الحالة
+        const statusCell = row.querySelector('td:nth-child(6)');
+
+        if (statusCell) {
+            // إنشاء حاوية العد التنازلي
+            countdownContainer = document.createElement('div');
+            countdownContainer.className = 'countdown-container mt-2';
+            countdownContainer.setAttribute('data-expiry', expiryDateStr);
+
+            // إضافة حاوية العد التنازلي إلى خلية الحالة
+            statusCell.appendChild(countdownContainer);
+        } else {
+            console.log('لم يتم العثور على خلية الحالة في:', row.id);
+            return;
+        }
+    }
+
+    // بدء العد التنازلي
+    startCountdown(countdownContainer, expiryDate);
+}
+
+/**
+ * بدء عملية العد التنازلي لعنصر معين
+ * @param {HTMLElement} countdownElement - عنصر HTML الذي سيعرض العد التنازلي
+ * @param {Date} expiryDate - تاريخ انتهاء الصلاحية
+ */
+function startCountdown(countdownElement, expiryDate) {
+    // دالة لتحديث العد التنازلي
+    function updateCountdown() {
+        // الوقت الحالي
+        const now = new Date().getTime();
+
+        // حساب الفرق بين الوقت الحالي وتاريخ الانتهاء
+        const timeRemaining = expiryDate.getTime() - now;
+
+        // التحقق مما إذا كان الوقت قد انتهى
+        if (timeRemaining <= 0) {
+            // عرض رسالة انتهاء الصلاحية
+            countdownElement.innerHTML = `
+                <div class="countdown-expired">
+                    <i class="fas fa-exclamation-triangle ms-1"></i>
+                    انتهت مدة الدفع
+                </div>
+            `;
+
+            // إيقاف تحديث العد التنازلي
+            clearInterval(countdownInterval);
+            return;
+        }
+
+        // حساب الساعات والدقائق والثواني المتبقية
+        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+        // تحديد لون النص بناءً على الوقت المتبقي
+        let colorClass = 'countdown-normal';
+
+        if (hours < 2) {
+            colorClass = 'countdown-warning';
+        }
+
+        if (hours < 1) {
+            colorClass = 'countdown-expired';
+        }
+
+        // تحديث نص العد التنازلي
+        countdownElement.innerHTML = `
+            <div class="${colorClass}">
+                <i class="fas fa-clock ms-1"></i>
+                ينتهي الدفع خلال: ${hours} ساعة ${minutes} دقيقة ${seconds} ثانية
+            </div>
+        `;
+    }
+
+    // تحديث العد التنازلي للمرة الأولى
+    updateCountdown();
+
+    // تحديث العد التنازلي كل ثانية
+    const countdownInterval = setInterval(updateCountdown, 1000);
+
+    // تخزين معرف الفاصل الزمني في سمة العنصر للرجوع إليه لاحقًا
+    countdownElement.setAttribute('data-interval-id', countdownInterval);
+}
