@@ -932,7 +932,7 @@
                             </td>
                             <td style="min-width: 200px;">
                                 <div class="badges-container" style="display: flex !important; flex-direction: column !important; gap: 8px !important; align-items: flex-start !important; width: 100% !important;">
-                                    <div class="d-flex flex-wrap gap-2">
+                                    <div class="status-container" style="display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; gap: 8px !important; margin-bottom: 5px !important;">
                                         {% if reservation.status == 'pending' %}
                                         <span class="status-badge status-pending">{% if is_english %}Under Review{% else %}قيد المراجعة{% endif %}</span>
                                         {% elif reservation.status == 'confirmed' %}
@@ -954,18 +954,42 @@
                                 </div>
                             </td>
                             <td class="{% if is_english %}text-end pe-4{% else %}text-start ps-4{% endif %}">
-                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                <div class="action-buttons" style="min-width: 130px;">
                                     <a href="{% url 'reservation_detail' reservation_id=reservation.id %}" class="btn btn-primary rounded-circle action-button" title="{% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     
                                     {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success rounded-circle action-button" title="{% if is_english %}Pay Now{% else %}ادفع الآن{% endif %}">
+                                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success rounded-circle action-button ms-1" title="{% if is_english %}Pay Now{% else %}ادفع الآن{% endif %}">
                                         <i class="fas fa-credit-card"></i>
                                     </a>
-                                    <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-info rounded-circle action-button" title="{% if is_english %}Bank Transfer{% else %}تحويل بنكي{% endif %}">
+                                    <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-info rounded-circle action-button ms-1" title="{% if is_english %}Bank Transfer{% else %}تحويل بنكي{% endif %}">
                                         <i class="fas fa-university"></i>
                                     </a>
+                                    
+                                    <!-- تحسين قسم تحذير الدفع والعداد التنازلي -->
+                                    <div class="payment-warning mt-2" style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; margin-top: 10px !important; clear: both !important;">
+                                        <div class="alert alert-danger py-2 px-3 mb-0" style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; box-shadow: 0 2px 5px rgba(0,0,0,0.15); border-left: 3px solid #dc3545;">
+                                            <div class="countdown-container d-flex align-items-center justify-content-between" style="width: 100% !important;">
+                                                <div>
+                                                    <i class="fas fa-exclamation-triangle {% if is_english %}me-1{% else %}ms-1{% endif %}"></i>
+                                                    {% if is_english %}
+                                                    <strong>Payment required:</strong>
+                                                    {% else %}
+                                                    <strong>مدة الدفع:</strong>
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                <!-- عنصر العداد التنازلي مع تحسينات إضافية للظهور -->
+                                                <div id="countdown-{{ reservation.id }}" class="countdown-timer {% if is_english %}ms-2{% else %}me-2{% endif %}" 
+                                                    style="display: inline-block !important; visibility: visible !important; opacity: 1 !important; z-index: 999 !important; position: relative !important; background-color: rgba(220, 53, 69, 0.1); padding: 3px 8px !important; border-radius: 4px !important; font-weight: bold !important; min-width: 90px !important; text-align: center !important;" 
+                                                    data-expire-time="{% if reservation.confirmation_expiry %}{{ reservation.confirmation_expiry|date:'Y-m-d\TH:i:s' }}{% else %}{{ now|date:'Y-m-d' }}T{{ now|time:'H:i:s' }}{% endif %}"
+                                                    data-reservation-id="{{ reservation.id }}">
+                                                    <span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     {% endif %}
                                     
                                     {% if reservation.status == 'pending' %}
@@ -974,28 +998,6 @@
                                     </a>
                                     {% endif %}
                                 </div>
-                                
-                                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                                <!-- تحذير الدفع والعداد التنازلي (محسن) -->
-                                <div class="payment-warning mt-2 w-100" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
-                                    <div class="alert alert-danger py-2 px-3 mb-0" style="box-shadow: 0 2px 5px rgba(0,0,0,0.15); border-{% if is_english %}left{% else %}right{% endif %}: 3px solid #dc3545;">
-                                        <div class="d-flex align-items-center justify-content-between flex-wrap">
-                                            <div>
-                                                <i class="fas fa-exclamation-triangle {% if is_english %}me-1{% else %}ms-1{% endif %}"></i>
-                                                <strong>{% if is_english %}Payment required:{% else %}مدة الدفع:{% endif %}</strong>
-                                            </div>
-                                            
-                                            <!-- العداد التنازلي محسن -->
-                                            <div id="countdown-{{ reservation.id }}" class="countdown-timer {% if is_english %}ms-2{% else %}me-2{% endif %}" 
-                                                style="display: inline-block !important; visibility: visible !important; opacity: 1 !important; z-index: 999; background-color: rgba(220, 53, 69, 0.1); padding: 3px 8px; border-radius: 4px; font-weight: bold; min-width: 90px; text-align: center;" 
-                                                data-expire-time="{% if reservation.confirmation_expiry %}{{ reservation.confirmation_expiry|date:'Y-m-d\TH:i:s' }}{% else %}{{ now|date:'Y-m-d' }}T{{ now|time:'H:i:s' }}{% endif %}"
-                                                data-reservation-id="{{ reservation.id }}">
-                                                <span class="hours">24</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
