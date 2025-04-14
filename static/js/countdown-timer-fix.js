@@ -128,23 +128,34 @@ document.addEventListener('DOMContentLoaded', function() {
         if ((statusText.includes('تم التأكيد') || statusText.includes('Confirmed') || hasPendingPayment) && expiryDate) {
             console.log("هذا الحجز مؤهل للعد التنازلي");
             
-            // البحث عن الخلية المناسبة لإضافة العد التنازلي
-            let dateCell = item.querySelector('.date-cell, td:nth-child(3)');
+            // البحث عن خلية الإجراءات (حيث توجد أزرار الدفع)
+            const actionsCell = item.querySelector('td:last-child');
+
+            if (!actionsCell) {
+                console.error("لم يتم العثور على خلية الإجراءات");
+                return;
+            }
+
+            // البحث عن أزرار الإجراءات
+            const actionButtons = actionsCell.querySelector('.action-buttons');
             
-            if (!dateCell) {
-                // محاولة البحث عن خلية التاريخ بطريقة أخرى
-                const cells = item.querySelectorAll('td');
-                cells.forEach(function(cell) {
-                    if (cell.textContent.includes('/20') || cell.textContent.includes('-20')) {
-                        dateCell = cell;
-                    }
-                });
+            if (!actionButtons) {
+                console.error("لم يتم العثور على حاوية أزرار الإجراءات");
+                return;
             }
             
-            if (!dateCell) {
-                // إذا لم نجد خلية مناسبة، نستخدم الخلية الرابعة (التي تكون عادة للمدة أو الإجمالي)
-                dateCell = item.querySelector('td:nth-child(4)');
+            // البحث عن زر الدفع
+            const payButton = actionButtons.querySelector('.btn-pay');
+            
+            if (!payButton) {
+                console.log("لم يتم العثور على زر الدفع");
+                return;
             }
+            
+            console.log("تم العثور على زر الدفع، سيتم إضافة العد التنازلي بجانبه");
+
+            // نستخدم حاوية أزرار الإجراءات لإضافة العد التنازلي
+            let dateCell = actionsCell;
             
             if (dateCell) {
                 console.log("تم العثور على خلية مناسبة للعد التنازلي");
@@ -155,8 +166,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!countdownContainer) {
                     console.log("إنشاء عنصر العد التنازلي");
                     countdownContainer = document.createElement('div');
-                    countdownContainer.className = 'countdown-container mt-2';
-                    dateCell.appendChild(countdownContainer);
+                    countdownContainer.className = 'countdown-container';
+                    
+                    // إضافة العد التنازلي بجانب زر الدفع
+                    const paymentButton = actionButtons.querySelector('.btn-pay');
+                    if (paymentButton) {
+                        countdownContainer.className = 'countdown-container ms-2 d-inline-block';
+                        paymentButton.after(countdownContainer);
+                    } else {
+                        // في حالة عدم وجود زر الدفع، أضف العد التنازلي إلى خلية الإجراءات
+                        dateCell.appendChild(countdownContainer);
+                    }
                 }
                 
                 // تحديث العد التنازلي
@@ -208,16 +228,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const remainingText = isEnglish ? 'Remaining payment time: ' : 'وقت الدفع المتبقي: ';
                     const borderColor = colorClass.replace('text-', '');
                     
+                    // نعدل طريقة العرض ليناسب موقع العد بجانب زر الدفع
                     countdownContainer.innerHTML = `
-                        <div class="p-2 border border-${borderColor} rounded text-center">
-                            <div class="${colorClass} fw-bold">
-                                <i class="fas fa-clock me-1"></i>
-                                ${remainingText}${countdownText}
-                            </div>
-                            <a href="/checkout/${item.id || index + 1}" class="btn btn-sm btn-${borderColor} mt-1">
-                                <i class="fas fa-credit-card me-1"></i>
-                                ${isEnglish ? 'Pay Now' : 'ادفع الآن'}
-                            </a>
+                        <div class="${colorClass} fw-bold d-inline-block ms-2 me-2">
+                            <i class="fas fa-clock me-1"></i>
+                            ${countdownText}
                         </div>
                     `;
                 }
