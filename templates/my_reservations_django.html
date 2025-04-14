@@ -6,25 +6,22 @@
 
 {% block extra_css %}
 <style>
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-color-light));
+        padding: 3.5rem 0;
+        margin-bottom: 3rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0 0 30px 30px;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+    }
+
     .reservation-section {
         background-color: #f8f9fa;
         border-radius: 15px;
         overflow: hidden;
         margin-bottom: 2rem;
-    }
-
-    .reservation-card {
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        margin-bottom: 20px;
-        overflow: hidden;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .reservation-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
     }
 
     .reservation-table {
@@ -73,15 +70,9 @@
         color: #dc3545;
     }
 
-    .status-paid {
-        background-color: rgba(40, 167, 69, 0.1);
-        color: #28a745;
-    }
-
-    .action-buttons .btn {
-        margin: 0 2px;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
+    .status-completed {
+        background-color: rgba(23, 162, 184, 0.1);
+        color: #17a2b8;
     }
 
     .car-info {
@@ -94,7 +85,7 @@
         width: 60px;
         height: 40px;
         object-fit: cover;
-        margin-left: 10px;
+        margin: 0 10px;
         border-radius: 4px;
     }
 
@@ -104,20 +95,21 @@
         border-radius: 4px;
         background-color: rgba(0, 0, 0, 0.02);
     }
-    
-    .countdown-container .text-success {
-        color: #28a745 !important;
-    }
-    
-    .countdown-container .text-warning {
-        color: #ffc107 !important;
-    }
-    
-    .countdown-container .text-danger {
-        color: #dc3545 !important;
+
+    .action-buttons .btn {
+        margin: 2px;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
     }
 
-    /* For mobile view */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
     @media (max-width: 767px) {
         .reservation-table thead {
             display: none;
@@ -131,291 +123,207 @@
         .reservation-table tr {
             margin-bottom: 15px;
             border-bottom: 2px solid #dee2e6;
+            padding: 10px;
         }
 
         .reservation-table td {
-            text-align: left;
-            padding: 10px 15px;
+            text-align: right;
+            padding: 10px;
             position: relative;
             padding-left: 50%;
         }
 
         .reservation-table td:before {
-            position: absolute;
-            left: 15px;
-            width: 45%;
-            padding-right: 10px;
-            white-space: nowrap;
-            font-weight: bold;
             content: attr(data-label);
+            position: absolute;
+            left: 0;
+            width: 45%;
+            padding-right: 15px;
+            font-weight: 600;
+            text-align: left;
         }
-    }
-    .page-header {
-        background: linear-gradient(135deg, var(--primary-color), var(--primary-color-light));
-        padding: 3.5rem 0;
-        margin-bottom: 3rem;
-        color: white;
-        position: relative;
-        overflow: hidden;
-        border-radius: 0 0 30px 30px;
-        box-shadow: 0 5px 25px rgba(0,0,0,0.15);
-    }
 
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: -10%;
-        {% if is_english %}right{% else %}left{% endif %}: -10%;
-        width: 300px;
-        height: 300px;
-        background: rgba(255,255,255,0.05);
-        border-radius: 50%;
-        z-index: 1;
-        animation: float-slow 15s infinite ease-in-out;
-    }
+        .car-info {
+            flex-direction: column;
+            align-items: center;
+        }
 
-    .page-header::after {
-        content: '';
-        position: absolute;
-        bottom: -20%;
-        {% if is_english %}left{% else %}right{% endif %}: -5%;
-        width: 250px;
-        height: 250px;
-        background: rgba(255,255,255,0.07);
-        border-radius: 50%;
-        z-index: 1;
-        animation: float-slow 18s infinite ease-in-out reverse;
-    }
-
-    @keyframes float-slow {
-        0% { transform: translate(0, 0) rotate(0deg); }
-        25% { transform: translate(5px, 10px) rotate(5deg); }
-        50% { transform: translate(10px, 5px) rotate(0deg); }
-        75% { transform: translate(5px, 8px) rotate(-5deg); }
-        100% { transform: translate(0, 0) rotate(0deg); }
-    }
-
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='rgba(255,255,255,.05)' fill-rule='evenodd'/%3E%3C/svg%3E");
-        z-index: 1;
-    }
-
-    .page-header .container {
-        position: relative;
-        z-index: 2;
-    }
-
-    .page-title {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 0.5rem;
-        text-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        font-family: 'Almarai', 'Cairo', sans-serif;
-    }
-
-    .page-subtitle {
-        font-size: 1.1rem;
-        opacity: 0.9;
-        font-weight: 300;
-        margin-bottom: 0;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    }
-
-    .empty-icon {
-        width: 120px;
-        height: 120px;
-        background: var(--light);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 2rem;
-        color: var(--primary);
-    }
-
-    .explore-btn {
-        padding: 0.9rem 2.5rem;
-        border-radius: 50px;
-        font-weight: 700;
-        background: linear-gradient(45deg, var(--primary-color), var(--primary-color-light));
-        border: none;
-        color: white;
-        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.05rem;
-    }
-
-    .explore-btn:hover {
-        transform: translateY(-4px) scale(1.03);
-        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
-        color: white;
-        text-decoration: none;
-    }
-
-    .explore-btn:active {
-        transform: translateY(-1px) scale(0.98);
-        box-shadow: 0 5px 12px rgba(37, 99, 235, 0.2);
-    }
-
-    .explore-btn i {
-        {% if is_english %}margin-right{% else %}margin-left{% endif %}: 10px;
-        font-size: 1.1rem;
+        .car-info img {
+            margin-bottom: 10px;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="mb-3">{% trans "My Reservations" %}</h1>
-            <p class="text-muted">{% trans "View and manage all your car reservations in one place." %}</p>
-        </div>
-        <div class="col-md-4 text-md-end">
-            <a href="{% url 'cars' %}" class="btn btn-primary">
-                <i class="fas fa-plus-circle {% if LANGUAGE_CODE == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> {% trans "Make a New Reservation" %}
-            </a>
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">{% trans "My Reservations" %}</h1>
+                <p class="mb-0 text-white-50">{% trans "View and manage all your car reservations in one place." %}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'cars' %}" class="btn btn-light">
+                    <i class="fas fa-plus-circle {% if LANGUAGE_CODE == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                    {% trans "Make a New Reservation" %}
+                </a>
+            </div>
         </div>
     </div>
+</div>
 
+<div class="container py-4">
     {% if reservations %}
-    <div class="reservation-section">
-        <div class="table-responsive">
-            <table class="reservation-table">
-                <thead>
-                    <tr>
-                        <th>{% trans "RESERVATION ID" %}</th>
-                        <th>{% trans "CAR" %}</th>
-                        <th>{% trans "DATES" %}</th>
-                        <th>{% trans "DURATION" %}</th>
-                        <th>{% trans "TOTAL" %}</th>
-                        <th>{% trans "STATUS" %}</th>
-                        <th>{% trans "ACTIONS" %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reservation in reservations %}
-                    <tr class="reservation-item" data-expiry="{% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}{{ reservation.confirmation_expiry|date:'c' }}{% endif %}">
-                        <td data-label="{% trans 'RESERVATION ID' %}" class="fw-bold text-primary">
-                            <a href="{% url 'reservation_detail' reservation.id %}" class="text-decoration-none">
-                                #{{ reservation.id }}
-                            </a>
-                        </td>
-                        <td data-label="{% trans 'CAR' %}" class="car-info">
-                            {% if reservation.car.image %}
-                            <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.model }}" class="{% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}">
-                            {% else %}
-                            <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.model }}" class="{% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}">
-                            {% endif %}
-                            <div>
-                                <div class="fw-bold">{{ reservation.car.make }} {{ reservation.car.model }}</div>
-                                <small class="text-muted">{{ reservation.car.year }}</small>
-                            </div>
-                        </td>
-                        <td data-label="{% trans 'DATES' %}" class="date-cell">
-                            <div>{{ reservation.start_date|date:"d/m/Y" }}</div>
-                            <div class="text-muted">{% if is_english %}to{% else %}إلى{% endif %}</div>
-                            <div>{{ reservation.end_date|date:"d/m/Y" }}</div>
-                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
-                            <div class="countdown-container"></div>
-                            {% endif %}
-                        </td>
-                        <td data-label="{% trans 'DURATION' %}">
-                            <div class="fw-bold">{{ reservation.duration }}</div>
-                            <div class="text-muted">{% trans "day" %}{{ reservation.duration|pluralize }}</div>
-                        </td>
-                        <td data-label="{% trans 'TOTAL' %}" class="fw-bold">
-                            {{ reservation.total_cost }} {% trans "dinar" %}
-                        </td>
-                        <td data-label="{% trans 'STATUS' %}" class="reservation-status">
-                            {% if reservation.status == 'pending' %}
-                            <span class="status-badge status-pending">{% trans "Pending Payment" %}</span>
-                            {% elif reservation.status == 'confirmed' %}
-                            <span class="status-badge status-confirmed">{% trans "Confirmed" %}</span>
-                            {% elif reservation.status == 'cancelled' %}
-                            <span class="status-badge status-cancelled">{% trans "Cancelled" %}</span>
-                            {% elif reservation.status == 'paid' %}
-                            <span class="status-badge status-paid">{% trans "Paid" %}</span>
-                            {% endif %}
-                        </td>
-                        <td data-label="{% trans 'ACTIONS' %}" class="action-buttons">
-                            <div class="d-flex flex-column flex-sm-row justify-content-center align-items-center">
-                                <a href="{% url 'reservation_detail' reservation.id %}" class="btn btn-sm btn-outline-primary mb-2 mb-sm-0 {% if LANGUAGE_CODE == 'ar' %}ms-sm-2{% else %}me-sm-2{% endif %}">
-                                    <i class="fas fa-eye"></i> {% trans "View" %}
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="reservation-table">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Reservation ID" %}</th>
+                            <th>{% trans "Car" %}</th>
+                            <th>{% trans "Dates" %}</th>
+                            <th>{% trans "Duration" %}</th>
+                            <th>{% trans "Total" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in reservations %}
+                        <tr class="reservation-item" data-reservation-id="{{ reservation.id }}" 
+                            {% if reservation.confirmation_expiry %}data-expiry="{{ reservation.confirmation_expiry|date:'c' }}"{% endif %}>
+                            <td data-label="{% trans 'Reservation ID' %}">
+                                <a href="{% url 'reservation_detail' reservation.id %}" class="text-decoration-none">
+                                    #{{ reservation.reservation_number }}
                                 </a>
-
+                            </td>
+                            <td data-label="{% trans 'Car' %}" class="car-info">
+                                {% if reservation.car.image %}
+                                <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.model }}">
+                                {% else %}
+                                <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.model }}">
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold">{{ reservation.car.make }} {{ reservation.car.model }}</div>
+                                    <small class="text-muted">{{ reservation.car.year }}</small>
+                                </div>
+                            </td>
+                            <td data-label="{% trans 'Dates' %}">
+                                <div>{{ reservation.start_date|date:"Y/m/d" }}</div>
+                                <div class="text-muted">{% trans "to" %}</div>
+                                <div>{{ reservation.end_date|date:"Y/m/d" }}</div>
+                                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
+                                <div class="countdown-container"></div>
+                                {% endif %}
+                            </td>
+                            <td data-label="{% trans 'Duration' %}">
+                                {{ reservation.days }} {% trans "days" %}
+                            </td>
+                            <td data-label="{% trans 'Total' %}" class="fw-bold">
+                                {{ reservation.total_price }} {% trans "dinar" %}
+                            </td>
+                            <td data-label="{% trans 'Status' %}">
                                 {% if reservation.status == 'pending' %}
-                                <a href="{% url 'checkout' reservation.id %}" class="btn btn-sm btn-success mb-2 mb-sm-0 {% if LANGUAGE_CODE == 'ar' %}ms-sm-2{% else %}me-sm-2{% endif %}">
-                                    <i class="fas fa-credit-card"></i> {% trans "Pay" %}
-                                </a>
+                                <span class="status-badge status-pending">{% trans "Pending" %}</span>
+                                {% elif reservation.status == 'confirmed' %}
+                                <span class="status-badge status-confirmed">{% trans "Confirmed" %}</span>
+                                {% elif reservation.status == 'completed' %}
+                                <span class="status-badge status-completed">{% trans "Completed" %}</span>
+                                {% elif reservation.status == 'cancelled' %}
+                                <span class="status-badge status-cancelled">{% trans "Cancelled" %}</span>
                                 {% endif %}
+                            </td>
+                            <td data-label="{% trans 'Actions' %}">
+                                <div class="action-buttons">
+                                    <a href="{% url 'reservation_detail' reservation.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> {% trans "View" %}
+                                    </a>
 
-                                {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
-                                <a href="{% url 'cancel_reservation' reservation.id %}" class="btn btn-sm btn-outline-danger">
-                                    <i class="fas fa-times"></i> {% trans "Cancel" %}
-                                </a>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                                    {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-credit-card"></i> {% trans "Pay" %}
+                                    </a>
+                                    {% endif %}
+
+                                    {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
+                                    <a href="{% url 'cancel_reservation' reservation.id %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-times"></i> {% trans "Cancel" %}
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     {% else %}
-    <div class="alert alert-info">
-        <h4><i class="fas fa-info-circle {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i> {% trans "No Reservations Found" %}</h4>
-        <p class="mb-0">{% trans "You haven't made any reservations yet. Start by browsing our car collection and make your first reservation today!" %}</p>
-    </div>
-    <div class="text-center mt-4">
-        <a href="{% url 'cars' %}" class="btn btn-lg btn-primary">
-            <i class="fas fa-car {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i> {% trans "Browse Our Cars" %}
-        </a>
+    <div class="empty-state">
+        <div class="text-center">
+            <img src="{% static 'images/car-placeholder.svg' %}" alt="No reservations" style="width: 120px; margin-bottom: 2rem;">
+            <h4>{% trans "No Reservations Found" %}</h4>
+            <p class="text-muted mb-4">{% trans "You haven't made any reservations yet. Start by browsing our car collection and make your first reservation today!" %}</p>
+            <a href="{% url 'cars' %}" class="btn btn-primary">
+                <i class="fas fa-car {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                {% trans "Browse Our Cars" %}
+            </a>
+        </div>
     </div>
     {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- تحميل ملف العد التنازلي المحدث -->
-<script src="{% static 'js/countdown-timer-fix.js' %}?v={{ now|date:'U' }}"></script>
+<script src="{% static 'js/countdown-timer-fix.js' %}"></script>
 <script>
-    // إضافة معرفات للحجوزات لتسهيل التعامل معها في JavaScript
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('تم تحميل صفحة الحجوزات وتشغيل الأكواد اللازمة');
-        
-        // إضافة معرفات للصفوف
-        const rows = document.querySelectorAll('.reservation-item, tr');
-        rows.forEach(function(row, index) {
-            if (!row.id) {
-                const reservationId = row.querySelector('a[href*="reservation_detail"]');
-                if (reservationId) {
-                    const id = reservationId.textContent.trim().replace('#', '');
-                    row.id = 'reservation-' + id;
-                } else {
-                    row.id = 'reservation-row-' + (index + 1);
-                }
-            }
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize countdown timers for all reservations
+    const reservations = document.querySelectorAll('.reservation-item');
+    reservations.forEach(function(reservation) {
+        const expiryDate = reservation.dataset.expiry;
+        if (expiryDate) {
+            initializeCountdown(reservation, new Date(expiryDate));
+        }
     });
+});
+
+function initializeCountdown(reservationElement, expiryDate) {
+    const countdownContainer = reservationElement.querySelector('.countdown-container');
+    if (!countdownContainer) return;
+
+    function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = expiryDate - now;
+
+        if (distance < 0) {
+            countdownContainer.innerHTML = `<div class="text-danger">
+                <i class="fas fa-exclamation-triangle"></i> {% trans "Payment deadline expired" %}
+            </div>`;
+            return;
+        }
+
+        const hours = Math.floor(distance / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        let colorClass = 'text-success';
+        if (hours < 2) colorClass = 'text-warning';
+        if (hours < 1) colorClass = 'text-danger';
+
+        countdownContainer.innerHTML = `
+            <div class="${colorClass}">
+                <i class="fas fa-clock"></i> {% trans "Payment deadline" %}: 
+                ${hours}h ${minutes}m ${seconds}s
+            </div>
+        `;
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+}
 </script>
 {% endblock %}
