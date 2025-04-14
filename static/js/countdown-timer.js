@@ -7,35 +7,47 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("تم العثور على " + reservationItems.length + " حجز");
 
     reservationItems.forEach(function(item) {
-        // التحقق من وجود سمة تاريخ انتهاء الصلاحية
-        const expiryDateAttr = item.getAttribute('data-expiry');
+        // التحقق من حالة الحجز عن طريق البحث عن عنصر الحالة
         const statusElement = item.querySelector('.reservation-status');
         
-        // التحقق من أن الحجز مؤكد من خلال فحص عنصر الحالة
-        if (statusElement && statusElement.textContent.includes('تم التأكيد') && expiryDateAttr) {
-            // إنشاء عنصر العداد التنازلي إذا لم يكن موجودًا
-            let countdownElement = item.querySelector('.countdown-container');
-            if (!countdownElement) {
-                countdownElement = document.createElement('div');
-                countdownElement.className = 'countdown-container';
-                const dateCell = item.querySelector('.date-cell');
-                if (dateCell) {
-                    dateCell.appendChild(countdownElement);
-                }
-            }
-
-            // تحويل تاريخ الانتهاء إلى كائن Date
-            const expiryDate = new Date(expiryDateAttr);
+        if (statusElement && statusElement.textContent.includes('تم التأكيد')) {
+            // الحصول على تاريخ انتهاء صلاحية تأكيد الحجز
+            const expiryDateAttr = item.getAttribute('data-expiry');
             
-            if (!isNaN(expiryDate.getTime())) {
-                // تحديث العداد التنازلي كل ثانية
-                updateCountdown(countdownElement, expiryDate);
-                const interval = setInterval(function() {
-                    updateCountdown(countdownElement, expiryDate);
-                }, 1000);
+            // التأكد من أن سمة تاريخ الانتهاء موجودة وليست فارغة
+            if (expiryDateAttr && expiryDateAttr !== 'None' && expiryDateAttr !== '') {
+                console.log("وجدت حجز مؤكد مع تاريخ انتهاء: " + expiryDateAttr);
                 
-                // حفظ معرف الفاصل الزمني في العنصر لتنظيفه لاحقًا
-                item.setAttribute('data-interval-id', interval);
+                // إنشاء عنصر العداد التنازلي
+                let countdownElement = item.querySelector('.countdown-container');
+                if (!countdownElement) {
+                    countdownElement = document.createElement('div');
+                    countdownElement.className = 'countdown-container mt-2';
+                    const dateCell = item.querySelector('.date-cell');
+                    if (dateCell) {
+                        dateCell.appendChild(countdownElement);
+                    }
+                }
+
+                // تحويل تاريخ الانتهاء إلى كائن Date
+                const expiryDate = new Date(expiryDateAttr);
+                
+                if (!isNaN(expiryDate.getTime())) {
+                    // تحديث العداد التنازلي مباشرة
+                    updateCountdown(countdownElement, expiryDate);
+                    
+                    // ثم تحديثه كل ثانية
+                    const interval = setInterval(function() {
+                        updateCountdown(countdownElement, expiryDate);
+                    }, 1000);
+                    
+                    // حفظ معرف الفاصل الزمني للتنظيف لاحقاً
+                    item.setAttribute('data-interval-id', interval);
+                } else {
+                    console.error("تاريخ انتهاء الصلاحية غير صالح: ", expiryDateAttr);
+                }
+            } else {
+                console.log("حجز مؤكد بدون تاريخ انتهاء صلاحية");
             }
         }
     });
@@ -71,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
             colorClass = 'text-warning';
         }
 
-        element.innerHTML = `<div class="mt-2 text-center"><span class="${colorClass} fw-bold">وقت الدفع المتبقي: ${countdownText}</span></div>`;
+        element.innerHTML = `<div class="text-center"><span class="${colorClass} fw-bold">وقت الدفع المتبقي: ${countdownText}</span></div>`;
     }
 
     function padZero(num) {

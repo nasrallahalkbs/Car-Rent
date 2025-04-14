@@ -102,6 +102,14 @@
         font-weight: bold;
         margin-top: 5px;
     }
+    
+    .countdown-container {
+        min-height: 30px;
+    }
+    
+    .reservation-status .status-confirmed {
+        position: relative;
+    }
 
     /* For mobile view */
     @media (max-width: 767px) {
@@ -299,7 +307,7 @@
                 </thead>
                 <tbody>
                     {% for reservation in reservations %}
-                    <tr class="reservation-item" data-expiry="{% if reservation.status == 'confirmed' and reservation.confirmation_expiry %}{{ reservation.confirmation_expiry|date:'c' }}{% endif %}">
+                    <tr class="reservation-item" data-expiry="{{ reservation.confirmation_expiry|date:'c' }}">
                         <td data-label="{% trans 'RESERVATION ID' %}" class="fw-bold text-primary">
                             <a href="{% url 'reservation_detail' reservation.id %}" class="text-decoration-none">
                                 #{{ reservation.id }}
@@ -321,7 +329,7 @@
                             <div class="text-muted">إلى</div>
                             <div>{{ reservation.end_date|date:"d/m/Y" }}</div>
                             {% if reservation.status == 'confirmed' and reservation.confirmation_expiry %}
-                            <div class="countdown-container"></div>
+                            <div class="countdown-container mt-2 border-top pt-2"></div>
                             {% endif %}
                         </td>
                         <td data-label="{% trans 'DURATION' %}">
