@@ -328,9 +328,9 @@
                                     <div>
                                         <div class="date-range fw-medium">
                                             {% if is_english %}
-                                                {{ reservation.start_date|date:"m/d/Y" }} - {{ reservation.end_date|date:"m/d/Y" }}
+                                                {{ reservation.start_date|date:"d/m/Y" }} - {{ reservation.end_date|date:"d/m/Y" }}
                                             {% else %}
-                                                {{ reservation.start_date|date:"Y/m/d" }} - {{ reservation.end_date|date:"Y/m/d" }}
+                                                {{ reservation.start_date|date:"d/m/Y" }} - {{ reservation.end_date|date:"d/m/Y" }}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -372,19 +372,16 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="d-flex flex-column align-items-center">
-                                    <div class="action-buttons mb-2">
-                                        <a href="{% url 'reservation_detail' reservation_id=reservation.id %}" class="btn btn-outline-primary btn-sm" data-bs-toggle="tooltip" title="{% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}">
-                                            <i class="fas fa-eye me-1"></i> {% if is_english %}View{% else %}عرض{% endif %}
-                                        </a>
-
-                                        {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and not reservation.payment_date %}
-                                        <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-success btn-sm ms-1" data-bs-toggle="tooltip" title="{% if is_english %}Make Payment{% else %}إجراء الدفع{% endif %}">
-                                            <i class="fas fa-credit-card me-1"></i> {% if is_english %}Pay{% else %}ادفع{% endif %}
-                                        </a>
-                                        {% endif %}
-                                    </div>
-                                    <small class="text-muted">{{ reservation.created_at|date:"Y/m/d" }}</small>
+                                <div class="action-buttons">
+                                    <a href="{% url 'reservation_detail' reservation_id=reservation.id %}" class="btn btn-action btn-view" data-bs-toggle="tooltip" title="{% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-action btn-pay mx-1" data-bs-toggle="tooltip" title="{% if is_english %}Make Payment{% else %}إجراء الدفع{% endif %}">
+                                        <i class="fas fa-credit-card"></i>
+                                    </a>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
