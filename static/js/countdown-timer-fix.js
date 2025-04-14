@@ -7,7 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // إعداد العداد التنازلي لكل حجز
     reservationRows.forEach(function(row) {
-        initializeCountdown(row);
+        // التحقق من حالة الدفع قبل إنشاء العداد التنازلي
+        const isPaid = checkIfReservationIsPaid(row);
+        if (!isPaid) {
+            initializeCountdown(row);
+        }
     });
 
     // البحث عن عناصر العد التنازلي المستقلة
@@ -15,16 +19,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // إعداد العداد التنازلي لكل عنصر مستقل
     countdownContainers.forEach(function(container) {
-        if (!container.hasAttribute('data-initialized')) {
+        // التحقق مما إذا كان الحجز مدفوعاً قبل إنشاء العداد التنازلي
+        const row = container.closest('.reservation-item, tr');
+        const isPaid = row ? checkIfReservationIsPaid(row) : false;
+
+        if (!isPaid && !container.hasAttribute('data-initialized')) {
             const expiryDateStr = container.getAttribute('data-expiry');
             if (expiryDateStr) {
                 const expiryDate = new Date(expiryDateStr);
                 startCountdown(container, expiryDate);
                 container.setAttribute('data-initialized', 'true');
             }
+        } else if (isPaid) {
+            // إذا كان الحجز مدفوعاً، نحذف العداد التنازلي
+            container.remove();
         }
     });
 });
+
+/**
+ * التحقق مما إذا كان الحجز مدفوعاً
+ * @param {HTMLElement} row - صف الحجز
+ * @returns {boolean} - يعود true إذا كان الحجز مدفوعاً، وإلا يعود false
+ */
+function checkIfReservationIsPaid(row) {
+    // البحث عن عنصر الحالة
+    const statusBadge = row.querySelector('.status-paid, .status-badge.status-paid');
+    
+    // التحقق من وجود بطاقة "مدفوع"
+    if (statusBadge) {
+        return true;
+    }
+    
+    // البحث عن نص "مدفوع" في خلية الحالة
+    const statusText = row.textContent || '';
+    const hasPaidStatus = statusText.includes('مدفوع') || statusText.includes('Paid');
+    
+    // البحث عن زر "مدفوع" في صف الحجز
+    const paidButton = row.querySelector('a:contains("مدفوع"), a:contains("Paid")');
+    
+    return hasPaidStatus || (paidButton !== null);
+}
 
 /**
  * تهيئة العداد التنازلي لصف حجز معين
@@ -82,6 +117,12 @@ function initializeCountdown(row) {
 function startCountdown(countdownElement, expiryDate) {
     // دالة لتحديث العد التنازلي
     function updateCountdown() {
+        // التحقق مما إذا كان العنصر ما زال موجوداً في DOM
+        if (!document.contains(countdownElement)) {
+            clearInterval(countdownInterval);
+            return;
+        }
+
         // الوقت الحالي
         const now = new Date().getTime();
 
@@ -92,9 +133,9 @@ function startCountdown(countdownElement, expiryDate) {
         if (timeRemaining <= 0) {
             // عرض رسالة انتهاء الصلاحية
             countdownElement.innerHTML = `
-                <div class="countdown-expired">
+                <div class="alert alert-danger p-2 mb-0 text-center">
                     <i class="fas fa-exclamation-triangle ms-1"></i>
-                    انتهت مدة الدفع
+                    <small>انتهت مدة الدفع</small>
                 </div>
             `;
 
@@ -103,27 +144,37 @@ function startCountdown(countdownElement, expiryDate) {
             return;
         }
 
-        // حساب الساعات والدقائق والثواني المتبقية
-        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+        // حساب الأيام والساعات والدقائق والثواني المتبقية
+        const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
 
-        // تحديد لون النص بناءً على الوقت المتبقي
-        let colorClass = 'countdown-normal';
+        // تحديد لون النص وفئة التنبيه بناءً على الوقت المتبقي
+        let alertClass = 'alert-success';
+        let textClass = 'text-success';
 
-        if (hours < 2) {
-            colorClass = 'countdown-warning';
+        if (timeRemaining < 3600000) { // أقل من ساعة
+            alertClass = 'alert-danger';
+            textClass = 'text-danger';
+        } else if (timeRemaining < 86400000) { // أقل من يوم
+            alertClass = 'alert-warning';
+            textClass = 'text-warning';
         }
 
-        if (hours < 1) {
-            colorClass = 'countdown-expired';
+        // إنشاء نص العد التنازلي بتنسيق محسن
+        let timeDisplay = '';
+        if (days > 0) {
+            timeDisplay += `<span class="fw-bold">${days}</span> يوم `;
         }
+        
+        timeDisplay += `<span class="fw-bold">${padZero(hours)}</span>:<span class="fw-bold">${padZero(minutes)}</span>:<span class="fw-bold">${padZero(seconds)}</span>`;
 
-        // تحديث نص العد التنازلي
+        // تحديث نص العد التنازلي بتصميم محسن
         countdownElement.innerHTML = `
-            <div class="${colorClass}">
-                <i class="fas fa-clock ms-1"></i>
-                ينتهي الدفع خلال: ${hours} ساعة ${minutes} دقيقة ${seconds} ثانية
+            <div class="alert ${alertClass} p-2 mb-0 text-center">
+                <i class="fas fa-clock me-1 ${textClass}"></i>
+                <small>وقت الدفع المتبقي: ${timeDisplay}</small>
             </div>
         `;
     }
@@ -136,4 +187,13 @@ function startCountdown(countdownElement, expiryDate) {
 
     // تخزين معرف الفاصل الزمني في سمة العنصر للرجوع إليه لاحقًا
     countdownElement.setAttribute('data-interval-id', countdownInterval);
+}
+
+/**
+ * إضافة أصفار للأرقام الأصغر من 10
+ * @param {number} num - الرقم المراد تنسيقه
+ * @returns {string} - الرقم مع إضافة صفر في البداية إذا كان أقل من 10
+ */
+function padZero(num) {
+    return num.toString().padStart(2, '0');
 }
