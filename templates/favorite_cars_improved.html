@@ -753,11 +753,13 @@
                 <h3>{% if is_english %}No Favorite Cars Yet{% else %}لا توجد سيارات مفضلة بعد{% endif %}</h3>
                 <p>
                     {% if is_english %}
-                    Explore our diverse collection and add cars to your favorites to create your personalized selection.
-                    Save your preferred vehicles here for quick access and easy booking.
+                    <span class="d-block mb-2">Explore our diverse collection and add cars to your favorites to create your personalized selection.</span>
+                    <span class="d-block mb-2">To add cars to favorites, look for the <i class="fas fa-heart text-danger"></i> icon on any car you like.</span>
+                    <span class="d-block">Save your preferred vehicles here for quick access and easy booking.</span>
                     {% else %}
-                    استكشف مجموعتنا المتنوعة وأضف السيارات إلى المفضلة لإنشاء مجموعتك الشخصية.
-                    احفظ السيارات المفضلة لديك هنا للوصول السريع وسهولة الحجز.
+                    <span class="d-block mb-2">استكشف مجموعتنا المتنوعة وأضف السيارات إلى المفضلة لإنشاء مجموعتك الشخصية.</span>
+                    <span class="d-block mb-2">لإضافة سيارات إلى المفضلة، ابحث عن أيقونة <i class="fas fa-heart text-danger"></i> على أي سيارة تعجبك.</span>
+                    <span class="d-block">احفظ السيارات المفضلة لديك هنا للوصول السريع وسهولة الحجز.</span>
                     {% endif %}
                 </p>
                 <a href="{% url 'cars' %}" class="btn-browse">
@@ -778,6 +780,37 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // تأثير دخول صفحة المفضلة وترحيب
+        const favoritesHeader = document.querySelector('.favorites-header');
+        if (favoritesHeader) {
+            // تأثير ظهور هيدر الصفحة
+            setTimeout(() => {
+                favoritesHeader.style.opacity = '0';
+                favoritesHeader.style.transform = 'translateY(-30px)';
+                favoritesHeader.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                
+                setTimeout(() => {
+                    favoritesHeader.style.opacity = '1';
+                    favoritesHeader.style.transform = 'translateY(0)';
+                }, 100);
+            }, 50);
+        }
+        
+        const emptyFavorites = document.querySelector('.empty-favorites');
+        if (emptyFavorites) {
+            // تأثير ظهور رسالة الصفحة الفارغة
+            setTimeout(() => {
+                emptyFavorites.style.opacity = '0';
+                emptyFavorites.style.transform = 'scale(0.9) translateY(30px)';
+                emptyFavorites.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                
+                setTimeout(() => {
+                    emptyFavorites.style.opacity = '1';
+                    emptyFavorites.style.transform = 'scale(1) translateY(0)';
+                }, 200);
+            }, 100);
+        }
+        
         // تأثيرات الظهور أثناء التمرير
         const carCards = document.querySelectorAll('.car-card');
         
@@ -812,10 +845,36 @@
             // تأثير الظل عند التحويم
             card.addEventListener('mouseover', function() {
                 this.style.boxShadow = '0 20px 40px rgba(58, 134, 255, 0.25)';
+                
+                // تأثير ارتداد أكثر تفاعلية للسعر
+                const priceElement = this.querySelector('.car-price');
+                if (priceElement) {
+                    priceElement.style.transform = 'scale(1.05)';
+                    priceElement.style.boxShadow = '0 12px 25px rgba(255, 71, 87, 0.35)';
+                }
             });
             
             card.addEventListener('mouseout', function() {
                 this.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+                
+                // إعادة السعر إلى حجمه الطبيعي
+                const priceElement = this.querySelector('.car-price');
+                if (priceElement) {
+                    priceElement.style.transform = '';
+                    priceElement.style.boxShadow = '';
+                }
+            });
+        });
+        
+        // تأثير تحسين للازرار
+        const actionButtons = document.querySelectorAll('.btn-car-action');
+        actionButtons.forEach(button => {
+            button.addEventListener('mouseover', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            button.addEventListener('mouseout', function() {
+                this.style.transform = '';
             });
         });
     });
