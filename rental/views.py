@@ -659,7 +659,18 @@ def my_reservations(request):
     pending_count = reservations_query.filter(status='pending').count()
     confirmed_count = reservations_query.filter(status='confirmed').count()
     completed_count = reservations_query.filter(status='completed').count()
-    logger.info(f"User {request.user.id} reservations - Pending: {pending_count}, Confirmed: {confirmed_count}, Completed: {completed_count}")
+    expired_count = reservations_query.filter(payment_status='expired').count()
+    
+    # تسجيل كافة الحجوزات لهذا المستخدم للتشخيص
+    all_user_reservations = Reservation.objects.filter(user=request.user)
+    all_count = all_user_reservations.count()
+    
+    logger.info(f"-------- تشخيص عرض الحجوزات --------")
+    logger.info(f"User {request.user.id} reservations - Total: {all_count}, Pending: {pending_count}, Confirmed: {confirmed_count}, Completed: {completed_count}, Expired Payment: {expired_count}")
+    
+    # عرض جميع حجوزات المستخدم للتشخيص
+    for res in all_user_reservations:
+        logger.info(f"Reservation ID: {res.id}, Status: {res.status}, Payment: {res.payment_status}, Created: {res.created_at}")
 
     # استخراج معايير البحث من الاستعلام
     search_query = request.GET.get('search', '')
