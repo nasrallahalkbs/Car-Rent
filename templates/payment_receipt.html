@@ -1,0 +1,151 @@
+
+{% extends 'layout_django.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Payment Receipt" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow border-0">
+                <div class="card-header bg-white py-3">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h4 class="mb-0">{% trans "Payment Receipt" %}</h4>
+                        </div>
+                        <div class="col text-end">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                                <i class="fas fa-print me-1"></i> {% trans "Print" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Receipt Header -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-1">{% trans "Car Rental Service" %}</h5>
+                            <p class="mb-0">info@car-rental.example.com</p>
+                            <p class="mb-0">+1 234 567 890</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h5 class="text-primary mb-1">{% trans "Receipt #" %}{{ reservation.id }}</h5>
+                            <p class="mb-0">{% trans "Date:" %} {% if is_english %}{{ current_datetime|date:"m/d/Y h:i A" }}{% else %}{{ current_datetime|date:"Y/m/d H:i" }}{% endif %}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Customer Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">{% trans "Customer Information" %}</h6>
+                            <p class="mb-1"><strong>{% trans "Name:" %}</strong> {{ reservation.user.get_full_name|default:reservation.user.username }}</p>
+                            <p class="mb-1"><strong>{% trans "Email:" %}</strong> {{ reservation.user.email }}</p>
+                            {% if reservation.full_name %}
+                            <p class="mb-0"><strong>{% trans "Full Name:" %}</strong> {{ reservation.full_name }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">{% trans "Reservation Details" %}</h6>
+                            <p class="mb-1"><strong>{% trans "Reservation No:" %}</strong> {{ reservation.reservation_number|default:reservation.id }}</p>
+                            <p class="mb-1"><strong>{% trans "Status:" %}</strong> <span class="badge bg-success">{{ reservation.get_status_display }}</span></p>
+                            <p class="mb-0"><strong>{% trans "Payment Status:" %}</strong> <span class="badge bg-success">{{ reservation.get_payment_status_display }}</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Car Details -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">{% trans "Rental Details" %}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>{% trans "Vehicle" %}</th>
+                                        <th>{% trans "Pick-up Date" %}</th>
+                                        <th>{% trans "Return Date" %}</th>
+                                        <th>{% trans "Days" %}</th>
+                                        <th>{% trans "Daily Rate" %}</th>
+                                        <th>{% trans "Total" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</td>
+                                        <td>{% if is_english %}{{ reservation.start_date|date:"m/d/Y" }}{% else %}{{ reservation.start_date|date:"Y/m/d" }}{% endif %}</td>
+                                        <td>{% if is_english %}{{ reservation.end_date|date:"m/d/Y" }}{% else %}{{ reservation.end_date|date:"Y/m/d" }}{% endif %}</td>
+                                        <td>{{ reservation.days }}</td>
+                                        <td>{{ reservation.car.daily_rate }} {% trans "JOD" %}</td>
+                                        <td>{{ reservation.total_price }} {% trans "JOD" %}</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="5" class="text-end"><strong>{% trans "Total Amount" %}</strong></td>
+                                        <td><strong>{{ reservation.total_price }} {% trans "JOD" %}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Information -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">{% trans "Payment Information" %}</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>{% trans "Payment Method:" %}</strong> 
+                                    {% if reservation.payment_method == 'credit_card' %}{% trans "Credit/Debit Card" %}
+                                    {% elif reservation.payment_method == 'paypal' %}{% trans "PayPal" %}
+                                    {% elif reservation.payment_method == 'cash' %}{% trans "Cash" %}
+                                    {% elif reservation.payment_method == 'bank_transfer' %}{% trans "Bank Transfer" %}
+                                    {% else %}{{ reservation.payment_method }}{% endif %}
+                                </p>
+                                {% if reservation.payment_reference %}
+                                <p class="mb-1"><strong>{% trans "Payment Reference:" %}</strong> {{ reservation.payment_reference }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {% if reservation.payment_date %}
+                                <p class="mb-1"><strong>{% trans "Payment Date:" %}</strong> 
+                                    {% if is_english %}{{ reservation.payment_date|date:"m/d/Y h:i A" }}{% else %}{{ reservation.payment_date|date:"Y/m/d H:i" }}{% endif %}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer Note -->
+                    <div class="border-top pt-4 mt-4">
+                        <p class="text-muted mb-0 small">{% trans "This is an automated receipt generated by our system. For any inquiries regarding this payment, please contact our customer service." %}</p>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0 py-3 text-center">
+                    <a href="{% url 'reservation_detail' reservation_id=reservation.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "Back to Reservation" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .container {
+        width: 100%;
+        max-width: 100%;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .card-footer, .btn, header, footer, nav {
+        display: none !important;
+    }
+    body {
+        background-color: #fff !important;
+    }
+}
+</style>
+{% endblock %}
