@@ -615,8 +615,15 @@ def my_reservations(request):
     # الحصول على الوقت الحالي (مطلوب للعداد التنازلي)
     now = timezone.now()
 
-    # الحصول على كافة حجوزات المستخدم الحالي
+    # الحصول على كافة حجوزات المستخدم الحالي (بما في ذلك الملغية)
     reservations_query = Reservation.objects.filter(user=request.user)
+    
+    # تسجيل عدد الحجوزات حسب الحالة للتشخيص
+    pending_count = reservations_query.filter(status='pending').count()
+    confirmed_count = reservations_query.filter(status='confirmed').count()
+    completed_count = reservations_query.filter(status='completed').count()
+    cancelled_count = reservations_query.filter(status='cancelled').count()
+    logger.info(f"User {request.user.id} reservations - Pending: {pending_count}, Confirmed: {confirmed_count}, Completed: {completed_count}, Cancelled: {cancelled_count}")
 
     # استخراج معايير البحث من الاستعلام
     search_query = request.GET.get('search', '')
@@ -631,7 +638,8 @@ def my_reservations(request):
             Q(car__make__icontains=search_query) | 
             Q(car__model__icontains=search_query) |
             Q(car__license_plate__icontains=search_query) |
-            Q(id__icontains=search_query)
+            Q(id__icontains=search_query) |
+            Q(reservation_number__icontains=search_query)
         )
 
     if status_filter:
@@ -789,8 +797,27 @@ def cancel_reservation(request, reservation_id):
     )
 
     if request.method == 'POST':
+        # تغيير حالة الحجز إلى ملغي مع الاحتفاظ بالسجل
         reservation.status = 'cancelled'
+        
+        # استعادة حالة السيارة إلى "متاحة" إذا كانت محجوزة بواسطة هذا الحجز
+        car = reservation.car
+        if not car.is_available:
+            car.is_available = True
+            car.save()
+            logger.info(f"Car {car.id} made available after cancellation of reservation {reservation.id}")
+        
+        # إضافة ملاحظة عن الإلغاء
+        notes = reservation.notes or ""
+        cancel_note = f"\nتم إلغاء الحجز من قبل المستخدم بتاريخ {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        if notes:
+            notes += cancel_note
+        else:
+            notes = cancel_note
+        reservation.notes = notes
+        
         reservation.save()
+        logger.info(f"Reservation {reservation.id} cancelled by user {request.user.id}")
 
         messages.success(request, "تم إلغاء الحجز بنجاح!")
         return redirect('my_reservations')
