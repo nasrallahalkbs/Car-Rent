@@ -34,67 +34,6 @@
     --transition-normal: all 0.3s ease;
   }
 
-  /* تصميم متقدم للتاب نافيجيشن */
-  .profile-tabs {
-    border-bottom: none;
-    margin-bottom: 30px;
-    display: flex;
-    justify-content: center;
-  }
-
-  .profile-tabs .nav-item {
-    margin: 0 10px;
-  }
-
-  .profile-tabs .nav-link {
-    border: none;
-    padding: 12px 20px;
-    border-radius: var(--border-radius-md);
-    font-weight: 600;
-    color: var(--text-muted);
-    background-color: white;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-    transition: var(--transition-normal);
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-  }
-
-  .profile-tabs .nav-link::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(to right, var(--primary-color), #4dabf7);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s ease;
-    z-index: -1;
-  }
-
-  .profile-tabs .nav-link:hover::before,
-  .profile-tabs .nav-link.active::before {
-    transform: scaleX(1);
-  }
-
-  .profile-tabs .nav-link:hover {
-    color: var(--primary-color);
-    transform: translateY(-3px);
-  }
-
-  .profile-tabs .nav-link.active {
-    color: var(--primary-color);
-    background-color: white;
-    box-shadow: 0 8px 15px rgba(58, 134, 255, 0.15);
-    transform: translateY(-3px);
-  }
-
-  .profile-tabs .nav-link i {
-    margin-right: 8px;
-  }
-
   /* إطار الملف الشخصي */
   .profile-wrapper {
     background: linear-gradient(135deg, var(--light-bg) 0%, #e9ecef 100%);
@@ -310,27 +249,9 @@
     .profile-wrapper {
       padding: 20px;
     }
-    
-    .profile-tabs .nav-item {
-      margin: 0 5px;
-    }
-    
-    .profile-tabs .nav-link {
-      padding: 10px 15px;
-      font-size: 0.9rem;
-    }
   }
 
   @media (max-width: 768px) {
-    .profile-tabs {
-      flex-wrap: wrap;
-    }
-    
-    .profile-tabs .nav-item {
-      margin: 5px;
-      flex: 1 1 calc(50% - 10px);
-    }
-    
     .profile-avatar {
       width: 100px;
       height: 100px;
@@ -338,23 +259,20 @@
   }
 
   /* إضافات وتحسينات لنموذج تغيير كلمة المرور */
-  .password-form .form-header {
+  .section-header {
     margin-bottom: 25px;
     padding-bottom: 15px;
     border-bottom: 1px solid #e9ecef;
-  }
-
-  .password-form .form-header i {
-    color: var(--primary-color);
-    margin-right: 10px;
-  }
-
-  .password-form .form-header h4 {
     font-weight: 700;
     color: var(--dark-color);
-    margin: 0;
-    display: inline-flex;
+    display: flex;
     align-items: center;
+  }
+
+  .section-header i {
+    color: var(--primary-color);
+    margin-right: 10px;
+    font-size: 1.2rem;
   }
 
   .password-requirements {
@@ -409,190 +327,165 @@
     </div>
   </div>
 
-  <!-- أقسام الصفحة -->
-  <ul class="nav nav-pills profile-tabs animate-slide-up" id="profileTab" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal-tab-pane" type="button" role="tab" aria-controls="personal-tab-pane" aria-selected="true">
-        <i class="fas fa-user {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
-        {% if is_english %}Personal Info{% else %}المعلومات الشخصية{% endif %}
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password-tab-pane" type="button" role="tab" aria-controls="password-tab-pane" aria-selected="false">
-        <i class="fas fa-key {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
-        {% if is_english %}Change Password{% else %}تغيير كلمة المرور{% endif %}
-      </button>
-    </li>
-  </ul>
-
-  <div class="tab-content" id="profileTabContent">
-    <!-- قسم المعلومات الشخصية -->
-    <div class="tab-pane fade show active animate-fade-in" id="personal-tab-pane" role="tabpanel" aria-labelledby="personal-tab" tabindex="0">
-      <div class="row">
-        <div class="col-lg-4 mb-4">
-          <div class="profile-card">
-            <div class="text-center py-5">
-              <div class="profile-avatar mb-4">
-                <i class="fas fa-user"></i>
-              </div>
-              <h3 class="h4 mb-1">{{ user.get_full_name|default:user.username }}</h3>
-              <p class="text-muted mb-3">{{ user.email }}</p>
-              <div class="d-flex justify-content-center align-items-center">
-                <span class="badge bg-primary rounded-pill">
-                  <i class="fas fa-calendar-alt {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                  {% if is_english %}
-                    Member since {{ user.date_joined|date:"M d, Y" }}
-                  {% else %}
-                    عضو منذ {{ user.date_joined|date:"Y/m/d" }}
-                  {% endif %}
-                </span>
-              </div>
-            </div>
+  <div class="row">
+    <!-- قسم معلومات المستخدم الأساسية -->
+    <div class="col-lg-4 mb-4">
+      <div class="profile-card">
+        <div class="text-center py-5">
+          <div class="profile-avatar mb-4">
+            <i class="fas fa-user"></i>
           </div>
-        </div>
-
-        <div class="col-lg-8">
-          <div class="info-card">
-            <div class="info-card-header">
-              <h3 class="info-card-title">
-                <i class="fas fa-id-card {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
-                {% if is_english %}
-                  Update Profile
-                {% else %}
-                  تحديث الملف الشخصي
-                {% endif %}
-              </h3>
-            </div>
-            <div class="info-card-body">
-              <form method="post" class="profile-form">
-                {% csrf_token %}
-                <div class="mb-4">
-                  <label for="id_username" class="form-label">
-                    {% if is_english %}Username{% else %}اسم المستخدم{% endif %}
-                  </label>
-                  <input type="text" name="username" value="{{ user.username }}" class="form-control" id="id_username" readonly>
-                  <div class="form-text text-muted small">
-                    {% if is_english %}
-                      Username cannot be changed.
-                    {% else %}
-                      لا يمكن تغيير اسم المستخدم.
-                    {% endif %}
-                  </div>
-                </div>
-                
-                <div class="row mb-4">
-                  <div class="col-md-6">
-                    <label for="id_first_name" class="form-label">
-                      {% if is_english %}First Name{% else %}الاسم الأول{% endif %}
-                    </label>
-                    <input type="text" name="first_name" value="{{ user.first_name }}" class="form-control" id="id_first_name">
-                  </div>
-                  <div class="col-md-6">
-                    <label for="id_last_name" class="form-label">
-                      {% if is_english %}Last Name{% else %}اسم العائلة{% endif %}
-                    </label>
-                    <input type="text" name="last_name" value="{{ user.last_name }}" class="form-control" id="id_last_name">
-                  </div>
-                </div>
-                
-                <div class="mb-4">
-                  <label for="id_email" class="form-label">
-                    {% if is_english %}Email{% else %}البريد الإلكتروني{% endif %}
-                  </label>
-                  <input type="email" name="email" value="{{ user.email }}" class="form-control" id="id_email">
-                </div>
-                
-                <div class="mb-4">
-                  <label for="id_phone" class="form-label">
-                    {% if is_english %}Phone Number{% else %}رقم الهاتف{% endif %}
-                  </label>
-                  <input type="text" name="phone" value="{{ user.phone }}" class="form-control" id="id_phone">
-                </div>
-                
-                <div class="d-grid mt-4">
-                  <button type="submit" class="submit-btn">
-                    <i class="fas fa-save {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
-                    {% if is_english %}Save Changes{% else %}حفظ التغييرات{% endif %}
-                  </button>
-                </div>
-              </form>
-            </div>
+          <h3 class="h4 mb-1">{{ user.get_full_name|default:user.username }}</h3>
+          <p class="text-muted mb-3">{{ user.email }}</p>
+          <div class="d-flex justify-content-center align-items-center">
+            <span class="badge bg-primary rounded-pill">
+              <i class="fas fa-calendar-alt {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
+              {% if is_english %}
+                Member since {{ user.date_joined|date:"M d, Y" }}
+              {% else %}
+                عضو منذ {{ user.date_joined|date:"Y/m/d" }}
+              {% endif %}
+            </span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- قسم تغيير كلمة المرور -->
-    <div class="tab-pane fade animate-fade-in" id="password-tab-pane" role="tabpanel" aria-labelledby="password-tab" tabindex="0">
-      <div class="row">
-        <div class="col-lg-8 mx-auto">
-          <div class="info-card">
-            <div class="info-card-header">
-              <h3 class="info-card-title">
-                <i class="fas fa-lock {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
+    <!-- قسم تحديث المعلومات وتغيير كلمة المرور -->
+    <div class="col-lg-8">
+      <div class="info-card">
+        <div class="info-card-header">
+          <h3 class="info-card-title">
+            <i class="fas fa-id-card {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
+            {% if is_english %}
+              User Profile
+            {% else %}
+              الملف الشخصي
+            {% endif %}
+          </h3>
+        </div>
+        <div class="info-card-body">
+          <!-- نموذج المعلومات الشخصية -->
+          <form method="post" class="profile-form">
+            {% csrf_token %}
+            
+            <!-- قسم المعلومات الشخصية -->
+            <h4 class="section-header">
+              <i class="fas fa-user {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
+              {% if is_english %}Personal Information{% else %}المعلومات الشخصية{% endif %}
+            </h4>
+            
+            <div class="mb-4">
+              <label for="id_username" class="form-label">
+                {% if is_english %}Username{% else %}اسم المستخدم{% endif %}
+              </label>
+              <input type="text" name="username" value="{{ user.username }}" class="form-control" id="id_username" readonly>
+              <div class="form-text text-muted small">
                 {% if is_english %}
-                  Change Password
+                  Username cannot be changed.
                 {% else %}
-                  تغيير كلمة المرور
+                  لا يمكن تغيير اسم المستخدم.
                 {% endif %}
-              </h3>
+              </div>
             </div>
-            <div class="info-card-body">
-              <form method="post" class="profile-form password-form">
-                {% csrf_token %}
-                <input type="hidden" name="change_password" value="1">
-                
-                <div class="mb-4">
-                  <label for="id_current_password" class="form-label">
-                    {% if is_english %}Current Password{% else %}كلمة المرور الحالية{% endif %}
-                  </label>
-                  <input type="password" name="current_password" class="form-control" id="id_current_password" required>
-                </div>
-                
-                <div class="mb-4">
-                  <label for="id_new_password" class="form-label">
-                    {% if is_english %}New Password{% else %}كلمة المرور الجديدة{% endif %}
-                  </label>
-                  <input type="password" name="new_password" class="form-control" id="id_new_password" required>
-                </div>
-                
-                <div class="mb-4">
-                  <label for="id_confirm_password" class="form-label">
-                    {% if is_english %}Confirm New Password{% else %}تأكيد كلمة المرور الجديدة{% endif %}
-                  </label>
-                  <input type="password" name="confirm_password" class="form-control" id="id_confirm_password" required>
-                </div>
-                
-                <div class="password-requirements mb-4">
-                  <h5>
-                    {% if is_english %}
-                      Password Requirements
-                    {% else %}
-                      متطلبات كلمة المرور
-                    {% endif %}
-                  </h5>
-                  <ul>
-                    {% if is_english %}
-                      <li>At least 8 characters long</li>
-                      <li>Include both letters and numbers</li>
-                      <li>Password confirmation must match the new password</li>
-                    {% else %}
-                      <li>8 أحرف على الأقل</li>
-                      <li>يجب أن تحتوي على أحرف وأرقام</li>
-                      <li>يجب أن يتطابق تأكيد كلمة المرور مع كلمة المرور الجديدة</li>
-                    {% endif %}
-                  </ul>
-                </div>
-                
-                <div class="d-grid mt-4">
-                  <button type="submit" class="submit-btn">
-                    <i class="fas fa-key {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
-                    {% if is_english %}Update Password{% else %}تحديث كلمة المرور{% endif %}
-                  </button>
-                </div>
-              </form>
+            
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <label for="id_first_name" class="form-label">
+                  {% if is_english %}First Name{% else %}الاسم الأول{% endif %}
+                </label>
+                <input type="text" name="first_name" value="{{ user.first_name }}" class="form-control" id="id_first_name">
+              </div>
+              <div class="col-md-6">
+                <label for="id_last_name" class="form-label">
+                  {% if is_english %}Last Name{% else %}اسم العائلة{% endif %}
+                </label>
+                <input type="text" name="last_name" value="{{ user.last_name }}" class="form-control" id="id_last_name">
+              </div>
             </div>
-          </div>
+            
+            <div class="mb-4">
+              <label for="id_email" class="form-label">
+                {% if is_english %}Email{% else %}البريد الإلكتروني{% endif %}
+              </label>
+              <input type="email" name="email" value="{{ user.email }}" class="form-control" id="id_email">
+            </div>
+            
+            <div class="mb-4">
+              <label for="id_phone" class="form-label">
+                {% if is_english %}Phone Number{% else %}رقم الهاتف{% endif %}
+              </label>
+              <input type="text" name="phone" value="{{ user.phone }}" class="form-control" id="id_phone">
+            </div>
+            
+            <div class="d-grid mt-4">
+              <button type="submit" class="submit-btn">
+                <i class="fas fa-save {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
+                {% if is_english %}Save Profile Information{% else %}حفظ معلومات الملف الشخصي{% endif %}
+              </button>
+            </div>
+          </form>
+          
+          <!-- نموذج تغيير كلمة المرور -->
+          <form method="post" class="profile-form mt-5">
+            {% csrf_token %}
+            <input type="hidden" name="change_password" value="1">
+            
+            <!-- قسم تغيير كلمة المرور -->
+            <h4 class="section-header">
+              <i class="fas fa-key {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
+              {% if is_english %}Change Password{% else %}تغيير كلمة المرور{% endif %}
+            </h4>
+            
+            <div class="mb-4">
+              <label for="id_current_password" class="form-label">
+                {% if is_english %}Current Password{% else %}كلمة المرور الحالية{% endif %}
+              </label>
+              <input type="password" name="current_password" class="form-control" id="id_current_password" required>
+            </div>
+            
+            <div class="mb-4">
+              <label for="id_new_password" class="form-label">
+                {% if is_english %}New Password{% else %}كلمة المرور الجديدة{% endif %}
+              </label>
+              <input type="password" name="new_password" class="form-control" id="id_new_password" required>
+            </div>
+            
+            <div class="mb-4">
+              <label for="id_confirm_password" class="form-label">
+                {% if is_english %}Confirm New Password{% else %}تأكيد كلمة المرور الجديدة{% endif %}
+              </label>
+              <input type="password" name="confirm_password" class="form-control" id="id_confirm_password" required>
+            </div>
+            
+            <div class="password-requirements mb-4">
+              <h5>
+                {% if is_english %}
+                  Password Requirements
+                {% else %}
+                  متطلبات كلمة المرور
+                {% endif %}
+              </h5>
+              <ul>
+                {% if is_english %}
+                  <li>At least 8 characters long</li>
+                  <li>Include both letters and numbers</li>
+                  <li>Password confirmation must match the new password</li>
+                {% else %}
+                  <li>8 أحرف على الأقل</li>
+                  <li>يجب أن تحتوي على أحرف وأرقام</li>
+                  <li>يجب أن يتطابق تأكيد كلمة المرور مع كلمة المرور الجديدة</li>
+                {% endif %}
+              </ul>
+            </div>
+            
+            <div class="d-grid mt-4">
+              <button type="submit" class="submit-btn">
+                <i class="fas fa-key {% if is_rtl %}rtl-margin-fix{% endif %}"></i>
+                {% if is_english %}Update Password{% else %}تحديث كلمة المرور{% endif %}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -600,30 +493,8 @@
 </div>
 
 <script>
-  // تفعيل التاب المناسب عند تحميل الصفحة
+  // تأثير للعناصر المتحركة
   document.addEventListener('DOMContentLoaded', function() {
-    // التحقق من وجود تاب محدد في الرابط
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('tab');
-    
-    if (tabParam) {
-      const tab = document.querySelector(`#${tabParam}-tab`);
-      if (tab) {
-        const bsTab = new bootstrap.Tab(tab);
-        bsTab.show();
-      }
-    }
-    
-    {% if password_form_submitted %}
-      // إظهار تاب كلمة المرور إذا تم إرسال نموذج تغيير كلمة المرور
-      const passwordTab = document.querySelector('#password-tab');
-      if (passwordTab) {
-        const bsTab = new bootstrap.Tab(passwordTab);
-        bsTab.show();
-      }
-    {% endif %}
-    
-    // تأثير للعناصر المتحركة
     const animateElements = document.querySelectorAll('.animate-fade-in, .animate-slide-up');
     animateElements.forEach((el, index) => {
       el.style.opacity = '0';
