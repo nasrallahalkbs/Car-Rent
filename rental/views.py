@@ -25,7 +25,7 @@ def check_expired_confirmations():
     فحص الحجوزات المؤكدة التي انتهت صلاحيتها ولم يتم الدفع لها
     يتم استدعاء هذه الدالة عند الصفحات الرئيسية لتحديث حالات الحجوزات
     
-    تعديل: تم تغيير السلوك لتغيير حالة الحجوزات المنتهية إلى "expired" بدلاً من حذفها
+    تعديل: تم تغيير السلوك ليحذف الحجوزات المنتهية بدلاً من وضع علامة عليها
     """
     # الحصول على الوقت الحالي
     now = timezone.now()
@@ -42,20 +42,22 @@ def check_expired_confirmations():
     count = expired_reservations.count()
     logger.info(f"Found {count} expired confirmed reservations.")
 
-    # تغيير حالة الحجوزات المنتهية بدلاً من حذفها
+    # حذف الحجوزات المنتهية
     for reservation in expired_reservations:
         # استعادة حالة السيارة إلى "متاحة" لإتاحتها للحجوزات الجديدة
         car = reservation.car
         car.is_available = True
         car.save()
         
-        # تغيير حالة الدفع إلى "منتهية الصلاحية" بدلاً من الحذف
-        reservation.payment_status = 'expired'
-        reservation.save()
+        # تسجيل رقم الحجز قبل حذفه
+        reservation_id = reservation.id
         
-        logger.info(f"Marked reservation #{reservation.id} as payment expired for car {car.id}.")
+        # حذف الحجز
+        reservation.delete()
+        
+        logger.info(f"Deleted expired reservation #{reservation_id} for car {car.id}.")
 
-    # إرجاع عدد الحجوزات التي تم تعديلها
+    # إرجاع عدد الحجوزات التي تم حذفها
     return count
 
 def get_template_by_language(request, base_template):
@@ -653,12 +655,6 @@ def my_reservations(request):
     # الحصول على كافة حجوزات المستخدم الحالي باستثناء الملغية
     # استبعاد الحجوزات ذات حالة 'cancelled' بشكل صريح
     reservations_query = Reservation.objects.filter(user=request.user).exclude(status='cancelled')
-    
-    # طباعة جميع الحجوزات للتشخيص
-    all_reservations = Reservation.objects.filter(user=request.user)
-    logger.info(f"All reservations for user {request.user.id}: {all_reservations.count()}")
-    for res in all_reservations:
-        logger.info(f"Reservation #{res.id}: status={res.status}, payment_status={res.payment_status}")
     
     # تسجيل عدد الحجوزات حسب الحالة للتشخيص
     pending_count = reservations_query.filter(status='pending').count()
