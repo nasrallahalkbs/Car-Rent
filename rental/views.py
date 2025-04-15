@@ -653,6 +653,7 @@ def my_reservations(request):
 
     # الحصول على كافة حجوزات المستخدم الحالي بما فيها المنتهية
     # استبعاد الحجوزات ذات حالة 'cancelled' بشكل صريح
+    # اختيار حجوزات المستخدم الحالي مباشرة بغض النظر عن حالتها (باستثناء 'cancelled')
     reservations_query = Reservation.objects.filter(user=request.user).exclude(status='cancelled')
     
     # تسجيل عدد الحجوزات حسب الحالة للتشخيص
@@ -660,17 +661,7 @@ def my_reservations(request):
     confirmed_count = reservations_query.filter(status='confirmed').count()
     completed_count = reservations_query.filter(status='completed').count()
     expired_count = reservations_query.filter(payment_status='expired').count()
-    
-    # تسجيل كافة الحجوزات لهذا المستخدم للتشخيص
-    all_user_reservations = Reservation.objects.filter(user=request.user)
-    all_count = all_user_reservations.count()
-    
-    logger.info(f"-------- تشخيص عرض الحجوزات --------")
-    logger.info(f"User {request.user.id} reservations - Total: {all_count}, Pending: {pending_count}, Confirmed: {confirmed_count}, Completed: {completed_count}, Expired Payment: {expired_count}")
-    
-    # عرض جميع حجوزات المستخدم للتشخيص
-    for res in all_user_reservations:
-        logger.info(f"Reservation ID: {res.id}, Status: {res.status}, Payment: {res.payment_status}, Created: {res.created_at}")
+    logger.info(f"User {request.user.id} reservations - Pending: {pending_count}, Confirmed: {confirmed_count}, Completed: {completed_count}, Expired: {expired_count}")
 
     # استخراج معايير البحث من الاستعلام
     search_query = request.GET.get('search', '')
