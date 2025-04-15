@@ -715,9 +715,9 @@ def my_reservations(request):
         'now': now,  # إضافة الوقت الحالي للقالب (مطلوب للعداد التنازلي)
     }
 
-    # استخدام القالب المحدث مع دعم ثنائية اللغة
-    template = get_template_by_language(request, 'my_reservations.html')
-    return render(request, template, context)
+    # استخدام القالب القديم مباشرة بدلاً من القالب المحدث
+    # template = get_template_by_language(request, 'my_reservations.html')
+    return render(request, 'my_reservations_original.html', context)
 
 @login_required
 def confirmation(request):
@@ -846,10 +846,10 @@ def cancel_reservation(request, reservation_id):
             car.save()
             logger.info(f"Car {car.id} made available after cancellation of reservation {reservation.id}")
         
-        # حذف الحجز بشكل نهائي بدلاً من تغيير حالته
-        reservation_id = reservation.id
-        reservation.delete()
-        logger.info(f"Reservation {reservation_id} deleted by user {request.user.id}")
+        # تغيير حالة الحجز إلى 'cancelled' بدلاً من حذفه
+        reservation.status = 'cancelled'
+        reservation.save()
+        logger.info(f"Reservation {reservation.id} cancelled by user {request.user.id}")
 
         messages.success(request, "تم إلغاء الحجز بنجاح!")
         return redirect('my_reservations')
