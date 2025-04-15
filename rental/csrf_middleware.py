@@ -35,8 +35,8 @@ class CSRFFixMiddleware(MiddlewareMixin):
         if 'csrftoken' in response.cookies:
             # تعديل خصائص ملف تعريف الارتباط
             # للعمل في بيئة Replit
-            response.cookies['csrftoken']['samesite'] = 'Lax'
-            response.cookies['csrftoken']['secure'] = False
+            response.cookies['csrftoken']['samesite'] = 'None'  # تغيير من 'Lax' إلى 'None' لمزيد من التوافق
+            response.cookies['csrftoken']['secure'] = True  # تمكين بشكل صريح للنطاقات الآمنة (https)
             response.cookies['csrftoken']['httponly'] = False
             # زيادة وقت انتهاء الصلاحية
             response.cookies['csrftoken']['max-age'] = 60 * 60 * 24 * 7  # أسبوع واحد
@@ -46,8 +46,8 @@ class CSRFFixMiddleware(MiddlewareMixin):
         # إذا كانت الاستجابة تحتوي على ملف تعريف ارتباط الجلسة
         if 'sessionid' in response.cookies:
             # تطبيق نفس التغييرات على ملف تعريف ارتباط الجلسة
-            response.cookies['sessionid']['samesite'] = 'Lax'
-            response.cookies['sessionid']['secure'] = False
+            response.cookies['sessionid']['samesite'] = 'None'  # تغيير من 'Lax' إلى 'None' لمزيد من التوافق
+            response.cookies['sessionid']['secure'] = True  # تمكين بشكل صريح للنطاقات الآمنة (https)
             response.cookies['sessionid']['path'] = '/'
         
         # تضمين تعليمات لمنع التخزين المؤقت
