@@ -49,6 +49,7 @@ class Car(models.Model):
     image_url = models.URLField(blank=True)
     image = models.ImageField(upload_to='car_images/', blank=True, null=True)
     is_available = models.BooleanField(default=True)
+    avg_rating = models.DecimalField(max_digits=3, decimal_places=1, default=0)
     
     def __str__(self):
         return f"{self.year} {self.make} {self.model}"
