@@ -776,9 +776,9 @@ def my_reservations(request):
         'now': now,  # إضافة الوقت الحالي للقالب (مطلوب للعداد التنازلي)
     }
 
-    # استخدام القالب القديم مباشرة بدلاً من القالب المحدث
-    # template = get_template_by_language(request, 'my_reservations.html')
-    return render(request, 'my_reservations_original.html', context)
+    # استخدام القالب المحدث عبر دالة اختيار القالب بناءً على اللغة
+    template = get_template_by_language(request, 'my_reservations.html')
+    return render(request, template, context)
 
 @login_required
 def confirmation(request):
