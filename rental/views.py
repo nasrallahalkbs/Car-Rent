@@ -1300,9 +1300,9 @@ def favorite_cars(request):
         'is_rtl': is_rtl
     }
     
-    # استخدام قالب جديد مباشرة لعرض المفضلة، دون الرجوع لنظام التحويل 
-    # لتجنب مشاكل التخزين المؤقت
-    return render(request, 'favorite_cars_new.html', context)
+    # استخدام قالب محسن جديد مع تنسيق احترافي وجذاب
+    # تم تغيير المسار للقالب المحسن الجديد
+    return render(request, 'favorite_cars_improved.html', context)
 
 @login_required
 def payment_receipt(request, reservation_id):
