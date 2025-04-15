@@ -366,6 +366,8 @@
                                     <span class="payment-badge payment-pending">{% if is_english %}Awaiting Payment{% else %}في انتظار الدفع{% endif %}</span>
                                     {% elif reservation.payment_status == 'paid' %}
                                     <span class="payment-badge payment-paid">{% if is_english %}Paid{% else %}مدفوع{% endif %}</span>
+                                    {% elif reservation.payment_status == 'expired' %}
+                                    <span class="payment-badge payment-refunded">{% if is_english %}Payment Expired{% else %}انتهت مهلة الدفع{% endif %}</span>
                                     {% elif reservation.payment_status == 'refunded' %}
                                     <span class="payment-badge payment-refunded">{% if is_english %}Refunded{% else %}مسترجع{% endif %}</span>
                                     {% endif %}
@@ -380,6 +382,10 @@
                                     {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
                                     <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-action btn-pay mx-1" data-bs-toggle="tooltip" title="{% if is_english %}Make Payment{% else %}إجراء الدفع{% endif %}">
                                         <i class="fas fa-credit-card"></i>
+                                    </a>
+                                    {% elif reservation.status == 'confirmed' and reservation.payment_status == 'expired' %}
+                                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-action btn-modify mx-1" data-bs-toggle="tooltip" title="{% if is_english %}Reactivate Reservation{% else %}إعادة تفعيل الحجز{% endif %}">
+                                        <i class="fas fa-sync-alt"></i>
                                     </a>
                                     {% endif %}
                                 </div>
