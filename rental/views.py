@@ -40,7 +40,8 @@ def check_expired_confirmations():
     )
 
     # تسجيل عدد الحجوزات المنتهية للتتبع
-    logger.info(f"Found {expired_reservations.count()} expired confirmed reservations.")
+    count = expired_reservations.count()
+    logger.info(f"Found {count} expired confirmed reservations.")
 
     # تغيير حالة الدفع للحجوزات المنتهية بدلاً من إلغائها
     for reservation in expired_reservations:
@@ -126,10 +127,10 @@ def get_template_by_language(request, base_template):
 
 def index(request):
     """Home page view"""
-    # قبل عرض الصفحة، تحقق من الحجوزات المنتهية وقم بإلغائها تلقائيًا
+    # قبل عرض الصفحة، تحقق من الحجوزات المنتهية وحدّث حالتها
     expired_count = check_expired_confirmations()
     if expired_count > 0:
-        logger.info(f"Auto-cancelled {expired_count} expired reservations during index view.")
+        logger.info(f"Marked {expired_count} reservations as payment expired during index view.")
 
     # Get featured cars (newest 6 cars)
     featured_cars = Car.objects.filter(is_available=True).order_by('-id')[:6]
@@ -548,6 +549,21 @@ def checkout(request):
             if reservation.status == 'confirmed' and reservation.payment_status == 'pending':
                 # Redirect to our new unified payment gateway
                 return redirect(f'/payment/gateway/?reservation_id={reservation_id}')
+            elif reservation.status == 'confirmed' and reservation.payment_status == 'expired':
+                # إعادة تفعيل الحجز المنتهي عن طريق إعادة تعيين حالة الدفع وتحديث تاريخ انتهاء التأكيد
+                reservation.payment_status = 'pending'
+                # تعيين مهلة جديدة للدفع (24 ساعة من الآن)
+                reservation.confirmation_expiry = timezone.now() + timedelta(hours=24)
+                reservation.save()
+                
+                # رسالة نجاح
+                if is_english:
+                    message = "Reservation has been reactivated successfully. You have 24 hours to complete the payment."
+                else:
+                    message = "تم إعادة تفعيل الحجز بنجاح. لديك 24 ساعة لإكمال عملية الدفع."
+
+                messages.success(request, message)
+                return redirect(f'/payment/gateway/?reservation_id={reservation_id}')
             elif reservation.status == 'pending':
                 # Cannot pay for pending reservations
                 if is_english:
@@ -594,7 +610,7 @@ def my_reservations(request):
     # تحقق من الحجوزات المنتهية قبل عرض الصفحة
     expired_count = check_expired_confirmations()
     if expired_count > 0:
-        logger.info(f"Auto-cancelled {expired_count} expired reservations during my_reservations view.")
+        logger.info(f"Marked {expired_count} reservations as payment expired during my_reservations view.")
 
     # الحصول على الوقت الحالي (مطلوب للعداد التنازلي)
     now = timezone.now()
