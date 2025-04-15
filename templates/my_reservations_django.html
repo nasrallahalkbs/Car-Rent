@@ -777,8 +777,23 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/countdown-timer-fix.js' %}"></script>
+<script src="{% static 'js/countdown-timer-fix.js' %}?v={{ request.instance_hash|default:request.instance_name }}"></script>
 <script>
+// سكريبت للتأكد من تحديث الصفحة وإفراغ التخزين المؤقت
+(function() {
+    // إضافة معلمة عشوائية إلى عنوان URL لتجنب التخزين المؤقت
+    if (window.location.href.indexOf('cache_clear') === -1) {
+        window.location.href = window.location.href + (window.location.href.indexOf('?') !== -1 ? '&' : '?') + 'cache_clear=' + Math.random();
+    }
+    
+    // إفراغ التخزين المؤقت لتأكيد تحميل الملفات الجديدة
+    if (window.caches) {
+        caches.keys().then(function(names) {
+            for (let name of names) caches.delete(name);
+        });
+    }
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
     // تطبيق تأثيرات الظهور التدريجي
     const animatedElements = document.querySelectorAll('.animate-fade-in-up');
