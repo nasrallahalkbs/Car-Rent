@@ -16,15 +16,9 @@ class CSRFFixMiddleware(MiddlewareMixin):
         """
         إعداد توكن CSRF لكل طلب للتأكد من توفره
         """
-        if request.method == "GET":
-            # تفعيل توكن CSRF مباشرة في بداية الطلب GET
-            # هذا يضمن أن Django سيقوم بإنشاء CSRF cookie
-            get_token(request)
-            
-        # تأكد من وجود التوكن في الجلسة
-        if 'csrftoken' not in request.COOKIES and hasattr(request, 'session'):
-            request.session['csrftoken'] = get_token(request)
-            
+        # تفعيل توكن CSRF مباشرة في بداية الطلب
+        # هذا يضمن أن Django سيقوم بإنشاء CSRF cookie
+        get_token(request)
         return None
     
     def process_response(self, request, response):
