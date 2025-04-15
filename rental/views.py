@@ -9,7 +9,7 @@ from django.db.models import Q, Avg, Count
 from django.core.paginator import Paginator
 from django.conf import settings
 from django.utils.translation import gettext as _
-from .forms import LoginForm, RegisterForm, CarSearchForm, ReservationForm, CheckoutForm, ReviewForm, ProfileForm
+from .forms import LoginForm, RegisterForm, CarSearchForm, ReservationForm, CheckoutForm, ReviewForm, ProfileForm, PasswordChangeForm
 from .models import User, Car, Reservation, Review, CartItem, FavoriteCar
 from .utils import calculate_total_price, get_car_availability, get_unavailable_dates
 from datetime import datetime, date, timedelta
@@ -186,24 +186,74 @@ def logout_view(request):
 @login_required
 def profile_view(request):
     """User profile view"""
+    password_form = PasswordChangeForm()
+    password_form_submitted = False
+    
+    # تحديد نوع النموذج المرسل (معلومات المستخدم أو تغيير كلمة المرور)
     if request.method == 'POST':
-        form = ProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "تم تحديث الملف الشخصي بنجاح!")
-            return redirect('profile')
+        if 'change_password' in request.POST:
+            password_form_submitted = True
+            password_form = PasswordChangeForm(request.POST)
+            if password_form.is_valid():
+                # التحقق من كلمة المرور الحالية
+                if request.user.check_password(password_form.cleaned_data['current_password']):
+                    # تعيين كلمة المرور الجديدة
+                    request.user.set_password(password_form.cleaned_data['new_password'])
+                    request.user.save()
+                    
+                    # الحصول على اللغة الحالية للرسائل
+                    from django.utils.translation import get_language
+                    current_language = get_language()
+                    is_english = (current_language == 'en')
+                    
+                    # رسالة نجاح مناسبة للغة
+                    if is_english:
+                        messages.success(request, "Password changed successfully. Please log in again.")
+                    else:
+                        messages.success(request, "تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول مرة أخرى.")
+                    
+                    # تسجيل الخروج بعد تغيير كلمة المرور
+                    from django.contrib.auth import logout
+                    logout(request)
+                    return redirect('login')
+                else:
+                    # خطأ في كلمة المرور الحالية
+                    from django.utils.translation import get_language
+                    current_language = get_language()
+                    is_english = (current_language == 'en')
+                    
+                    if is_english:
+                        messages.error(request, "Current password is incorrect.")
+                    else:
+                        messages.error(request, "كلمة المرور الحالية غير صحيحة.")
+        else:
+            # نموذج تحديث بيانات المستخدم
+            form = ProfileForm(request.POST, instance=request.user)
+            if form.is_valid():
+                form.save()
+                
+                # الحصول على اللغة الحالية للرسائل
+                from django.utils.translation import get_language
+                current_language = get_language()
+                is_english = (current_language == 'en')
+                
+                # رسالة نجاح مناسبة للغة
+                if is_english:
+                    messages.success(request, "Profile updated successfully!")
+                else:
+                    messages.success(request, "تم تحديث الملف الشخصي بنجاح!")
+                
+                return redirect('profile')
     else:
         form = ProfileForm(instance=request.user)
-
-    # Get reservation history
-    reservations = Reservation.objects.filter(user=request.user).order_by('-created_at')[:5]
 
     # إضافة ختم زمني لتفادي مشكلة التخزين المؤقت
     from datetime import datetime
     context = {
         'form': form,
+        'password_form': password_form,
+        'password_form_submitted': password_form_submitted,
         'user': request.user,
-        'reservations': reservations,
         'current_date': timezone.now(),
         'timestamp': datetime.now().timestamp(),  # إضافة ختم زمني
     }

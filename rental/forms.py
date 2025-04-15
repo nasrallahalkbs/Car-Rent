@@ -190,6 +190,23 @@ class ProfileForm(forms.ModelForm):
         model = User
         fields = ['username', 'first_name', 'last_name', 'email', 'phone']
 
+class PasswordChangeForm(forms.Form):
+    """Form for changing user password"""
+    current_password = forms.CharField(widget=forms.PasswordInput(), label="Current Password")
+    new_password = forms.CharField(widget=forms.PasswordInput(), label="New Password")
+    confirm_password = forms.CharField(widget=forms.PasswordInput(), label="Confirm New Password")
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password = cleaned_data.get('new_password')
+        confirm_password = cleaned_data.get('confirm_password')
+        
+        if new_password and confirm_password:
+            if new_password != confirm_password:
+                raise forms.ValidationError("New passwords do not match")
+        
+        return cleaned_data
+
 class ManualPaymentForm(forms.Form):
     """Form for entering manual payments"""
     PAYMENT_METHODS = [
