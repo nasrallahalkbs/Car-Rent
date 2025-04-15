@@ -646,8 +646,9 @@ def my_reservations(request):
         'now': now,  # إضافة الوقت الحالي للقالب (مطلوب للعداد التنازلي)
     }
 
-    # استخدام القالب الأصلي مع التصميم السابق
-    return render(request, 'my_reservations_original.html', context)
+    # استخدام القالب المحدث مع دعم ثنائية اللغة
+    template = get_template_by_language(request, 'my_reservations.html')
+    return render(request, template, context)
 
 @login_required
 def confirmation(request):
@@ -684,15 +685,32 @@ def reservation_detail(request, reservation_id):
         # Check if user has already reviewed this reservation
         has_review = Review.objects.filter(reservation=reservation, user=request.user).exists()
 
+        # احصل على لغة المستخدم لعرض الرسائل المناسبة
+        from django.utils.translation import get_language
+        current_language = get_language()
+        is_english = current_language == 'en'
+        is_rtl = current_language == 'ar'
+
         context = {
             'reservation': reservation,
             'has_review': has_review,
+            'is_english': is_english,
+            'is_rtl': is_rtl
         }
 
         template = get_template_by_language(request, 'reservation_detail.html')
         return render(request, template, context)
-    except:
-        messages.error(request, _("الحجز غير موجود أو لا يمكنك الوصول إليه"))
+    except Exception as e:
+        # تسجيل الخطأ للتصحيح
+        logger.error(f"Error in reservation_detail view: {str(e)}")
+        
+        # رسالة الخطأ بناءً على لغة المستخدم
+        from django.utils.translation import get_language
+        current_language = get_language()
+        if current_language == 'en':
+            messages.error(request, "Reservation not found or you don't have access to it.")
+        else:
+            messages.error(request, "الحجز غير موجود أو لا يمكنك الوصول إليه.")
         return redirect('my_reservations')
 
 @login_required
