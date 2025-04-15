@@ -1,1 +1,382 @@
-add_review.html
+{% extends 'layout_django.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}
+    {% if is_english %}
+        Add Review - {{ car.make }} {{ car.model }}
+    {% else %}
+        إضافة تقييم - {{ car.make }} {{ car.model }}
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .review-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .review-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .review-header {
+        background: linear-gradient(45deg, #0f766e, #0d9488);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .review-header h3 {
+        margin: 0;
+        font-weight: 700;
+    }
+    
+    .review-header p {
+        opacity: 0.9;
+        margin-top: 0.5rem;
+    }
+    
+    .review-body {
+        padding: 2rem;
+    }
+    
+    .rating-stars {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .star-rating {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .star-rating input[type="radio"] {
+        display: none;
+    }
+    
+    .star-rating label {
+        font-size: 2.5rem;
+        color: #cbd5e1;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .star-rating label:hover,
+    .star-rating label:hover ~ label,
+    .star-rating input[type="radio"]:checked ~ label {
+        color: #f59e0b;
+    }
+    
+    .rating-text {
+        margin-top: 0.75rem;
+        font-weight: 500;
+        color: #64748b;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #0f766e;
+        box-shadow: 0 0 0 0.25rem rgba(15, 118, 110, 0.25);
+    }
+    
+    textarea.form-control {
+        min-height: 150px;
+    }
+    
+    .submit-button {
+        background: linear-gradient(45deg, #0f766e, #0d9488);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 1rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+        cursor: pointer;
+    }
+    
+    .submit-button:hover {
+        background: linear-gradient(45deg, #115e59, #0f766e);
+        transform: translateY(-2px);
+    }
+    
+    .car-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: #f8fafc;
+        border-radius: 8px;
+    }
+    
+    .car-img {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        object-fit: cover;
+        margin-right: 1rem;
+    }
+    
+    [dir="rtl"] .car-img {
+        margin-right: 0;
+        margin-left: 1rem;
+    }
+    
+    .car-details h4 {
+        margin: 0 0 0.25rem 0;
+        color: #0f172a;
+    }
+    
+    .car-details p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .requirements-note {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background-color: #f8fafc;
+        border-radius: 8px;
+        border-left: 4px solid #0f766e;
+        font-size: 0.9rem;
+        color: #475569;
+    }
+    
+    [dir="rtl"] .requirements-note {
+        border-left: none;
+        border-right: 4px solid #0f766e;
+    }
+    
+    /* Add animation effect */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="review-card animate-fade-in-up">
+                <div class="review-header">
+                    <h3>
+                        {% if is_english %}
+                            Add Your Review
+                        {% else %}
+                            أضف تقييمك
+                        {% endif %}
+                    </h3>
+                    <p>
+                        {% if is_english %}
+                            Share your experience with this car
+                        {% else %}
+                            شارك تجربتك مع هذه السيارة
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="review-body">
+                    <!-- Car Information -->
+                    <div class="car-info">
+                        {% if car.image %}
+                            <img src="{{ car.image.url }}" class="car-img" alt="{{ car.make }} {{ car.model }}">
+                        {% elif car.image_url %}
+                            <img src="{{ car.image_url }}" class="car-img" alt="{{ car.make }} {{ car.model }}">
+                        {% else %}
+                            <img src="{% static 'images/car-placeholder-improved.svg' %}" class="car-img" alt="{{ car.make }} {{ car.model }}">
+                        {% endif %}
+                        <div class="car-details">
+                            <h4>{{ car.make }} {{ car.model }}</h4>
+                            <p>{{ car.year }} • 
+                                {% if is_english %}
+                                    {% if car.category == "Economy" %}Economy
+                                    {% elif car.category == "Compact" %}Compact
+                                    {% elif car.category == "Mid-size" %}Mid-size
+                                    {% elif car.category == "Luxury" %}Luxury
+                                    {% elif car.category == "SUV" %}SUV
+                                    {% elif car.category == "Truck" %}Truck
+                                    {% else %}{{ car.category }}{% endif %}
+                                {% else %}
+                                    {% if car.category == "Economy" %}اقتصادية
+                                    {% elif car.category == "Compact" %}مدمجة
+                                    {% elif car.category == "Mid-size" %}متوسطة
+                                    {% elif car.category == "Luxury" %}فاخرة
+                                    {% elif car.category == "SUV" %}دفع رباعي
+                                    {% elif car.category == "Truck" %}شاحنات
+                                    {% else %}{{ car.category }}{% endif %}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                
+                    <!-- Review Form -->
+                    <form method="post" action="{% url 'add_direct_review' car_id=car.id %}">
+                        {% csrf_token %}
+                        
+                        <!-- Star Rating -->
+                        <div class="rating-stars">
+                            <div class="star-rating">
+                                <input type="radio" id="star5" name="rating" value="5" {% if form.rating.value == 5 %}checked{% endif %} required>
+                                <label for="star5" class="fas fa-star"></label>
+                                
+                                <input type="radio" id="star4" name="rating" value="4" {% if form.rating.value == 4 %}checked{% endif %}>
+                                <label for="star4" class="fas fa-star"></label>
+                                
+                                <input type="radio" id="star3" name="rating" value="3" {% if form.rating.value == 3 %}checked{% endif %}>
+                                <label for="star3" class="fas fa-star"></label>
+                                
+                                <input type="radio" id="star2" name="rating" value="2" {% if form.rating.value == 2 %}checked{% endif %}>
+                                <label for="star2" class="fas fa-star"></label>
+                                
+                                <input type="radio" id="star1" name="rating" value="1" {% if form.rating.value == 1 %}checked{% endif %}>
+                                <label for="star1" class="fas fa-star"></label>
+                            </div>
+                            <div class="rating-text" id="ratingText">
+                                {% if is_english %}
+                                    Select a rating
+                                {% else %}
+                                    اختر تقييمًا
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Comment -->
+                        <div class="mb-4">
+                            <label for="id_comment" class="form-label">
+                                {% if is_english %}
+                                    Your Review
+                                {% else %}
+                                    تقييمك
+                                {% endif %}
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="id_comment" 
+                                name="comment" 
+                                placeholder="{% if is_english %}Tell us about your experience with this car{% else %}أخبرنا عن تجربتك مع هذه السيارة{% endif %}" 
+                                required
+                            >{{ form.comment.value|default_if_none:"" }}</textarea>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-button">
+                            {% if is_english %}
+                                Submit Review
+                            {% else %}
+                                إرسال التقييم
+                            {% endif %}
+                        </button>
+                    </form>
+                    
+                    <!-- Requirements Note -->
+                    <div class="requirements-note">
+                        <strong>
+                            {% if is_english %}
+                                Note:
+                            {% else %}
+                                ملاحظة:
+                            {% endif %}
+                        </strong>
+                        {% if is_english %}
+                            You can only review cars that you have rented and completed the reservation. Your review helps other users make better decisions.
+                        {% else %}
+                            يمكنك فقط تقييم السيارات التي استأجرتها وأكملت الحجز الخاص بها. تقييمك يساعد المستخدمين الآخرين في اتخاذ قرارات أفضل.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Back to Car Detail button -->
+            <div class="text-center">
+                <a href="{% url 'car_detail' car_id=car.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    {% if is_english %}
+                        Back to Car Details
+                    {% else %}
+                        العودة إلى تفاصيل السيارة
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update rating text when stars are selected
+    const ratingInputs = document.querySelectorAll('input[name="rating"]');
+    const ratingText = document.getElementById('ratingText');
+
+    const ratingLabels = {
+        1: {
+            en: 'Poor - Not recommended',
+            ar: 'سيء - غير موصى به'
+        },
+        2: {
+            en: 'Fair - Has some issues',
+            ar: 'مقبول - يوجد بعض المشاكل'
+        },
+        3: {
+            en: 'Good - Meets expectations',
+            ar: 'جيد - يلبي التوقعات'
+        },
+        4: {
+            en: 'Very Good - Recommended',
+            ar: 'جيد جداً - موصى به'
+        },
+        5: {
+            en: 'Excellent - Highly Recommended',
+            ar: 'ممتاز - موصى به بشدة'
+        }
+    };
+
+    // Get current language
+    const isEnglish = {% if is_english %}true{% else %}false{% endif %};
+    
+    ratingInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const rating = parseInt(this.value);
+            const label = isEnglish ? ratingLabels[rating].en : ratingLabels[rating].ar;
+            ratingText.textContent = label;
+        });
+    });
+    
+    // Set initial text if a rating is already selected
+    const selectedRating = document.querySelector('input[name="rating"]:checked');
+    if (selectedRating) {
+        const rating = parseInt(selectedRating.value);
+        const label = isEnglish ? ratingLabels[rating].en : ratingLabels[rating].ar;
+        ratingText.textContent = label;
+    }
+});
+</script>
+{% endblock %}

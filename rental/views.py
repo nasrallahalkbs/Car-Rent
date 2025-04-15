@@ -836,6 +836,86 @@ def add_review(request, reservation_id):
     template = get_template_by_language(request, 'add_review.html')
     return render(request, template, context)
 
+@login_required
+def add_direct_review(request, car_id):
+    """
+    إضافة تقييم مباشر للسيارة من صفحة تفاصيل السيارة
+    هذه الدالة تسمح للمستخدم بإضافة تقييم للسيارة التي استخدمها سابقًا
+    من خلال واجهة مشابهة لتقييمات جوجل بلاي
+    """
+    car = get_object_or_404(Car, id=car_id)
+    
+    # التحقق من أن المستخدم قد استأجر السيارة بالفعل
+    completed_reservations = Reservation.objects.filter(
+        user=request.user,
+        car=car,
+        status='completed',
+        payment_status='paid'
+    ).exists()
+    
+    # احصل على لغة المستخدم لعرض الرسائل المناسبة
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    # التحقق من وجود حجز مكتمل قبل السماح بالتقييم
+    if not completed_reservations:
+        if is_english:
+            messages.error(request, "You can only review cars that you have rented and completed the reservation.")
+        else:
+            messages.error(request, "يمكنك فقط تقييم السيارات التي استأجرتها وأكملت الحجز الخاص بها.")
+        return redirect('car_detail', car_id=car.id)
+    
+    # التحقق من أن المستخدم لم يقم بتقييم هذه السيارة مسبقًا
+    existing_review = Review.objects.filter(car=car, user=request.user).first()
+    if existing_review:
+        if is_english:
+            messages.warning(request, "You have already reviewed this car!")
+        else:
+            messages.warning(request, "لقد قمت بتقييم هذه السيارة بالفعل!")
+        return redirect('car_detail', car_id=car.id)
+    
+    # الحصول على أحدث حجز مكتمل لهذه السيارة
+    reservation = Reservation.objects.filter(
+        user=request.user,
+        car=car,
+        status='completed',
+        payment_status='paid'
+    ).order_by('-created_at').first()
+    
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.user = request.user
+            review.car = car
+            review.reservation = reservation
+            review.save()
+            
+            # تحديث متوسط التقييم للسيارة
+            avg_rating = Review.objects.filter(car=car).aggregate(Avg('rating'))['rating__avg'] or 0
+            car.avg_rating = round(avg_rating, 1)
+            car.save()
+            
+            if is_english:
+                messages.success(request, "Thank you for your review!")
+            else:
+                messages.success(request, "شكراً لتقييمك!")
+            
+            return redirect('car_detail', car_id=car.id)
+    else:
+        form = ReviewForm()
+    
+    context = {
+        'form': form,
+        'car': car,
+        'is_english': is_english,
+        'is_rtl': is_rtl
+    }
+    
+    return render(request, 'add_review_django.html', context)
+
 def toggle_dark_mode(request):
     """Toggle dark mode on/off"""
     current_mode = request.session.get('dark_mode', False)
