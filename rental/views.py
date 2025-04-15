@@ -1303,8 +1303,11 @@ def favorite_cars(request):
     }
     
     # استخدام قالب محسن جديد مع تنسيق احترافي وجذاب
-    # تم تغيير المسار للقالب المحسن الجديد
-    return render(request, 'favorite_cars_improved.html', context)
+    # إضافة ختم زمني للمساعدة في تجنب مشكلة التخزين المؤقت
+    context['timestamp'] = datetime.now().timestamp()
+    
+    # تغيير القالب إلى القالب الجديد المحدث
+    return render(request, 'favorite_cars_django.html', context)
 
 @login_required
 def payment_receipt(request, reservation_id):
