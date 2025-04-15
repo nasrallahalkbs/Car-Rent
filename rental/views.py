@@ -25,8 +25,7 @@ def check_expired_confirmations():
     فحص الحجوزات المؤكدة التي انتهت صلاحيتها ولم يتم الدفع لها
     يتم استدعاء هذه الدالة عند الصفحات الرئيسية لتحديث حالات الحجوزات
     
-    تعديل: تم تغيير السلوك ليضع علامة 'payment_expired' بدلاً من إلغاء الحجز
-    هذا يسمح للحجز بالظهور في صفحة الحجوزات ولكن مع إشارة إلى انتهاء مهلة الدفع
+    تعديل: تم تغيير السلوك ليحذف الحجوزات المنتهية بدلاً من وضع علامة عليها
     """
     # الحصول على الوقت الحالي
     now = timezone.now()
@@ -43,32 +42,23 @@ def check_expired_confirmations():
     count = expired_reservations.count()
     logger.info(f"Found {count} expired confirmed reservations.")
 
-    # تغيير حالة الدفع للحجوزات المنتهية بدلاً من إلغائها
+    # حذف الحجوزات المنتهية
     for reservation in expired_reservations:
-        # تحديث حالة الدفع إلى "منتهي" بدلاً من إلغاء الحجز بالكامل
-        reservation.payment_status = 'expired'
-
-        # تسجيل ملاحظة عن انتهاء الصلاحية
-        notes = reservation.notes or ""
-        expiry_note = "انتهت مهلة الدفع. يرجى التواصل مع إدارة الموقع لإعادة تفعيل الحجز."
-        if notes:
-            notes += f"\n{expiry_note}"
-        else:
-            notes = expiry_note
-        reservation.notes = notes
-
-        # حفظ التغييرات
-        reservation.save()
-
         # استعادة حالة السيارة إلى "متاحة" لإتاحتها للحجوزات الجديدة
         car = reservation.car
         car.is_available = True
         car.save()
+        
+        # تسجيل رقم الحجز قبل حذفه
+        reservation_id = reservation.id
+        
+        # حذف الحجز
+        reservation.delete()
+        
+        logger.info(f"Deleted expired reservation #{reservation_id} for car {car.id}.")
 
-        logger.info(f"Marked reservation #{reservation.id} for car {car.id} as payment expired (not cancelled).")
-
-    # إرجاع عدد الحجوزات التي تم تغيير حالتها
-    return expired_reservations.count()
+    # إرجاع عدد الحجوزات التي تم حذفها
+    return count
 
 def get_template_by_language(request, base_template):
     """
@@ -615,15 +605,14 @@ def my_reservations(request):
     # الحصول على الوقت الحالي (مطلوب للعداد التنازلي)
     now = timezone.now()
 
-    # الحصول على كافة حجوزات المستخدم الحالي (بما في ذلك الملغية)
+    # الحصول على كافة حجوزات المستخدم الحالي (ماعدا الملغية، حيث أنها تُحذف الآن)
     reservations_query = Reservation.objects.filter(user=request.user)
     
     # تسجيل عدد الحجوزات حسب الحالة للتشخيص
     pending_count = reservations_query.filter(status='pending').count()
     confirmed_count = reservations_query.filter(status='confirmed').count()
     completed_count = reservations_query.filter(status='completed').count()
-    cancelled_count = reservations_query.filter(status='cancelled').count()
-    logger.info(f"User {request.user.id} reservations - Pending: {pending_count}, Confirmed: {confirmed_count}, Completed: {completed_count}, Cancelled: {cancelled_count}")
+    logger.info(f"User {request.user.id} reservations - Pending: {pending_count}, Confirmed: {confirmed_count}, Completed: {completed_count}")
 
     # استخراج معايير البحث من الاستعلام
     search_query = request.GET.get('search', '')
@@ -797,9 +786,6 @@ def cancel_reservation(request, reservation_id):
     )
 
     if request.method == 'POST':
-        # تغيير حالة الحجز إلى ملغي مع الاحتفاظ بالسجل
-        reservation.status = 'cancelled'
-        
         # استعادة حالة السيارة إلى "متاحة" إذا كانت محجوزة بواسطة هذا الحجز
         car = reservation.car
         if not car.is_available:
@@ -807,17 +793,10 @@ def cancel_reservation(request, reservation_id):
             car.save()
             logger.info(f"Car {car.id} made available after cancellation of reservation {reservation.id}")
         
-        # إضافة ملاحظة عن الإلغاء
-        notes = reservation.notes or ""
-        cancel_note = f"\nتم إلغاء الحجز من قبل المستخدم بتاريخ {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        if notes:
-            notes += cancel_note
-        else:
-            notes = cancel_note
-        reservation.notes = notes
-        
-        reservation.save()
-        logger.info(f"Reservation {reservation.id} cancelled by user {request.user.id}")
+        # حذف الحجز بدلاً من تغيير حالته
+        reservation_id = reservation.id
+        reservation.delete()
+        logger.info(f"Reservation {reservation_id} deleted by user {request.user.id}")
 
         messages.success(request, "تم إلغاء الحجز بنجاح!")
         return redirect('my_reservations')
