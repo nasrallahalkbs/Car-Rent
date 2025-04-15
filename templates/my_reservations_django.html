@@ -2,294 +2,775 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{% trans "My Reservations" %} - CarRental{% endblock %}
+{% block title %}{% if is_english %}My Reservations{% else %}حجوزاتي{% endif %} - {% if is_english %}Car Rental{% else %}تأجير السيارات{% endif %}{% endblock %}
 
 {% block extra_css %}
+<!-- إضافة ختم زمني لمنع التخزين المؤقت للأنماط CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 <style>
-    .page-header {
-        background: linear-gradient(135deg, var(--primary-color), var(--primary-color-light));
-        padding: 3.5rem 0;
-        margin-bottom: 3rem;
+    :root {
+        --primary-color: #3a86ff;
+        --primary-dark: #2970d6;
+        --primary-light: #c7dbff;
+        --secondary-color: #ff006e;
+        --secondary-light: #ffcce0;
+        --success-color: #38b000;
+        --warning-color: #ffbe0b;
+        --danger-color: #ff595e;
+        --info-color: #4cc9f0;
+        --dark-color: #2b3a55;
+        --text-color: #212529;
+        --text-muted: #6c757d;
+        --light-bg: #f8f9fa;
+        --card-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        --hover-shadow: 0 15px 25px rgba(58, 134, 255, 0.15);
+        --border-radius-xl: 20px;
+        --border-radius-lg: 15px;
+        --border-radius-md: 10px;
+        --border-radius-sm: 5px;
+        --transition-fast: all 0.2s ease;
+        --transition-normal: all 0.3s ease;
+        --transition-slow: all 0.5s ease;
+    }
+
+    /* قسم الرأس (Header) المتميز */
+    .reservations-header {
+        background: linear-gradient(135deg, var(--primary-color), #4dabf7);
         color: white;
         position: relative;
         overflow: hidden;
-        border-radius: 0 0 30px 30px;
-        box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+        border-radius: 0 0 var(--border-radius-xl) var(--border-radius-xl);
+        box-shadow: 0 10px 30px rgba(58, 134, 255, 0.2);
+        margin-bottom: 50px;
+        padding: 70px 0 100px;
     }
 
-    .reservation-section {
-        background-color: #f8f9fa;
-        border-radius: 15px;
-        overflow: hidden;
-        margin-bottom: 2rem;
+    .reservations-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+        z-index: 0;
+        opacity: 0.8;
     }
 
-    .reservation-table {
+    .header-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .reservations-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .reservations-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        max-width: 600px;
+    }
+
+    .header-wave {
+        position: absolute;
+        bottom: 0;
+        left: 0;
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
+        overflow: hidden;
+        line-height: 0;
+        transform: rotate(180deg);
     }
 
-    .reservation-table th {
-        background-color: #f8f9fa;
-        padding: 15px;
-        text-align: center;
+    .header-wave svg {
+        position: relative;
+        display: block;
+        width: calc(100% + 1.3px);
+        height: 30px;
+    }
+
+    .header-wave .shape-fill {
+        fill: #FFFFFF;
+    }
+
+    .new-reservation-btn {
+        background: white;
+        color: var(--primary-color);
+        border: none;
+        border-radius: var(--border-radius-md);
+        padding: 12px 25px;
         font-weight: 600;
-        color: #495057;
-        border-bottom: 1px solid #dee2e6;
+        display: inline-flex;
+        align-items: center;
+        transition: var(--transition-normal);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    .reservation-table td {
-        padding: 15px;
-        text-align: center;
-        vertical-align: middle;
-        border-bottom: 1px solid #f0f0f0;
+    .new-reservation-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        background: rgba(255,255,255,0.95);
+    }
+
+    .new-reservation-btn i {
+        font-size: 1.1rem;
+    }
+
+    /* تحسين مظهر القسم الرئيسي */
+    .reservations-container {
+        margin-top: -50px;
+        margin-bottom: 50px;
+        position: relative;
+        z-index: 3;
+    }
+
+    /* تصميم البطاقات بدلاً من الجدول */
+    .reservation-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+
+    .reservation-card {
+        background: white;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        position: relative;
+        transition: var(--transition-normal);
+        border: none;
+        height: 100%;
+    }
+
+    .reservation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--hover-shadow);
+    }
+
+    .reservation-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 0.4s ease;
+    }
+
+    .reservation-card-pending::after {
+        background: var(--warning-color);
+    }
+
+    .reservation-card-confirmed::after {
+        background: var(--success-color);
+    }
+
+    .reservation-card-expired::after {
+        background: var(--danger-color);
+    }
+
+    .reservation-card-completed::after {
+        background: var(--info-color);
+    }
+
+    .reservation-card-cancelled::after {
+        background: var(--text-muted);
+    }
+
+    .reservation-card:hover::after {
+        transform: scaleX(1);
+    }
+
+    .card-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .reservation-id {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--dark-color);
+        display: flex;
+        align-items: center;
+    }
+
+    .reservation-id i {
+        margin-right: 8px;
+        color: var(--primary-color);
+    }
+
+    .car-image-container {
+        height: 180px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .car-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: var(--transition-normal);
+    }
+
+    .reservation-card:hover .car-image {
+        transform: scale(1.05);
+    }
+
+    .car-image-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 50%;
+        background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .car-name {
+        position: absolute;
+        bottom: 15px;
+        left: 15px;
+        color: white;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .car-model {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .reservation-info {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+
+    .date-range {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        background: var(--light-bg);
+        padding: 12px 15px;
+        border-radius: var(--border-radius-md);
+    }
+
+    .date-icon {
+        font-size: 1.5rem;
+        color: var(--primary-color);
+        margin-right: 12px;
+    }
+    
+    .date-details {
+        flex: 1;
+    }
+
+    .date-separator {
+        margin: 0 8px;
+        color: var(--text-muted);
     }
 
     .status-badge {
-        display: inline-block;
-        padding: 0.35rem 0.75rem;
-        border-radius: 50px;
-        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 15px;
+        border-radius: 30px;
+        font-size: 0.85rem;
         font-weight: 600;
-        text-transform: uppercase;
+        margin-bottom: 15px;
     }
 
-    .status-pending {
-        background-color: rgba(255, 193, 7, 0.1);
-        color: #ffc107;
+    .status-badge i {
+        margin-right: 6px;
     }
 
-    .status-confirmed {
-        background-color: rgba(40, 167, 69, 0.1);
-        color: #28a745;
+    .badge-pending {
+        background-color: rgba(255, 190, 11, 0.15);
+        color: var(--warning-color);
     }
 
-    .status-cancelled {
-        background-color: rgba(220, 53, 69, 0.1);
-        color: #dc3545;
+    .badge-confirmed {
+        background-color: rgba(56, 176, 0, 0.15);
+        color: var(--success-color);
     }
 
-    .status-completed {
-        background-color: rgba(23, 162, 184, 0.1);
-        color: #17a2b8;
+    .badge-expired {
+        background-color: rgba(255, 89, 94, 0.15);
+        color: var(--danger-color);
     }
 
-    .status-warning {
-        background-color: rgba(255, 153, 0, 0.1);
-        color: #ff9900;
+    .badge-completed {
+        background-color: rgba(76, 201, 240, 0.15);
+        color: var(--info-color);
     }
 
-    .car-info {
+    .badge-cancelled {
+        background-color: rgba(108, 117, 125, 0.15);
+        color: var(--text-muted);
+    }
+
+    .price-wrapper {
+        background: var(--light-bg);
+        padding: 15px;
+        border-radius: var(--border-radius-md);
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
     }
 
-    .car-info img {
-        width: 60px;
-        height: 40px;
-        object-fit: cover;
-        margin: 0 10px;
-        border-radius: 4px;
+    .price-label {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    .price-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--primary-color);
     }
 
     .countdown-container {
-        margin-top: 10px;
-        padding: 5px;
-        border-radius: 4px;
-        background-color: rgba(0, 0, 0, 0.02);
+        margin: 15px 0;
+        padding: 10px 15px;
+        border-radius: var(--border-radius-md);
+        background: rgba(255, 190, 11, 0.1);
+        display: flex;
+        align-items: center;
     }
 
-    .action-buttons .btn {
-        margin: 2px;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
+    .countdown-container i {
+        margin-right: 10px;
+        color: var(--warning-color);
+        font-size: 1.2rem;
     }
 
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn-action {
+        flex: 1;
+        padding: 12px;
+        border-radius: var(--border-radius-md);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: var(--transition-normal);
+        text-decoration: none;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+    .btn-view {
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-light);
     }
 
+    .btn-view:hover {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        transform: translateY(-3px);
+    }
+
+    .btn-pay {
+        background: var(--success-color);
+        color: white;
+        border: none;
+    }
+
+    .btn-pay:hover {
+        background: #2d9500;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(56, 176, 0, 0.3);
+    }
+
+    .btn-reactivate {
+        background: var(--warning-color);
+        color: white;
+        border: none;
+    }
+
+    .btn-reactivate:hover {
+        background: #e6ab00;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(255, 190, 11, 0.3);
+    }
+
+    .btn-cancel {
+        background: white;
+        color: var(--danger-color);
+        border: 1px solid rgba(255, 89, 94, 0.3);
+    }
+
+    .btn-cancel:hover {
+        background: rgba(255, 89, 94, 0.1);
+        transform: translateY(-3px);
+    }
+
+    /* تصميم حالة عدم وجود حجوزات */
+    .no-reservations-container {
+        background: white;
+        border-radius: var(--border-radius-xl);
+        box-shadow: var(--card-shadow);
+        padding: 60px 40px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .no-reservations-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(to right, var(--primary-color), #4dabf7);
+    }
+
+    .empty-illustration {
+        width: 200px;
+        margin-bottom: 30px;
+        opacity: 0.8;
+    }
+
+    .no-reservations-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: var(--dark-color);
+    }
+
+    .no-reservations-text {
+        color: var(--text-muted);
+        max-width: 600px;
+        margin: 0 auto 30px;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .btn-browse-cars {
+        background: linear-gradient(to right, var(--primary-color), #4dabf7);
+        color: white;
+        border: none;
+        padding: 15px 35px;
+        border-radius: 50px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: var(--transition-normal);
+        text-decoration: none;
+        box-shadow: 0 10px 20px rgba(58, 134, 255, 0.25);
+    }
+
+    .btn-browse-cars:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 15px 30px rgba(58, 134, 255, 0.35);
+        color: white;
+    }
+
+    .btn-browse-cars i {
+        font-size: 1.2rem;
+    }
+
+    /* التصميم المتجاوب لشاشات الجوال */
     @media (max-width: 767px) {
-        .reservation-table thead {
-            display: none;
+        .reservations-header {
+            padding: 50px 0 80px;
         }
 
-        .reservation-table, .reservation-table tbody, .reservation-table tr, .reservation-table td {
-            display: block;
+        .reservations-title {
+            font-size: 2rem;
+        }
+
+        .reservation-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .car-image-container {
+            height: 160px;
+        }
+
+        .price-wrapper {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .price-value {
+            margin-top: 5px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .btn-action {
             width: 100%;
         }
+    }
 
-        .reservation-table tr {
-            margin-bottom: 15px;
-            border-bottom: 2px solid #dee2e6;
-            padding: 10px;
+    /* تأثيرات حركية للعناصر */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
         }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
-        .reservation-table td {
-            text-align: right;
-            padding: 10px;
-            position: relative;
-            padding-left: 50%;
-        }
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease forwards;
+    }
 
-        .reservation-table td:before {
-            content: attr(data-label);
-            position: absolute;
-            left: 0;
-            width: 45%;
-            padding-right: 15px;
-            font-weight: 600;
-            text-align: left;
-        }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
 
-        .car-info {
-            flex-direction: column;
-            align-items: center;
-        }
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
 
-        .car-info img {
-            margin-bottom: 10px;
-        }
+    /* تصحيح للإطار العربي (RTL) */
+    .rtl-fix {
+        margin-right: 0 !important;
+        margin-left: 8px !important;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="container">
+<!-- قسم الرأس المتميز -->
+<div class="reservations-header">
+    <div class="container header-content">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <h1 class="mb-2">{% trans "My Reservations" %}</h1>
-                <p class="mb-0 text-white-50">{% trans "View and manage all your car reservations in one place." %}</p>
+                <h1 class="reservations-title animate__animated animate__fadeInDown">
+                    <i class="fas fa-calendar-alt {% if is_rtl %}rtl-fix{% else %}me-2{% endif %}"></i>
+                    {% if is_english %}My Reservations{% else %}حجوزاتي{% endif %}
+                </h1>
+                <p class="reservations-subtitle animate__animated animate__fadeIn animate__delay-1s">
+                    {% if is_english %}
+                        Track and manage all your car rentals in one place. View reservation details, make payments, and see your rental history.
+                    {% else %}
+                        تتبع وإدارة جميع حجوزات السيارات الخاصة بك في مكان واحد. عرض تفاصيل الحجز، وإجراء المدفوعات، ومشاهدة سجل التأجير.
+                    {% endif %}
+                </p>
             </div>
-            <div class="col-md-4 text-md-end">
-                <a href="{% url 'cars' %}" class="btn btn-light">
-                    <i class="fas fa-plus-circle {% if LANGUAGE_CODE == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
-                    {% trans "Make a New Reservation" %}
+            <div class="col-md-4 text-md-end animate__animated animate__fadeInRight">
+                <a href="{% url 'cars' %}" class="new-reservation-btn">
+                    <i class="fas fa-plus-circle {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
+                    {% if is_english %}Book a New Car{% else %}حجز سيارة جديدة{% endif %}
                 </a>
             </div>
         </div>
     </div>
+    
+    <!-- موجة الخلفية السفلية -->
+    <div class="header-wave">
+        <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path>
+        </svg>
+    </div>
 </div>
 
-<div class="container py-4">
+<!-- قسم الحجوزات الرئيسي -->
+<div class="container reservations-container">
     {% if reservations %}
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="reservation-table">
-                    <thead>
-                        <tr>
-                            <th>{% trans "Reservation ID" %}</th>
-                            <th>{% trans "Car" %}</th>
-                            <th>{% trans "Dates" %}</th>
-                            <th>{% trans "Duration" %}</th>
-                            <th>{% trans "Total" %}</th>
-                            <th>{% trans "Status" %}</th>
-                            <th>{% trans "Actions" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for reservation in reservations %}
-                        <tr class="reservation-item" data-reservation-id="{{ reservation.id }}" 
-                            {% if reservation.confirmation_expiry %}data-expiry="{{ reservation.confirmation_expiry|date:'c' }}"{% endif %}>
-                            <td data-label="{% trans 'Reservation ID' %}">
-                                <a href="{% url 'reservation_detail' reservation.id %}" class="text-decoration-none">
-                                    #{{ reservation.reservation_number }}
-                                </a>
-                            </td>
-                            <td data-label="{% trans 'Car' %}" class="car-info">
-                                {% if reservation.car.image %}
-                                <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.model }}">
-                                {% else %}
-                                <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.model }}">
-                                {% endif %}
-                                <div>
-                                    <div class="fw-bold">{{ reservation.car.make }} {{ reservation.car.model }}</div>
-                                    <small class="text-muted">{{ reservation.car.year }}</small>
-                                </div>
-                            </td>
-                            <td data-label="{% trans 'Dates' %}">
-                                <div>{{ reservation.start_date|date:"Y/m/d" }}</div>
-                                <div class="text-muted">{% trans "to" %}</div>
-                                <div>{{ reservation.end_date|date:"Y/m/d" }}</div>
-                                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
-                                <div class="countdown-container"></div>
-                                {% endif %}
-                            </td>
-                            <td data-label="{% trans 'Duration' %}">
-                                {{ reservation.days }} {% trans "days" %}
-                            </td>
-                            <td data-label="{% trans 'Total' %}" class="fw-bold">
-                                {{ reservation.total_price }} {% trans "dinar" %}
-                            </td>
-                            <td data-label="{% trans 'Status' %}">
-                                {% if reservation.status == 'pending' %}
-                                <span class="status-badge status-pending">{% trans "Pending" %}</span>
-                                {% elif reservation.status == 'confirmed' %}
-                                    {% if reservation.payment_status == 'expired' %}
-                                    <span class="status-badge status-warning">{% trans "Payment Expired" %}</span>
-                                    {% elif reservation.payment_status == 'pending' %}
-                                    <span class="status-badge status-confirmed">{% trans "Confirmed" %}</span>
-                                    <div class="small text-muted mt-1">{% trans "Awaiting Payment" %}</div>
-                                    {% else %}
-                                    <span class="status-badge status-confirmed">{% trans "Confirmed" %}</span>
-                                    {% endif %}
-                                {% elif reservation.status == 'completed' %}
-                                <span class="status-badge status-completed">{% trans "Completed" %}</span>
-                                {% elif reservation.status == 'cancelled' %}
-                                <span class="status-badge status-cancelled">{% trans "Cancelled" %}</span>
-                                {% endif %}
-                            </td>
-                            <td data-label="{% trans 'Actions' %}">
-                                <div class="action-buttons">
-                                    <a href="{% url 'reservation_detail' reservation.id %}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-eye"></i> {% trans "View" %}
-                                    </a>
+    <div class="reservation-cards">
+        {% for reservation in reservations %}
+        <div class="reservation-card 
+            {% if reservation.status == 'pending' %}reservation-card-pending{% endif %}
+            {% if reservation.status == 'confirmed' %}
+                {% if reservation.payment_status == 'expired' %}reservation-card-expired
+                {% else %}reservation-card-confirmed{% endif %}
+            {% endif %}
+            {% if reservation.status == 'completed' %}reservation-card-completed{% endif %}
+            {% if reservation.status == 'cancelled' %}reservation-card-cancelled{% endif %}
+            animate-fade-in-up" 
+            style="animation-delay: {{ forloop.counter0|divisibleby:3 }}00ms; opacity: 0;" 
+            data-reservation-id="{{ reservation.id }}" 
+            {% if reservation.confirmation_expiry %}data-expiry="{{ reservation.confirmation_expiry|date:'c' }}"{% endif %}>
+            
+            <!-- رأس البطاقة -->
+            <div class="card-header">
+                <div class="reservation-id">
+                    <i class="fas fa-ticket-alt"></i>
+                    <a href="{% url 'reservation_detail' reservation.id %}" class="text-decoration-none text-dark">
+                        #{{ reservation.reservation_number }}
+                    </a>
+                </div>
+                
+                <!-- شارة الحالة -->
+                {% if reservation.status == 'pending' %}
+                <span class="status-badge badge-pending">
+                    <i class="fas fa-clock"></i>
+                    {% if is_english %}Pending{% else %}قيد الانتظار{% endif %}
+                </span>
+                {% elif reservation.status == 'confirmed' %}
+                    {% if reservation.payment_status == 'expired' %}
+                    <span class="status-badge badge-expired">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {% if is_english %}Expired{% else %}منتهي الصلاحية{% endif %}
+                    </span>
+                    {% elif reservation.payment_status == 'pending' %}
+                    <span class="status-badge badge-confirmed">
+                        <i class="fas fa-check-circle"></i>
+                        {% if is_english %}Confirmed{% else %}مؤكد{% endif %}
+                    </span>
+                    {% else %}
+                    <span class="status-badge badge-confirmed">
+                        <i class="fas fa-check-circle"></i>
+                        {% if is_english %}Confirmed{% else %}مؤكد{% endif %}
+                    </span>
+                    {% endif %}
+                {% elif reservation.status == 'completed' %}
+                <span class="status-badge badge-completed">
+                    <i class="fas fa-flag-checkered"></i>
+                    {% if is_english %}Completed{% else %}مكتمل{% endif %}
+                </span>
+                {% elif reservation.status == 'cancelled' %}
+                <span class="status-badge badge-cancelled">
+                    <i class="fas fa-ban"></i>
+                    {% if is_english %}Cancelled{% else %}ملغي{% endif %}
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- صورة السيارة -->
+            <div class="car-image-container">
+                {% if reservation.car.image %}
+                <img src="{{ reservation.car.image.url }}" class="car-image" alt="{{ reservation.car.make }} {{ reservation.car.model }}">
+                {% else %}
+                <img src="{% static 'images/car-placeholder.svg' %}" class="car-image" alt="{{ reservation.car.make }} {{ reservation.car.model }}">
+                {% endif %}
+                <div class="car-image-overlay"></div>
+                <div class="car-name">
+                    <div>{{ reservation.car.make }} {{ reservation.car.model }}</div>
+                    <small class="car-model">{{ reservation.car.year }}</small>
+                </div>
+            </div>
+            
+            <!-- محتوى البطاقة -->
+            <div class="card-body">
+                <!-- فترة التاريخ -->
+                <div class="date-range">
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                    <div class="date-details">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span>{{ reservation.start_date|date:"Y/m/d" }}</span>
+                            <i class="fas fa-arrow-right date-separator"></i>
+                            <span>{{ reservation.end_date|date:"Y/m/d" }}</span>
+                        </div>
+                        <div class="text-muted mt-1 small">
+                            {{ reservation.days }} {% if is_english %}days{% else %}يوم{% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- العداد التنازلي للدفع (إذا كان مؤكدًا ولكن لم يتم الدفع بعد) -->
+                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
+                <div class="countdown-container">
+                    <i class="fas fa-hourglass-half"></i>
+                    <div class="countdown-text">{% if is_english %}Loading payment deadline...{% else %}جاري تحميل موعد انتهاء الدفع...{% endif %}</div>
+                </div>
+                {% endif %}
+                
+                <!-- معلومات السعر -->
+                <div class="price-wrapper">
+                    <div class="price-label">{% if is_english %}Total Price{% else %}السعر الإجمالي{% endif %}</div>
+                    <div class="price-value">{{ reservation.total_price }} {% if is_english %}SAR{% else %}ريال{% endif %}</div>
+                </div>
+                
+                <!-- أزرار الإجراءات -->
+                <div class="action-buttons">
+                    <a href="{% url 'reservation_detail' reservation.id %}" class="btn-action btn-view">
+                        <i class="fas fa-eye"></i>
+                        {% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}
+                    </a>
 
-                                    {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-sm btn-success">
-                                        <i class="fas fa-credit-card"></i> {% trans "Pay" %}
-                                    </a>
-                                    {% endif %}
+                    {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn-action btn-pay">
+                        <i class="fas fa-credit-card"></i>
+                        {% if is_english %}Pay Now{% else %}ادفع الآن{% endif %}
+                    </a>
+                    {% endif %}
 
-                                    {% if reservation.status == 'confirmed' and reservation.payment_status == 'expired' %}
-                                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-sync-alt"></i> {% trans "Reactivate" %}
-                                    </a>
-                                    {% endif %}
-
-                                    {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
-                                    <a href="{% url 'cancel_reservation' reservation.id %}" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-times"></i> {% trans "Cancel" %}
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                    {% if reservation.status == 'confirmed' and reservation.payment_status == 'expired' %}
+                    <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn-action btn-reactivate">
+                        <i class="fas fa-sync-alt"></i>
+                        {% if is_english %}Reactivate{% else %}إعادة تنشيط{% endif %}
+                    </a>
+                    {% endif %}
+                </div>
+                
+                {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
+                <div class="mt-2">
+                    <a href="{% url 'cancel_reservation' reservation.id %}" class="btn-action btn-cancel w-100">
+                        <i class="fas fa-times"></i>
+                        {% if is_english %}Cancel Reservation{% else %}إلغاء الحجز{% endif %}
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
+        {% endfor %}
     </div>
     {% else %}
-    <div class="empty-state">
-        <div class="text-center">
-            <img src="{% static 'images/car-placeholder.svg' %}" alt="No reservations" style="width: 120px; margin-bottom: 2rem;">
-            <h4>{% trans "No Reservations Found" %}</h4>
-            <p class="text-muted mb-4">{% trans "You haven't made any reservations yet. Start by browsing our car collection and make your first reservation today!" %}</p>
-            <a href="{% url 'cars' %}" class="btn btn-primary btn-lg rounded-pill shadow px-5 py-3">
-                <i class="fas fa-car {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
-                {% trans "Browse Our Cars" %}
-            </a>
-        </div>
+    <!-- حالة عدم وجود حجوزات -->
+    <div class="no-reservations-container animate__animated animate__fadeIn">
+        <img src="{% static 'images/car-placeholder.svg' %}" alt="No reservations" class="empty-illustration">
+        <h3 class="no-reservations-title">{% if is_english %}No Reservations Found{% else %}لم يتم العثور على حجوزات{% endif %}</h3>
+        <p class="no-reservations-text">
+            {% if is_english %}
+                You haven't made any car reservations yet. Browse our collection of premium vehicles and book your first rental today!
+            {% else %}
+                لم تقم بأي حجوزات سيارات حتى الآن. تصفح مجموعتنا من السيارات المميزة واحجز أول تأجير لك اليوم!
+            {% endif %}
+        </p>
+        <a href="{% url 'cars' %}" class="btn-browse-cars pulse-animation">
+            <i class="fas fa-car"></i>
+            {% if is_english %}Browse Our Cars{% else %}تصفح سياراتنا{% endif %}
+        </a>
     </div>
     {% endif %}
 </div>
@@ -299,28 +780,56 @@
 <script src="{% static 'js/countdown-timer-fix.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize countdown timers for all reservations
-    const reservations = document.querySelectorAll('.reservation-item');
+    // تطبيق تأثيرات الظهور التدريجي
+    const animatedElements = document.querySelectorAll('.animate-fade-in-up');
+    animatedElements.forEach((el, index) => {
+        setTimeout(() => {
+            el.style.opacity = '1';
+        }, index * 150);
+    });
+    
+    // تهيئة العدادات التنازلية لكل الحجوزات
+    const reservations = document.querySelectorAll('.reservation-card');
     reservations.forEach(function(reservation) {
         const expiryDate = reservation.dataset.expiry;
         if (expiryDate) {
             initializeCountdown(reservation, new Date(expiryDate));
         }
     });
+    
+    // تأثيرات إضافية للبطاقات عند التحويم
+    reservations.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            const carImage = this.querySelector('.car-image');
+            if (carImage) {
+                carImage.style.transform = 'scale(1.05)';
+            }
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            const carImage = this.querySelector('.car-image');
+            if (carImage) {
+                carImage.style.transform = 'scale(1)';
+            }
+        });
+    });
 });
 
 function initializeCountdown(reservationElement, expiryDate) {
     const countdownContainer = reservationElement.querySelector('.countdown-container');
     if (!countdownContainer) return;
+    
+    const countdownText = countdownContainer.querySelector('.countdown-text');
+    if (!countdownText) return;
 
     function updateCountdown() {
         const now = new Date().getTime();
         const distance = expiryDate - now;
 
         if (distance < 0) {
-            countdownContainer.innerHTML = `<div class="text-danger">
-                <i class="fas fa-exclamation-triangle"></i> {% trans "Payment deadline expired" %}
-            </div>`;
+            countdownText.innerHTML = `{% if is_english %}Payment deadline expired{% else %}انتهت مهلة الدفع{% endif %}`;
+            countdownContainer.style.background = 'rgba(255, 89, 94, 0.15)';
+            countdownContainer.querySelector('i').style.color = '#ff595e';
             return;
         }
 
@@ -328,15 +837,25 @@ function initializeCountdown(reservationElement, expiryDate) {
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-        let colorClass = 'text-success';
-        if (hours < 2) colorClass = 'text-warning';
-        if (hours < 1) colorClass = 'text-danger';
+        let colorClass = '#38b000';
+        let bgColor = 'rgba(56, 176, 0, 0.15)';
+        
+        if (hours < 2) {
+            colorClass = '#ffbe0b';
+            bgColor = 'rgba(255, 190, 11, 0.15)';
+        }
+        
+        if (hours < 1) {
+            colorClass = '#ff595e';
+            bgColor = 'rgba(255, 89, 94, 0.15)';
+        }
 
-        countdownContainer.innerHTML = `
-            <div class="${colorClass}">
-                <i class="fas fa-clock"></i> {% trans "Payment deadline" %}: 
-                ${hours}h ${minutes}m ${seconds}s
-            </div>
+        countdownContainer.style.background = bgColor;
+        countdownContainer.querySelector('i').style.color = colorClass;
+        
+        countdownText.innerHTML = `
+            {% if is_english %}Payment deadline: {% else %}موعد الدفع: {% endif %}
+            ${hours}h ${minutes}m ${seconds}s
         `;
     }
 
