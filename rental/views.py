@@ -1302,31 +1302,3 @@ def favorite_cars(request):
     # استخدام قالب جديد مباشرة لعرض المفضلة، دون الرجوع لنظام التحويل 
     # لتجنب مشاكل التخزين المؤقت
     return render(request, 'favorite_cars_new.html', context)
-
-@login_required
-def payment_receipt(request, reservation_id):
-    """عرض إيصال الدفع للحجز"""
-    reservation = get_object_or_404(
-        Reservation, 
-        id=reservation_id, 
-        user=request.user,
-        payment_status='paid'
-    )
-    
-    # الحصول على معلومات اللغة
-    from django.utils.translation import get_language
-    current_language = get_language()
-    is_english = current_language == 'en'
-    is_rtl = current_language == 'ar'
-    
-    # Current date time for the receipt
-    current_datetime = timezone.now()
-    
-    context = {
-        'reservation': reservation,
-        'current_datetime': current_datetime,
-        'is_english': is_english,
-        'is_rtl': is_rtl
-    }
-    
-    return render(request, 'payment_receipt.html', context)
