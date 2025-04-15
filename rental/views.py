@@ -1262,17 +1262,19 @@ def toggle_favorite(request, car_id):
     # الحصول على السيارة أو إرجاع خطأ 404
     car = get_object_or_404(Car, id=car_id)
     
-    # التحقق مما إذا كانت السيارة بالفعل في المفضلة
-    favorite = FavoriteCar.objects.filter(user=request.user, car=car).first()
-    
-    if favorite:
-        # إذا كانت موجودة، قم بإزالتها
-        favorite.delete()
-        messages.success(request, _("تمت إزالة السيارة من المفضلة"))
-    else:
-        # إذا لم تكن موجودة، قم بإضافتها
-        FavoriteCar.objects.create(user=request.user, car=car)
-        messages.success(request, _("تمت إضافة السيارة إلى المفضلة"))
+    # التأكد من أن الطلب هو POST للعمليات التي تغيّر البيانات (للحماية من CSRF)
+    if request.method == 'POST':
+        # التحقق مما إذا كانت السيارة بالفعل في المفضلة
+        favorite = FavoriteCar.objects.filter(user=request.user, car=car).first()
+        
+        if favorite:
+            # إذا كانت موجودة، قم بإزالتها
+            favorite.delete()
+            messages.success(request, _("تمت إزالة السيارة من المفضلة"))
+        else:
+            # إذا لم تكن موجودة، قم بإضافتها
+            FavoriteCar.objects.create(user=request.user, car=car)
+            messages.success(request, _("تمت إضافة السيارة إلى المفضلة"))
     
     # العودة إلى الصفحة السابقة أو صفحة تفاصيل السيارة
     referer = request.META.get('HTTP_REFERER')
