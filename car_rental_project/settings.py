@@ -24,17 +24,9 @@ REPLIT_ID = os.environ.get('REPL_ID', '')
 CSRF_TRUSTED_ORIGINS = [
     'https://*.replit.app',
     'https://*.replit.dev',
-    'https://*.pike.replit.dev',
     f'https://{REPLIT_SLUG}.{REPLIT_OWNER}.repl.co',
     f'https://{REPLIT_ID}.id.repl.co',
-    'https://*.repl.co',
 ]
-
-# Additional CSRF Settings
-CSRF_COOKIE_SECURE = False  # Set to True in production
-CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_USE_SESSIONS = True
 
 CSRF_COOKIE_SECURE = False  # Set to True in production
 CSRF_COOKIE_HTTPONLY = False
