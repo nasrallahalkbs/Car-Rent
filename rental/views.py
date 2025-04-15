@@ -606,8 +606,8 @@ def my_reservations(request):
     now = timezone.now()
 
     # الحصول على كافة حجوزات المستخدم الحالي باستثناء الملغية
-    # استبعاد الحجوزات ذات حالة 'cancelled' بشكل صريح
-    reservations_query = Reservation.objects.filter(user=request.user).exclude(status='cancelled')
+    # الملاحظة: الحجوزات الملغية يتم حذفها الآن وليست موجودة في قاعدة البيانات
+    reservations_query = Reservation.objects.filter(user=request.user)
     
     # تسجيل عدد الحجوزات حسب الحالة للتشخيص
     pending_count = reservations_query.filter(status='pending').count()
@@ -632,12 +632,13 @@ def my_reservations(request):
             Q(reservation_number__icontains=search_query)
         )
 
-    if status_filter and status_filter != 'cancelled':
-        # تطبيق الفلتر على الحالة المطلوبة (باستثناء 'cancelled')
-        reservations_query = reservations_query.filter(status=status_filter)
-    elif status_filter == 'cancelled':
-        # إذا تم طلب فلترة على الحالة 'cancelled'، ارجع قائمة فارغة
-        reservations_query = Reservation.objects.none()
+    if status_filter:
+        # تأكد من أن حالة 'cancelled' غير مشمولة ضمن الفلتر لأن الحجوزات الملغية تُحذف الآن
+        if status_filter != 'cancelled':
+            reservations_query = reservations_query.filter(status=status_filter)
+        else:
+            # إذا تم طلب فلترة على الحالة 'cancelled'، ارجع قائمة فارغة لأن هذه الحجوزات محذوفة
+            reservations_query = Reservation.objects.none()
 
     if date_from:
         try:
