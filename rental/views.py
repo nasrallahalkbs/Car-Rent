@@ -25,7 +25,8 @@ def check_expired_confirmations():
     فحص الحجوزات المؤكدة التي انتهت صلاحيتها ولم يتم الدفع لها
     يتم استدعاء هذه الدالة عند الصفحات الرئيسية لتحديث حالات الحجوزات
     
-    تعديل: تم تغيير السلوك ليحذف الحجوزات المنتهية بدلاً من وضع علامة عليها
+    تعديل: تم تغيير السلوك لتحديث حالة الحجوزات المنتهية بدلاً من حذفها
+    لتمكين العملاء من رؤيتها في سجل الحجوزات
     """
     # الحصول على الوقت الحالي
     now = timezone.now()
@@ -42,22 +43,20 @@ def check_expired_confirmations():
     count = expired_reservations.count()
     logger.info(f"Found {count} expired confirmed reservations.")
 
-    # حذف الحجوزات المنتهية
+    # تحديث حالة الحجوزات المنتهية بدلاً من حذفها
     for reservation in expired_reservations:
         # استعادة حالة السيارة إلى "متاحة" لإتاحتها للحجوزات الجديدة
         car = reservation.car
         car.is_available = True
         car.save()
         
-        # تسجيل رقم الحجز قبل حذفه
-        reservation_id = reservation.id
+        # تغيير حالة الدفع إلى "expired" بدلاً من حذفها
+        reservation.payment_status = 'expired'
+        reservation.save()
         
-        # حذف الحجز
-        reservation.delete()
-        
-        logger.info(f"Deleted expired reservation #{reservation_id} for car {car.id}.")
+        logger.info(f"Marked reservation #{reservation.id} as payment expired for car {car.id}.")
 
-    # إرجاع عدد الحجوزات التي تم حذفها
+    # إرجاع عدد الحجوزات التي تم تحديثها
     return count
 
 def get_template_by_language(request, base_template):
