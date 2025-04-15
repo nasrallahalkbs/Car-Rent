@@ -1,0 +1,24 @@
+from django import template
+
+register = template.Library()
+
+@register.filter
+def get_item(dictionary, key):
+    """
+    Get an item from a dictionary using the key.
+    This filter is useful for accessing dictionary items where the key is a variable.
+    
+    Usage: {{ dictionary|get_item:key }}
+    """
+    if dictionary is None:
+        return None
+    
+    # If key is an integer string, convert it to int
+    if isinstance(key, str) and key.isdigit():
+        key = int(key)
+        
+    # Handle index conversion for reverse loop
+    if hasattr(key, 'counter0'):
+        key = key.counter0
+    
+    return dictionary.get(key, 0)

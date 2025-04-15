@@ -1,6 +1,7 @@
 {% extends 'layout_django.html' %}
 {% load i18n %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}{{ car.make }} {{ car.model }} - {% trans "CarRental" %}{% endblock %}
 
@@ -483,6 +484,80 @@
     <div class="row">
         <div class="col-lg-8">
             <!-- Car Information Panels -->
+            <!-- Reviews Section (Similar to Google Play) -->
+            <div class="car-detail-panel animate-fade-in-up" style="animation-delay: 0.05s;">
+                <div class="detail-panel-header" style="background: linear-gradient(45deg, #0a5a54, #0f766e);">
+                    <h3><i class="fas fa-star {% trans "me-2" %}"></i> {% trans "Customer Reviews" %}</h3>
+                </div>
+                <div class="detail-panel-body">
+                    <!-- Rating Summary -->
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="rating-summary">
+                                <div class="overall-rating">{{ avg_rating }}</div>
+                                <div class="rating-stars">
+                                    {% for i in "12345"|make_list %}
+                                        {% if forloop.counter <= avg_rating|floatformat:0 %}
+                                            <i class="fas fa-star"></i>
+                                        {% elif forloop.counter <= avg_rating|add:0.5|floatformat:0 %}
+                                            <i class="fas fa-star-half-alt"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <div class="total-reviews">{% trans "Total reviews" %}: {{ total_reviews }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="rating-bars">
+                                {% for i in "54321"|make_list %}
+                                    <div class="rating-bar-item">
+                                        <div class="stars">{{ i }} <i class="fas fa-star"></i></div>
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" style="width: {{ rating_distribution|get_item:forloop.counter0|default:0 }}%;" 
+                                                aria-valuenow="{{ rating_distribution|get_item:forloop.counter0|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="percentage">{{ rating_distribution|get_item:forloop.counter0|default:0|floatformat:0 }}%</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Review Actions -->
+                    <div class="review-actions text-center mt-3">
+                        <a href="#review-list" id="view-reviews-btn" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-comments"></i> 
+                            {% if is_english %}
+                                View All Reviews
+                            {% else %}
+                                عرض جميع التقييمات
+                            {% endif %}
+                        </a>
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'my_reservations' %}?show_completed=true" class="btn btn-primary">
+                                <i class="fas fa-star"></i> 
+                                {% if is_english %}
+                                    Add Your Review
+                                {% else %}
+                                    أضف تقييمك
+                                {% endif %}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt"></i> 
+                                {% if is_english %}
+                                    Login to Review
+                                {% else %}
+                                    تسجيل الدخول للتقييم
+                                {% endif %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
             <!-- Car Specifications -->
             <div class="car-detail-panel animate-fade-in-up" style="animation-delay: 0.1s;">
                 <div class="detail-panel-header">
@@ -609,7 +684,269 @@
             </div>
             </div>
         </div>
+    
+    <!-- Customer Reviews List Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="car-detail-panel animate-fade-in-up" id="review-list">
+                <div class="detail-panel-header">
+                    <h3><i class="fas fa-comment {% trans "me-2" %}"></i> {% trans "Customer Feedback" %}</h3>
+                </div>
+                <div class="detail-panel-body">
+                    {% if reviews %}
+                        <div class="reviews-container">
+                            {% for review in reviews %}
+                                <div class="review-card mb-4">
+                                    <div class="review-header">
+                                        <div class="reviewer-info">
+                                            <div class="reviewer-avatar">
+                                                <i class="fas fa-user-circle fa-2x"></i>
+                                            </div>
+                                            <div class="reviewer-name">
+                                                <h5>{{ review.user.username }}</h5>
+                                                <div class="review-date">
+                                                    {{ review.created_at|date:"Y-m-d" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="review-rating">
+                                            {% for i in "12345"|make_list %}
+                                                {% if forloop.counter <= review.rating %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <span class="rating-value">{{ review.rating }}/5</span>
+                                        </div>
+                                    </div>
+                                    <div class="review-content mt-3">
+                                        <p>{{ review.comment }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-reviews text-center py-4">
+                            <div class="empty-icon mb-3">
+                                <i class="far fa-star fa-3x"></i>
+                            </div>
+                            <h4 class="empty-title">
+                                {% if is_english %}
+                                    No Reviews Yet
+                                {% else %}
+                                    لا توجد تقييمات حتى الآن
+                                {% endif %}
+                            </h4>
+                            <p class="empty-text mb-4">
+                                {% if is_english %}
+                                    Be the first to review this car after renting it. Your review helps other users make better decisions.
+                                {% else %}
+                                    كن أول من يقيم هذه السيارة بعد استئجارها. تقييمك يساعد المستخدمين الآخرين في اتخاذ قرارات أفضل.
+                                {% endif %}
+                            </p>
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'my_reservations' %}?show_completed=true" class="btn btn-primary">
+                                    <i class="fas fa-star"></i> 
+                                    {% if is_english %}
+                                        Write a Review
+                                    {% else %}
+                                        كتابة تقييم
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt"></i> 
+                                    {% if is_english %}
+                                        Login to Review
+                                    {% else %}
+                                        تسجيل الدخول للتقييم
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Add custom CSS for Reviews -->
+<style>
+    /* Rating Summary Styling */
+    .rating-summary {
+        padding: 1rem;
+    }
+    
+    .overall-rating {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #0f766e;
+    }
+    
+    .rating-stars {
+        color: #f59e0b;
+        font-size: 1.4rem;
+        margin: 0.5rem 0;
+    }
+    
+    .total-reviews {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .rating-bars {
+        padding: 1rem;
+    }
+    
+    .rating-bar-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .rating-bar-item .stars {
+        width: 50px;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .rating-bar-item .stars i {
+        color: #f59e0b;
+    }
+    
+    .rating-bar-item .progress {
+        flex: 1;
+        height: 10px;
+        margin: 0 10px;
+        background-color: #e2e8f0;
+    }
+    
+    .rating-bar-item .progress-bar {
+        background-color: #0f766e;
+    }
+    
+    .rating-bar-item .percentage {
+        width: 40px;
+        text-align: right;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    /* Review Cards */
+    .review-card {
+        background-color: #f8fafc;
+        border-radius: 10px;
+        padding: 1.5rem;
+        transition: transform 0.2s;
+    }
+    
+    .review-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    
+    .reviewer-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .reviewer-avatar {
+        margin-right: 1rem;
+        color: #64748b;
+    }
+    
+    [dir="rtl"] .reviewer-avatar {
+        margin-right: 0;
+        margin-left: 1rem;
+    }
+    
+    .reviewer-name h5 {
+        margin: 0;
+        color: #334155;
+    }
+    
+    .review-date {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .review-rating {
+        color: #f59e0b;
+    }
+    
+    .rating-value {
+        color: #64748b;
+        margin-left: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    [dir="rtl"] .rating-value {
+        margin-left: 0;
+        margin-right: 0.5rem;
+    }
+    
+    .review-content {
+        color: #334155;
+        line-height: 1.6;
+    }
+    
+    .empty-reviews {
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+    
+    .empty-icon {
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-title {
+        color: #334155;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-text {
+        color: #64748b;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    /* Review Actions */
+    .review-actions .btn {
+        padding: 0.6rem 1.2rem;
+        border-radius: 50px;
+        font-weight: 500;
+    }
+    
+    .review-actions .btn-outline-primary {
+        color: #0f766e;
+        border-color: #0f766e;
+    }
+    
+    .review-actions .btn-outline-primary:hover {
+        background-color: #0f766e;
+        color: white;
+    }
+    
+    .review-actions .btn-primary {
+        background-color: #0f766e;
+        border-color: #0f766e;
+    }
+    
+    .review-actions .btn-primary:hover {
+        background-color: #115e59;
+        border-color: #115e59;
+    }
+</style>
+
 {% endblock %}
 
 {% block extra_js %}
