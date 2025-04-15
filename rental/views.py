@@ -336,53 +336,6 @@ def car_detail(request, car_id):
     template = get_template_by_language(request, 'car_detail.html')
     return render(request, template, context)
 
-def car_reviews(request, car_id):
-    """صفحة منفصلة لعرض تقييمات السيارة بشكل مشابه للمتاجر الإلكترونية"""
-    car = get_object_or_404(Car, id=car_id)
-    
-    # Get reviews for this car
-    reviews_list = Review.objects.filter(car=car).order_by('-created_at')
-    
-    # تطبيق الصفحات (Pagination)
-    paginator = Paginator(reviews_list, 5)  # عرض 5 تقييمات في كل صفحة
-    page = request.GET.get('page')
-    reviews = paginator.get_page(page)
-    
-    # Calculate average rating
-    avg_rating = reviews_list.aggregate(Avg('rating'))['rating__avg'] or 0
-    avg_rating = round(avg_rating, 1)
-    
-    # Calculate rating distribution (percentage for each star level)
-    total_reviews = reviews_list.count()
-    rating_distribution = {}
-    
-    if total_reviews > 0:
-        for i in range(1, 6):
-            count = reviews_list.filter(rating=i).count()
-            percentage = (count / total_reviews) * 100
-            rating_distribution[i] = percentage
-    else:
-        for i in range(1, 6):
-            rating_distribution[i] = 0
-    
-    # احصل على معلومات اللغة للقالب
-    from django.utils.translation import get_language
-    current_language = get_language()
-    is_english = current_language == 'en'
-    is_rtl = current_language == 'ar'
-    
-    context = {
-        'car': car,
-        'reviews': reviews,
-        'avg_rating': avg_rating,
-        'total_reviews': total_reviews,
-        'rating_distribution': rating_distribution,
-        'is_english': is_english,
-        'is_rtl': is_rtl
-    }
-    
-    return render(request, 'car_reviews_django.html', context)
-
 @login_required
 def cart_view(request):
     """Shopping cart view"""

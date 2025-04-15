@@ -527,7 +527,7 @@
                     
                     <!-- Review Actions -->
                     <div class="review-actions text-center mt-3">
-                        <a href="{% url 'car_reviews' car_id=car.id %}" class="btn btn-outline-primary me-2">
+                        <a href="#review-list" id="view-reviews-btn" class="btn btn-outline-primary me-2">
                             <i class="fas fa-comments"></i> 
                             {% if is_english %}
                                 View All Reviews
@@ -685,17 +685,89 @@
             </div>
         </div>
     
-    <!-- لقد تم استبدال قسم التقييمات بصفحة منفصلة -->
+    <!-- Customer Reviews List Section -->
     <div class="row mt-5">
-        <div class="col-12 text-center">
-            <a href="{% url 'car_reviews' car_id=car.id %}" class="btn btn-lg btn-outline-primary">
-                <i class="fas fa-star {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
-                {% if is_english %}
-                    View All Reviews and Ratings
-                {% else %}
-                    عرض جميع التقييمات والتقديرات
-                {% endif %}
-            </a>
+        <div class="col-12">
+            <div class="car-detail-panel animate-fade-in-up" id="review-list">
+                <div class="detail-panel-header">
+                    <h3><i class="fas fa-comment {% trans "me-2" %}"></i> {% trans "Customer Feedback" %}</h3>
+                </div>
+                <div class="detail-panel-body">
+                    {% if reviews %}
+                        <div class="reviews-container">
+                            {% for review in reviews %}
+                                <div class="review-card mb-4">
+                                    <div class="review-header">
+                                        <div class="reviewer-info">
+                                            <div class="reviewer-avatar">
+                                                <i class="fas fa-user-circle fa-2x"></i>
+                                            </div>
+                                            <div class="reviewer-name">
+                                                <h5>{{ review.user.username }}</h5>
+                                                <div class="review-date">
+                                                    {{ review.created_at|date:"Y-m-d" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="review-rating">
+                                            {% for i in "12345"|make_list %}
+                                                {% if forloop.counter <= review.rating %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <span class="rating-value">{{ review.rating }}/5</span>
+                                        </div>
+                                    </div>
+                                    <div class="review-content mt-3">
+                                        <p>{{ review.comment }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-reviews text-center py-4">
+                            <div class="empty-icon mb-3">
+                                <i class="far fa-star fa-3x"></i>
+                            </div>
+                            <h4 class="empty-title">
+                                {% if is_english %}
+                                    No Reviews Yet
+                                {% else %}
+                                    لا توجد تقييمات حتى الآن
+                                {% endif %}
+                            </h4>
+                            <p class="empty-text mb-4">
+                                {% if is_english %}
+                                    Be the first to review this car after renting it. Your review helps other users make better decisions.
+                                {% else %}
+                                    كن أول من يقيم هذه السيارة بعد استئجارها. تقييمك يساعد المستخدمين الآخرين في اتخاذ قرارات أفضل.
+                                {% endif %}
+                            </p>
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'add_direct_review' car_id=car.id %}" class="btn btn-primary">
+                                    <i class="fas fa-star"></i> 
+                                    {% if is_english %}
+                                        Write a Review
+                                    {% else %}
+                                        كتابة تقييم
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt"></i> 
+                                    {% if is_english %}
+                                        Login to Review
+                                    {% else %}
+                                        تسجيل الدخول للتقييم
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
