@@ -364,6 +364,11 @@
                                                         <i class="fas fa-check-circle me-1"></i>
                                                         {% trans "تم الدفع" %}
                                                     </span>
+                                                {% elif reservation.payment_status == 'expired' %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                                        {% trans "انتهت مهلة الدفع" %}
+                                                    </span>
                                                 {% elif reservation.payment_status == 'refunded' %}
                                                     <span class="badge bg-secondary">
                                                         <i class="fas fa-undo me-1"></i>
@@ -429,10 +434,7 @@
             <!-- أزرار الإجراءات (بدون قالب) -->
             <div class="d-flex flex-wrap justify-content-center gap-2 mt-2 mb-3">
                 {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                <!-- تحذير مهلة الدفع -->
-                <!-- سيتم عرض العداد بجانب زر الدفع بدلاً من هذا القسم -->
-                {% endif %}
-                
+                <!-- إذا كان الحجز مؤكداً وفي انتظار الدفع -->
                 <div class="d-flex flex-column flex-md-row align-items-center gap-2">
                     {% if reservation.confirmation_expiry %}
                     <div class="countdown-container" data-expiry="{{ reservation.confirmation_expiry|date:'c' }}"></div>
@@ -444,6 +446,21 @@
                         </a>
                         <a href="{% url 'bank_transfer_payment' %}?reservation_id={{ reservation.id }}" class="btn btn-outline-success px-3">
                             <i class="fas fa-university me-1"></i> {% trans "الدفع بالتحويل البنكي" %}
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if reservation.status == 'confirmed' and reservation.payment_status == 'expired' %}
+                <!-- إذا كان الحجز مؤكداً ولكن مهلة الدفع انتهت -->
+                <div class="d-flex flex-column align-items-center gap-2">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i> {% trans "انتهت مهلة الدفع لهذا الحجز. يمكنك إعادة تفعيله لمدة 24 ساعة إضافية." %}
+                    </div>
+                    
+                    <div>
+                        <a href="{% url 'checkout' %}?reservation_id={{ reservation.id }}" class="btn btn-warning px-3">
+                            <i class="fas fa-sync-alt me-1"></i> {% trans "إعادة تفعيل الحجز" %}
                         </a>
                     </div>
                 </div>
