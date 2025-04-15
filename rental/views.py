@@ -198,14 +198,25 @@ def profile_view(request):
     # Get reservation history
     reservations = Reservation.objects.filter(user=request.user).order_by('-created_at')[:5]
 
+    # إضافة ختم زمني لتفادي مشكلة التخزين المؤقت
+    from datetime import datetime
     context = {
         'form': form,
         'user': request.user,
         'reservations': reservations,
         'current_date': timezone.now(),
+        'timestamp': datetime.now().timestamp(),  # إضافة ختم زمني
     }
-    template = get_template_by_language(request, 'profile.html')
-    return render(request, template, context)
+    
+    # الحصول على اللغة الحالية
+    from django.utils.translation import get_language
+    current_language = get_language()
+    context['is_english'] = (current_language == 'en')
+    context['is_rtl'] = (current_language == 'ar')
+    
+    # استخدام القالب مباشرة بدون الدالة المساعدة
+    # تجاوز المشكلة باستخدام مسار مباشر للقالب المحدث
+    return render(request, 'profile_django.html', context)
 
 def car_listing(request):
     """Car listing page with search functionality"""
