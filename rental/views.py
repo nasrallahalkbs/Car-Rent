@@ -605,8 +605,7 @@ def my_reservations(request):
     # الحصول على الوقت الحالي (مطلوب للعداد التنازلي)
     now = timezone.now()
 
-    # الحصول على كافة حجوزات المستخدم الحالي باستثناء الملغية
-    # الملاحظة: الحجوزات الملغية يتم حذفها الآن وليست موجودة في قاعدة البيانات
+    # الحصول على كافة حجوزات المستخدم الحالي (ماعدا الملغية، حيث أنها تُحذف الآن)
     reservations_query = Reservation.objects.filter(user=request.user)
     
     # تسجيل عدد الحجوزات حسب الحالة للتشخيص
@@ -633,12 +632,7 @@ def my_reservations(request):
         )
 
     if status_filter:
-        # تأكد من أن حالة 'cancelled' غير مشمولة ضمن الفلتر لأن الحجوزات الملغية تُحذف الآن
-        if status_filter != 'cancelled':
-            reservations_query = reservations_query.filter(status=status_filter)
-        else:
-            # إذا تم طلب فلترة على الحالة 'cancelled'، ارجع قائمة فارغة لأن هذه الحجوزات محذوفة
-            reservations_query = Reservation.objects.none()
+        reservations_query = reservations_query.filter(status=status_filter)
 
     if date_from:
         try:
@@ -799,7 +793,7 @@ def cancel_reservation(request, reservation_id):
             car.save()
             logger.info(f"Car {car.id} made available after cancellation of reservation {reservation.id}")
         
-        # حذف الحجز بشكل نهائي بدلاً من تغيير حالته
+        # حذف الحجز بدلاً من تغيير حالته
         reservation_id = reservation.id
         reservation.delete()
         logger.info(f"Reservation {reservation_id} deleted by user {request.user.id}")
