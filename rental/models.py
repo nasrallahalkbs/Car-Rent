@@ -78,6 +78,7 @@ class Reservation(models.Model):
         ('pending', 'Pending'),
         ('paid', 'Paid'),
         ('refunded', 'Refunded'),
+        ('expired', 'Expired'),
     ]
     
     PAYMENT_METHOD_CHOICES = [

@@ -24,6 +24,9 @@ def check_expired_confirmations():
     """
     فحص الحجوزات المؤكدة التي انتهت صلاحيتها ولم يتم الدفع لها
     يتم استدعاء هذه الدالة عند الصفحات الرئيسية لتحديث حالات الحجوزات
+    
+    تعديل: تم تغيير السلوك ليضع علامة 'payment_expired' بدلاً من إلغاء الحجز
+    هذا يسمح للحجز بالظهور في صفحة الحجوزات ولكن مع إشارة إلى انتهاء مهلة الدفع
     """
     # الحصول على الوقت الحالي
     now = timezone.now()
@@ -39,31 +42,31 @@ def check_expired_confirmations():
     # تسجيل عدد الحجوزات المنتهية للتتبع
     logger.info(f"Found {expired_reservations.count()} expired confirmed reservations.")
 
-    # الإلغاء التلقائي للحجوزات المنتهية
+    # تغيير حالة الدفع للحجوزات المنتهية بدلاً من إلغائها
     for reservation in expired_reservations:
-        # تحديث حالة الحجز إلى "ملغي"
-        reservation.status = 'cancelled'
+        # تحديث حالة الدفع إلى "منتهي" بدلاً من إلغاء الحجز بالكامل
+        reservation.payment_status = 'expired'
 
-        # تسجيل سبب الإلغاء في الملاحظات
+        # تسجيل ملاحظة عن انتهاء الصلاحية
         notes = reservation.notes or ""
-        cancellation_reason = "تم الإلغاء تلقائياً بسبب عدم الدفع خلال 24 ساعة."
+        expiry_note = "انتهت مهلة الدفع. يرجى التواصل مع إدارة الموقع لإعادة تفعيل الحجز."
         if notes:
-            notes += f"\n{cancellation_reason}"
+            notes += f"\n{expiry_note}"
         else:
-            notes = cancellation_reason
+            notes = expiry_note
         reservation.notes = notes
 
         # حفظ التغييرات
         reservation.save()
 
-        # استعادة حالة السيارة إلى "متاحة"
+        # استعادة حالة السيارة إلى "متاحة" لإتاحتها للحجوزات الجديدة
         car = reservation.car
         car.is_available = True
         car.save()
 
-        logger.info(f"Auto-cancelled reservation #{reservation.id} for car {car.id} due to payment timeout.")
+        logger.info(f"Marked reservation #{reservation.id} for car {car.id} as payment expired (not cancelled).")
 
-    # إرجاع عدد الحجوزات التي تم إلغاؤها
+    # إرجاع عدد الحجوزات التي تم تغيير حالتها
     return expired_reservations.count()
 
 def get_template_by_language(request, base_template):
