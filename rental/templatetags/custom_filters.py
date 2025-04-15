@@ -16,9 +16,6 @@ def get_item(dictionary, key):
     # If key is an integer string, convert it to int
     if isinstance(key, str) and key.isdigit():
         key = int(key)
-        
-    # Handle index conversion for reverse loop
-    if hasattr(key, 'counter0'):
-        key = key.counter0
     
+    # Try to get from dictionary with the key, or return 0 if not found
     return dictionary.get(key, 0)
