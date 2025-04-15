@@ -1,131 +1,104 @@
-
 {% extends 'layout_django.html' %}
 {% load static %}
 {% load i18n %}
 
-{# نسخة: 3 - تصميم محسن ومتقدم مع تأثيرات جديدة #}
 {% block title %}{% if is_english %}Favorite Cars{% else %}السيارات المفضلة{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* تصميم محسن لصفحة المفضلة - إصدار جديد */
-    .favorite-header {
-        margin-bottom: 30px;
-        padding: 40px 0;
-        position: relative;
-        text-align: center;
-        background: linear-gradient(135deg, rgba(58, 134, 255, 0.05), rgba(77, 171, 247, 0.15));
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(58, 134, 255, 0.1);
-        transition: all 0.5s ease;
-    }
-    
-    .favorite-header:hover {
-        box-shadow: 0 15px 40px rgba(58, 134, 255, 0.15);
-        transform: translateY(-5px);
+    /* تصميم متميز لصفحة المفضلة */
+    .favorites-container {
+        padding: 30px 0;
     }
 
-    .favorite-header::before {
-        content: '';
+    .favorites-header {
+        position: relative;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 35px 25px;
+        margin-bottom: 40px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        overflow: hidden;
+        border-bottom: 5px solid #3a86ff;
+    }
+
+    .favorites-header-pattern {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        height: 5px;
-        background: linear-gradient(90deg, #3a86ff, #4dabf7);
-        border-radius: 15px 15px 0 0;
-    }
-    
-    /* إضافة نمط خلفية متحركة */
-    .favorite-header::after {
-        content: '';
-        position: absolute;
         bottom: 0;
-        left: 0;
-        right: 0;
-        height: 100%;
-        background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%233a86ff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-        background-size: 150px 150px;
-        z-index: -1;
-        animation: patternMove 20s linear infinite;
-    }
-    
-    @keyframes patternMove {
-        0% {
-            background-position: 0 0;
-        }
-        100% {
-            background-position: 150px 150px;
-        }
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%233a86ff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        z-index: 0;
+        opacity: 0.6;
     }
 
-    .favorite-header-title {
-        font-size: 2.2rem;
-        font-weight: 800;
-        margin: 0;
-        background: linear-gradient(135deg, #3a86ff, #4dabf7);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        display: inline-block;
+    .favorites-title {
         position: relative;
+        z-index: 1;
+        font-weight: 800;
+        font-size: 2.2rem;
+        margin-bottom: 15px;
+        color: #2b3a55;
+        display: inline-block;
     }
 
-    .favorite-header-title::after {
+    .favorites-title::after {
         content: '';
         position: absolute;
+        width: 70px;
+        height: 4px;
+        background: linear-gradient(to right, #3a86ff, #4dabf7);
         bottom: -10px;
         left: 50%;
-        width: 80px;
-        height: 4px;
-        background: linear-gradient(90deg, #3a86ff, #4dabf7);
         transform: translateX(-50%);
         border-radius: 2px;
     }
 
-    .car-card {
-        margin-bottom: 30px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-        border: none;
-        border-radius: 15px;
-        overflow: hidden;
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        transform-origin: center;
+    .favorites-description {
         position: relative;
+        z-index: 1;
+        color: #6c757d;
+        font-size: 1.1rem;
+        max-width: 700px;
+        margin: 20px auto 0;
+    }
+
+    .heart-icon-header {
+        color: #ff4757;
+        margin-right: 10px;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.15);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* تصميم بطاقات السيارات */
+    .car-card {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        transition: all 0.4s ease;
+        margin-bottom: 30px;
         background: white;
-        backdrop-filter: blur(10px);
+        border: none;
+        height: 100%;
     }
 
     .car-card:hover {
-        transform: translateY(-10px) scale(1.02);
-        box-shadow: 0 20px 40px rgba(58, 134, 255, 0.25);
-    }
-    
-    /* إضافة تأثير لامع عند التحويم */
-    .car-card::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: linear-gradient(
-            to bottom right,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.1) 50%,
-            rgba(255, 255, 255, 0) 100%
-        );
-        transform: rotate(30deg);
-        transition: transform 0.7s ease-in-out;
-        z-index: 1;
-        pointer-events: none;
-        opacity: 0;
-    }
-    
-    .car-card:hover::before {
-        opacity: 1;
-        transform: rotate(30deg) translate(25%, 25%);
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(58, 134, 255, 0.2);
     }
 
     .car-card::after {
@@ -135,10 +108,10 @@
         left: 0;
         right: 0;
         height: 5px;
-        background: linear-gradient(90deg, #3a86ff, #4dabf7);
+        background: linear-gradient(to right, #3a86ff, #4dabf7);
         transform: scaleX(0);
-        transition: transform 0.4s ease;
         transform-origin: left;
+        transition: transform 0.4s ease;
     }
 
     .car-card:hover::after {
@@ -147,15 +120,15 @@
 
     .car-image-container {
         position: relative;
+        height: 200px;
         overflow: hidden;
-        height: 220px;
     }
 
     .car-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.7s ease;
+        transition: transform 0.5s ease;
     }
 
     .car-card:hover .car-image {
@@ -164,12 +137,11 @@
 
     .car-overlay {
         position: absolute;
-        top: 0;
+        bottom: 0;
         left: 0;
         right: 0;
-        bottom: 0;
-        background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 60%);
-        pointer-events: none;
+        height: 60%;
+        background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
         opacity: 0.7;
         transition: opacity 0.3s ease;
     }
@@ -178,53 +150,63 @@
         opacity: 1;
     }
 
-    .heart-icon {
+    .car-badge {
         position: absolute;
         top: 15px;
-        {% if is_rtl %}left{% else %}right{% endif %}: 15px;
-        background-color: rgba(255,255,255,0.95);
+        left: 15px;
+        background: rgba(255,255,255,0.9);
+        color: #3a86ff;
+        padding: 5px 12px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        border-radius: 20px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        z-index: 1;
+    }
+
+    .heart-action {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        background: rgba(255,255,255,0.9);
         border-radius: 50%;
-        width: 45px;
-        height: 45px;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-        z-index: 10;
         cursor: pointer;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        z-index: 1;
     }
 
-    .heart-icon:hover {
-        transform: scale(1.15);
-        background-color: #fff0f3;
+    .heart-action:hover {
+        transform: scale(1.1);
+        background: #fff0f0;
     }
 
-    .heart-icon i {
-        color: #dc3545;
-        font-size: 1.3rem;
+    .heart-action i {
+        color: #ff4757;
+        font-size: 1.2rem;
         transition: all 0.3s ease;
     }
 
-    .heart-icon:hover i {
+    .heart-action:hover i {
         transform: scale(1.2);
     }
 
-    .car-info {
-        padding: 25px;
+    .car-details {
+        padding: 20px;
     }
 
     .car-title {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
         font-weight: 700;
-        margin-bottom: 15px;
-        height: 48px;
-        overflow: hidden;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        text-align: center;
+        margin-bottom: 10px;
         color: #2b3a55;
+        line-height: 1.4;
+        text-align: center;
         transition: color 0.3s ease;
     }
 
@@ -232,462 +214,220 @@
         color: #3a86ff;
     }
 
-    .car-price {
-        font-size: 1.5rem;
-        background: linear-gradient(135deg, #3a86ff, #4dabf7);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 800;
-        text-align: center;
-        margin: 20px 0;
+    .car-specs {
         display: flex;
         justify-content: center;
-        align-items: center;
-        position: relative;
-    }
-
-    .car-price::before {
-        content: '';
-        position: absolute;
-        width: 40px;
-        height: 3px;
-        background: linear-gradient(90deg, #3a86ff, #4dabf7);
-        top: -10px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-radius: 3px;
-    }
-
-    .car-price::after {
-        content: '';
-        position: absolute;
-        width: 40px;
-        height: 3px;
-        background: linear-gradient(90deg, #3a86ff, #4dabf7);
-        bottom: -10px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-radius: 3px;
-    }
-
-    .car-price-tag {
-        display: inline-block;
-        position: relative;
-        padding: 5px 15px;
-        background: rgba(58, 134, 255, 0.05);
-        border-radius: 50px;
-    }
-
-    .car-badges {
-        text-align: center;
-        min-height: 30px;
-        margin-bottom: 20px;
-        display: flex;
         flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
+        gap: 8px;
+        margin: 15px 0;
     }
 
-    .car-badges .badge {
-        padding: 8px 15px;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    .car-spec {
+        background: #f8f9fa;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: #6c757d;
         transition: all 0.3s ease;
     }
 
-    .car-badges .badge:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    .car-card:hover .car-spec {
+        background: #e9ecef;
     }
 
-    .badge.bg-primary {
-        background: linear-gradient(135deg, #3a86ff, #4dabf7) !important;
-    }
-
-    .badge.bg-info {
-        background: linear-gradient(135deg, #0dcaf0, #6edff6) !important;
-    }
-
-    .badge.bg-warning {
-        background: linear-gradient(135deg, #ffc107, #ffdd56) !important;
-        color: #343a40 !important;
-    }
-
-    .btn-action {
-        border-radius: 50px;
-        padding: 12px 24px;
-        font-weight: 600;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-size: 0.85rem;
-        border: none;
-        position: relative;
-        overflow: hidden;
-        z-index: 1;
-    }
-
-    .btn-action::after {
-        content: '';
-        position: absolute;
-        width: 0;
-        height: 400%;
-        top: 50%;
-        left: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        transform: translate(-50%, -50%) rotate(45deg);
-        transition: width 0.6s ease;
-        z-index: -1;
-    }
-
-    .btn-action:hover::after {
-        width: 120%;
-    }
-    
-    /* تأثير نبض للأزرار عند النقر */
-    .btn-action:active {
-        transform: scale(0.95);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
-    
-    /* تحسين تأثير التحويم */
-    .btn-action {
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-position 0.8s;
-        background-size: 200% auto;
-    }
-    
-    .btn-details {
-        background-image: linear-gradient(135deg, #3a86ff 0%, #4dabf7 50%, #2970d6 100%);
-        color: white;
-    }
-    
-    .btn-details:hover {
-        background-position: right center;
-        color: white;
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(58, 134, 255, 0.3);
-    }
-    
-    .btn-remove {
-        background-image: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #c82333 100%);
-        color: white;
-    }
-    
-    .btn-remove:hover {
-        background-position: right center;
-        color: white;
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
-    }
-
-    .btn-details {
-        background: linear-gradient(135deg, #3a86ff, #4dabf7);
-        color: white;
-    }
-
-    .btn-details:hover {
-        background: linear-gradient(135deg, #2970d6, #3a86ff);
-        color: white;
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(58, 134, 255, 0.3);
-    }
-
-    .btn-remove {
-        color: white;
-        background: linear-gradient(135deg, #dc3545, #ff6b6b);
-    }
-
-    .btn-remove:hover {
-        background: linear-gradient(135deg, #c82333, #dc3545);
-        color: white;
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
-    }
-
-    .empty-state {
+    .car-price {
         text-align: center;
-        padding: 70px 30px;
-        background-color: white;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #3a86ff;
+        margin: 15px 0;
+    }
+
+    .car-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn-car-action {
+        flex: 1;
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .btn-details {
+        background: #3a86ff;
+        color: white;
+    }
+
+    .btn-details:hover {
+        background: #2970d6;
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 7px 15px rgba(58, 134, 255, 0.3);
+    }
+
+    .btn-remove {
+        background: #ff4757;
+        color: white;
+    }
+
+    .btn-remove:hover {
+        background: #e03444;
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 7px 15px rgba(255, 71, 87, 0.3);
+    }
+
+    /* حالة عدم وجود سيارات مفضلة */
+    .empty-favorites {
+        text-align: center;
+        padding: 60px 30px;
+        background: white;
         border-radius: 15px;
-        margin-top: 30px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        max-width: 800px;
+        margin: 40px auto;
         position: relative;
         overflow: hidden;
-        transition: all 0.5s ease;
-        background-image: radial-gradient(circle at 20% 20%, rgba(58, 134, 255, 0.03) 0%, rgba(255, 255, 255, 0) 70%),
-                          radial-gradient(circle at 80% 80%, rgba(77, 171, 247, 0.03) 0%, rgba(255, 255, 255, 0) 70%);
     }
 
-    .empty-state:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 25px 50px rgba(58, 134, 255, 0.15);
-    }
-    
-    /* إضافة تأثير متحرك للخلفية */
-    .empty-state::after {
+    .empty-favorites::after {
         content: '';
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        bottom: 0;
-        background: linear-gradient(45deg, rgba(58, 134, 255, 0.03) 25%, transparent 25%, transparent 50%, 
-                    rgba(58, 134, 255, 0.03) 50%, rgba(58, 134, 255, 0.03) 75%, transparent 75%, transparent);
-        background-size: 20px 20px;
-        opacity: 0.5;
-        animation: movingStripes 15s linear infinite;
-        pointer-events: none;
-        z-index: 0;
-    }
-    
-    @keyframes movingStripes {
-        0% {
-            background-position: 0 0;
-        }
-        100% {
-            background-position: 50px 50px;
-        }
+        height: 5px;
+        background: linear-gradient(to right, #3a86ff, #4dabf7);
     }
 
-    .empty-state::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 6px;
-        background: linear-gradient(90deg, #3a86ff, #4dabf7);
-    }
-
-    .empty-state i {
+    .empty-favorites i {
         font-size: 5rem;
-        color: #3a86ff;
-        margin-bottom: 30px;
-        display: inline-block;
-        filter: drop-shadow(0 10px 15px rgba(58, 134, 255, 0.3));
-        transition: all 0.5s ease;
+        color: #dfe6e9;
+        margin-bottom: 20px;
+        display: block;
     }
 
-    .empty-state:hover i {
-        transform: scale(1.1) rotate(10deg);
-    }
-
-    .empty-state h4 {
+    .empty-favorites h3 {
         font-size: 1.8rem;
         font-weight: 700;
-        margin-bottom: 15px;
         color: #2b3a55;
+        margin-bottom: 15px;
     }
 
-    .empty-state p {
-        font-size: 1.2rem;
+    .empty-favorites p {
         color: #6c757d;
+        font-size: 1.1rem;
         margin-bottom: 30px;
-        max-width: 600px;
+        max-width: 500px;
         margin-left: auto;
         margin-right: auto;
-        line-height: 1.6;
     }
 
-    .empty-state .btn {
-        padding: 15px 40px;
-        font-size: 1.1rem;
+    .btn-browse {
+        background: linear-gradient(to right, #3a86ff, #4dabf7);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 30px;
         font-weight: 600;
-        border-radius: 50px;
-        box-shadow: 0 8px 20px rgba(58, 134, 255, 0.3);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        background: linear-gradient(135deg, #3a86ff, #4dabf7);
-        border: none;
-        position: relative;
-        overflow: hidden;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 20px rgba(58, 134, 255, 0.3);
     }
 
-    .empty-state .btn::after {
-        content: '';
-        position: absolute;
-        width: 0;
-        height: 400%;
-        top: 50%;
-        left: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        transform: translate(-50%, -50%) rotate(45deg);
-        transition: width 0.6s ease;
-    }
-
-    .empty-state .btn:hover::after {
-        width: 120%;
-    }
-
-    .empty-state .btn:hover {
-        transform: translateY(-5px);
+    .btn-browse:hover {
+        transform: translateY(-3px);
         box-shadow: 0 15px 30px rgba(58, 134, 255, 0.4);
+        color: white;
     }
 
-    /* تحسين RTL تخطيط */
-    {% if is_rtl %}
-    .pe-1 {
-        padding-left: 0.25rem !important;
-        padding-right: 0 !important;
+    /* تحسينات RTL */
+    .rtl-flip {
+        transform: scaleX(-1);
     }
-    .ps-1 {
-        padding-right: 0.25rem !important;
-        padding-left: 0 !important;
-    }
-    {% endif %}
 
-    /* تأثيرات التحميل المتدرج - محسنة */
+    /* أنيميشن للعناصر */
     @keyframes fadeInUp {
         from {
             opacity: 0;
             transform: translateY(30px);
-            filter: blur(5px);
         }
         to {
             opacity: 1;
             transform: translateY(0);
-            filter: blur(0);
         }
     }
 
-    .fade-in-up {
-        animation: fadeInUp 0.8s ease-out forwards;
-        opacity: 0;
-    }
-    
-    /* إعدادات التأثير للحالة الفارغة */
-    .empty-state {
-        opacity: 0;
-        transform: translateY(30px);
-        transition: all 0.7s ease-out;
-    }
-    
-    .empty-state i, 
-    .empty-state h4, 
-    .empty-state p, 
-    .empty-state .btn {
-        opacity: 0;
-        transform: translateY(20px);
-        transition: all 0.5s ease-out;
-    }
-    
-    /* تأثير للعنوان الرئيسي */
-    .favorite-header {
-        opacity: 0;
-        transform: translateY(20px);
-        transition: all 0.7s ease-out;
-    }
-    
-    /* تأثير الزر الأساسي */
-    .empty-state .btn {
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
-                    background 0.4s ease, 
-                    color 0.4s ease,
-                    box-shadow 0.4s ease;
+    .animate-fadeInUp {
+        animation: fadeInUp 0.6s ease forwards;
     }
 
-    /* تأثير نبض القلب محسّن */
-    @keyframes heartBeat {
-        0% {
-            transform: scale(1);
-            filter: brightness(1);
-        }
-        14% {
-            transform: scale(1.3);
-            filter: brightness(1.2);
-        }
-        28% {
-            transform: scale(1);
-            filter: brightness(1);
-        }
-        42% {
-            transform: scale(1.3);
-            filter: brightness(1.2);
-        }
-        70% {
-            transform: scale(1);
-            filter: brightness(1);
-        }
+    /* ضبط المساحات للسائل */
+    .me-rtl-2 {
+        margin-right: 0.5rem !important;
     }
 
-    .heart-beat {
-        animation: heartBeat 1.3s infinite;
-    }
-    
-    /* تأثير توهج للقلب عند التحويم */
-    .heart-icon:hover i {
-        filter: drop-shadow(0 0 5px rgba(220, 53, 69, 0.7));
+    .ms-rtl-2 {
+        margin-left: 0.5rem !important;
     }
 
-    /* تحسين للشاشات المحمولة */
-    @media (max-width: 768px) {
-        .favorite-header-title {
-            font-size: 1.7rem;
+    /* للشاشات الصغيرة */
+    @media (max-width: 767px) {
+        .favorites-title {
+            font-size: 1.8rem;
+        }
+
+        .car-badge {
+            padding: 4px 10px;
+            font-size: 0.7rem;
+        }
+
+        .heart-action {
+            width: 35px;
+            height: 35px;
         }
 
         .car-title {
-            height: auto;
-            -webkit-line-clamp: 2;
+            font-size: 1.2rem;
         }
-        
-        .btn-action {
-            padding: 10px 15px;
-            font-size: 0.8rem;
-        }
-    }
-
-    /* خلفية متموجة */
-    .wave-bg {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: -1;
-        opacity: 0.7;
-        height: 50%;
-        background: linear-gradient(
-            to bottom,
-            rgba(58, 134, 255, 0),
-            rgba(58, 134, 255, 0.05)
-        );
-        clip-path: polygon(
-            0% 35%,
-            15% 60%,
-            33% 40%,
-            50% 60%,
-            65% 35%,
-            85% 65%,
-            100% 40%,
-            100% 100%,
-            0% 100%
-        );
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5 mb-5">
-    <div class="favorite-header mb-5">
-        <div class="d-flex align-items-center justify-content-center mb-3">
-            <i class="fas fa-heart text-danger {% if is_rtl %}ms-3{% else %}me-3{% endif %} fs-2"></i>
-            <h2 class="favorite-header-title">{% if is_english %}My Favorite Cars{% else %}سياراتي المفضلة{% endif %}</h2>
-        </div>
-        <p class="text-muted">
-            {% if is_english %}Your personal collection of dream vehicles{% else %}مجموعتك الشخصية من السيارات المفضلة{% endif %}
+<div class="container favorites-container">
+    <div class="favorites-header">
+        <div class="favorites-header-pattern"></div>
+        <h1 class="favorites-title">
+            <i class="fas fa-heart heart-icon-header"></i>
+            {% if is_english %}My Favorite Cars{% else %}سياراتي المفضلة{% endif %}
+        </h1>
+        <p class="favorites-description">
+            {% if is_english %}
+            Browse your personalized collection of favorite vehicles. Find the perfect car for your next journey.
+            {% else %}
+            تصفح مجموعتك الشخصية من السيارات المفضلة. اعثر على السيارة المثالية لرحلتك القادمة.
+            {% endif %}
         </p>
-        <div class="wave-bg"></div>
     </div>
 
     {% if favorites %}
         <div class="row">
             {% for favorite in favorites %}
-                <div class="col-md-6 col-lg-4 fade-in-up" style="animation-delay: {{ forloop.counter0|divisibleby:3 }}00ms">
-                    <div class="car-card">
+                <div class="col-md-6 col-lg-4 animate-fadeInUp" style="animation-delay: {{ forloop.counter0|divisibleby:3 }}00ms; opacity: 0;">
+                    <div class="car-card h-100">
                         <div class="car-image-container">
                             {% if favorite.car.image %}
                                 <img src="{{ favorite.car.image.url }}" class="car-image" alt="{{ favorite.car.make }} {{ favorite.car.model }}">
@@ -697,51 +437,53 @@
                                 <img src="{% static 'img/car-placeholder.png' %}" class="car-image" alt="Car Placeholder">
                             {% endif %}
                             <div class="car-overlay"></div>
-                            <div class="heart-icon">
+                            <div class="car-badge">{{ favorite.car.get_category_display }}</div>
+                            <a href="{% url 'toggle_favorite' favorite.car.id %}" class="heart-action">
                                 <i class="fas fa-heart"></i>
-                            </div>
+                            </a>
                         </div>
 
-                        <div class="car-info">
-                            <h5 class="car-title">{{ favorite.car.make }} {{ favorite.car.model }} ({{ favorite.car.year }})</h5>
+                        <div class="car-details">
+                            <h5 class="car-title">{{ favorite.car.make }} {{ favorite.car.model }} {{ favorite.car.year }}</h5>
 
-                            <div class="car-badges">
-                                <span class="badge bg-primary">{{ favorite.car.get_category_display }}</span>
-                                <span class="badge bg-info">{{ favorite.car.get_transmission_display }}</span>
-                                <span class="badge bg-warning">{{ favorite.car.get_fuel_type_display }}</span>
+                            <div class="car-specs">
+                                <span class="car-spec">
+                                    <i class="fas fa-cog {% if is_rtl %}ms-rtl-2{% else %}me-rtl-2{% endif %}"></i>
+                                    {{ favorite.car.get_transmission_display }}
+                                </span>
+                                <span class="car-spec">
+                                    <i class="fas fa-gas-pump {% if is_rtl %}ms-rtl-2{% else %}me-rtl-2{% endif %}"></i>
+                                    {{ favorite.car.get_fuel_type_display }}
+                                </span>
+                                <span class="car-spec">
+                                    <i class="fas fa-users {% if is_rtl %}ms-rtl-2{% else %}me-rtl-2{% endif %}"></i>
+                                    {{ favorite.car.seats }} {% if is_english %}seats{% else %}مقاعد{% endif %}
+                                </span>
                             </div>
 
                             <div class="car-price">
-                                <span class="car-price-tag">{{ favorite.car.daily_rate }} {% if is_english %}SAR/day{% else %}ريال/يوم{% endif %}</span>
+                                {{ favorite.car.daily_rate }} {% if is_english %}SAR/day{% else %}ريال/يوم{% endif %}
                             </div>
 
-                            <div class="row g-3 mt-3">
+                            <div class="car-actions">
                                 {% if is_rtl %}
-                                <div class="col-6">
-                                    <a href="{% url 'car_detail' favorite.car.id %}" class="btn btn-details btn-action w-100">
-                                        <i class="fas fa-info-circle {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                                        {% if is_english %}Details{% else %}التفاصيل{% endif %}
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="{% url 'toggle_favorite' favorite.car.id %}" class="btn btn-remove btn-action w-100">
-                                        <i class="fas fa-trash-alt {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                                        {% if is_english %}Remove{% else %}إزالة{% endif %}
-                                    </a>
-                                </div>
+                                <a href="{% url 'car_detail' favorite.car.id %}" class="btn-car-action btn-details">
+                                    <i class="fas fa-info-circle {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
+                                    {% if is_english %}Details{% else %}التفاصيل{% endif %}
+                                </a>
+                                <a href="{% url 'toggle_favorite' favorite.car.id %}" class="btn-car-action btn-remove">
+                                    <i class="fas fa-times {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
+                                    {% if is_english %}Remove{% else %}إزالة{% endif %}
+                                </a>
                                 {% else %}
-                                <div class="col-6">
-                                    <a href="{% url 'toggle_favorite' favorite.car.id %}" class="btn btn-remove btn-action w-100">
-                                        <i class="fas fa-trash-alt {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                                        {% if is_english %}Remove{% else %}إزالة{% endif %}
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="{% url 'car_detail' favorite.car.id %}" class="btn btn-details btn-action w-100">
-                                        <i class="fas fa-info-circle {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
-                                        {% if is_english %}Details{% else %}التفاصيل{% endif %}
-                                    </a>
-                                </div>
+                                <a href="{% url 'toggle_favorite' favorite.car.id %}" class="btn-car-action btn-remove">
+                                    <i class="fas fa-times {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
+                                    {% if is_english %}Remove{% else %}إزالة{% endif %}
+                                </a>
+                                <a href="{% url 'car_detail' favorite.car.id %}" class="btn-car-action btn-details">
+                                    <i class="fas fa-info-circle {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
+                                    {% if is_english %}Details{% else %}التفاصيل{% endif %}
+                                </a>
                                 {% endif %}
                             </div>
                         </div>
@@ -750,246 +492,98 @@
             {% endfor %}
         </div>
     {% else %}
-        <div class="empty-state">
+        <div class="empty-favorites">
             <i class="far fa-heart"></i>
-            <h4>{% if is_english %}No Favorite Cars Yet{% else %}لا توجد سيارات مفضلة حتى الآن{% endif %}</h4>
-            <p>{% if is_english %}Explore our vehicle collection and add cars to your favorites to see them here{% else %}استكشف مجموعة سياراتنا وأضف السيارات المفضلة لديك لتظهر هنا{% endif %}</p>
-            <a href="{% url 'cars' %}" class="btn btn-primary">
+            <h3>{% if is_english %}No Favorite Cars Yet{% else %}لا توجد سيارات مفضلة بعد{% endif %}</h3>
+            <p>
+                {% if is_english %}
+                Browse our collection and add cars to your favorites to see them here.
+                {% else %}
+                تصفح مجموعتنا وأضف السيارات إلى المفضلة لتظهر هنا.
+                {% endif %}
+            </p>
+            <a href="{% url 'cars' %}" class="btn-browse">
                 <i class="fas fa-car {% if is_rtl %}ms-2{% else %}me-2{% endif %}"></i>
-                {% if is_english %}Browse Our Cars{% else %}تصفح سياراتنا{% endif %}
+                {% if is_english %}Browse Cars{% else %}تصفح السيارات{% endif %}
             </a>
         </div>
     {% endif %}
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // إضافة تأثير دخول متدرج للعنوان
-    const favoriteHeader = document.querySelector('.favorite-header');
-    if (favoriteHeader) {
-        setTimeout(() => {
-            favoriteHeader.style.opacity = '1';
-            favoriteHeader.style.transform = 'translateY(0)';
-        }, 100);
-    }
-
-    // تطبيق تأثير الظهور التدريجي على البطاقات مع تأخير
-    const cards = document.querySelectorAll('.fade-in-up');
-    cards.forEach((card, index) => {
-        setTimeout(() => {
-            card.style.animation = `fadeInUp 0.8s ease-out forwards ${index * 0.15}s`;
-        }, 300);
-    });
-
-    // تأثير نبض للقلوب - محسن
-    const heartIcons = document.querySelectorAll('.heart-icon i');
-    heartIcons.forEach(icon => {
-        // تطبيق تأثير نبض القلب بشكل عشوائي
-        if (Math.random() > 0.7) {
-            icon.classList.add('heart-beat');
-        }
-        
-        // تفاعل محسن عند مرور المؤشر
-        icon.parentElement.addEventListener('mouseenter', function() {
-            icon.classList.add('heart-beat');
-            this.style.transform = 'scale(1.2) rotate(5deg)';
-            this.style.boxShadow = '0 8px 20px rgba(220, 53, 69, 0.3)';
-            icon.style.color = '#ff0033';
+    document.addEventListener('DOMContentLoaded', function() {
+        // تحريك القلوب
+        const heartIcons = document.querySelectorAll('.heart-action i');
+        heartIcons.forEach(icon => {
+            // إضافة تأثير نبض لبعض القلوب بشكل عشوائي
+            if (Math.random() > 0.5) {
+                icon.classList.add('pulse');
+                icon.style.animation = 'pulse 1.5s infinite';
+            }
         });
 
-        icon.parentElement.addEventListener('mouseleave', function() {
-            // إزالة النبض فقط إذا لم يكن أصلا ينبض
-            if (Math.random() > 0.7) {
-                icon.classList.remove('heart-beat');
-            }
-            this.style.transform = 'scale(1) rotate(0)';
-            this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.15)';
-            icon.style.color = '#dc3545';
+        // تأثير للبطاقات عند التحويم
+        const carCards = document.querySelectorAll('.car-card');
+        carCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                const image = this.querySelector('.car-image');
+                const title = this.querySelector('.car-title');
+                const specs = this.querySelectorAll('.car-spec');
+
+                if (image) image.style.transform = 'scale(1.1)';
+                if (title) title.style.color = '#3a86ff';
+
+                specs.forEach((spec, index) => {
+                    setTimeout(() => {
+                        spec.style.background = '#e9ecef';
+                        spec.style.transform = 'translateY(-3px)';
+                    }, index * 50);
+                });
+            });
+
+            card.addEventListener('mouseleave', function() {
+                const image = this.querySelector('.car-image');
+                const title = this.querySelector('.car-title');
+                const specs = this.querySelectorAll('.car-spec');
+
+                if (image) image.style.transform = 'scale(1)';
+                if (title) title.style.color = '#2b3a55';
+
+                specs.forEach(spec => {
+                    spec.style.background = '#f8f9fa';
+                    spec.style.transform = 'translateY(0)';
+                });
+            });
         });
-    });
 
-    // إضافة تأثيرات متقدمة للبطاقات
-    const carCards = document.querySelectorAll('.car-card');
-    carCards.forEach(card => {
-        // تطبيق تأثير ظل عند التحويم
-        card.addEventListener('mouseenter', function() {
-            // تأثير 3D للبطاقة
-            card.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            
-            // تأثير متقدم للصورة
-            const image = this.querySelector('.car-image');
-            if (image) {
-                image.style.transform = 'scale(1.1)';
-                image.style.filter = 'brightness(1.05)';
-            }
+        // تطبيق تأثير الظهور التدريجي
+        const animatedElements = document.querySelectorAll('.animate-fadeInUp');
+        animatedElements.forEach((el, index) => {
+            setTimeout(() => {
+                el.style.opacity = '1';
+            }, index * 100 + 100);
+        });
 
-            // تأثير متحرك للشارات
-            const badges = this.querySelectorAll('.badge');
-            badges.forEach((badge, index) => {
+        // تأثير القلب عند النقر
+        const heartActions = document.querySelectorAll('.heart-action');
+        heartActions.forEach(heart => {
+            heart.addEventListener('click', function(e) {
+                const heartIcon = this.querySelector('i');
+                heartIcon.style.transform = 'scale(1.5)';
                 setTimeout(() => {
-                    badge.style.transform = 'translateY(-3px) scale(1.05)';
-                    badge.style.boxShadow = '0 5px 15px rgba(0,0,0,0.15)';
-                }, index * 100);
-            });
-
-            // تأثير نبض للسعر
-            const price = this.querySelector('.car-price');
-            if (price) {
-                price.style.transform = 'scale(1.05)';
-                price.style.textShadow = '0 0 10px rgba(58, 134, 255, 0.5)';
-            }
-            
-            // تأثير للأزرار
-            const buttons = this.querySelectorAll('.btn-action');
-            buttons.forEach((button, index) => {
-                setTimeout(() => {
-                    button.style.transform = 'translateY(-2px)';
-                    if (button.classList.contains('btn-details')) {
-                        button.style.boxShadow = '0 8px 20px rgba(58, 134, 255, 0.3)';
-                    } else if (button.classList.contains('btn-remove')) {
-                        button.style.boxShadow = '0 8px 20px rgba(220, 53, 69, 0.3)';
-                    }
-                }, 150 + index * 100);
+                    heartIcon.style.transform = 'scale(1)';
+                }, 300);
             });
         });
 
-        // إعادة التأثيرات عند مغادرة البطاقة
-        card.addEventListener('mouseleave', function() {
-            // إعادة الصورة
-            const image = this.querySelector('.car-image');
-            if (image) {
-                image.style.transform = 'scale(1)';
-                image.style.filter = 'brightness(1)';
-            }
-
-            // إعادة الشارات
-            const badges = this.querySelectorAll('.badge');
-            badges.forEach(badge => {
-                badge.style.transform = 'translateY(0) scale(1)';
-                badge.style.boxShadow = '0 3px 10px rgba(0,0,0,0.1)';
-            });
-
-            // إعادة السعر
-            const price = this.querySelector('.car-price');
-            if (price) {
-                price.style.transform = 'scale(1)';
-                price.style.textShadow = 'none';
-            }
-            
-            // إعادة الأزرار
-            const buttons = this.querySelectorAll('.btn-action');
-            buttons.forEach(button => {
-                button.style.transform = 'translateY(0)';
-                button.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
-            });
+        // معالجة تأثيرات RTL
+        {% if is_rtl %}
+        const rightIcons = document.querySelectorAll('.fa-arrow-right');
+        rightIcons.forEach(icon => {
+            icon.classList.remove('fa-arrow-right');
+            icon.classList.add('fa-arrow-left');
         });
+        {% endif %}
     });
-
-    // تفاعل متقدم مع حالة الفراغ
-    const emptyState = document.querySelector('.empty-state');
-    if (emptyState) {
-        // تأثير دخول مع تأخير للحالة الفارغة
-        setTimeout(() => {
-            emptyState.style.opacity = '1';
-            emptyState.style.transform = 'translateY(0)';
-        }, 300);
-        
-        const icon = emptyState.querySelector('i');
-        const title = emptyState.querySelector('h4');
-        const paragraph = emptyState.querySelector('p');
-        const btn = emptyState.querySelector('.btn');
-        
-        // تأثير تتابعي للعناصر
-        if (icon) setTimeout(() => { icon.style.opacity = '1'; icon.style.transform = 'translateY(0)'; }, 500);
-        if (title) setTimeout(() => { title.style.opacity = '1'; title.style.transform = 'translateY(0)'; }, 700);
-        if (paragraph) setTimeout(() => { paragraph.style.opacity = '1'; paragraph.style.transform = 'translateY(0)'; }, 900);
-        if (btn) setTimeout(() => { btn.style.opacity = '1'; btn.style.transform = 'translateY(0)'; }, 1100);
-        
-        // تفاعل محسن عند التحويم
-        emptyState.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-10px)';
-            this.style.boxShadow = '0 30px 60px rgba(58, 134, 255, 0.2)';
-            
-            if (icon) {
-                icon.style.transform = 'scale(1.15) rotate(10deg)';
-                icon.style.color = '#2970d6';
-                icon.style.filter = 'drop-shadow(0 10px 20px rgba(58, 134, 255, 0.4))';
-                // تطبيق تأثير نبض لطيف
-                icon.style.animation = 'heartBeat 2s infinite';
-            }
-            
-            if (title) {
-                title.style.transform = 'scale(1.05)';
-                title.style.color = '#2970d6';
-            }
-            
-            if (btn) {
-                btn.style.transform = 'translateY(-5px) scale(1.05)';
-                btn.style.boxShadow = '0 15px 30px rgba(58, 134, 255, 0.3)';
-                btn.style.background = 'linear-gradient(135deg, #2970d6, #3a86ff)';
-            }
-        });
-
-        emptyState.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = '0 15px 35px rgba(0,0,0,0.05)';
-            
-            if (icon) {
-                icon.style.transform = 'scale(1) rotate(0)';
-                icon.style.color = '#3a86ff';
-                icon.style.filter = 'drop-shadow(0 10px 15px rgba(58, 134, 255, 0.3))';
-                icon.style.animation = 'none';
-            }
-            
-            if (title) {
-                title.style.transform = 'scale(1)';
-                title.style.color = '#2b3a55';
-            }
-            
-            if (btn) {
-                btn.style.transform = 'translateY(0) scale(1)';
-                btn.style.boxShadow = '0 8px 20px rgba(58, 134, 255, 0.3)';
-                btn.style.background = 'linear-gradient(135deg, #3a86ff, #4dabf7)';
-            }
-        });
-        
-        // تأثير تفاعلي للزر نفسه
-        if (btn) {
-            btn.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-5px) scale(1.05)';
-                this.style.boxShadow = '0 15px 30px rgba(58, 134, 255, 0.4)';
-            });
-            
-            btn.addEventListener('mouseleave', function() {
-                if (emptyState.matches(':hover')) {
-                    this.style.transform = 'translateY(-5px) scale(1.05)';
-                    this.style.boxShadow = '0 15px 30px rgba(58, 134, 255, 0.3)';
-                } else {
-                    this.style.transform = 'translateY(0) scale(1)';
-                    this.style.boxShadow = '0 8px 20px rgba(58, 134, 255, 0.3)';
-                }
-            });
-        }
-    }
-    
-    // تأثير متموج للخلفية
-    const waveBg = document.querySelector('.wave-bg');
-    if (waveBg) {
-        document.addEventListener('mousemove', function(e) {
-            const moveX = (e.clientX * 0.005);
-            const moveY = (e.clientY * 0.005);
-            waveBg.style.clipPath = `polygon(
-                ${moveX}% 35%,
-                ${15 + moveX * 0.5}% ${60 - moveY * 0.5}%,
-                ${33 - moveX * 0.3}% ${40 + moveY * 0.3}%,
-                ${50 + moveX * 0.2}% ${60 - moveY * 0.2}%,
-                ${65 - moveX * 0.1}% ${35 + moveY * 0.4}%,
-                ${85 + moveX * 0.3}% ${65 - moveY * 0.3}%,
-                ${100 - moveX * 0.2}% ${40 + moveY * 0.5}%,
-                100% 100%,
-                0% 100%
-            )`;
-        });
-    }
-});</script>
+</script>
 {% endblock %}
