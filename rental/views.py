@@ -89,7 +89,7 @@ def get_template_by_language(request, base_template):
         'checkout.html': 'checkout_django.html',
         'login.html': 'login_django.html',
         'register.html': 'register_django.html',
-        'my_reservations.html': 'my_reservations_original.html',
+        'my_reservations.html': 'my_reservations_django.html',
         'booking.html': 'booking_django.html',
         'reservation_detail.html': 'reservation_detail_django.html',
         'error.html': 'error_django.html',
@@ -651,7 +651,7 @@ def my_reservations(request):
     # الحصول على الوقت الحالي (مطلوب للعداد التنازلي)
     now = timezone.now()
 
-    # الحصول على كافة حجوزات المستخدم الحالي باستثناء الملغية
+    # الحصول على كافة حجوزات المستخدم الحالي بما فيها المنتهية
     # استبعاد الحجوزات ذات حالة 'cancelled' بشكل صريح
     reservations_query = Reservation.objects.filter(user=request.user).exclude(status='cancelled')
     
