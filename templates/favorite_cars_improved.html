@@ -289,30 +289,61 @@
         margin-right: 5px;
     }
 
-    .car-price {
+    .car-price-container {
         text-align: center;
-        font-size: 1.6rem;
-        font-weight: 800;
-        color: #ff4757;
-        margin: 20px 0;
-        text-shadow: 0 2px 5px rgba(255, 71, 87, 0.2);
+        margin: 25px 0;
         position: relative;
+    }
+
+    .car-price {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: white;
+        padding: 10px 25px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(255, 71, 87, 0.25);
         display: inline-block;
-        left: 50%;
-        transform: translateX(-50%);
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        transition: all 0.3s ease;
     }
 
     .car-price::before {
         content: '';
         position: absolute;
-        width: 120%;
-        height: 40px;
-        background: rgba(255, 71, 87, 0.08);
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        border-radius: 20px;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, rgba(255,255,255,0.15), rgba(255,255,255,0));
         z-index: -1;
+    }
+
+    .car-price::after {
+        content: '';
+        position: absolute;
+        width: 150%;
+        height: 100%;
+        background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+        top: 0;
+        left: -50%;
+        transform: skewX(-20deg);
+        animation: priceShineSlow 4s infinite;
+        z-index: 0;
+    }
+
+    @keyframes priceShineSlow {
+        0% { left: -150%; }
+        30% { left: -150%; }
+        100% { left: 150%; }
+    }
+
+    .car-card:hover .car-price {
+        transform: scale(1.05);
+        box-shadow: 0 12px 25px rgba(255, 71, 87, 0.35);
     }
 
     .car-actions {
@@ -671,8 +702,10 @@
                                     </span>
                                 </div>
 
-                                <div class="car-price">
-                                    {{ favorite.car.daily_rate }} {% if is_english %}SAR/day{% else %}ريال/يوم{% endif %}
+                                <div class="car-price-container">
+                                    <div class="car-price">
+                                        {{ favorite.car.daily_rate }} {% if is_english %}SAR/day{% else %}ريال/يوم{% endif %}
+                                    </div>
                                 </div>
 
                                 <div class="car-actions">
