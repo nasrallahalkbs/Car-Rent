@@ -3,12 +3,14 @@
 """
 
 import os
+import re
 import socket
 from django.http import HttpRequest, JsonResponse, HttpResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.shortcuts import render
+from django.utils.translation import gettext_lazy as _
 
 def add_current_host_to_trusted_origins():
     """
@@ -50,6 +52,54 @@ def add_current_host_to_trusted_origins():
             settings.CSRF_TRUSTED_ORIGINS.append(general_pattern)
     
     return settings.CSRF_TRUSTED_ORIGINS
+
+def csrf_failure(request, reason=""):
+    """
+    دالة تعامل مخصصة مع أخطاء CSRF
+    تعرض صفحة خطأ ودية مع معلومات وروابط مفيدة للتصحيح
+    """
+    # تحديث النطاقات الموثوقة ديناميكيًا
+    add_current_host_to_trusted_origins()
+    
+    # الحصول على معلومات المضيف والطلب
+    hostname = socket.gethostname()
+    replit_id = os.environ.get('REPL_ID', 'غير متاح')
+    origin = request.headers.get('Origin', 'غير متاح')
+    referer = request.headers.get('Referer', 'غير متاح')
+    
+    # محاولة العثور على معلومات إضافية للسبب
+    error_context = {
+        'reason': reason,
+        'hostname': hostname,
+        'replit_id': replit_id,
+        'origin': origin,
+        'referer': referer,
+        'csrf_token': get_token(request),
+        'csrf_cookie': request.COOKIES.get('csrftoken', 'غير موجود'),
+        'csrf_trusted_origins': settings.CSRF_TRUSTED_ORIGINS,
+    }
+    
+    # تصحيح المشكلة تلقائيًا إذا لم يكن ضمن النطاقات الموثوقة
+    if origin != 'غير متاح':
+        origin_found = False
+        for trusted_origin in settings.CSRF_TRUSTED_ORIGINS:
+            # تحويل أنماط النطاقات مع العلامة النجمية إلى تعبيرات منتظمة للمطابقة
+            if '*' in trusted_origin:
+                pattern = trusted_origin.replace('.', '\\.').replace('*', '.*')
+                regex = re.compile(pattern)
+                if regex.match(origin):
+                    origin_found = True
+                    break
+            elif trusted_origin == origin:
+                origin_found = True
+                break
+        
+        # إضافة النطاق إلى القائمة إذا لم يكن موجودًا
+        if not origin_found:
+            settings.CSRF_TRUSTED_ORIGINS.append(origin)
+            error_context['auto_fixed'] = True
+    
+    return render(request, '403_csrf.html', error_context)
 
 def csrf_debug_page(request):
     """
