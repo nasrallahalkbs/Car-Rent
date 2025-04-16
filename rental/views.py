@@ -728,6 +728,15 @@ def my_reservations(request):
     pending_count = reservations_query.filter(status='pending').count()
     confirmed_count = reservations_query.filter(status='confirmed').count()
     completed_count = reservations_query.filter(status='completed').count()
+    
+    # طباعة معلومات تشخيصية
+    print(f"عدد الحجوزات المعلقة: {pending_count}")
+    print(f"عدد الحجوزات المؤكدة: {confirmed_count}")
+    print(f"عدد الحجوزات المكتملة: {completed_count}")
+    print(f"إجمالي الحجوزات: {reservations_query.count()}")
+    
+    # طباعة اسم المستخدم الحالي للتحقق
+    print(f"المستخدم الحالي: {request.user.username}")
     expired_count = reservations_query.filter(payment_status='expired').count()
     logger.info(f"User {request.user.id} reservations - Pending: {pending_count}, Confirmed: {confirmed_count}, Completed: {completed_count}, Expired: {expired_count}")
 
