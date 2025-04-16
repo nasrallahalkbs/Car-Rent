@@ -2,9 +2,12 @@
 وحدة debug مخصصة لإصلاح مشكلة CSRF في بيئة Replit
 """
 
-from django.http import HttpRequest
+import os
+import socket
+from django.http import HttpRequest, JsonResponse, HttpResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
 @csrf_exempt
 def csrf_debug_view(request):

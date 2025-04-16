@@ -31,6 +31,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.repl.co',
     'https://247299eb-56db-40dd-9589-fe24387a6bf8-00-1hevkyvsh17at.sisko.replit.dev:8000',
     'https://247299eb-56db-40dd-9589-fe24387a6bf8-00-1hevkyvsh17at.sisko.replit.dev',
+    'https://d2177ceb-9728-4182-a8ff-35de971df8e4-00-26n4b48jep28q.sisko.replit.dev:8000',
+    'https://d2177ceb-9728-4182-a8ff-35de971df8e4-00-26n4b48jep28q.sisko.replit.dev',
 ]
 
 # Additional CSRF Settings
