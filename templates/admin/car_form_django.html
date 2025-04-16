@@ -397,15 +397,10 @@
                                 </div>
                             </div>
                             
-                            <div class="form-check border-top pt-3 mt-2">
-                                <div class="d-flex align-items-center mb-1">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-toggle-on text-primary ms-1"></i> توفر السيارة للحجز:
-                                    </label>
-                                </div>
-                                
-                                <div class="form-text mb-2">
-                                    <i class="fas fa-info-circle ms-1"></i> ملاحظة: عند اختيار الحالة "في الصيانة" أو "محجوزة"، سيتم تلقائياً تحديد أن السيارة غير متاحة للحجز
+                            <div class="mb-4 border-top pt-3 mt-2">
+                                <div class="alert alert-info mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <span>ملاحظة: تعتبر السيارة متاحة للحجز والإيجار فقط عند اختيار حالة "متاحة للإيجار". أي حالة أخرى ستجعل السيارة غير متاحة للحجز تلقائيًا.</span>
                                 </div>
                                 
                                 <script>
@@ -414,15 +409,16 @@
                                         const statusField = document.getElementById('{{ form.status.id_for_label }}');
                                         const isAvailableField = document.getElementById('{{ form.is_available.id_for_label }}');
                                         
-                                        // دالة تحديث حالة الإتاحة بناءً على حالة السيارة
+                                        // إخفاء حقل is_available لأننا سنعتمد فقط على status
+                                        if (isAvailableField) {
+                                            isAvailableField.parentNode.style.display = 'none';
+                                        }
+                                        
+                                        // دالة تحديث حالة الإتاحة بناءً على حالة السيارة فقط
                                         function updateAvailability() {
-                                            // إذا كانت السيارة متاحة، نسمح بالتعديل على الإتاحة
                                             if (statusField.value === 'available') {
-                                                isAvailableField.disabled = false;
                                                 isAvailableField.checked = true;
                                             } else {
-                                                // إذا كانت السيارة في صيانة أو محجوزة، لا تكون متاحة للحجز
-                                                isAvailableField.disabled = true;
                                                 isAvailableField.checked = false;
                                             }
                                         }
@@ -435,17 +431,7 @@
                                     });
                                 </script>
                                 
-                                <div class="form-check">
-                                    {{ form.is_available }}
-                                    <label class="form-check-label fw-bold ms-2 mb-0" for="{{ form.is_available.id_for_label }}">
-                                        <i class="fas fa-check-circle text-success ms-1"></i> متاحة للحجز والإيجار
-                                    </label>
-                                </div>
-                                {% if form.is_available.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.is_available.errors }}
-                                </div>
-                                {% endif %}
+                                {{ form.is_available }}
                             </div>
                         </div>
                     </div>
