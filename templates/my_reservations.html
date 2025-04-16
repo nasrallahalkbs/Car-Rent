@@ -636,27 +636,19 @@
                         </td>
                         
                         <!-- الإجراءات -->
-                        <td data-label="{% trans 'ACTIONS' %}" class="action-buttons">
-                            <a href="{% url 'reservation_detail' reservation.id %}" class="btn btn-view">
-                                <i class="fas fa-eye"></i> {% trans "View" %}
+                        <td data-label="{% trans 'ACTIONS' %}">
+                            {% if reservation.status == 'confirmed' %}
+                            <a href="{% url 'reservation_detail' reservation.id %}" class="action-btn btn-confirm">
+                                {% if is_english %}Confirmed{% else %}تمت الموافقة{% endif %}
                             </a>
-
-                            <div class="d-flex flex-column flex-md-row align-items-center gap-2">
-                                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
-                                <div class="countdown-container" data-expiry="{{ reservation.confirmation_expiry|date:'c' }}"></div>
-                                {% endif %}
-                                
-                                {% if reservation.status == 'pending' or reservation.payment_status == 'pending' %}
-                                <a href="{% url 'checkout' reservation.id %}" class="btn btn-pay">
-                                    <i class="fas fa-credit-card"></i> {% trans "Pay" %}
-                                </a>
-                                {% endif %}
-                            </div>
-
-                            {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
-                            <a href="{% url 'cancel_reservation' reservation.id %}" class="btn btn-cancel">
-                                <i class="fas fa-times"></i> {% trans "Cancel" %}
+                            {% else %}
+                            <a href="{% url 'reservation_detail' reservation.id %}" class="action-btn btn-pending">
+                                {% if is_english %}In Waiting{% else %}في الانتظار{% endif %}
                             </a>
+                            {% endif %}
+                            
+                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
+                            <div class="countdown-container" data-expiry="{{ reservation.confirmation_expiry|date:'c' }}"></div>
                             {% endif %}
                         </td>
                     </tr>
@@ -689,7 +681,11 @@
 <script>
     // إضافة معرفات للحجوزات لتسهيل التعامل معها في JavaScript
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('تم تحميل صفحة الحجوزات وتشغيل الأكواد اللازمة');
+        console.log('تم تحميل صفحة العداد التنازلي');
+        
+        // طباعة عدد الحجوزات للتشخيص
+        const reservationItems = document.querySelectorAll('.reservation-item');
+        console.log(`تم العثور على ${reservationItems.length} حجز`);
         
         // إضافة معرفات للصفوف
         const rows = document.querySelectorAll('.reservation-item, tr');
@@ -699,6 +695,7 @@
                 if (reservationId) {
                     const id = reservationId.textContent.trim().replace('#', '');
                     row.id = 'reservation-' + id;
+                    console.log(`تم تعيين معرف الصف: ${row.id}`);
                 } else {
                     row.id = 'reservation-row-' + (index + 1);
                 }
