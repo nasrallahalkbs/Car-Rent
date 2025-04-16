@@ -559,16 +559,7 @@
     <div class="reservations-container mb-4">
         <div class="table-responsive">
             <table class="reservation-table">
-                <thead>
-                    <tr>
-                        <th class="text-center">{% trans "ID" %}</th>
-                        <th class="text-center">{% trans "Car" %}</th>
-                        <th class="text-center">{% trans "Dates" %}</th>
-                        <th class="text-center">{% trans "Duration" %}</th>
-                        <th class="text-center">{% trans "Total" %}</th>
-                        <th class="text-center">{% trans "Actions" %}</th>
-                    </tr>
-                </thead>
+
                 <tbody>
                     {% for reservation in reservations %}
                     <tr class="reservation-item" data-expiry="{% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}{{ reservation.confirmation_expiry|date:'c' }}{% endif %}">
@@ -581,11 +572,9 @@
                         
                         <!-- معلومات السيارة -->
                         <td data-label="{% trans 'CAR' %}" class="car-info">
-                            {% if reservation.car.image %}
-                            <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.model }}">
-                            {% else %}
-                            <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.model }}">
-                            {% endif %}
+                            <div class="car-icon">
+                                <i class="fas fa-car"></i>
+                            </div>
                             <div class="car-details">
                                 <div class="car-make-model">{{ reservation.car.make }} {{ reservation.car.model }}</div>
                                 <div class="car-year">{{ reservation.car.year }}</div>
@@ -594,9 +583,11 @@
                         
                         <!-- التواريخ -->
                         <td data-label="{% trans 'DATES' %}" class="date-cell">
-                            <div class="date-value">{{ reservation.start_date|date:"d/m/Y" }}</div>
-                            <div class="date-separator">{% if is_english %}to{% else %}إلى{% endif %}</div>
-                            <div class="date-value">{{ reservation.end_date|date:"d/m/Y" }}</div>
+                            <div class="date-range">
+                                <div class="start-date">{{ reservation.start_date|date:"d/m/Y" }}</div>
+                                <div class="date-separator">-</div>
+                                <div class="end-date">{{ reservation.end_date|date:"d/m/Y" }}</div>
+                            </div>
                         </td>
                         
                         <!-- المدة -->
@@ -619,30 +610,7 @@
                             <span class="currency">{% trans "SAR" %}</span>
                         </td>
                         
-                        <!-- الحالة -->
-                        <td data-label="{% trans 'STATUS' %}" class="reservation-status">
-                            {% if reservation.status == 'pending' %}
-                            <span class="status-badge status-pending">
-                                <i class="fas fa-clock"></i>
-                                {% trans "Pending Payment" %}
-                            </span>
-                            {% elif reservation.status == 'confirmed' %}
-                            <span class="status-badge status-confirmed">
-                                <i class="fas fa-check-circle"></i>
-                                {% trans "Confirmed" %}
-                            </span>
-                            {% elif reservation.status == 'cancelled' %}
-                            <span class="status-badge status-cancelled">
-                                <i class="fas fa-times-circle"></i>
-                                {% trans "Cancelled" %}
-                            </span>
-                            {% elif reservation.status == 'paid' or reservation.payment_status == 'paid' %}
-                            <span class="status-badge status-paid">
-                                <i class="fas fa-check-double"></i>
-                                {% trans "Paid" %}
-                            </span>
-                            {% endif %}
-                        </td>
+
                         
                         <!-- الإجراءات -->
                         <td data-label="{% trans 'ACTIONS' %}" class="text-center">
