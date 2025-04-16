@@ -1,7 +1,7 @@
 from django.urls import path
 from django.shortcuts import render
 from . import views, admin_views, payment_views
-from .csrf_debug import csrf_debug_view
+from .csrf_debug import csrf_debug_view, csrf_debug_page
 
 urlpatterns = [
     # User-facing views
@@ -67,4 +67,5 @@ urlpatterns = [
     
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
+    path('csrf-debug-page/', csrf_debug_page, name='csrf_debug_page'),
 ]

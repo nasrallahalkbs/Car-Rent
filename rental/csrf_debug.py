@@ -8,16 +8,74 @@ from django.http import HttpRequest, JsonResponse, HttpResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.shortcuts import render
+
+def add_current_host_to_trusted_origins():
+    """
+    إضافة المضيف الحالي إلى قائمة النطاقات الموثوقة CSRF_TRUSTED_ORIGINS
+    """
+    # الحصول على معلومات Replit من متغيرات البيئة
+    replit_id = os.environ.get('REPL_ID', '')
+    replit_slug = os.environ.get('REPL_SLUG', '')
+    replit_owner = os.environ.get('REPL_OWNER', '')
+    
+    # قائمة بالنطاقات المحتملة التي تستند إلى معرف REPL
+    possible_domains = []
+    
+    if replit_id:
+        # نطاقات تعتمد على معرف REPL
+        wildcard_domains = [
+            f'https://{replit_id}-*.*.replit.dev',
+            f'https://{replit_id}-*.*.replit.dev:*',
+        ]
+        
+        # إضافة أنماط أكثر تحديدًا
+        specific_domains = [
+            f'https://{replit_id}-00-26n4b48jep28q.sisko.replit.dev',
+            f'https://{replit_id}-00-26n4b48jep28q.sisko.replit.dev:8000',
+        ]
+        
+        possible_domains.extend(wildcard_domains)
+        possible_domains.extend(specific_domains)
+    
+    # إضافة النطاقات المحتملة إلى قائمة النطاقات الموثوقة
+    for domain in possible_domains:
+        if domain not in settings.CSRF_TRUSTED_ORIGINS:
+            settings.CSRF_TRUSTED_ORIGINS.append(domain)
+    
+    # إضافة نطاق عام للتغطية الشاملة
+    if replit_id:
+        general_pattern = f'https://{replit_id}-*'
+        if general_pattern not in settings.CSRF_TRUSTED_ORIGINS:
+            settings.CSRF_TRUSTED_ORIGINS.append(general_pattern)
+    
+    return settings.CSRF_TRUSTED_ORIGINS
+
+def csrf_debug_page(request):
+    """
+    عرض صفحة HTML لتصحيح أخطاء CSRF
+    """
+    return render(request, 'csrf_debug.html')
 
 @csrf_exempt
 def csrf_debug_view(request):
     """
     عرض معلومات تصحيح الأخطاء المتعلقة بـ CSRF
     """
-    from django.http import JsonResponse
+    # تحديث النطاقات الموثوقة
+    trusted_origins = add_current_host_to_trusted_origins()
     
     # طلب إنشاء رمز CSRF وإرجاعه
     csrf_token = get_token(request)
+    
+    # الحصول على معلومات المضيف والطلب
+    hostname = socket.gethostname()
+    replit_id = os.environ.get('REPL_ID', 'Not available')
+    replit_slug = os.environ.get('REPL_SLUG', 'Not available')
+    replit_owner = os.environ.get('REPL_OWNER', 'Not available')
+    origin = request.headers.get('Origin', 'Not available')
+    referer = request.headers.get('Referer', 'Not available')
+    user_agent = request.headers.get('User-Agent', 'Not available')
     
     # التحقق من وجود رمز CSRF في الطلب
     csrf_cookie = request.COOKIES.get('csrftoken', None)
@@ -33,4 +91,26 @@ def csrf_debug_view(request):
         'csrf_cookie': csrf_cookie if csrf_cookie else 'Not found',
         'all_cookies': list(request.COOKIES.keys()),
         'session_key': request.session.session_key if hasattr(request, 'session') and hasattr(request.session, 'session_key') else None,
+        'hostname': hostname,
+        'replit_info': {
+            'replit_id': replit_id,
+            'replit_slug': replit_slug,
+            'replit_owner': replit_owner,
+        },
+        'request_info': {
+            'origin': origin,
+            'referer': referer,
+            'user_agent': user_agent,
+            'method': request.method,
+            'is_secure': request.is_secure(),
+            'is_ajax': request.headers.get('X-Requested-With') == 'XMLHttpRequest',
+        },
+        'csrf_settings': {
+            'csrf_cookie_name': settings.CSRF_COOKIE_NAME,
+            'csrf_use_sessions': settings.CSRF_USE_SESSIONS,
+            'csrf_cookie_secure': settings.CSRF_COOKIE_SECURE,
+            'csrf_cookie_httponly': settings.CSRF_COOKIE_HTTPONLY,
+            'csrf_cookie_samesite': settings.CSRF_COOKIE_SAMESITE,
+        },
+        'csrf_trusted_origins': trusted_origins,
     })

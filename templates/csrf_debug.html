@@ -1,0 +1,331 @@
+{% extends "layout_django.html" %}
+
+{% block title %}
+    فحص حالة CSRF
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card border-primary">
+        <div class="card-header bg-primary text-white">
+            <h3 class="my-2 text-center">معلومات حماية CSRF</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <p class="mb-0">هذه الصفحة تعرض معلومات تشخيصية عن حالة حماية CSRF في التطبيق. استخدمها عند مواجهة مشكلات تتعلق بأخطاء CSRF.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h4 class="text-primary">اختبار إرسال نموذج</h4>
+                    <div class="border p-3 rounded">
+                        <form method="post" action="{% url 'csrf_debug' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="test_input" class="form-label">نص اختباري:</label>
+                                <input type="text" class="form-control" id="test_input" name="test_input" value="اختبار CSRF">
+                            </div>
+                            <button type="submit" class="btn btn-primary">إرسال النموذج الاختباري</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0">حالة CSRF</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>CSRF Cookie موجود</span>
+                                    <span id="csrf_cookie_exists" class="badge bg-primary">جاري التحميل...</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>CSRF Header موجود</span>
+                                    <span id="csrf_header_exists" class="badge bg-primary">جاري التحميل...</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>CSRF POST قيمة</span>
+                                    <span id="csrf_post_exists" class="badge bg-primary">جاري التحميل...</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <div><strong>CSRF Token:</strong></div>
+                                    <div class="text-break"><code id="csrf_token">جاري التحميل...</code></div>
+                                </li>
+                                <li class="list-group-item">
+                                    <div><strong>CSRF Cookie:</strong></div>
+                                    <div class="text-break"><code id="csrf_cookie">جاري التحميل...</code></div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0">معلومات Replit</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <strong>Hostname:</strong> <span id="hostname">جاري التحميل...</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>REPLIT_ID:</strong> <span id="replit_id">جاري التحميل...</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>REPLIT_SLUG:</strong> <span id="replit_slug">جاري التحميل...</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>REPLIT_OWNER:</strong> <span id="replit_owner">جاري التحميل...</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0">معلومات الطلب</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <strong>Origin:</strong> <span id="origin">جاري التحميل...</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Referer:</strong> <span id="referer">جاري التحميل...</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Method:</strong> <span id="method">جاري التحميل...</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>HTTPS:</strong> <span id="is_secure">جاري التحميل...</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0">إعدادات CSRF</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush" id="csrf_settings">
+                                <li class="list-group-item">جاري التحميل...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0">النطاقات الموثوقة لـ CSRF</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-success">
+                                <strong>هام:</strong> يجب أن يكون عنوان URL الخاص بك (origin) مدرجًا في قائمة النطاقات الموثوقة أدناه لكي تعمل حماية CSRF بشكل صحيح.
+                            </div>
+                            <ul class="list-group list-group-flush" id="csrf_trusted_origins">
+                                <li class="list-group-item">جاري التحميل...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0">Cookies</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush" id="all_cookies">
+                                <li class="list-group-item">جاري التحميل...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-12 text-center">
+                    <button id="refresh_data" class="btn btn-primary">تحديث البيانات</button>
+                    <a href="{% url 'index' %}" class="btn btn-secondary ms-2">العودة إلى الصفحة الرئيسية</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchData();
+        
+        document.getElementById('refresh_data').addEventListener('click', fetchData);
+    });
+    
+    function fetchData() {
+        fetch('{% url "csrf_debug" %}')
+            .then(response => response.json())
+            .then(data => {
+                // تحديث حالة CSRF
+                document.getElementById('csrf_cookie_exists').textContent = data.csrf_cookie_exists ? 'موجود ✓' : 'غير موجود ✗';
+                document.getElementById('csrf_cookie_exists').className = data.csrf_cookie_exists ? 'badge bg-success' : 'badge bg-danger';
+                
+                document.getElementById('csrf_header_exists').textContent = data.csrf_header_exists ? 'موجود ✓' : 'غير موجود ✗';
+                document.getElementById('csrf_header_exists').className = data.csrf_header_exists ? 'badge bg-success' : 'badge bg-danger';
+                
+                document.getElementById('csrf_post_exists').textContent = data.csrf_post_exists ? 'موجود ✓' : 'غير موجود ✗';
+                document.getElementById('csrf_post_exists').className = data.csrf_post_exists ? 'badge bg-success' : 'badge bg-danger';
+                
+                document.getElementById('csrf_token').textContent = data.csrf_token;
+                document.getElementById('csrf_cookie').textContent = data.csrf_cookie;
+                
+                // تحديث معلومات Replit
+                document.getElementById('hostname').textContent = data.hostname;
+                document.getElementById('replit_id').textContent = data.replit_info.replit_id;
+                document.getElementById('replit_slug').textContent = data.replit_info.replit_slug;
+                document.getElementById('replit_owner').textContent = data.replit_info.replit_owner;
+                
+                // تحديث معلومات الطلب
+                document.getElementById('origin').textContent = data.request_info.origin;
+                document.getElementById('referer').textContent = data.request_info.referer;
+                document.getElementById('method').textContent = data.request_info.method;
+                document.getElementById('is_secure').textContent = data.request_info.is_secure ? 'نعم (HTTPS)' : 'لا (HTTP)';
+                
+                // تحديث إعدادات CSRF
+                const csrfSettingsList = document.getElementById('csrf_settings');
+                csrfSettingsList.innerHTML = '';
+                for (const [key, value] of Object.entries(data.csrf_settings)) {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.innerHTML = `<strong>${key}:</strong> ${value}`;
+                    csrfSettingsList.appendChild(li);
+                }
+                
+                // تحديث النطاقات الموثوقة
+                const trustedOriginsList = document.getElementById('csrf_trusted_origins');
+                trustedOriginsList.innerHTML = '';
+                
+                // تحقق مما إذا كان عنوان URL الحالي موجودًا في قائمة النطاقات الموثوقة
+                const currentOrigin = data.request_info.origin;
+                let isCurrentOriginTrusted = false;
+                
+                data.csrf_trusted_origins.forEach(origin => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    
+                    // التحقق من تطابق النطاق الحالي مع أنماط النطاقات الموثوقة
+                    let isTrusted = false;
+                    if (currentOrigin === origin) {
+                        isTrusted = true;
+                        isCurrentOriginTrusted = true;
+                    } else if (origin.includes('*')) {
+                        // تحويل نمط النطاق مع العلامة النجمية إلى تعبير منتظم للمطابقة
+                        const pattern = origin.replace(/\./g, '\\.').replace(/\*/g, '.*');
+                        const regex = new RegExp('^' + pattern + '$');
+                        if (regex.test(currentOrigin)) {
+                            isTrusted = true;
+                            isCurrentOriginTrusted = true;
+                        }
+                    }
+                    
+                    if (isTrusted) {
+                        li.innerHTML = `<span class="text-success">${origin} ✓</span>`;
+                        li.className = 'list-group-item list-group-item-success';
+                    } else {
+                        li.textContent = origin;
+                    }
+                    
+                    trustedOriginsList.appendChild(li);
+                });
+                
+                // إذا لم يكن عنوان URL الحالي موجودًا في قائمة النطاقات الموثوقة، أضف تحذيرًا
+                if (!isCurrentOriginTrusted && currentOrigin !== 'Not available') {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item list-group-item-danger';
+                    li.innerHTML = `<strong>تحذير:</strong> عنوان URL الحالي <code>${currentOrigin}</code> غير موجود في قائمة النطاقات الموثوقة. هذا هو سبب حدوث أخطاء CSRF.`;
+                    trustedOriginsList.appendChild(li);
+                }
+                
+                // تحديث ملفات تعريف الارتباط
+                const cookiesList = document.getElementById('all_cookies');
+                cookiesList.innerHTML = '';
+                data.all_cookies.forEach(cookie => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    if (cookie === 'csrftoken') {
+                        li.innerHTML = `<strong>${cookie}</strong> (مهم لحماية CSRF)`;
+                        li.className = 'list-group-item list-group-item-info';
+                    } else if (cookie === 'sessionid') {
+                        li.innerHTML = `<strong>${cookie}</strong> (مهم لجلسة المستخدم)`;
+                        li.className = 'list-group-item list-group-item-info';
+                    } else {
+                        li.textContent = cookie;
+                    }
+                    cookiesList.appendChild(li);
+                });
+                
+                // عرض تنبيه ملخص للحالة العامة
+                const alertDiv = document.createElement('div');
+                if (data.csrf_cookie_exists && isCurrentOriginTrusted) {
+                    alertDiv.className = 'alert alert-success mt-4';
+                    alertDiv.innerHTML = '<strong>حالة CSRF جيدة:</strong> جميع المتطلبات الأساسية موجودة وتبدو الحماية تعمل بشكل صحيح.';
+                } else {
+                    alertDiv.className = 'alert alert-danger mt-4';
+                    alertDiv.innerHTML = '<strong>هناك مشكلة في حماية CSRF:</strong> ';
+                    if (!data.csrf_cookie_exists) {
+                        alertDiv.innerHTML += 'ملف تعريف ارتباط CSRF غير موجود. ';
+                    }
+                    if (!isCurrentOriginTrusted && currentOrigin !== 'Not available') {
+                        alertDiv.innerHTML += `عنوان URL الحالي <code>${currentOrigin}</code> غير موجود في قائمة النطاقات الموثوقة.`;
+                    }
+                }
+                
+                const cardBody = document.querySelector('.card-body');
+                const existingAlert = cardBody.querySelector('.alert-summary');
+                if (existingAlert) {
+                    cardBody.removeChild(existingAlert);
+                }
+                alertDiv.classList.add('alert-summary');
+                cardBody.insertBefore(alertDiv, cardBody.firstChild);
+            })
+            .catch(error => {
+                console.error('Error fetching CSRF debug data:', error);
+                
+                const cardBody = document.querySelector('.card-body');
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger mt-4 alert-summary';
+                alertDiv.innerHTML = '<strong>خطأ:</strong> حدث خطأ أثناء جلب بيانات تصحيح CSRF.';
+                
+                const existingAlert = cardBody.querySelector('.alert-summary');
+                if (existingAlert) {
+                    cardBody.removeChild(existingAlert);
+                }
+                cardBody.insertBefore(alertDiv, cardBody.firstChild);
+            });
+    }
+</script>
+{% endblock %}
