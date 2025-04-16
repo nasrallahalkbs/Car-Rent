@@ -1112,11 +1112,13 @@ def toggle_dark_mode(request):
 def toggle_language(request):
     """
     تبديل إعدادات اللغة بين العربية والإنجليزية بشكل مباشر
+    مع الحفاظ على البقاء في نفس الصفحة بعد تغيير اللغة
     """
     from django.utils import translation
     from django.utils.translation import get_language
     from django.conf import settings
     import logging
+    import re
 
     logger = logging.getLogger(__name__)
 
@@ -1137,8 +1139,48 @@ def toggle_language(request):
     # طباعة معلومات التصحيح
     print(f"Language session updated: {new_language}")
 
-    # إعادة توجيه بشكل مباشر إلى المسار المناسب مع بادئة اللغة الجديدة
-    response = redirect(f'/{new_language}/')
+    # الحصول على صفحة المصدر (إذا كانت متوفرة)
+    referer = request.META.get('HTTP_REFERER')
+    
+    # مسار للعودة إليه
+    redirect_url = f'/{new_language}/'
+    
+    # التحقق إذا كانت الصفحة المصدر متوفرة
+    if referer:
+        logger.debug(f"Referer URL: {referer}")
+        
+        # التحقق إذا كانت هذه صفحة إدارية
+        if '/admin/' in referer or '/admin_' in referer:
+            logger.debug("Admin page detected, redirecting back to admin panel")
+            
+            # الاحتفاظ بالمسار الإداري نفسه
+            # تعديل المسار للعودة للوحة التحكم
+            if 'admin_index' in referer:
+                redirect_url = reverse('admin_index')
+            elif 'admin_cars' in referer:
+                redirect_url = reverse('admin_cars')
+            elif 'admin_users' in referer:
+                redirect_url = reverse('admin_users')
+            elif 'admin_reservations' in referer:
+                redirect_url = reverse('admin_reservations')
+            elif 'admin_dashboard' in referer:
+                redirect_url = reverse('admin_index')
+            else:
+                # إذا لم يكن أي من الصفحات الإدارية المعروفة، أعد التوجيه إلى لوحة التحكم
+                redirect_url = reverse('admin_index')
+                
+            logger.debug(f"Redirecting to admin page: {redirect_url}")
+        else:
+            # بالنسبة للصفحات غير الإدارية، قم بإستبدال اللغة في المسار
+            # مثل: /ar/cars/ -> /en/cars/
+            match = re.search(r'/(ar|en)/(.+)', referer)
+            if match:
+                path_after_lang = match.group(2)
+                redirect_url = f'/{new_language}/{path_after_lang}'
+                logger.debug(f"Redirecting to: {redirect_url}")
+    
+    # إعادة توجيه إلى المسار المحدد
+    response = redirect(redirect_url)
 
     # ضبط ملف تعريف الارتباط
     response.set_cookie(
@@ -1152,7 +1194,7 @@ def toggle_language(request):
         samesite=settings.LANGUAGE_COOKIE_SAMESITE,
     )
 
-    logger.debug(f"Language switched to: {new_language}, redirecting to home page in {new_language}")
+    logger.debug(f"Language switched to: {new_language}, redirecting to: {redirect_url}")
     return response
 
 
