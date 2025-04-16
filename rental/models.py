@@ -35,6 +35,12 @@ class Car(models.Model):
         ('Hybrid', 'Hybrid'),
     ]
     
+    STATUS_CHOICES = [
+        ('available', 'متاحة للإيجار'),
+        ('maintenance', 'في الصيانة'),
+        ('reserved', 'محجوزة'),
+    ]
+    
     make = models.CharField(max_length=50)
     model = models.CharField(max_length=50)
     year = models.IntegerField()
@@ -49,6 +55,7 @@ class Car(models.Model):
     image_url = models.URLField(blank=True)
     image = models.ImageField(upload_to='car_images/', blank=True, null=True)
     is_available = models.BooleanField(default=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     avg_rating = models.DecimalField(max_digits=3, decimal_places=1, default=0)
     
     def __str__(self):

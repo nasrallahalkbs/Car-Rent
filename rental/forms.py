@@ -176,7 +176,7 @@ class CarForm(forms.ModelForm):
         model = Car
         fields = ['make', 'model', 'year', 'color', 'license_plate', 'daily_rate', 
                  'category', 'seats', 'transmission', 'fuel_type', 'features', 
-                 'image_url', 'image', 'is_available']
+                 'image_url', 'image', 'status', 'is_available']
         widgets = {
             'make': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -235,6 +235,9 @@ class CarForm(forms.ModelForm):
             }),
             'is_available': forms.CheckboxInput(attrs={
                 'class': 'form-check-input me-2',
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select',
             }),
         }
 
