@@ -791,6 +791,7 @@ def my_reservations(request):
 
     # استخدام القالب المحدث عبر دالة اختيار القالب بناءً على اللغة
     template = get_template_by_language(request, 'my_reservations.html')
+    print(f"TEMPLATE BEING USED: {template}")  # طباعة تشخيصية للقالب المستخدم
     return render(request, template, context)
 
 @login_required
