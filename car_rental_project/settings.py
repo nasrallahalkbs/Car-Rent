@@ -25,6 +25,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.replit.app',
     'https://*.replit.dev',
     'https://*.pike.replit.dev',
+    'https://*.sisko.replit.dev',
     f'https://{REPLIT_SLUG}.{REPLIT_OWNER}.repl.co',
     f'https://{REPLIT_ID}.id.repl.co',
     'https://*.repl.co',
@@ -32,6 +33,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://07e67146-564e-4c35-aefd-537ca316147c-00-qud2bpdkzhko.pike.replit.dev',
     'https://6b3e8525-9db6-4d80-a0e6-0d38f2c3e87a-00-1trdfl58ps9pa.pike.replit.dev:8000',
     'https://6b3e8525-9db6-4d80-a0e6-0d38f2c3e87a-00-1trdfl58ps9pa.pike.replit.dev',
+    'https://ee9af411-09e6-4c8d-8486-d2f91f090200-00-2lfytje4curdz.sisko.replit.dev:8000',
+    'https://ee9af411-09e6-4c8d-8486-d2f91f090200-00-2lfytje4curdz.sisko.replit.dev',
 ]
 
 # Additional CSRF Settings
