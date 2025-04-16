@@ -178,10 +178,64 @@ class CarForm(forms.ModelForm):
                  'category', 'seats', 'transmission', 'fuel_type', 'features', 
                  'image_url', 'image', 'is_available']
         widgets = {
-            'year': forms.NumberInput(attrs={'min': 2000, 'max': date.today().year + 1}),
-            'features': forms.TextInput(attrs={'placeholder': 'مثل: GPS، بلوتوث، كاميرا خلفية'}),
-            'image_url': forms.URLInput(attrs={'placeholder': 'رابط الصورة (اختياري إذا قمت بتحميل ملف)'}),
-            'image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'make': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'مثل: تويوتا، فورد، هوندا',
+            }),
+            'model': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'مثل: كامري، F-150، سيفيك',
+            }),
+            'year': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 2000,
+                'max': date.today().year + 1,
+                'placeholder': f'بين 2000 و {date.today().year + 1}',
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'مثل: أبيض، أسود، أحمر',
+            }),
+            'license_plate': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'رقم لوحة السيارة',
+            }),
+            'daily_rate': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'step': 0.1,
+                'placeholder': 'السعر اليومي (د.ك)',
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'seats': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'max': 15,
+                'placeholder': 'عدد المقاعد',
+            }),
+            'transmission': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'fuel_type': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'features': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'مثل: كاميرا خلفية، نظام ملاحة، GPS',
+            }),
+            'image_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'رابط الصورة من الإنترنت (اختياري)',
+            }),
+            'image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*',
+            }),
+            'is_available': forms.CheckboxInput(attrs={
+                'class': 'form-check-input me-2',
+            }),
         }
 
 class ProfileForm(forms.ModelForm):
