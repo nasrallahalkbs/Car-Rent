@@ -76,6 +76,10 @@ def get_template_by_language(request, base_template):
     print(f"Current language: {current_language}")
     print(f"Cookie language: {request.COOKIES.get('django_language', 'none')}")
 
+    # استثناء خاص لصفحة الحجوزات - استخدام القالب الجدولي دائمًا
+    if base_template == 'my_reservations.html':
+        return 'my_reservations.html'
+
     # قاموس لتحويل القوالب الأساسية إلى نسخها المدعومة بنظام i18n
     template_mappings = {
         # قوالب التنقل الرئيسية
@@ -89,7 +93,8 @@ def get_template_by_language(request, base_template):
         'checkout.html': 'checkout_django.html',
         'login.html': 'login_django.html',
         'register.html': 'register_django.html',
-        'my_reservations.html': 'my_reservations_django.html',
+        # استثناء لصفحة الحجوزات - تم تعليقه لاستخدام التصميم الجدولي
+        # 'my_reservations.html': 'my_reservations_django.html',
         'booking.html': 'booking_django.html',
         'reservation_detail.html': 'reservation_detail_django.html',
         'error.html': 'error_django.html',
@@ -765,6 +770,12 @@ def my_reservations(request):
     # ترتيب النتائج حسب تاريخ الإنشاء (الأحدث أولاً)
     reservations = reservations_query.order_by('-created_at')
 
+    # الحصول على معلومات اللغة للقالب
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
     context = {
         'reservations': reservations,
         'search_query': search_query,
@@ -774,6 +785,8 @@ def my_reservations(request):
         'status_choices': Reservation.STATUS_CHOICES,
         'today': date.today(),
         'now': now,  # إضافة الوقت الحالي للقالب (مطلوب للعداد التنازلي)
+        'is_english': is_english,  # إضافة متغير اللغة الإنجليزية
+        'is_rtl': is_rtl  # إضافة متغير للتنسيق من اليمين إلى اليسار
     }
 
     # استخدام القالب المحدث عبر دالة اختيار القالب بناءً على اللغة
