@@ -561,13 +561,12 @@
             <table class="reservation-table">
                 <thead>
                     <tr>
-                        <th>{% trans "RESERVATION ID" %}</th>
-                        <th>{% trans "CAR" %}</th>
-                        <th>{% trans "DATES" %}</th>
-                        <th>{% trans "DURATION" %}</th>
-                        <th>{% trans "TOTAL" %}</th>
-                        <th>{% trans "STATUS" %}</th>
-                        <th>{% trans "ACTIONS" %}</th>
+                        <th class="text-center">{% trans "ID" %}</th>
+                        <th class="text-center">{% trans "Car" %}</th>
+                        <th class="text-center">{% trans "Dates" %}</th>
+                        <th class="text-center">{% trans "Duration" %}</th>
+                        <th class="text-center">{% trans "Total" %}</th>
+                        <th class="text-center">{% trans "Actions" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -646,20 +645,32 @@
                         </td>
                         
                         <!-- الإجراءات -->
-                        <td data-label="{% trans 'ACTIONS' %}">
-                            {% if reservation.status == 'confirmed' %}
-                            <a href="{% url 'reservation_detail' reservation.id %}" class="action-btn btn-confirm">
-                                {% if is_english %}Confirmed{% else %}تمت الموافقة{% endif %}
-                            </a>
-                            {% else %}
-                            <a href="{% url 'reservation_detail' reservation.id %}" class="action-btn btn-pending">
-                                {% if is_english %}In Waiting{% else %}في الانتظار{% endif %}
-                            </a>
-                            {% endif %}
-                            
-                            {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
-                            <div class="countdown-container" data-expiry="{{ reservation.confirmation_expiry|date:'c' }}"></div>
-                            {% endif %}
+                        <td data-label="{% trans 'ACTIONS' %}" class="text-center">
+                            <div class="action-wrapper">
+                                {% if reservation.status == 'confirmed' or reservation.payment_status == 'paid' %}
+                                <a href="{% url 'reservation_detail' reservation.id %}" class="action-btn btn-confirm">
+                                    {% if is_english %}Confirmed{% else %}تمت الموافقة{% endif %}
+                                </a>
+                                <a href="{% url 'reservation_detail' reservation.id %}" class="action-btn btn-details">
+                                    {% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}
+                                </a>
+                                {% else %}
+                                <a href="{% url 'reservation_detail' reservation.id %}" class="action-btn btn-pending">
+                                    {% if is_english %}Waiting{% else %}في انتظار الدفع{% endif %}
+                                </a>
+                                {% endif %}
+                                
+                                {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' and reservation.confirmation_expiry %}
+                                <div class="reservation-expiry">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    {% if is_english %}
+                                    Deadline: <span class="countdown-timer" data-expiry="{{ reservation.confirmation_expiry|date:'c' }}">5 hours</span>
+                                    {% else %}
+                                    انتهاء مهلة الحجز: <span class="countdown-timer" data-expiry="{{ reservation.confirmation_expiry|date:'c' }}">5 ساعات</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
