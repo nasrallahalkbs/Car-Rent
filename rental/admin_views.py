@@ -208,11 +208,17 @@ def add_car(request):
     if request.method == 'POST':
         form = CarForm(request.POST, request.FILES)
         if form.is_valid():
-            car = form.save()
+            car = form.save(commit=False)
+            
+            # تحديث حقل is_available بناءً على حالة السيارة
+            if car.status != 'available':
+                car.is_available = False
+                
+            car.save()
             messages.success(request, f"تمت إضافة السيارة {car.make} {car.model} بنجاح!")
             return redirect('admin_cars')
     else:
-        form = CarForm()
+        form = CarForm(initial={'status': 'available', 'is_available': True})
     
     context = {
         'form': form,
@@ -232,7 +238,13 @@ def edit_car(request, car_id):
     if request.method == 'POST':
         form = CarForm(request.POST, request.FILES, instance=car)
         if form.is_valid():
-            car = form.save()
+            car = form.save(commit=False)
+            
+            # تحديث حقل is_available بناءً على حالة السيارة
+            if car.status != 'available':
+                car.is_available = False
+            
+            car.save()
             messages.success(request, f"تم تحديث السيارة {car.make} {car.model} بنجاح!")
             return redirect('admin_cars')
     else:
