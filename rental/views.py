@@ -74,10 +74,12 @@ def get_template_by_language(request, base_template):
 
     # طباعة للتصحيح
     print(f"Current language: {current_language}")
-    print(f"Cookie language: {request.COOKIES.get('django_language', 'none')}")
+    if request and hasattr(request, 'COOKIES'):
+        print(f"Cookie language: {request.COOKIES.get('django_language', 'none')}")
 
     # استثناء خاص لصفحة الحجوزات - استخدام القالب الجدولي دائمًا
     if base_template == 'my_reservations.html':
+        print(f"Using table-based design for reservations page")
         return 'my_reservations.html'
 
     # قاموس لتحويل القوالب الأساسية إلى نسخها المدعومة بنظام i18n
