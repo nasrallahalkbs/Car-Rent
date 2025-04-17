@@ -786,7 +786,7 @@ def add_manual_payment(request):
                 try:
                     placeholder_car = Car.objects.first()
                     if not placeholder_car:
-                        # If no cars exist, create a placeholder dummy car for manual payments
+                                            # If no cars exist, create a placeholder dummy car for manual payments
                         placeholder_car = Car.objects.create(
                             make="Manual Payment",
                             model="System Car",
