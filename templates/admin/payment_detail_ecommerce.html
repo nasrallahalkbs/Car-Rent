@@ -5,7 +5,601 @@
 {% block title %}تفاصيل الدفع #{{ payment.id }} - لوحة التحكم{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{% static 'css/payment_ecommerce.css' %}?v=1744904985">
+<style>
+/* تصميم صفحة تفاصيل الدفع على طراز المتاجر الإلكترونية */
+
+/* متغيرات CSS الأساسية */
+:root {
+    /* ألوان أساسية */
+    --primary-color: #05a566;
+    --primary-hover: #048c56;
+    --primary-light: #e8f9f2;
+    --primary-border: #b5e6d1;
+    
+    /* ألوان الرمادي */
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #ced4da;
+    --gray-500: #adb5bd;
+    --gray-600: #6c757d;
+    --gray-700: #495057;
+    --gray-800: #343a40;
+    --gray-900: #212529;
+    
+    /* ألوان الحالة */
+    --success-color: #28a745;
+    --success-light: #d4edda;
+    --success-border: #c3e6cb;
+    
+    --warning-color: #ffc107;
+    --warning-light: #fff3cd;
+    --warning-border: #ffeeba;
+    
+    --danger-color: #dc3545;
+    --danger-light: #f8d7da;
+    --danger-border: #f5c6cb;
+    
+    --info-color: #17a2b8;
+    --info-light: #d1ecf1;
+    --info-border: #bee5eb;
+    
+    /* ألوان النص */
+    --text-color: #212529;
+    --text-muted: #6c757d;
+    --text-light: #adb5bd;
+    
+    /* حدود وظلال */
+    --border-radius: 0.25rem;
+    --border-radius-lg: 0.5rem;
+    --border-color: #dee2e6;
+    --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --box-shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    
+    /* المسافات */
+    --spacer: 1rem;
+    --spacer-sm: 0.5rem;
+    --spacer-lg: 1.5rem;
+    --spacer-xl: 3rem;
+    
+    /* الخطوط */
+    --font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-size-base: 1rem;
+    --font-size-sm: 0.875rem;
+    --font-size-lg: 1.25rem;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+    --line-height-base: 1.5;
+}
+
+/* إعدادات عامة */
+body {
+    font-family: var(--font-family);
+    color: var(--text-color);
+    background-color: #f8f9fa;
+    line-height: var(--line-height-base);
+}
+
+/* الحاويات */
+.container {
+    max-width: 1140px;
+    padding: 0 15px;
+    margin: 0 auto;
+}
+
+/* منطقة ترويسة الصفحة */
+.page-header {
+    background-color: white;
+    padding: var(--spacer-lg) 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: var(--spacer-lg);
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+}
+
+.page-title i {
+    margin-left: var(--spacer-sm);
+}
+
+/* فتات الخبز */
+.breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    padding: var(--spacer-sm) 0;
+    margin: 0;
+    list-style: none;
+    font-size: var(--font-size-sm);
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item + .breadcrumb-item {
+    padding-right: var(--spacer-sm);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    padding-left: var(--spacer-sm);
+    content: "/";
+    color: var(--gray-500);
+}
+
+.breadcrumb-item a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+    color: var(--primary-hover);
+}
+
+.breadcrumb-item.active {
+    color: var(--gray-600);
+}
+
+/* بطاقة ملخص الدفع */
+.order-summary-card {
+    background-color: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow);
+    margin-bottom: var(--spacer-lg);
+    overflow: hidden;
+}
+
+.order-summary-header {
+    padding: var(--spacer-lg);
+    background-color: var(--primary-light);
+    border-bottom: 1px solid var(--primary-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.order-summary-header .order-info h3 {
+    margin: 0 0 var(--spacer-sm) 0;
+    font-size: var(--font-size-lg);
+    color: var(--gray-800);
+}
+
+.order-meta {
+    font-size: var(--font-size-sm);
+    color: var(--gray-700);
+    margin-bottom: var(--spacer-sm);
+}
+
+.order-meta span {
+    display: inline-block;
+    margin-left: var(--spacer);
+}
+
+.order-meta i {
+    margin-left: 0.25rem;
+    color: var(--gray-500);
+}
+
+.order-id {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: white;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+}
+
+/* شارات الحالة */
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    display: inline-flex;
+    align-items: center;
+}
+
+.status-badge i {
+    margin-left: 0.5rem;
+}
+
+.badge-success {
+    background-color: var(--success-light);
+    color: var(--success-color);
+    border: 1px solid var(--success-border);
+}
+
+.badge-warning {
+    background-color: var(--warning-light);
+    color: #856404;
+    border: 1px solid var(--warning-border);
+}
+
+.badge-danger {
+    background-color: var(--danger-light);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-border);
+}
+
+.badge-info {
+    background-color: var(--info-light);
+    color: var(--info-color);
+    border: 1px solid var(--info-border);
+}
+
+/* أقسام البطاقة */
+.card-section {
+    padding: var(--spacer-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card-section:last-child {
+    border-bottom: none;
+}
+
+.card-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 var(--spacer) 0;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+}
+
+.card-section-title i {
+    margin-left: 0.5rem;
+    color: var(--primary-color);
+}
+
+/* جدول تفاصيل الطلب */
+.order-details-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.order-details-table td {
+    padding: var(--spacer-sm) 0;
+    vertical-align: top;
+}
+
+.order-details-table td:first-child {
+    width: 40%;
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+.order-details-table td:last-child {
+    font-weight: 500;
+}
+
+/* قسم المنتجات */
+.product-item {
+    display: flex;
+    padding: var(--spacer-sm) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.product-item:last-child {
+    border-bottom: none;
+}
+
+.product-image {
+    width: 80px;
+    height: 60px;
+    background-color: var(--gray-100);
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: var(--spacer);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.product-image i {
+    font-size: 24px;
+    color: var(--gray-500);
+}
+
+.product-details {
+    flex: 1;
+}
+
+.product-title {
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.product-meta {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+}
+
+.product-price {
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    padding-right: var(--spacer);
+}
+
+/* قسم المجاميع والملخص */
+.order-summary-table {
+    width: 100%;
+    margin-top: var(--spacer);
+}
+
+.order-summary-table td {
+    padding: var(--spacer-sm) 0;
+}
+
+.order-summary-table tr:not(:last-child) td {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.order-summary-table td:last-child {
+    text-align: left;
+    font-weight: 600;
+}
+
+.total-row td {
+    padding-top: var(--spacer);
+    font-weight: 700;
+    font-size: var(--font-size-lg);
+    color: var(--text-color);
+    border-top: 2px solid var(--border-color) !important;
+}
+
+/* قسم الدفع */
+.payment-method-details {
+    background-color: var(--gray-100);
+    border-radius: var(--border-radius);
+    padding: var(--spacer);
+    margin-top: var(--spacer-sm);
+    border: 1px solid var(--border-color);
+}
+
+.payment-method-icon {
+    font-size: 24px;
+    margin-left: var(--spacer-sm);
+    vertical-align: middle;
+}
+
+.payment-method-name {
+    font-weight: 600;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.payment-method-meta {
+    margin-top: var(--spacer-sm);
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+}
+
+/* معلومات العميل */
+.customer-info {
+    display: flex;
+    margin-top: var(--spacer);
+}
+
+.address-box {
+    flex: 1;
+    background-color: var(--gray-100);
+    border-radius: var(--border-radius);
+    padding: var(--spacer);
+    margin-left: var(--spacer);
+    border: 1px solid var(--border-color);
+}
+
+.address-box:last-child {
+    margin-left: 0;
+}
+
+.address-type {
+    font-weight: 600;
+    margin-bottom: var(--spacer-sm);
+    color: var(--gray-800);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacer-sm);
+}
+
+.address-content {
+    line-height: 1.6;
+}
+
+/* زر الإجراءات */
+.actions {
+    margin-top: var(--spacer-lg);
+    text-align: center;
+}
+
+.btn {
+    display: inline-block;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.5rem 1.25rem;
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+    border-radius: var(--border-radius);
+    transition: color 0.15s ease-in-out, 
+                background-color 0.15s ease-in-out, 
+                border-color 0.15s ease-in-out, 
+                box-shadow 0.15s ease-in-out;
+    text-decoration: none;
+}
+
+.btn i {
+    margin-left: 0.5rem;
+}
+
+.btn-primary {
+    color: white;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    background-color: transparent;
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    color: white;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-secondary {
+    color: white;
+    background-color: var(--gray-600);
+    border-color: var(--gray-600);
+}
+
+.btn-secondary:hover {
+    background-color: var(--gray-700);
+    border-color: var(--gray-700);
+}
+
+.btn-outline-secondary {
+    color: var(--gray-600);
+    background-color: transparent;
+    border-color: var(--gray-600);
+}
+
+.btn-outline-secondary:hover {
+    color: white;
+    background-color: var(--gray-600);
+    border-color: var(--gray-600);
+}
+
+.btn-success {
+    color: white;
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger {
+    color: white;
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.25rem;
+    border-radius: 0.3rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 0.2rem;
+}
+
+/* ملاحظات الطلب */
+.order-notes {
+    background-color: var(--gray-100);
+    border-radius: var(--border-radius);
+    padding: var(--spacer);
+    border-left: 4px solid var(--primary-color);
+    margin-top: var(--spacer);
+    font-size: var(--font-size-sm);
+}
+
+/* التذييل */
+.footer {
+    margin-top: var(--spacer-xl);
+    padding: var(--spacer-lg) 0;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+}
+
+/* الطباعة */
+@media print {
+    body {
+        background-color: white;
+    }
+    
+    .order-summary-card {
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+    }
+    
+    .actions {
+        display: none;
+    }
+    
+    .page-header {
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: var(--spacer);
+    }
+}
+
+/* الهاتف المحمول والتصميم المستجيب */
+@media (max-width: 768px) {
+    .order-summary-header {
+        flex-direction: column;
+    }
+    
+    .order-summary-header .order-status {
+        margin-top: var(--spacer);
+    }
+    
+    .customer-info {
+        flex-direction: column;
+    }
+    
+    .address-box {
+        margin-left: 0;
+        margin-bottom: var(--spacer);
+    }
+    
+    .product-item {
+        flex-direction: column;
+    }
+    
+    .product-image {
+        margin-bottom: var(--spacer-sm);
+        margin-left: 0;
+    }
+    
+    .product-price {
+        margin-top: var(--spacer-sm);
+        text-align: right;
+        padding-right: 0;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
