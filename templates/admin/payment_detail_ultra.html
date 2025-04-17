@@ -1,0 +1,579 @@
+{% extends 'admin_layout.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}تفاصيل الدفع - لوحة التحكم{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/payment_ultra_pro.css' %}?v=1744902360">
+<style>
+    /* أنماط إضافية خاصة بصفحة التفاصيل */
+    body {
+        background-image: linear-gradient(120deg, #fdfbfb 0%, #f8f8ff 100%);
+        background-attachment: fixed;
+        position: relative;
+        overflow-x: hidden;
+    }
+    
+    /* أنماط الموجات الزخرفية */
+    .decorative-wave {
+        position: fixed;
+        width: 100%;
+        height: 300px;
+        opacity: 0.04;
+        z-index: -1;
+        pointer-events: none;
+    }
+    
+    .wave-top {
+        top: -150px;
+        left: -100px;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 900 600' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 189L21.5 195.5C43 202 86 215 128.8 223.2C171.7 231.3 214.3 234.7 257.2 237.3C300 240 343 242 385.8 235.5C428.7 229 471.3 214 514.2 198.5C557 183 600 167 642.8 170.5C685.7 174 728.3 197 771.2 205.8C814 214.7 857 209.3 878.5 206.7L900 204L900 0L878.5 0C857 0 814 0 771.2 0C728.3 0 685.7 0 642.8 0C600 0 557 0 514.2 0C471.3 0 428.7 0 385.8 0C343 0 300 0 257.2 0C214.3 0 171.7 0 128.8 0C86 0 43 0 21.5 0L0 0Z' fill='%232563eb'%3E%3C/path%3E%3C/svg%3E");
+        background-size: cover;
+        transform: rotate(180deg);
+    }
+    
+    .wave-bottom {
+        bottom: -150px;
+        right: -100px;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 900 600' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 244L30 257.5C60 271 120 298 180 308.3C240 318.7 300 312.3 360 312.2C420 312 480 318 540 306.5C600 295 660 266 720 263.7C780 261.3 840 285.7 870 297.8L900 310L900 601L870 601C840 601 780 601 720 601C660 601 600 601 540 601C480 601 420 601 360 601C300 601 240 601 180 601C120 601 60 601 30 601L0 601Z' fill='%2310b981'%3E%3C/path%3E%3C/svg%3E");
+        background-size: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- العناصر الزخرفية الثابتة -->
+<div class="decorative-wave wave-top"></div>
+<div class="decorative-wave wave-bottom"></div>
+
+<div class="page-container">
+    <!-- فتات الخبز -->
+    <div class="breadcrumb-container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'admin_index' %}"><i class="fas fa-home"></i> لوحة المعلومات</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'admin_payments' %}"><i class="fas fa-dollar-sign"></i> المدفوعات</a></li>
+                <li class="breadcrumb-item active">تفاصيل الدفع #{{ payment.id }}</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- ترويسة المستند -->
+    <div class="document-header mb-4">
+        <div class="content">
+            <div class="document-logo">
+                <i class="fas fa-file-invoice-dollar"></i> تأجير السيارات العالمية
+            </div>
+            <div class="document-meta">
+                <div class="document-info">
+                    <div class="document-title">إيصال مدفوعات</div>
+                    <div class="document-subtitle">{% if is_english %}{{ payment.date|date:"F d, Y" }}{% else %}{{ payment.date|date:"Y/m/d" }}{% endif %}</div>
+                    <div class="document-id mt-2">#{{ payment.id }}</div>
+                </div>
+                <div class="document-badges">
+                    <span class="status-badge {% if payment.status == 'paid' %}status-badge-completed{% elif payment.status == 'pending' %}status-badge-pending{% elif payment.status == 'refunded' %}status-badge-warning{% else %}status-badge-cancelled{% endif %}">
+                        {% if payment.status == 'paid' %}<i class="fas fa-check-circle"></i> مدفوع بالكامل{% elif payment.status == 'pending' %}<i class="fas fa-clock"></i> في انتظار الدفع{% elif payment.status == 'refunded' %}<i class="fas fa-undo-alt"></i> تم استرداد المبلغ{% else %}<i class="fas fa-ban"></i> ملغي{% endif %}
+                    </span>
+                    <div class="document-amount mt-2">{{ payment.amount }} د.ك</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- تفاصيل الدفع -->
+        <div class="col-lg-7">
+            <!-- بطاقة معلومات الدفع -->
+            <div class="premium-card mb-4">
+                <div class="premium-card-header">
+                    <h5 class="premium-card-title"><i class="fas fa-credit-card"></i> معلومات الدفع</h5>
+                </div>
+                <div class="premium-card-body">
+                    <div class="details-container">
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-hashtag"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">رقم المرجع</div>
+                                <div class="detail-value">{{ payment.reference_number|default:"—" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">تاريخ المعاملة</div>
+                                <div class="detail-value">{% if is_english %}{{ payment.date|date:"m/d/Y" }}{% else %}{{ payment.date|date:"Y/m/d" }}{% endif %}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">وقت المعاملة</div>
+                                <div class="detail-value">{{ payment.date|time:"H:i:s" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-money-check-alt"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">طريقة الدفع</div>
+                                <div class="detail-value">
+                                    {% if payment.payment_method == 'visa' %}
+                                    <i class="fab fa-cc-visa payment-method-icon visa"></i> فيزا
+                                    {% elif payment.payment_method == 'mastercard' %}
+                                    <i class="fab fa-cc-mastercard payment-method-icon mastercard"></i> ماستركارد
+                                    {% elif payment.payment_method == 'amex' %}
+                                    <i class="fab fa-cc-amex payment-method-icon amex"></i> أمريكان إكسبرس
+                                    {% elif payment.payment_method == 'cash' %}
+                                    <i class="fas fa-money-bill-wave payment-method-icon cash"></i> نقداً
+                                    {% elif payment.payment_method == 'bank_transfer' %}
+                                    <i class="fas fa-university payment-method-icon bank"></i> حوالة بنكية
+                                    {% else %}
+                                    {{ payment.payment_method }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">حالة الدفع</div>
+                                <div class="detail-value">
+                                    {% if payment.status == 'paid' %}
+                                    <span class="status-badge status-badge-completed"><i class="fas fa-check-circle"></i> مدفوع بالكامل</span>
+                                    {% elif payment.status == 'pending' %}
+                                    <span class="status-badge status-badge-pending"><i class="fas fa-clock"></i> في انتظار الدفع</span>
+                                    {% elif payment.status == 'refunded' %}
+                                    <span class="status-badge status-badge-warning"><i class="fas fa-undo-alt"></i> تم استرداد المبلغ</span>
+                                    {% else %}
+                                    <span class="status-badge status-badge-cancelled"><i class="fas fa-ban"></i> ملغي</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">المبلغ الإجمالي</div>
+                                <div class="detail-value fs-4 fw-bold text-primary">{{ payment.amount }} د.ك</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- بطاقة تفاصيل البطاقة -->
+            <div class="premium-card mb-4">
+                <div class="premium-card-header">
+                    <h5 class="premium-card-title"><i class="fas fa-id-card"></i> تفاصيل البطاقة</h5>
+                </div>
+                <div class="premium-card-body">
+                    <div class="details-container">
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">اسم حامل البطاقة</div>
+                                <div class="detail-value">{{ payment.card_name|default:"—" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">رقم البطاقة</div>
+                                <div class="detail-value">{{ payment.masked_card_number|default:"—" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">تاريخ الانتهاء</div>
+                                <div class="detail-value">{{ payment.expiry_date|default:"—" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-sticky-note"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">ملاحظات المعاملة</div>
+                                <div class="detail-value" style="white-space: pre-line">{{ payment.notes|default:"—" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- أزرار الإجراءات -->
+            <div class="action-buttons">
+                <a href="{% url 'admin_payments' %}" class="action-button secondary">
+                    <i class="fas fa-arrow-right"></i> <span>العودة للسجل</span>
+                </a>
+
+                <a href="{% url 'print_receipt' payment_id=payment.id %}" class="action-button primary">
+                    <i class="fas fa-print"></i> <span>طباعة الإيصال</span>
+                </a>
+                
+                <a href="{% url 'download_receipt' payment_id=payment.id %}" class="action-button outline">
+                    <i class="fas fa-file-pdf"></i> <span>تحميل PDF</span>
+                </a>
+                
+                <div style="flex-grow: 1;"></div>
+                
+                {% if payment.status == 'pending' %}
+                <a href="{% url 'mark_as_paid' payment_id=payment.id %}" class="action-button success">
+                    <i class="fas fa-check-circle"></i> <span>تأكيد الدفع</span>
+                </a>
+                <a href="{% url 'cancel_payment' payment_id=payment.id %}" 
+                   class="action-button danger"
+                   onclick="return confirm('هل أنت متأكد من حذف هذه الدفعة؟\n\nسيتم حذف الدفعة نهائياً من قاعدة البيانات ولن تتمكن من استعادتها لاحقاً.\n\nاضغط موافق للتأكيد.');">
+                    <i class="fas fa-trash-alt"></i> <span>حذف نهائي</span>
+                </a>
+                {% endif %}
+                {% if payment.status == 'paid' %}
+                <a href="{% url 'process_refund' payment_id=payment.id %}" class="action-button warning">
+                    <i class="fas fa-undo"></i> <span>رد المبلغ</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- معلومات الحجز والعميل -->
+        <div class="col-lg-5">
+            <!-- بطاقة معلومات السيارة -->
+            <div class="premium-card mb-4">
+                <div class="premium-card-header">
+                    <h5 class="premium-card-title"><i class="fas fa-car"></i> معلومات السيارة</h5>
+                </div>
+                <div class="premium-card-body">
+                    <div class="car-feature">
+                        <div class="car-thumbnail">
+                            <i class="fas fa-car-side"></i>
+                        </div>
+                        <div class="car-details">
+                            <h5>{{ payment.car.make }} {{ payment.car.model }}</h5>
+                            <div class="car-meta">
+                                <i class="fas fa-calendar-alt"></i> {{ payment.car.year }}
+                                <span class="separator"></span>
+                                <i class="fas fa-tag"></i> {{ payment.car.category }}
+                            </div>
+                            <div class="car-action">
+                                <a href="#" class="text-primary">
+                                    <i class="fas fa-eye"></i> عرض تفاصيل السيارة
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="details-container mt-4">
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-bookmark"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">رقم الحجز</div>
+                                <div class="detail-value">
+                                    <a href="#" class="text-primary">#{{ payment.id }}</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-clipboard-check"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">حالة الحجز</div>
+                                <div class="detail-value">
+                                    {% if payment.status == 'pending' %}
+                                    <span class="status-badge status-badge-pending"><i class="fas fa-clock"></i> معلق</span>
+                                    {% elif payment.status == 'confirmed' %}
+                                    <span class="status-badge status-badge-confirmed"><i class="fas fa-check"></i> مؤكد</span>
+                                    {% elif payment.status == 'completed' %}
+                                    <span class="status-badge status-badge-completed"><i class="fas fa-check-double"></i> مكتمل</span>
+                                    {% elif payment.status == 'cancelled' %}
+                                    <span class="status-badge status-badge-cancelled"><i class="fas fa-ban"></i> ملغي</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">تاريخ الاستلام</div>
+                                <div class="detail-value">{% if is_english %}{{ payment.start_date|date:"m/d/Y" }}{% else %}{{ payment.start_date|date:"Y/m/d" }}{% endif %}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-calendar-minus"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">تاريخ التسليم</div>
+                                <div class="detail-value">{% if is_english %}{{ payment.end_date|date:"m/d/Y" }}{% else %}{{ payment.end_date|date:"Y/m/d" }}{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-summary mt-4">
+                        <div class="payment-summary-header">
+                            <i class="fas fa-calculator me-2"></i> ملخص التكاليف
+                        </div>
+                        <div class="payment-summary-body">
+                            <div class="payment-summary-row">
+                                <div class="label">سعر الإيجار اليومي</div>
+                                <div class="value">{{ payment.car.daily_rate }} د.ك</div>
+                            </div>
+                            <div class="payment-summary-row">
+                                <div class="label">عدد الأيام</div>
+                                <div class="value">{{ days }} يوم</div>
+                            </div>
+                            <div class="payment-summary-row">
+                                <div class="label">المجموع الفرعي</div>
+                                <div class="value">{{ payment.car.daily_rate }} × {{ days }} = {{ payment.amount }} د.ك</div>
+                            </div>
+                            <div class="payment-total-row">
+                                <div class="label">المجموع</div>
+                                <div class="value">{{ payment.amount }} د.ك</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- معلومات العميل -->
+            <div class="premium-card mb-4">
+                <div class="premium-card-header">
+                    <h5 class="premium-card-title"><i class="fas fa-user"></i> معلومات العميل</h5>
+                </div>
+                <div class="premium-card-body">
+                    <div class="details-container">
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">الاسم</div>
+                                <div class="detail-value">{{ payment.user.first_name }} {{ payment.user.last_name }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">البريد الإلكتروني</div>
+                                <div class="detail-value">{{ payment.user.email }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">رقم الهاتف</div>
+                                <div class="detail-value">{{ payment.user.phone_number|default:"—" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <div class="detail-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">تاريخ التسجيل</div>
+                                <div class="detail-value">{% if is_english %}{{ payment.user.date_joined|date:"M d, Y" }}{% else %}{{ payment.user.date_joined|date:"Y/m/d" }}{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- حالة الدفع -->
+            <div class="payment-status-card status-{{ payment.status }}">
+                <div class="payment-status-header status-{{ payment.status }}">
+                    <h5><i class="fas {% if payment.status == 'paid' %}fa-check-circle{% elif payment.status == 'pending' %}fa-clock{% elif payment.status == 'refunded' %}fa-undo-alt{% else %}fa-ban{% endif %}"></i> حالة الدفع</h5>
+                </div>
+                <div class="payment-status-body">
+                    {% if payment.status == 'paid' %}
+                    <div>
+                        <i class="fas fa-check-circle payment-status-icon status-paid"></i>
+                        <div class="payment-status-title status-paid">مدفوع بالكامل</div>
+                        <div class="payment-status-message">تمت معالجة الدفعة بنجاح. شكراً لك!</div>
+                    </div>
+                    {% elif payment.status == 'refunded' %}
+                    <div>
+                        <i class="fas fa-undo-alt payment-status-icon status-refunded"></i>
+                        <div class="payment-status-title status-refunded">تم استرداد المبلغ</div>
+                        <div class="payment-status-message">تم إعادة المبلغ بالكامل إلى العميل</div>
+                    </div>
+                    {% elif payment.status == 'cancelled' %}
+                    <div>
+                        <i class="fas fa-ban payment-status-icon status-cancelled"></i>
+                        <div class="payment-status-title status-cancelled">ملغي</div>
+                        <div class="payment-status-message">تم إلغاء هذه الدفعة</div>
+                    </div>
+                    {% elif payment.status == 'pending' %}
+                    <div>
+                        <i class="fas fa-clock payment-status-icon status-pending"></i>
+                        <div class="payment-status-title status-pending">في انتظار الدفع</div>
+                        <div class="payment-status-message">يرجى استكمال عملية الدفع</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-footer">
+    <div class="container">
+        <p>&copy; {{ "now"|date:"Y" }} نظام تأجير السيارات العالمية | جميع الحقوق محفوظة</p>
+    </div>
+</div>
+
+<!-- أضف تأثيرات أخرى للتصميم ثلاثي الأبعاد -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحسين أداء الانتقال للصفحة
+    setTimeout(function() {
+        document.body.classList.add('loaded');
+    }, 100);
+    
+    // التأثير ثلاثي الأبعاد للترويسة
+    const header = document.querySelector('.document-header');
+    const premiumCards = document.querySelectorAll('.premium-card');
+    const carFeature = document.querySelector('.car-feature');
+    const actionButtons = document.querySelector('.action-buttons');
+    
+    document.addEventListener('mousemove', function(e) {
+        const x = e.clientX / window.innerWidth;
+        const y = e.clientY / window.innerHeight;
+        
+        if (header) {
+            header.style.transform = `translateY(-7px) perspective(1000px) rotateX(${y * 2 - 1}deg) rotateY(${-(x * 2 - 1)}deg)`;
+        }
+        
+        // تأثير على البطاقات
+        premiumCards.forEach(card => {
+            const rect = card.getBoundingClientRect();
+            
+            // حساب الموضع النسبي للماوس بالنسبة للبطاقة
+            if (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
+                const cardX = ((e.clientX - rect.left) / rect.width) - 0.5;
+                const cardY = ((e.clientY - rect.top) / rect.height) - 0.5;
+                
+                card.style.transform = `translateY(-5px) perspective(1000px) rotateX(${cardY * 2}deg) rotateY(${cardX * 2}deg)`;
+            }
+        });
+        
+        // تأثير على بطاقة السيارة
+        if (carFeature) {
+            const rect = carFeature.getBoundingClientRect();
+            if (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
+                const cardX = ((e.clientX - rect.left) / rect.width) - 0.5;
+                const cardY = ((e.clientY - rect.top) / rect.height) - 0.5;
+                
+                carFeature.style.transform = `translateY(-7px) scale(1.01) perspective(800px) rotateX(${cardY * 3}deg) rotateY(${cardX * 3}deg)`;
+            }
+        }
+        
+        // تأثير على قسم الأزرار
+        if (actionButtons) {
+            const rect = actionButtons.getBoundingClientRect();
+            if (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
+                const buttonX = ((e.clientX - rect.left) / rect.width) - 0.5;
+                const buttonY = ((e.clientY - rect.top) / rect.height) - 0.5;
+                
+                actionButtons.style.transform = `translateY(-7px) perspective(1000px) rotateX(${buttonY * 1.5}deg) rotateY(${buttonX * 1.5}deg)`;
+            }
+        }
+    });
+    
+    // إعادة التعيين عند مغادرة العنصر
+    document.addEventListener('mouseleave', function() {
+        if (header) {
+            header.style.transform = 'translateY(-7px)';
+        }
+        
+        premiumCards.forEach(card => {
+            card.style.transform = 'translateY(-5px)';
+        });
+        
+        if (carFeature) {
+            carFeature.style.transform = 'translateY(-7px) scale(1.01)';
+        }
+        
+        if (actionButtons) {
+            actionButtons.style.transform = 'translateY(-7px)';
+        }
+    });
+    
+    // تعيين أحداث إعادة التعيين عندما يخرج المؤشر من العنصر
+    premiumCards.forEach(card => {
+        card.addEventListener('mouseleave', function() {
+            card.style.transform = 'translateY(-5px)';
+        });
+    });
+    
+    if (carFeature) {
+        carFeature.addEventListener('mouseleave', function() {
+            carFeature.style.transform = 'translateY(-7px) scale(1.01)';
+        });
+    }
+    
+    if (actionButtons) {
+        actionButtons.addEventListener('mouseleave', function() {
+            actionButtons.style.transform = 'translateY(-7px)';
+        });
+    }
+});
+</script>
+
+<!-- Cache buster: {{ cache_buster }} -->
+{% endblock %}
