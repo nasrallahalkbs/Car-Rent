@@ -664,20 +664,23 @@ def cancel_payment(request, payment_id):
     payment_id_str = str(payment.id)
     payment_amount = payment.total_price
     
+    # الطريقة 1: حذف الدفعة نهائياً من قاعدة البيانات (الطريقة المفضلة)
     try:
-        # Option 1: Hard deletion (if appropriate and no foreign key constraints)
-        # payment.delete()
-        
-        # Option 2: Mark as deleted and hide from all queries (soft delete)
-        payment.status = 'cancelled'
-        payment.payment_status = 'deleted'  # Use a special status that won't show up in the UI
-        payment.save()
-        
-        messages.success(request, f"تم حذف الدفعة #{payment_id_str} بقيمة {payment_amount} د.ك بنجاح!")
+        # الفعل الحقيقي: حذف السجل بشكل كامل
+        payment.delete()
+        messages.success(request, f"تم حذف الدفعة #{payment_id_str} بقيمة {payment_amount} د.ك نهائياً من قاعدة البيانات!")
     except Exception as e:
-        messages.error(request, f"حدث خطأ أثناء محاولة حذف الدفعة: {str(e)}")
+        # في حال فشل الحذف الكامل (مثلًا بسبب قيود العلاقات)
+        # نستخدم الحذف الناعم كحل بديل
+        try:
+            payment.status = 'cancelled'
+            payment.payment_status = 'deleted'  # استخدم حالة خاصة لن تظهر في واجهة المستخدم
+            payment.save()
+            messages.warning(request, f"تم إلغاء الدفعة #{payment_id_str} وإخفاءها من السجلات (لم يتم حذفها نهائياً بسبب علاقات قاعدة البيانات)")
+        except Exception as inner_e:
+            messages.error(request, f"حدث خطأ أثناء محاولة حذف الدفعة: {str(e)} | {str(inner_e)}")
     
-    # Redirect to the payments list
+    # إعادة التوجيه إلى قائمة المدفوعات
     return redirect('admin_payments')
 
 @login_required
