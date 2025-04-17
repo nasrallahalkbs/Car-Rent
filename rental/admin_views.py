@@ -576,12 +576,12 @@ def payment_details(request, payment_id):
         'is_rtl': is_rtl,
     }
 
-    # استخدام القالب الاحترافي فائق الجودة مع CSS منفصل
-    template_name = get_template_by_language(request, 'admin/payment_detail_ultra_pro.html')
-
-    # إضافة مكون زمني لإجبار المتصفح على تحديث الصفحة وعدم استخدام النسخة المخزنة
+    # تحديث ملف CSS منفصل
     import time
     context['cache_buster'] = str(int(time.time()))
+
+    # استخدم قالب المتوفر بدلاً من البحث عن قالب غير موجود
+    template_name = 'admin/payment_detail_ultra_pro.html'
 
     return render(request, template_name, context)
 
