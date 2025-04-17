@@ -7,6 +7,7 @@ from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
+from django.utils.translation import get_language
 from .models import User, Car, Reservation, CartItem, SiteSettings
 from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm, SiteSettingsForm
 from functools import wraps
@@ -560,16 +561,27 @@ def payment_details(request, payment_id):
     if not hasattr(payment, 'payment_method'):
         payment.payment_method = 'visa'  # Default payment method
     
+    # تحديد لغة المستخدم
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
     context = {
         'payment': payment,
         'days': delta,
         'amount': payment.total_price,
         'current_user': request.user,  # Add current user for template access
+        'is_english': is_english,
+        'is_rtl': is_rtl,
     }
     
-    template_name = 'admin/payment_detail_invoice.html'
+    # استخدام القالب الجديد ذو التصميم الاحترافي
+    template_name = 'admin/payment_detail_ultra_pro.html'
+    
     # إضافة مكون زمني لإجبار المتصفح على تحديث الصفحة وعدم استخدام النسخة المخزنة
-    context['cache_buster'] = '1744912021'
+    import time
+    context['cache_buster'] = str(int(time.time()))
+    
     return render(request, template_name, context)
 
 @login_required
