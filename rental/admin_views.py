@@ -550,7 +550,8 @@ def payment_details(request, payment_id):
     
     # Extract payment method and reference number from notes if available
     if payment.notes:
-        notes_lines = payment.notes.split('\n')
+        notes_lines = payment.notes.split('
+')
         for line in notes_lines:
             if 'طريقة الدفع:' in line:
                 payment.payment_method = line.split('طريقة الدفع:')[1].strip()
@@ -562,6 +563,7 @@ def payment_details(request, payment_id):
         payment.payment_method = 'visa'  # Default payment method
     
     # تحديد لغة المستخدم
+    from django.utils.translation import get_language
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
@@ -570,63 +572,19 @@ def payment_details(request, payment_id):
         'payment': payment,
         'days': delta,
         'amount': payment.total_price,
-        'current_user': request.user,  # Add current user for template access
+        'current_user': request.user,
         'is_english': is_english,
         'is_rtl': is_rtl,
     }
     
-    # استخدام القالب الجديد ذو التصميم الاحترافي
-    template_name = 'admin/payment_detail_ultra_pro.html'
+    # استخدام القالب المباشر مع التصميم الاحترافي
+    template_name = 'admin/payment_detail_direct.html'
     
     # إضافة مكون زمني لإجبار المتصفح على تحديث الصفحة وعدم استخدام النسخة المخزنة
     import time
     context['cache_buster'] = str(int(time.time()))
     
     return render(request, template_name, context)
-
-@login_required
-@admin_required
-def print_receipt(request, payment_id):
-    """View to print a payment receipt"""
-    payment = get_object_or_404(Reservation, id=payment_id)
-    
-    # Only allow printing receipts for paid reservations
-    if payment.payment_status != 'paid':
-        messages.error(request, "لا يمكن طباعة إيصال للمدفوعات غير المدفوعة!")
-        return redirect('payment_details', payment_id=payment_id)
-    
-    # Calculate the number of days between start_date and end_date
-    delta = (payment.end_date - payment.start_date).days + 1
-    
-    # Add additional payment fields needed by template
-    payment.date = payment.created_at  # Use created_at for payment date
-    payment.reference_number = ''  # Default empty reference number
-    payment.status = payment.payment_status  # Map payment_status to status
-    payment.amount = payment.total_price  # Map total_price to amount
-    
-    # Extract payment method and reference number from notes if available
-    if payment.notes:
-        notes_lines = payment.notes.split('\n')
-        for line in notes_lines:
-            if 'طريقة الدفع:' in line:
-                payment.payment_method = line.split('طريقة الدفع:')[1].strip()
-            elif 'رقم المرجع:' in line:
-                payment.reference_number = line.split('رقم المرجع:')[1].strip()
-    
-    # Default values if not found in notes
-    if not hasattr(payment, 'payment_method'):
-        payment.payment_method = 'visa'  # Default payment method
-    
-    context = {
-        'payment': payment,
-        'receipt_id': f'R{payment.id:06d}',
-        'print_date': timezone.now(),
-        'days': delta,
-        'amount': payment.total_price,
-        'current_user': request.user,  # Add current user for template access
-    }
-    
-    return render(request, 'admin/payment_receipt_django.html', context)
 
 @login_required
 @admin_required
