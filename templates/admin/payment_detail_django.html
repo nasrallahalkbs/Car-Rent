@@ -5,112 +5,559 @@
 {% block title %}{% if is_english %}Payment Details{% else %}تفاصيل الدفع{% endif %}{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{% static 'css/payment_professional.css' %}">
+<style>
+    :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #3498db;
+        --success-color: #27ae60;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+        --light-bg: #f8f9fa;
+        --dark-text: #2c3e50;
+        --light-text: #ecf0f1;
+        --border-color: #ddd;
+        --hover-color: #1abc9c;
+    }
+
+    .payment-details-container {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .payment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .payment-id {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+    }
+
+    .payment-id i {
+        margin-{% if is_english %}right{% else %}left{% endif %}: 10px;
+        color: var(--secondary-color);
+    }
+
+    .payment-status {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .status-completed {
+        background-color: rgba(39, 174, 96, 0.15);
+        color: #27ae60;
+        border: 1px solid rgba(39, 174, 96, 0.3);
+    }
+
+    .status-pending {
+        background-color: rgba(243, 156, 18, 0.15);
+        color: #f39c12;
+        border: 1px solid rgba(243, 156, 18, 0.3);
+    }
+
+    .status-cancelled {
+        background-color: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    .detail-section {
+        margin-bottom: 2rem;
+        background-color: var(--light-bg);
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
+    .section-title {
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+
+    .section-title i {
+        margin-{% if is_english %}right{% else %}left{% endif %}: 10px;
+        color: var(--secondary-color);
+    }
+
+    .detail-row {
+        display: flex;
+        margin-bottom: 1rem;
+        align-items: center;
+    }
+
+    .detail-label {
+        flex: 0 0 30%;
+        font-weight: 600;
+        color: var(--dark-text);
+    }
+
+    .detail-value {
+        flex: 0 0 70%;
+        color: var(--dark-text);
+    }
+
+    .payment-method-icon {
+        height: 30px;
+        margin-{% if is_english %}right{% else %}left{% endif %}: 10px;
+        vertical-align: middle;
+    }
+
+    .price-value {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--primary-color);
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-action {
+        padding: 0.8rem 1.5rem;
+        border-radius: 5px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        border: none;
+    }
+
+    .btn-action i {
+        margin-{% if is_english %}right{% else %}left{% endif %}: 8px;
+    }
+
+    .btn-primary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+
+    .btn-success {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #219a52;
+    }
+
+    .btn-warning {
+        background-color: var(--warning-color);
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background-color: #e67e22;
+    }
+
+    .btn-danger {
+        background-color: var(--danger-color);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #c0392b;
+    }
+
+    .btn-secondary {
+        background-color: #7f8c8d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #6b7a7c;
+    }
+
+    .payment-summary {
+        background-color: var(--primary-color);
+        color: var(--light-text);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-title {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+
+    .summary-title i {
+        margin-{% if is_english %}right{% else %}left{% endif %}: 10px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+        font-size: 1rem;
+    }
+
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .reservation-info {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .reservation-card {
+        flex: 1;
+        background-color: var(--light-bg);
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+    }
+
+    .reservation-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .reservation-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+    }
+
+    .reservation-card-title i {
+        margin-{% if is_english %}right{% else %}left{% endif %}: 8px;
+        color: var(--secondary-color);
+    }
+
+    .reservation-detail {
+        margin-bottom: 0.5rem;
+        display: flex;
+    }
+
+    .reservation-label {
+        font-weight: 600;
+        min-width: 90px;
+        color: var(--dark-text);
+    }
+
+    .reservation-value {
+        color: var(--dark-text);
+    }
+
+    /* Print Receipt Styling */
+    @media print {
+        .admin-sidebar, .admin-header, .action-buttons, .navbar {
+            display: none !important;
+        }
+
+        .payment-details-container {
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: white;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            padding: 0;
+        }
+
+        .payment-receipt {
+            page-break-after: always;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="payment-page">
-    <div class="payment-container">
-        <!-- بطاقة معلومات الدفع الرئيسية -->
-        <div class="payment-card">
-            <div class="payment-card-header">
-                <div class="payment-card-title">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    {% if is_english %}Payment Details{% else %}تفاصيل الدفع{% endif %}
-                </div>
-                <div class="payment-status-badge {% if payment.status == 'paid' %}success{% elif payment.status == 'pending' %}warning{% else %}danger{% endif %}">
-                    <i class="fas {% if payment.status == 'paid' %}fa-check-circle{% elif payment.status == 'pending' %}fa-clock{% else %}fa-times-circle{% endif %}"></i>
-                    {% if payment.status == 'paid' %}
-                        {% if is_english %}Paid{% else %}مدفوع{% endif %}
-                    {% elif payment.status == 'pending' %}
-                        {% if is_english %}Pending{% else %}معلق{% endif %}
-                    {% else %}
-                        {% if is_english %}Cancelled{% else %}ملغي{% endif %}
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="payment-card-body">
-                <div class="payment-info-grid">
-                    <div class="payment-info-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-info-circle"></i>
-                            {% if is_english %}Basic Information{% else %}المعلومات الأساسية{% endif %}
-                        </h3>
-                        <div class="info-row">
-                            <div class="info-label">{% if is_english %}Payment ID{% else %}رقم الدفعة{% endif %}</div>
-                            <div class="info-value">#{{ payment.id }}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">{% if is_english %}Date{% else %}التاريخ{% endif %}</div>
-                            <div class="info-value">{{ payment.created_at|date:"Y-m-d H:i" }}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">{% if is_english %}Amount{% else %}المبلغ{% endif %}</div>
-                            <div class="info-value amount">{{ payment.total_price }} {% if is_english %}SAR{% else %}ر.س{% endif %}</div>
-                        </div>
-                    </div>
-
-                    <div class="payment-info-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-credit-card"></i>
-                            {% if is_english %}Payment Method{% else %}طريقة الدفع{% endif %}
-                        </h3>
-                        <div class="payment-method-display">
-                            {% if payment.payment_method == 'credit_card' %}
-                                <i class="payment-method-icon fas fa-credit-card"></i>
-                                {% if is_english %}Credit Card{% else %}بطاقة ائتمان{% endif %}
-                            {% elif payment.payment_method == 'bank_transfer' %}
-                                <i class="payment-method-icon fas fa-university"></i>
-                                {% if is_english %}Bank Transfer{% else %}تحويل بنكي{% endif %}
-                            {% else %}
-                                <i class="payment-method-icon fas fa-money-bill-wave"></i>
-                                {% if is_english %}Cash{% else %}نقداً{% endif %}
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
+<div class="container mt-4">
+    <div class="payment-details-container">
+        <!-- Header Section -->
+        <div class="payment-header">
+            <div class="payment-id">
+                <i class="fas fa-file-invoice-dollar"></i>
+                {% if is_english %}Payment{% else %}الدفعة{% endif %} #{{ payment.id }}
                 {% if payment.reservation %}
-                <div class="reservation-details">
-                    <h3 class="section-title">
-                        <i class="fas fa-car"></i>
-                        {% if is_english %}Rental Details{% else %}تفاصيل الحجز{% endif %}
-                    </h3>
-                    <div class="reservation-info-grid">
-                        <div class="info-row">
-                            <div class="info-label">{% if is_english %}Car{% else %}السيارة{% endif %}</div>
-                            <div class="info-value">{{ payment.reservation.car.make }} {{ payment.reservation.car.model }}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">{% if is_english %}Period{% else %}الفترة{% endif %}</div>
-                            <div class="info-value">{{ payment.reservation.start_date|date:"Y-m-d" }} - {{ payment.reservation.end_date|date:"Y-m-d" }}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">{% if is_english %}Duration{% else %}المدة{% endif %}</div>
-                            <div class="info-value">{{ days }} {% if is_english %}days{% else %}أيام{% endif %}</div>
-                        </div>
-                    </div>
-                </div>
+                <span class="text-muted ms-2">
+                    {% if is_english %}for reservation{% else %}للحجز{% endif %} #{{ payment.reservation.id }}
+                </span>
                 {% endif %}
+            </div>
+            <div>
+                {% if payment.status == 'completed' %}
+                <span class="payment-status status-completed">
+                    <i class="fas fa-check-circle"></i> 
+                    {% if is_english %}Completed{% else %}مكتمل{% endif %}
+                </span>
+                {% elif payment.status == 'pending' %}
+                <span class="payment-status status-pending">
+                    <i class="fas fa-clock"></i> 
+                    {% if is_english %}Pending{% else %}قيد الانتظار{% endif %}
+                </span>
+                {% elif payment.status == 'cancelled' %}
+                <span class="payment-status status-cancelled">
+                    <i class="fas fa-times-circle"></i> 
+                    {% if is_english %}Cancelled{% else %}ملغي{% endif %}
+                </span>
+                {% endif %}
+            </div>
+        </div>
 
-                <div class="payment-actions">
-                    {% if payment.status == 'pending' %}
-                    <a href="{% url 'mark_as_paid' payment.id %}" class="action-btn success">
-                        <i class="fas fa-check-circle"></i>
-                        {% if is_english %}Mark as Paid{% else %}تعيين كمدفوع{% endif %}
-                    </a>
-                    <a href="{% url 'cancel_payment' payment.id %}" class="action-btn danger">
-                        <i class="fas fa-times-circle"></i>
-                        {% if is_english %}Cancel Payment{% else %}إلغاء الدفع{% endif %}
-                    </a>
+        <!-- Payment Summary Box -->
+        <div class="payment-summary">
+            <div class="summary-title">
+                <i class="fas fa-calculator"></i>
+                {% if is_english %}Payment Summary{% else %}ملخص الدفع{% endif %}
+            </div>
+            <div class="summary-row">
+                <div>{% if is_english %}Base Amount{% else %}المبلغ الأساسي{% endif %}</div>
+                <div>{{ payment.amount }} {% if is_english %}SAR{% else %}ر.س{% endif %}</div>
+            </div>
+            {% if payment.tax_amount %}
+            <div class="summary-row">
+                <div>{% if is_english %}Tax (15%){% else %}الضريبة (15%){% endif %}</div>
+                <div>{{ payment.tax_amount }} {% if is_english %}SAR{% else %}ر.س{% endif %}</div>
+            </div>
+            {% endif %}
+            <div class="summary-total">
+                <div>{% if is_english %}Total Amount{% else %}المبلغ الإجمالي{% endif %}</div>
+                <div>{{ payment.total_amount }} {% if is_english %}SAR{% else %}ر.س{% endif %}</div>
+            </div>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="detail-section">
+            <div class="section-title">
+                <i class="fas fa-info-circle"></i>
+                {% if is_english %}Payment Details{% else %}تفاصيل الدفع{% endif %}
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Payment ID{% else %}رقم الدفعة{% endif %}</div>
+                <div class="detail-value">{{ payment.id }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Date{% else %}التاريخ{% endif %}</div>
+                <div class="detail-value">{{ payment.payment_date }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Method{% else %}طريقة الدفع{% endif %}</div>
+                <div class="detail-value">
+                    {% if payment.payment_method == 'credit_card' %}
+                    <img src="{% static 'images/credit_card.svg' %}" alt="Credit Card" class="payment-method-icon">
+                    {% if is_english %}Credit Card{% else %}بطاقة ائتمان{% endif %}
+                    {% elif payment.payment_method == 'bank_transfer' %}
+                    <img src="{% static 'images/bank.svg' %}" alt="Bank Transfer" class="payment-method-icon">
+                    {% if is_english %}Bank Transfer{% else %}تحويل بنكي{% endif %}
+                    {% elif payment.payment_method == 'cash' %}
+                    <img src="{% static 'images/cash.svg' %}" alt="Cash" class="payment-method-icon">
+                    {% if is_english %}Cash{% else %}نقدًا{% endif %}
+                    {% else %}
+                    {{ payment.payment_method }}
                     {% endif %}
-                    <a href="{% url 'admin_payments' %}" class="action-btn secondary">
-                        <i class="fas fa-arrow-left"></i>
-                        {% if is_english %}Back to Payments{% else %}العودة للمدفوعات{% endif %}
-                    </a>
                 </div>
             </div>
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Amount{% else %}المبلغ{% endif %}</div>
+                <div class="detail-value price-value">{{ payment.total_amount }} {% if is_english %}SAR{% else %}ر.س{% endif %}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Status{% else %}الحالة{% endif %}</div>
+                <div class="detail-value">
+                    {% if payment.status == 'completed' %}
+                    <span class="badge bg-success">{% if is_english %}Completed{% else %}مكتمل{% endif %}</span>
+                    {% elif payment.status == 'pending' %}
+                    <span class="badge bg-warning text-dark">{% if is_english %}Pending{% else %}قيد الانتظار{% endif %}</span>
+                    {% elif payment.status == 'cancelled' %}
+                    <span class="badge bg-danger">{% if is_english %}Cancelled{% else %}ملغي{% endif %}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if payment.transaction_id %}
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Transaction ID{% else %}رقم العملية{% endif %}</div>
+                <div class="detail-value">{{ payment.transaction_id }}</div>
+            </div>
+            {% endif %}
+            {% if payment.notes %}
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Notes{% else %}ملاحظات{% endif %}</div>
+                <div class="detail-value">{{ payment.notes }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Customer Details -->
+        {% if payment.reservation and payment.reservation.user %}
+        <div class="detail-section">
+            <div class="section-title">
+                <i class="fas fa-user"></i>
+                {% if is_english %}Customer Information{% else %}معلومات العميل{% endif %}
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Name{% else %}الاسم{% endif %}</div>
+                <div class="detail-value">{{ payment.reservation.user.first_name }} {{ payment.reservation.user.last_name }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Email{% else %}البريد الإلكتروني{% endif %}</div>
+                <div class="detail-value">{{ payment.reservation.user.email }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Phone{% else %}رقم الهاتف{% endif %}</div>
+                <div class="detail-value">{{ payment.reservation.user.profile.phone }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Reservation Details -->
+        {% if payment.reservation %}
+        <div class="detail-section">
+            <div class="section-title">
+                <i class="fas fa-calendar-check"></i>
+                {% if is_english %}Reservation Details{% else %}تفاصيل الحجز{% endif %}
+            </div>
+
+            <!-- Cards for important reservation details -->
+            <div class="reservation-info">
+                <!-- Dates Card -->
+                <div class="reservation-card">
+                    <div class="reservation-card-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        {% if is_english %}Rental Period{% else %}فترة الإيجار{% endif %}
+                    </div>
+                    <div class="reservation-detail">
+                        <div class="reservation-label">{% if is_english %}From{% else %}من{% endif %}</div>
+                        <div class="reservation-value">{{ payment.reservation.start_date }}</div>
+                    </div>
+                    <div class="reservation-detail">
+                        <div class="reservation-label">{% if is_english %}To{% else %}إلى{% endif %}</div>
+                        <div class="reservation-value">{{ payment.reservation.end_date }}</div>
+                    </div>
+                    <div class="reservation-detail">
+                        <div class="reservation-label">{% if is_english %}Duration{% else %}المدة{% endif %}</div>
+                        <div class="reservation-value">{{ payment.reservation.days_count }} {% if is_english %}days{% else %}أيام{% endif %}</div>
+                    </div>
+                </div>
+
+                <!-- Car Details Card -->
+                <div class="reservation-card">
+                    <div class="reservation-card-title">
+                        <i class="fas fa-car"></i>
+                        {% if is_english %}Vehicle Details{% else %}تفاصيل السيارة{% endif %}
+                    </div>
+                    <div class="reservation-detail">
+                        <div class="reservation-label">{% if is_english %}Model{% else %}الموديل{% endif %}</div>
+                        <div class="reservation-value">{{ payment.reservation.car.brand }} {{ payment.reservation.car.model }}</div>
+                    </div>
+                    <div class="reservation-detail">
+                        <div class="reservation-label">{% if is_english %}Year{% else %}السنة{% endif %}</div>
+                        <div class="reservation-value">{{ payment.reservation.car.year }}</div>
+                    </div>
+                    <div class="reservation-detail">
+                        <div class="reservation-label">{% if is_english %}Rate{% else %}السعر{% endif %}</div>
+                        <div class="reservation-value">{{ payment.reservation.car.daily_rate }} {% if is_english %}SAR/day{% else %}ر.س/يوم{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional reservation details -->
+            <div class="detail-row mt-3">
+                <div class="detail-label">{% if is_english %}Reservation Status{% else %}حالة الحجز{% endif %}</div>
+                <div class="detail-value">
+                    {% if payment.reservation.status == 'confirmed' %}
+                    <span class="badge bg-success">{% if is_english %}Confirmed{% else %}مؤكد{% endif %}</span>
+                    {% elif payment.reservation.status == 'pending' %}
+                    <span class="badge bg-warning text-dark">{% if is_english %}Pending{% else %}قيد الانتظار{% endif %}</span>
+                    {% elif payment.reservation.status == 'cancelled' %}
+                    <span class="badge bg-danger">{% if is_english %}Cancelled{% else %}ملغي{% endif %}</span>
+                    {% elif payment.reservation.status == 'completed' %}
+                    <span class="badge bg-info">{% if is_english %}Completed{% else %}منتهي{% endif %}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if payment.reservation.booking_date %}
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Booking Date{% else %}تاريخ الحجز{% endif %}</div>
+                <div class="detail-value">{{ payment.reservation.booking_date }}</div>
+            </div>
+            {% endif %}
+            {% if payment.reservation.pickup_location %}
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Pickup Location{% else %}موقع الاستلام{% endif %}</div>
+                <div class="detail-value">{{ payment.reservation.pickup_location }}</div>
+            </div>
+            {% endif %}
+            {% if payment.reservation.return_location %}
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Return Location{% else %}موقع التسليم{% endif %}</div>
+                <div class="detail-value">{{ payment.reservation.return_location }}</div>
+            </div>
+            {% endif %}
+            {% if payment.reservation.notes %}
+            <div class="detail-row">
+                <div class="detail-label">{% if is_english %}Notes{% else %}ملاحظات{% endif %}</div>
+                <div class="detail-value">{{ payment.reservation.notes }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            {% if payment.status == 'pending' %}
+            <a href="{% url 'confirm_payment' payment.id %}" class="btn-action btn-success">
+                <i class="fas fa-check-circle"></i> {% if is_english %}Confirm Payment{% else %}تأكيد الدفع{% endif %}
+            </a>
+            <a href="{% url 'cancel_payment' payment.id %}" class="btn-action btn-danger">
+                <i class="fas fa-times-circle"></i> {% if is_english %}Cancel Payment{% else %}إلغاء الدفع{% endif %}
+            </a>
+            {% endif %}
+            <a href="{% url 'admin_payment_receipt' payment.id %}" class="btn-action btn-primary" target="_blank">
+                <i class="fas fa-print"></i> {% if is_english %}Print Receipt{% else %}طباعة الإيصال{% endif %}
+            </a>
+            <a href="{% url 'admin_payments' %}" class="btn-action btn-secondary">
+                <i class="fas fa-arrow-left"></i> {% if is_english %}Back to Payments{% else %}العودة إلى المدفوعات{% endif %}
+            </a>
         </div>
     </div>
 </div>
