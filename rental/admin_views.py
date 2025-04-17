@@ -567,9 +567,9 @@ def payment_details(request, payment_id):
         'current_user': request.user,  # Add current user for template access
     }
     
-    template_name = 'admin/payment_detail_ecommerce.html'
+    template_name = 'admin/payment_detail_invoice.html'
     # إضافة مكون زمني لإجبار المتصفح على تحديث الصفحة وعدم استخدام النسخة المخزنة
-    context['cache_buster'] = '1744904985'
+    context['cache_buster'] = '1744912021'
     return render(request, template_name, context)
 
 @login_required
