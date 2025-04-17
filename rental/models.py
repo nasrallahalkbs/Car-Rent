@@ -225,3 +225,78 @@ class FavoriteCar(models.Model):
     
     def __str__(self):
         return f"{self.user.username} فضّل {self.car}"
+        
+class SiteSettings(models.Model):
+    """نموذج إعدادات الموقع"""
+    # إعدادات عامة
+    site_name = models.CharField(max_length=100, verbose_name=_('اسم الموقع'), default="كاررنتال")
+    site_description = models.TextField(blank=True, null=True, verbose_name=_('وصف الموقع'))
+    site_logo = models.ImageField(upload_to='settings/', blank=True, null=True, verbose_name=_('شعار الموقع'))
+    site_favicon = models.ImageField(upload_to='settings/', blank=True, null=True, verbose_name=_('أيقونة الموقع'))
+    
+    # معلومات الاتصال
+    site_email = models.EmailField(blank=True, null=True, verbose_name=_('البريد الإلكتروني'))
+    site_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name=_('رقم الهاتف'))
+    site_address = models.TextField(blank=True, null=True, verbose_name=_('العنوان'))
+    
+    # وسائل التواصل الاجتماعي
+    facebook_url = models.URLField(blank=True, null=True, verbose_name=_('رابط فيسبوك'))
+    twitter_url = models.URLField(blank=True, null=True, verbose_name=_('رابط تويتر'))
+    instagram_url = models.URLField(blank=True, null=True, verbose_name=_('رابط انستجرام'))
+    tiktok_url = models.URLField(blank=True, null=True, verbose_name=_('رابط تيك توك'))
+    youtube_url = models.URLField(blank=True, null=True, verbose_name=_('رابط يوتيوب'))
+    
+    # إعدادات API
+    google_maps_api_key = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('مفتاح API لخرائط جوجل'))
+    payment_gateway_api_key = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('مفتاح API لبوابة الدفع'))
+    
+    # إعدادات الحجز
+    booking_start_time = models.TimeField(default='09:00', verbose_name=_('وقت بدء الحجز'))
+    booking_end_time = models.TimeField(default='18:00', verbose_name=_('وقت انتهاء الحجز'))
+    min_booking_days = models.PositiveIntegerField(default=1, verbose_name=_('الحد الأدنى لأيام الحجز'))
+    max_booking_days = models.PositiveIntegerField(default=30, verbose_name=_('الحد الأقصى لأيام الحجز'))
+    
+    # إعدادات المظهر
+    primary_color = models.CharField(max_length=20, default='#3a86ff', verbose_name=_('اللون الرئيسي'))
+    secondary_color = models.CharField(max_length=20, default='#334155', verbose_name=_('اللون الثانوي'))
+    enable_dark_mode = models.BooleanField(default=True, verbose_name=_('تفعيل الوضع المظلم'))
+    
+    # إعدادات الأمان
+    enable_two_factor_auth = models.BooleanField(default=False, verbose_name=_('تفعيل المصادقة الثنائية'))
+    booking_confirmation_expiry_hours = models.PositiveIntegerField(default=24, verbose_name=_('ساعات انتهاء صلاحية تأكيد الحجز'))
+    session_timeout_minutes = models.PositiveIntegerField(default=60, verbose_name=_('مدة انتهاء الجلسة بالدقائق'))
+    
+    # إعدادات الحجز
+    enable_deposit = models.BooleanField(default=True, verbose_name=_('تفعيل نظام العربون'))
+    deposit_percentage = models.PositiveIntegerField(default=20, verbose_name=_('نسبة العربون من إجمالي الحجز (%)'))
+    enable_automatic_reservation_expiry = models.BooleanField(default=True, verbose_name=_('تفعيل انتهاء صلاحية الحجز التلقائي'))
+    
+    # إعدادات النظام
+    maintenance_mode = models.BooleanField(default=False, verbose_name=_('وضع الصيانة'))
+    enable_debug_mode = models.BooleanField(default=False, verbose_name=_('تفعيل وضع التصحيح'))
+    cache_timeout_minutes = models.PositiveIntegerField(default=60, verbose_name=_('مدة انتهاء ذاكرة التخزين المؤقت بالدقائق'))
+    
+    # إعدادات الإشعارات
+    enable_email_notifications = models.BooleanField(default=True, verbose_name=_('تفعيل الإشعارات بالبريد الإلكتروني'))
+    enable_sms_notifications = models.BooleanField(default=False, verbose_name=_('تفعيل الإشعارات بالرسائل النصية'))
+    admin_notification_email = models.EmailField(blank=True, null=True, verbose_name=_('البريد الإلكتروني لإشعارات المدير'))
+    
+    # ترجمة وتدويل
+    default_language = models.CharField(max_length=10, default='ar', choices=[('ar', 'العربية'), ('en', 'English')], verbose_name=_('اللغة الافتراضية'))
+    default_timezone = models.CharField(max_length=100, default='Asia/Kuwait', verbose_name=_('المنطقة الزمنية الافتراضية'))
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاريخ التحديث'))
+    
+    def __str__(self):
+        return f"إعدادات الموقع - {self.site_name}"
+    
+    class Meta:
+        verbose_name = _('إعدادات الموقع')
+        verbose_name_plural = _('إعدادات الموقع')
+        
+    @classmethod
+    def get_settings(cls):
+        """الحصول على إعدادات الموقع، أو إنشاء إعدادات افتراضية إذا لم تكن موجودة"""
+        settings, created = cls.objects.get_or_create(pk=1)
+        return settings

@@ -298,3 +298,70 @@ class ManualPaymentForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
     )
+    
+
+class SiteSettingsForm(forms.ModelForm):
+    """نموذج تحرير إعدادات الموقع"""
+    class Meta:
+        from .models import SiteSettings
+        model = SiteSettings
+        exclude = ['created_at', 'updated_at']
+        
+        widgets = {
+            # إعدادات عامة
+            'site_name': forms.TextInput(attrs={'class': 'form-control', 'dir': 'auto'}),
+            'site_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'dir': 'auto'}),
+            'site_logo': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'site_favicon': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            
+            # معلومات الاتصال
+            'site_email': forms.EmailInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            'site_phone': forms.TextInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            'site_address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'dir': 'auto'}),
+            
+            # وسائل التواصل الاجتماعي
+            'facebook_url': forms.URLInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            'twitter_url': forms.URLInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            'instagram_url': forms.URLInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            'tiktok_url': forms.URLInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            'youtube_url': forms.URLInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            
+            # إعدادات API
+            'google_maps_api_key': forms.TextInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            'payment_gateway_api_key': forms.TextInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            
+            # إعدادات الحجز
+            'booking_start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'booking_end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'min_booking_days': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'max_booking_days': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            
+            # إعدادات المظهر
+            'primary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color', 'style': 'height: 40px;'}),
+            'secondary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color', 'style': 'height: 40px;'}),
+            'enable_dark_mode': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            
+            # إعدادات الأمان
+            'enable_two_factor_auth': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'booking_confirmation_expiry_hours': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'session_timeout_minutes': forms.NumberInput(attrs={'class': 'form-control', 'min': 5}),
+            
+            # إعدادات الحجز
+            'enable_deposit': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'deposit_percentage': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100}),
+            'enable_automatic_reservation_expiry': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            
+            # إعدادات النظام
+            'maintenance_mode': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'enable_debug_mode': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'cache_timeout_minutes': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            
+            # إعدادات الإشعارات
+            'enable_email_notifications': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'enable_sms_notifications': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'admin_notification_email': forms.EmailInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+            
+            # ترجمة وتدويل
+            'default_language': forms.Select(attrs={'class': 'form-select'}),
+            'default_timezone': forms.TextInput(attrs={'class': 'form-control', 'dir': 'ltr'}),
+        }

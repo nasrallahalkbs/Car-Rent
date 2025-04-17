@@ -7,8 +7,8 @@ from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
-from .models import User, Car, Reservation, CartItem
-from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm
+from .models import User, Car, Reservation, CartItem, SiteSettings
+from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm, SiteSettingsForm
 from functools import wraps
 from datetime import datetime, date, timedelta
 import uuid
