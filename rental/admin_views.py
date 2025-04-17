@@ -576,18 +576,13 @@ def payment_details(request, payment_id):
         'is_rtl': is_rtl,
     }
 
-    # تحسين التنسيق باستخدام قالب فائق الجودة
+    # تحديث ملف CSS منفصل
     import time
     context['cache_buster'] = str(int(time.time()))
-    
-    # استخدام التصميم الاحترافي الرسمي فائق الجودة
+
+    # استخدم قالب المتوفر بدلاً من البحث عن قالب غير موجود
     template_name = 'admin/payment_detail_ultra_pro.html'
-    
-    # تعزيز سياق العرض لإضافة تفاصيل أكثر جاذبية
-    context['display_mode'] = 'premium'
-    context['animate_elements'] = True
-    context['show_enhanced_details'] = True
-    
+
     return render(request, template_name, context)
 
 @login_required
