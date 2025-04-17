@@ -1,0 +1,635 @@
+{% extends 'layout_django.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% if is_english %}Payment Receipt{% else %}إيصال مدفوعات{% endif %}{% endblock %}
+
+{% block styles %}
+<style>
+    :root {
+        --primary-color: #3B82F6;
+        --primary-dark: #1E40AF;
+        --primary-light: #DBEAFE;
+        --primary-bg: #EFF6FF;
+        --success-color: #10B981;
+        --success-light: #D1FAE5;
+        --warn-color: #F59E0B;
+        --warn-light: #FEF3C7;
+        --danger-color: #EF4444;
+        --danger-light: #FEE2E2;
+        --gray-50: #F9FAFB;
+        --gray-100: #F3F4F6;
+        --gray-200: #E5E7EB;
+        --gray-300: #D1D5DB;
+        --gray-400: #9CA3AF;
+        --gray-500: #6B7280;
+        --gray-600: #4B5563;
+        --gray-700: #374151;
+        --gray-800: #1F2937;
+        --gray-900: #111827;
+        --border-radius: 0.5rem;
+        --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    }
+
+    .receipt-page {
+        background-color: var(--gray-100);
+        min-height: 100vh;
+        padding: 2rem 1rem;
+    }
+
+    .receipt-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: white;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--box-shadow);
+        border: 1px solid var(--gray-200);
+    }
+
+    .receipt-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        color: white;
+        padding: 2rem;
+        position: relative;
+    }
+
+    .receipt-header-pattern {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='rgba(255,255,255,0.1)' fill-rule='evenodd'/%3E%3C/svg%3E");
+        opacity: 0.3;
+    }
+
+    .receipt-title {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .receipt-logo {
+        margin-left: 1rem;
+        font-size: 2rem;
+        background: rgba(255, 255, 255, 0.2);
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.1);
+    }
+
+    .receipt-main-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .receipt-subtitle {
+        font-size: 0.875rem;
+        opacity: 0.8;
+        margin-top: 0.25rem;
+    }
+
+    .receipt-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .receipt-number {
+        font-size: 1.125rem;
+        font-weight: 700;
+    }
+
+    .receipt-date {
+        font-size: 0.875rem;
+        opacity: 0.8;
+    }
+
+    .receipt-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .receipt-status.paid {
+        background-color: rgba(16, 185, 129, 0.2);
+        color: #10B981;
+    }
+
+    .receipt-status.pending {
+        background-color: rgba(245, 158, 11, 0.2);
+        color: #F59E0B;
+    }
+
+    .receipt-status.cancelled {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: #EF4444;
+    }
+
+    .receipt-status i {
+        margin-left: 0.5rem;
+    }
+
+    .receipt-body {
+        padding: 2rem;
+    }
+
+    .receipt-section {
+        margin-bottom: 2rem;
+    }
+
+    .receipt-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .receipt-section-title {
+        font-weight: 700;
+        color: var(--gray-800);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+    }
+
+    .receipt-section-title i {
+        margin-left: 0.5rem;
+        color: var(--primary-color);
+    }
+
+    .receipt-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+        .receipt-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .receipt-detail-group {
+        margin-bottom: 1rem;
+    }
+
+    .receipt-detail-label {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        margin-bottom: 0.25rem;
+    }
+
+    .receipt-detail-value {
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .car-info {
+        display: flex;
+        align-items: center;
+        background-color: var(--gray-50);
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .car-icon {
+        width: 60px;
+        height: 60px;
+        background-color: var(--primary-bg);
+        color: var(--primary-color);
+        border-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-left: 1rem;
+        flex-shrink: 0;
+    }
+
+    .car-details h4 {
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: var(--gray-900);
+    }
+
+    .car-meta {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+
+    .car-meta span:not(:last-child)::after {
+        content: "•";
+        margin: 0 0.5rem;
+        color: var(--gray-400);
+    }
+
+    .car-dates {
+        margin-top: 0.5rem;
+    }
+
+    .car-dates span {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+
+    .car-dates i {
+        color: var(--primary-color);
+    }
+
+    .payment-method {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background-color: var(--gray-50);
+        border-radius: var(--border-radius);
+        border: 1px solid var(--gray-200);
+    }
+
+    .payment-icon {
+        font-size: 2rem;
+        margin-left: 1rem;
+    }
+
+    .payment-icon.visa {
+        color: #1A1F71;
+    }
+
+    .payment-icon.mastercard {
+        color: #EB001B;
+    }
+
+    .payment-icon.amex {
+        color: #2E77BC;
+    }
+
+    .payment-icon.cash {
+        color: #10B981;
+    }
+
+    .payment-icon.bank {
+        color: #0EA5E9;
+    }
+
+    .payment-details h4 {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .payment-ref {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+
+    .cost-summary {
+        background-color: var(--gray-50);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .cost-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px dashed var(--gray-300);
+        color: var(--gray-600);
+    }
+
+    .cost-row:last-of-type {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .cost-total {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid var(--gray-300);
+        font-weight: 700;
+        font-size: 1.125rem;
+        color: var(--gray-900);
+    }
+
+    .receipt-footer {
+        padding: 1.5rem 2rem;
+        background-color: var(--gray-50);
+        border-top: 1px solid var(--gray-200);
+        text-align: center;
+    }
+
+    .receipt-thank-you {
+        font-weight: 700;
+        color: var(--gray-800);
+        margin-bottom: 0.5rem;
+    }
+
+    .receipt-note {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+
+    .receipt-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .receipt-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .receipt-btn i {
+        margin-left: 0.5rem;
+    }
+
+    .receipt-btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .receipt-btn-primary:hover {
+        background-color: var(--primary-dark);
+    }
+
+    .receipt-btn-secondary {
+        background-color: white;
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+    }
+
+    .receipt-btn-secondary:hover {
+        background-color: var(--gray-100);
+    }
+
+    .receipt-amount {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 1rem 0;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .receipt-currency {
+        font-size: 1.25rem;
+        font-weight: 500;
+    }
+
+    @media print {
+        .receipt-page {
+            background-color: white;
+            padding: 0;
+        }
+
+        .receipt-container {
+            box-shadow: none;
+            border: none;
+        }
+
+        .receipt-actions,
+        .receipt-header-pattern {
+            display: none;
+        }
+
+        .receipt-header {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="receipt-page">
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <div class="receipt-header-pattern"></div>
+            <div class="receipt-title">
+                <div class="receipt-logo">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div>
+                    <div class="receipt-main-title">{% if is_english %}Payment Receipt{% else %}إيصال مدفوعات{% endif %}</div>
+                    <div class="receipt-subtitle">{% if is_english %}Transaction complete{% else %}تمت المعاملة بنجاح{% endif %}</div>
+                </div>
+            </div>
+
+            <div class="receipt-meta">
+                <div>
+                    <div class="receipt-number">#{{ payment.id }}</div>
+                    <div class="receipt-date">{{ payment.date|date:"Y/m/d" }} {{ payment.date|time:"H:i" }}</div>
+                </div>
+                <div>
+                    {% if payment.status == 'paid' %}
+                    <div class="receipt-status paid">
+                        <i class="fas fa-check-circle"></i> 
+                        {% if is_english %}Paid{% else %}مدفوع بالكامل{% endif %}
+                    </div>
+                    {% elif payment.status == 'pending' %}
+                    <div class="receipt-status pending">
+                        <i class="fas fa-clock"></i> 
+                        {% if is_english %}Pending{% else %}قيد الانتظار{% endif %}
+                    </div>
+                    {% else %}
+                    <div class="receipt-status cancelled">
+                        <i class="fas fa-ban"></i> 
+                        {% if is_english %}Cancelled{% else %}ملغي{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="receipt-amount">
+                {{ payment.amount }} <span class="receipt-currency">{% if is_english %}KWD{% else %}د.ك{% endif %}</span>
+            </div>
+        </div>
+
+        <div class="receipt-body">
+            <!-- تفاصيل السيارة -->
+            {% if payment.car %}
+            <div class="receipt-section">
+                <h3 class="receipt-section-title">
+                    <i class="fas fa-car"></i>
+                    {% if is_english %}Car Details{% else %}تفاصيل السيارة{% endif %}
+                </h3>
+                <div class="car-info">
+                    <div class="car-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="car-details">
+                        <h4>{{ payment.car.make }} {{ payment.car.model }}</h4>
+                        <div class="car-meta">
+                            <span>{{ payment.car.year }}</span>
+                            <span>{{ payment.car.color }}</span>
+                            <span>{{ payment.car.category }}</span>
+                        </div>
+                        <div class="car-dates">
+                            <i class="fas fa-calendar-alt"></i> 
+                            <span>{% if is_english %}From{% else %}من{% endif %} {{ payment.start_date|date:"Y/m/d" }} {% if is_english %}to{% else %}إلى{% endif %} {{ payment.end_date|date:"Y/m/d" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- تفاصيل الدفع والعميل -->
+            <div class="receipt-section">
+                <div class="receipt-grid">
+                    <div>
+                        <h3 class="receipt-section-title">
+                            <i class="fas fa-credit-card"></i>
+                            {% if is_english %}Payment Information{% else %}معلومات الدفع{% endif %}
+                        </h3>
+                        <div class="payment-method">
+                            {% if payment.payment_method == 'visa' %}
+                            <i class="fab fa-cc-visa payment-icon visa"></i>
+                            {% elif payment.payment_method == 'mastercard' %}
+                            <i class="fab fa-cc-mastercard payment-icon mastercard"></i>
+                            {% elif payment.payment_method == 'amex' %}
+                            <i class="fab fa-cc-amex payment-icon amex"></i>
+                            {% elif payment.payment_method == 'cash' %}
+                            <i class="fas fa-money-bill-wave payment-icon cash"></i>
+                            {% elif payment.payment_method == 'bank_transfer' %}
+                            <i class="fas fa-university payment-icon bank"></i>
+                            {% else %}
+                            <i class="fas fa-credit-card payment-icon"></i>
+                            {% endif %}
+                            <div class="payment-details">
+                                <h4>
+                                    {% if payment.payment_method == 'visa' %}
+                                    {% if is_english %}Visa Card{% else %}بطاقة فيزا{% endif %}
+                                    {% elif payment.payment_method == 'mastercard' %}
+                                    {% if is_english %}MasterCard{% else %}ماستركارد{% endif %}
+                                    {% elif payment.payment_method == 'amex' %}
+                                    {% if is_english %}American Express{% else %}أمريكان إكسبرس{% endif %}
+                                    {% elif payment.payment_method == 'cash' %}
+                                    {% if is_english %}Cash{% else %}نقداً{% endif %}
+                                    {% elif payment.payment_method == 'bank_transfer' %}
+                                    {% if is_english %}Bank Transfer{% else %}تحويل بنكي{% endif %}
+                                    {% else %}
+                                    {{ payment.payment_method }}
+                                    {% endif %}
+                                </h4>
+                                {% if payment.reference_number %}
+                                <div class="payment-ref">{% if is_english %}Ref:{% else %}رقم المرجع:{% endif %} {{ payment.reference_number }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="receipt-detail-group mt-3">
+                            <div class="receipt-detail-label">{% if is_english %}Transaction Date{% else %}تاريخ المعاملة{% endif %}</div>
+                            <div class="receipt-detail-value">{{ payment.date|date:"Y/m/d" }}</div>
+                        </div>
+
+                        <div class="receipt-detail-group">
+                            <div class="receipt-detail-label">{% if is_english %}Transaction Time{% else %}وقت المعاملة{% endif %}</div>
+                            <div class="receipt-detail-value">{{ payment.date|time:"H:i" }}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="receipt-section-title">
+                            <i class="fas fa-user"></i>
+                            {% if is_english %}Customer Information{% else %}معلومات العميل{% endif %}
+                        </h3>
+                        {% if payment.user %}
+                        <div class="receipt-detail-group">
+                            <div class="receipt-detail-label">{% if is_english %}Name{% else %}الاسم{% endif %}</div>
+                            <div class="receipt-detail-value">{{ payment.user.get_full_name|default:payment.user.username }}</div>
+                        </div>
+
+                        <div class="receipt-detail-group">
+                            <div class="receipt-detail-label">{% if is_english %}Email{% else %}البريد الإلكتروني{% endif %}</div>
+                            <div class="receipt-detail-value">{{ payment.user.email }}</div>
+                        </div>
+
+                        <div class="receipt-detail-group">
+                            <div class="receipt-detail-label">{% if is_english %}Customer ID{% else %}رقم العميل{% endif %}</div>
+                            <div class="receipt-detail-value">{{ payment.user.id }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if payment.car %}
+                        <div class="receipt-detail-group">
+                            <div class="receipt-detail-label">{% if is_english %}Rental Period{% else %}مدة الإيجار{% endif %}</div>
+                            <div class="receipt-detail-value">{{ days }} {% if is_english %}day{{ days|pluralize }}{% else %}يوم{% if days > 2 %}اً{% elif days > 10 %}{% endif %}{% endif %}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ملخص التكاليف -->
+            <div class="receipt-section">
+                <h3 class="receipt-section-title">
+                    <i class="fas fa-calculator"></i>
+                    {% if is_english %}Cost Summary{% else %}ملخص التكاليف{% endif %}
+                </h3>
+                <div class="cost-summary">
+                    {% if payment.car %}
+                    <div class="cost-row">
+                        <div>{% if is_english %}Daily Rate{% else %}السعر اليومي{% endif %}</div>
+                        <div>{{ payment.car.daily_rate }} {% if is_english %}KWD{% else %}د.ك{% endif %}</div>
+                    </div>
+                    <div class="cost-row">
+                        <div>{% if is_english %}Number of Days{% else %}عدد الأيام{% endif %}</div>
+                        <div>{{ days }}</div>
+                    </div>
+                    <div class="cost-row">
+                        <div>{% if is_english %}Subtotal{% else %}المجموع الفرعي{% endif %}</div>
+                        <div>{{ payment.amount }} {% if is_english %}KWD{% else %}د.ك{% endif %}</div>
+                    </div>
+                    {% endif %}
+                    <div class="cost-total">
+                        <div>{% if is_english %}Total{% else %}المجموع الكلي{% endif %}</div>
+                        <div>{{ payment.amount }} {% if is_english %}KWD{% else %}د.ك{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="receipt-footer">
+            <div class="receipt-thank-you">{% if is_english %}Thank you for your business!{% else %}شكراً لاختيارك خدماتنا!{% endif %}</div>
+            <div class="receipt-note">{% if is_english %}This is your official payment receipt.{% else %}هذا هو إيصال الدفع الرسمي الخاص بك.{% endif %}</div>
+            
+            <div class="receipt-actions">
+                {% if payment.status == 'paid' %}
+                <a href="{% url 'download_receipt' payment_id=payment.id %}" class="receipt-btn receipt-btn-primary">
+                    <i class="fas fa-download"></i> {% if is_english %}Download Receipt{% else %}تنزيل الإيصال{% endif %}
+                </a>
+                {% endif %}
+                
+                <a href="javascript:window.print()" class="receipt-btn receipt-btn-secondary">
+                    <i class="fas fa-print"></i> {% if is_english %}Print{% else %}طباعة{% endif %}
+                </a>
+                
+                <a href="{% url 'admin_payments' %}" class="receipt-btn receipt-btn-secondary">
+                    <i class="fas fa-arrow-left"></i> {% if is_english %}Back{% else %}عودة{% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

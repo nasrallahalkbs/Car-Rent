@@ -550,8 +550,7 @@ def payment_details(request, payment_id):
     
     # Extract payment method and reference number from notes if available
     if payment.notes:
-        notes_lines = payment.notes.split('
-')
+        notes_lines = payment.notes.split('\n')
         for line in notes_lines:
             if 'طريقة الدفع:' in line:
                 payment.payment_method = line.split('طريقة الدفع:')[1].strip()
@@ -578,7 +577,7 @@ def payment_details(request, payment_id):
     }
     
     # استخدام القالب المباشر مع التصميم الاحترافي
-    template_name = 'admin/payment_detail_direct.html'
+    template_name = 'payment_receipt_premium.html'
     
     # إضافة مكون زمني لإجبار المتصفح على تحديث الصفحة وعدم استخدام النسخة المخزنة
     import time
