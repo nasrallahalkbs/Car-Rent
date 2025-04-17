@@ -644,7 +644,7 @@ def mark_as_paid(request, payment_id):
 @login_required
 @admin_required
 def cancel_payment(request, payment_id):
-    """Cancel a pending payment"""
+    """Cancel a pending payment and delete it from payment records"""
     payment = get_object_or_404(Reservation, id=payment_id)
     
     # Only allow cancelling pending payments
@@ -652,12 +652,18 @@ def cancel_payment(request, payment_id):
         messages.error(request, "لا يمكن إلغاء الدفعات التي تم معالجتها بالفعل!")
         return redirect('payment_details', payment_id=payment_id)
     
-    # Cancel the reservation
+    # Store reservation ID for redirection
+    user_id = payment.user.id
+    
+    # Cancel the reservation and reset payment status
     payment.status = 'cancelled'
+    payment.payment_status = 'cancelled'
     payment.save()
     
     messages.success(request, "تم إلغاء الدفع والحجز بنجاح!")
-    return redirect('payment_details', payment_id=payment_id)
+    
+    # Redirect to the payments list instead of the cancelled payment details
+    return redirect('admin_payments')
 
 @login_required
 @admin_required

@@ -161,6 +161,7 @@
             </thead>
             <tbody>
                 {% for payment in payments %}
+                {% if payment.payment_status != 'cancelled' %}
                 <tr>
                     <td>
                         <div class="fw-bold">#{{ payment.id }}</div>
@@ -191,17 +192,17 @@
                     </td>
                     <td>
                         {% if payment.notes and "طريقة الدفع: visa" in payment.notes %}
-                        <div><i class="fab fa-cc-visa text-primary ms-1></i>فيزا</div>
+                        <div><i class="fab fa-cc-visa text-primary ms-1"></i> فيزا</div>
                         {% elif payment.notes and "طريقة الدفع: mastercard" in payment.notes %}
-                        <div><i class="fab fa-cc-mastercard text-danger ms-1></i>ماستركارد</div>
+                        <div><i class="fab fa-cc-mastercard text-danger ms-1"></i> ماستركارد</div>
                         {% elif payment.notes and "طريقة الدفع: amex" in payment.notes %}
-                        <div><i class="fab fa-cc-amex text-info ms-1></i>أمريكان إكسبرس</div>
+                        <div><i class="fab fa-cc-amex text-info ms-1"></i> أمريكان إكسبرس</div>
                         {% elif payment.notes and "طريقة الدفع: cash" in payment.notes %}
-                        <div><i class="fas fa-money-bill-wave text-success ms-1></i> نقداً</div>
+                        <div><i class="fas fa-money-bill-wave text-success ms-1"></i> نقداً</div>
                         {% elif payment.notes and "طريقة الدفع: bank_transfer" in payment.notes %}
-                        <div><i class="fas fa-university text-secondary ms-1></i> حوالة بنكية</div>
+                        <div><i class="fas fa-university text-secondary ms-1"></i> حوالة بنكية</div>
                         {% else %}
-                        <div><i class="fas fa-credit-card ms-1></i> بطاقة ائتمان</div>
+                        <div><i class="fas fa-credit-card ms-1"></i> بطاقة ائتمان</div>
                         {% endif %}
                     </td>
                     <td>
@@ -211,7 +212,7 @@
                         <span class="status-badge status-badge-completed">مدفوع</span>
                         {% elif payment.payment_status == 'refunded' %}
                         <span class="status-badge status-badge-warning">مسترجع</span>
-                        {% elif payment.status == 'cancelled' %}
+                        {% elif payment.payment_status == 'cancelled' %}
                         <span class="status-badge status-badge-cancelled">ملغي</span>
                         {% endif %}
                     </td>
@@ -223,35 +224,36 @@
                             <ul class="dropdown-menu">
                                 <li>
                                     <a class="dropdown-item" href="{% url 'payment_details' payment_id=payment.id %}">
-                                        <i class="fas fa-eye ms-2" ms-1></i> عرض التفاصيل
+                                        <i class="fas fa-eye ms-2"></i> عرض التفاصيل
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{% url 'print_receipt' payment_id=payment.id %}">
-                                        <i class="fas fa-print ms-2" ms-1></i> طباعة الإيصال
+                                        <i class="fas fa-print ms-2"></i> طباعة الإيصال
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{% url 'download_receipt' payment_id=payment.id %}">
-                                        <i class="fas fa-file-pdf ms-2" ms-1></i> تحميل الإيصال
+                                        <i class="fas fa-file-pdf ms-2"></i> تحميل الإيصال
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 {% if payment.payment_status == 'pending' %}
                                 <li>
                                     <a class="dropdown-item text-success" href="{% url 'mark_as_paid' payment_id=payment.id %}">
-                                        <i class="fas fa-check ms-2" ms-1></i> تحديث للمدفوع
+                                        <i class="fas fa-check ms-2"></i> تحديث للمدفوع
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item text-danger" href="{% url 'cancel_payment' payment_id=payment.id %}">
-                                        <i class="fas fa-times ms-2" ms-1></i> إلغاء الدفعة
+                                    <a class="dropdown-item text-danger" href="{% url 'cancel_payment' payment_id=payment.id %}"
+                                       onclick="return confirm('هل أنت متأكد من إلغاء هذه الدفعة؟ سيتم إزالتها من سجل المدفوعات.');">
+                                        <i class="fas fa-times ms-2"></i> إلغاء الدفعة
                                     </a>
                                 </li>
                                 {% elif payment.payment_status == 'paid' %}
                                 <li>
                                     <a class="dropdown-item text-warning" href="{% url 'process_refund' payment_id=payment.id %}">
-                                        <i class="fas fa-undo ms-2" ms-1></i> رد المبلغ
+                                        <i class="fas fa-undo ms-2"></i> رد المبلغ
                                     </a>
                                 </li>
                                 {% endif %}
@@ -259,6 +261,7 @@
                         </div>
                     </td>
                 </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>
