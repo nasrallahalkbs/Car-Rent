@@ -458,9 +458,14 @@ def admin_payments(request):
     payment_status = request.GET.get('payment_status', '')
     date_range = request.GET.get('date_range', '')
     search = request.GET.get('search', '')
+    show_cancelled = request.GET.get('show_cancelled', '') == 'yes'
     
     # Start with all reservations that have payment information
     payments = Reservation.objects.all().select_related('user', 'car')
+    
+    # Exclude cancelled payments by default unless explicitly requested
+    if not show_cancelled:
+        payments = payments.exclude(payment_status='cancelled')
     
     # Apply filters
     if payment_status:

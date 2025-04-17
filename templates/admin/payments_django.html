@@ -124,12 +124,19 @@
             <input type="text" class="form-control" id="search" name="search" placeholder="بحث برقم الدفعة، اسم المستخدم..." 
                    value="{{ request.GET.search|default:'' }}">
         </div>
-        <div class="col-md-6 d-flex align-items-end">
+        <div class="col-md-3">
+            <label for="show_cancelled" class="form-label">المدفوعات الملغية</label>
+            <select name="show_cancelled" id="show_cancelled" class="form-select">
+                <option value="" {% if not request.GET.show_cancelled %}selected{% endif %}>إخفاء الملغية</option>
+                <option value="yes" {% if request.GET.show_cancelled == 'yes' %}selected{% endif %}>عرض الملغية</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
             <button type="submit" class="btn btn-primary ms-2">
-                <i class="fas fa-search ms-2" ms-1></i> بحث
+                <i class="fas fa-search ms-2"></i> بحث
             </button>
             <a href="{% url 'admin_payments' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-redo ms-2" ms-1></i> إعادة تعيين
+                <i class="fas fa-redo ms-2"></i> إعادة تعيين
             </a>
         </div>
     </form>
@@ -161,8 +168,7 @@
             </thead>
             <tbody>
                 {% for payment in payments %}
-                {% if payment.payment_status != 'cancelled' %}
-                <tr>
+                <tr {% if payment.payment_status == 'cancelled' %}class="payment-cancelled-row"{% endif %}>
                     <td>
                         <div class="fw-bold">#{{ payment.id }}</div>
                         <div class="small text-muted">
@@ -261,7 +267,6 @@
                         </div>
                     </td>
                 </tr>
-                {% endif %}
                 {% endfor %}
             </tbody>
         </table>
