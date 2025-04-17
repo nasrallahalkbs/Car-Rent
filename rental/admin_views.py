@@ -576,8 +576,8 @@ def payment_details(request, payment_id):
         'is_rtl': is_rtl,
     }
     
-    # استخدام القالب الاحترافي المحسن مع CSS منفصل
-    template_name = 'admin/payment_detail_premium.html'
+    # استخدام القالب الاحترافي فائق الجودة مع CSS منفصل
+    template_name = 'admin/payment_detail_ultra.html'
     
     # إضافة مكون زمني لإجبار المتصفح على تحديث الصفحة وعدم استخدام النسخة المخزنة
     import time
