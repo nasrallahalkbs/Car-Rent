@@ -1,0 +1,234 @@
+{% extends 'layout_django.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if is_english %}Payment Details{% else %}تفاصيل الدفع{% endif %}
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/payment_receipt.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="payment-page">
+    <div class="container mb-4">
+        <a href="{% url 'admin_payments' %}" class="payment-btn payment-btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            {% if is_english %}Back to Payments{% else %}العودة إلى المدفوعات{% endif %}
+        </a>
+    </div>
+    
+    <div class="payment-container">
+        <div class="payment-header">
+            <div class="payment-header-pattern"></div>
+            <div class="payment-title">
+                <div class="payment-logo">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div>
+                    <div class="payment-main-title">{% if is_english %}Payment Details{% else %}تفاصيل الدفع{% endif %}</div>
+                    <div class="payment-subtitle">
+                        {% if payment.payment_status == 'paid' %}
+                            {% if is_english %}Transaction complete{% else %}تمت المعاملة بنجاح{% endif %}
+                        {% elif payment.payment_status == 'pending' %}
+                            {% if is_english %}Waiting for payment{% else %}في انتظار الدفع{% endif %}
+                        {% else %}
+                            {% if is_english %}Payment cancelled{% else %}تم إلغاء الدفع{% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-meta">
+                <div>
+                    <div class="payment-number">#{{ payment.id }}</div>
+                    <div class="payment-date">{{ payment.created_at|date:"Y/m/d" }} {{ payment.created_at|time:"H:i" }}</div>
+                </div>
+                <div>
+                    {% if payment.payment_status == 'paid' %}
+                    <div class="payment-status paid">
+                        <i class="fas fa-check-circle"></i> 
+                        {% if is_english %}Paid{% else %}مدفوع بالكامل{% endif %}
+                    </div>
+                    {% elif payment.payment_status == 'pending' %}
+                    <div class="payment-status pending">
+                        <i class="fas fa-clock"></i> 
+                        {% if is_english %}Pending{% else %}قيد الانتظار{% endif %}
+                    </div>
+                    {% else %}
+                    <div class="payment-status cancelled">
+                        <i class="fas fa-ban"></i> 
+                        {% if is_english %}Cancelled{% else %}ملغي{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="payment-amount">
+                {{ payment.total_price }} <span class="payment-currency">{% if is_english %}KWD{% else %}د.ك{% endif %}</span>
+            </div>
+        </div>
+
+        <div class="payment-body">
+            <!-- تفاصيل السيارة -->
+            <div class="payment-section">
+                <h3 class="payment-section-title">
+                    <i class="fas fa-car"></i>
+                    {% if is_english %}Car Details{% else %}تفاصيل السيارة{% endif %}
+                </h3>
+                <div class="car-info">
+                    <div class="car-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="car-details">
+                        <h4>{{ payment.car.make }} {{ payment.car.model }}</h4>
+                        <div class="car-meta">
+                            <span>{{ payment.car.year }}</span>
+                            <span>{{ payment.car.color }}</span>
+                            <span>{{ payment.car.category }}</span>
+                        </div>
+                        <div class="car-dates">
+                            <i class="fas fa-calendar-alt"></i> 
+                            <span>{% if is_english %}From{% else %}من{% endif %} {{ payment.start_date|date:"Y/m/d" }} {% if is_english %}to{% else %}إلى{% endif %} {{ payment.end_date|date:"Y/m/d" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- تفاصيل الدفع والعميل -->
+            <div class="payment-section">
+                <div class="payment-grid">
+                    <div>
+                        <h3 class="payment-section-title">
+                            <i class="fas fa-credit-card"></i>
+                            {% if is_english %}Payment Information{% else %}معلومات الدفع{% endif %}
+                        </h3>
+                        
+                        {% if payment.payment_method %}
+                        <div class="payment-method">
+                            {% if payment.payment_method == 'visa' %}
+                            <i class="fab fa-cc-visa payment-icon visa"></i>
+                            {% elif payment.payment_method == 'mastercard' %}
+                            <i class="fab fa-cc-mastercard payment-icon mastercard"></i>
+                            {% elif payment.payment_method == 'amex' %}
+                            <i class="fab fa-cc-amex payment-icon amex"></i>
+                            {% elif payment.payment_method == 'cash' %}
+                            <i class="fas fa-money-bill-wave payment-icon cash"></i>
+                            {% elif payment.payment_method == 'bank_transfer' %}
+                            <i class="fas fa-university payment-icon bank"></i>
+                            {% else %}
+                            <i class="fas fa-credit-card payment-icon"></i>
+                            {% endif %}
+                            <div class="payment-details">
+                                <h4>
+                                    {% if payment.payment_method == 'visa' %}
+                                    {% if is_english %}Visa Card{% else %}بطاقة فيزا{% endif %}
+                                    {% elif payment.payment_method == 'mastercard' %}
+                                    {% if is_english %}MasterCard{% else %}ماستركارد{% endif %}
+                                    {% elif payment.payment_method == 'amex' %}
+                                    {% if is_english %}American Express{% else %}أمريكان إكسبرس{% endif %}
+                                    {% elif payment.payment_method == 'cash' %}
+                                    {% if is_english %}Cash{% else %}نقداً{% endif %}
+                                    {% elif payment.payment_method == 'bank_transfer' %}
+                                    {% if is_english %}Bank Transfer{% else %}تحويل بنكي{% endif %}
+                                    {% else %}
+                                    {{ payment.payment_method }}
+                                    {% endif %}
+                                </h4>
+                                {% if payment.reference_number %}
+                                <div class="payment-ref">{% if is_english %}Ref:{% else %}رقم المرجع:{% endif %} {{ payment.reference_number }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="payment-detail-group mt-3">
+                            <div class="payment-detail-label">{% if is_english %}Transaction Date{% else %}تاريخ المعاملة{% endif %}</div>
+                            <div class="payment-detail-value">{{ payment.created_at|date:"Y/m/d" }}</div>
+                        </div>
+
+                        <div class="payment-detail-group">
+                            <div class="payment-detail-label">{% if is_english %}Transaction Time{% else %}وقت المعاملة{% endif %}</div>
+                            <div class="payment-detail-value">{{ payment.created_at|time:"H:i" }}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="payment-section-title">
+                            <i class="fas fa-user"></i>
+                            {% if is_english %}Customer Information{% else %}معلومات العميل{% endif %}
+                        </h3>
+                        <div class="payment-detail-group">
+                            <div class="payment-detail-label">{% if is_english %}Name{% else %}الاسم{% endif %}</div>
+                            <div class="payment-detail-value">{{ payment.user.get_full_name|default:payment.user.username }}</div>
+                        </div>
+
+                        <div class="payment-detail-group">
+                            <div class="payment-detail-label">{% if is_english %}Email{% else %}البريد الإلكتروني{% endif %}</div>
+                            <div class="payment-detail-value">{{ payment.user.email }}</div>
+                        </div>
+
+                        <div class="payment-detail-group">
+                            <div class="payment-detail-label">{% if is_english %}Customer ID{% else %}رقم العميل{% endif %}</div>
+                            <div class="payment-detail-value">{{ payment.user.id }}</div>
+                        </div>
+
+                        <div class="payment-detail-group">
+                            <div class="payment-detail-label">{% if is_english %}Rental Period{% else %}مدة الإيجار{% endif %}</div>
+                            <div class="payment-detail-value">{{ days }} {% if is_english %}day{{ days|pluralize }}{% else %}يوم{% if days > 2 %}اً{% elif days > 10 %}{% endif %}{% endif %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ملخص التكاليف -->
+            <div class="payment-section">
+                <h3 class="payment-section-title">
+                    <i class="fas fa-calculator"></i>
+                    {% if is_english %}Cost Summary{% else %}ملخص التكاليف{% endif %}
+                </h3>
+                <div class="cost-summary">
+                    <div class="cost-row">
+                        <div>{% if is_english %}Daily Rate{% else %}السعر اليومي{% endif %}</div>
+                        <div>{{ payment.car.daily_rate }} {% if is_english %}KWD{% else %}د.ك{% endif %}</div>
+                    </div>
+                    <div class="cost-row">
+                        <div>{% if is_english %}Number of Days{% else %}عدد الأيام{% endif %}</div>
+                        <div>{{ days }}</div>
+                    </div>
+                    <div class="cost-row">
+                        <div>{% if is_english %}Subtotal{% else %}المجموع الفرعي{% endif %}</div>
+                        <div>{{ payment.total_price }} {% if is_english %}KWD{% else %}د.ك{% endif %}</div>
+                    </div>
+                    <div class="cost-total">
+                        <div>{% if is_english %}Total{% else %}المجموع الكلي{% endif %}</div>
+                        <div>{{ payment.total_price }} {% if is_english %}KWD{% else %}د.ك{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-footer">
+            <div class="payment-thank-you">{% if is_english %}Thank you for your business!{% else %}شكراً لاختيارك خدماتنا!{% endif %}</div>
+            <div class="payment-note">{% if is_english %}This is your official payment receipt.{% else %}هذا هو إيصال الدفع الرسمي الخاص بك.{% endif %}</div>
+            
+            <div class="payment-actions">
+                {% if payment.payment_status == 'paid' %}
+                <a href="{% url 'download_receipt' payment_id=payment.id %}" class="payment-btn payment-btn-primary">
+                    <i class="fas fa-download"></i> {% if is_english %}Download Receipt{% else %}تنزيل الإيصال{% endif %}
+                </a>
+                {% endif %}
+                
+                <a href="javascript:window.print()" class="payment-btn payment-btn-secondary">
+                    <i class="fas fa-print"></i> {% if is_english %}Print{% else %}طباعة{% endif %}
+                </a>
+                
+                <a href="{% url 'admin_payments' %}" class="payment-btn payment-btn-secondary">
+                    <i class="fas fa-arrow-left"></i> {% if is_english %}Back{% else %}عودة{% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
