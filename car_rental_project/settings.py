@@ -13,6 +13,13 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# منع التخزين المؤقت خلال التطوير
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+
 ALLOWED_HOSTS = ["*"]  # Allow all hosts for development
 
 # Get Replit host if available from environment
