@@ -463,7 +463,10 @@ def admin_payments(request):
     # Start with all reservations that have payment information
     payments = Reservation.objects.all().select_related('user', 'car')
     
-    # Exclude cancelled payments by default unless explicitly requested
+    # Exclude deleted/cancelled payments by default
+    payments = payments.exclude(payment_status='deleted')  # Always exclude completely deleted payments
+    
+    # Exclude regular cancelled payments unless explicitly requested
     if not show_cancelled:
         payments = payments.exclude(payment_status='cancelled')
     
@@ -649,7 +652,7 @@ def mark_as_paid(request, payment_id):
 @login_required
 @admin_required
 def cancel_payment(request, payment_id):
-    """Cancel a pending payment and delete it from payment records"""
+    """Cancel a pending payment and completely remove it from payment records"""
     payment = get_object_or_404(Reservation, id=payment_id)
     
     # Only allow cancelling pending payments
@@ -657,17 +660,24 @@ def cancel_payment(request, payment_id):
         messages.error(request, "لا يمكن إلغاء الدفعات التي تم معالجتها بالفعل!")
         return redirect('payment_details', payment_id=payment_id)
     
-    # Store reservation ID for redirection
-    user_id = payment.user.id
+    # Store payment information for confirmation message
+    payment_id_str = str(payment.id)
+    payment_amount = payment.total_price
     
-    # Cancel the reservation and reset payment status
-    payment.status = 'cancelled'
-    payment.payment_status = 'cancelled'
-    payment.save()
+    try:
+        # Option 1: Hard deletion (if appropriate and no foreign key constraints)
+        # payment.delete()
+        
+        # Option 2: Mark as deleted and hide from all queries (soft delete)
+        payment.status = 'cancelled'
+        payment.payment_status = 'deleted'  # Use a special status that won't show up in the UI
+        payment.save()
+        
+        messages.success(request, f"تم حذف الدفعة #{payment_id_str} بقيمة {payment_amount} د.ك بنجاح!")
+    except Exception as e:
+        messages.error(request, f"حدث خطأ أثناء محاولة حذف الدفعة: {str(e)}")
     
-    messages.success(request, "تم إلغاء الدفع والحجز بنجاح!")
-    
-    # Redirect to the payments list instead of the cancelled payment details
+    # Redirect to the payments list
     return redirect('admin_payments')
 
 @login_required

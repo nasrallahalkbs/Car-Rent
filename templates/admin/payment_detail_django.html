@@ -4,6 +4,92 @@
 
 {% block title %}تفاصيل الدفع - لوحة التحكم{% endblock %}
 
+{% block styles %}
+<style>
+/* أنماط إضافية لصفحة تفاصيل الدفع */
+.payment-header {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.payment-card {
+    border-radius: 0.75rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    background-color: #fff;
+    border: 1px solid rgba(0,0,0,0.05);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 50rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-badge-pending {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.status-badge-completed, .status-badge-confirmed {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.status-badge-cancelled {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.status-badge-warning {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.payment-detail-card {
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    background-color: #fff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.payment-method-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.payment-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.payment-summary-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.payment-total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 0;
+    margin-top: 0.5rem;
+    border-top: 2px solid rgba(0,0,0,0.1);
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- فتات الخبز -->
 <nav aria-label="breadcrumb" class="mb-4">
@@ -55,15 +141,15 @@
                         <div class="text-muted small">طريقة الدفع</div>
                         <div class="fw-bold">
                             {% if payment.payment_method == 'visa' %}
-                            <i class="fab fa-cc-visa text-primary ms-1></i>فيزا
+                            <i class="fab fa-cc-visa text-primary ms-1"></i> فيزا
                             {% elif payment.payment_method == 'mastercard' %}
-                            <i class="fab fa-cc-mastercard text-danger ms-1></i>ماستركارد
+                            <i class="fab fa-cc-mastercard text-danger ms-1"></i> ماستركارد
                             {% elif payment.payment_method == 'amex' %}
-                            <i class="fab fa-cc-amex text-info ms-1></i>أمريكان إكسبرس
+                            <i class="fab fa-cc-amex text-info ms-1"></i> أمريكان إكسبرس
                             {% elif payment.payment_method == 'cash' %}
-                            <i class="fas fa-money-bill-wave text-success ms-1></i> نقداً
+                            <i class="fas fa-money-bill-wave text-success ms-1"></i> نقداً
                             {% elif payment.payment_method == 'bank_transfer' %}
-                            <i class="fas fa-university text-secondary ms-1></i> حوالة بنكية
+                            <i class="fas fa-university text-secondary ms-1"></i> حوالة بنكية
                             {% else %}
                             {{ payment.payment_method }}
                             {% endif %}
@@ -115,19 +201,28 @@
             </div>
             
             <!-- الإجراءات -->
-            <div class="d-flex gap-2 mt-4">
+            <div class="d-flex gap-2 mt-4 flex-wrap">
+                <a href="{% url 'admin_payments' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right ms-2"></i> العودة لسجل المدفوعات
+                </a>
+
                 <a href="{% url 'print_receipt' payment_id=payment.id %}" class="btn btn-primary">
-                    <i class="fas fa-print ms-2" ms-1></i> طباعة الإيصال
+                    <i class="fas fa-print ms-2"></i> طباعة الإيصال
                 </a>
                 <a href="{% url 'download_receipt' payment_id=payment.id %}" class="btn btn-outline-primary">
-                    <i class="fas fa-file-pdf ms-2" ms-1></i> تحميل PDF
+                    <i class="fas fa-file-pdf ms-2"></i> تحميل PDF
                 </a>
+                
+                <div class="ms-auto"></div>
+                
                 {% if payment.status == 'pending' %}
                 <a href="{% url 'mark_as_paid' payment_id=payment.id %}" class="btn btn-success">
-                    <i class="fas fa-check-circle ms-2" ms-1></i> تحديث للمدفوع
+                    <i class="fas fa-check-circle ms-2"></i> تحديث للمدفوع
                 </a>
-                <a href="{% url 'cancel_payment' payment_id=payment.id %}" class="btn btn-danger">
-                    <i class="fas fa-times-circle ms-2" ms-1></i> إلغاء الدفعة
+                <a href="{% url 'cancel_payment' payment_id=payment.id %}" 
+                   class="btn btn-danger"
+                   onclick="return confirm('هل أنت متأكد من إلغاء هذه الدفعة؟ سيتم حذفها نهائياً من سجل المدفوعات.');">
+                    <i class="fas fa-trash-alt ms-2"></i> حذف الدفعة
                 </a>
                 {% endif %}
                 {% if payment.status == 'paid' %}
