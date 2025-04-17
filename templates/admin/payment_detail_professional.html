@@ -1,0 +1,295 @@
+{% extends 'admin_layout.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}تفاصيل الدفع #{{ payment.id }} - لوحة التحكم{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/payment_professional.css' %}?v=1744903585">
+{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title">تفاصيل الدفع</h1>
+            </div>
+            <div class="col-md-6">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb float-md-end">
+                        <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">لوحة التحكم</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'admin_payments' %}">المدفوعات</a></li>
+                        <li class="breadcrumb-item active">تفاصيل الدفع #{{ payment.id }}</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- ملخص الدفع -->
+    <div class="payment-summary-header">
+        <div>
+            <h4>إيصال مدفوعات</h4>
+            <div class="payment-id">#{{ payment.id }}</div>
+            <div class="payment-date">{% if is_english %}{{ payment.date|date:"F d, Y" }}{% else %}{{ payment.date|date:"Y/m/d" }}{% endif %}</div>
+        </div>
+        <div class="text-start">
+            <div>
+                <span class="payment-status status-{{ payment.status }}">
+                    {% if payment.status == 'paid' %}<i class="fas fa-check-circle"></i> مدفوع بالكامل{% elif payment.status == 'pending' %}<i class="fas fa-clock"></i> في انتظار الدفع{% elif payment.status == 'refunded' %}<i class="fas fa-undo-alt"></i> تم استرداد المبلغ{% else %}<i class="fas fa-ban"></i> ملغي{% endif %}
+                </span>
+            </div>
+            <div class="payment-amount">{{ payment.amount }} د.ك</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- معلومات الدفع والبطاقة -->
+        <div class="col-lg-7">
+            <!-- معلومات الدفع -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-credit-card"></i> معلومات الدفع</h5>
+                </div>
+                <div class="card-body">
+                    <table class="info-table">
+                        <tbody>
+                            <tr>
+                                <td>رقم المرجع</td>
+                                <td>{{ payment.reference_number|default:"—" }}</td>
+                            </tr>
+                            <tr>
+                                <td>تاريخ المعاملة</td>
+                                <td>{% if is_english %}{{ payment.date|date:"m/d/Y" }}{% else %}{{ payment.date|date:"Y/m/d" }}{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td>وقت المعاملة</td>
+                                <td>{{ payment.date|time:"H:i:s" }}</td>
+                            </tr>
+                            <tr>
+                                <td>طريقة الدفع</td>
+                                <td>
+                                    {% if payment.payment_method == 'visa' %}
+                                    <i class="fab fa-cc-visa text-primary me-1"></i> فيزا
+                                    {% elif payment.payment_method == 'mastercard' %}
+                                    <i class="fab fa-cc-mastercard text-danger me-1"></i> ماستركارد
+                                    {% elif payment.payment_method == 'amex' %}
+                                    <i class="fab fa-cc-amex text-info me-1"></i> أمريكان إكسبرس
+                                    {% elif payment.payment_method == 'cash' %}
+                                    <i class="fas fa-money-bill-wave text-success me-1"></i> نقداً
+                                    {% elif payment.payment_method == 'bank_transfer' %}
+                                    <i class="fas fa-university text-secondary me-1"></i> حوالة بنكية
+                                    {% else %}
+                                    {{ payment.payment_method }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>حالة الدفع</td>
+                                <td>
+                                    {% if payment.status == 'paid' %}
+                                    <span class="text-success"><i class="fas fa-check-circle"></i> مدفوع بالكامل</span>
+                                    {% elif payment.status == 'pending' %}
+                                    <span class="text-warning"><i class="fas fa-clock"></i> في انتظار الدفع</span>
+                                    {% elif payment.status == 'refunded' %}
+                                    <span class="text-info"><i class="fas fa-undo-alt"></i> تم استرداد المبلغ</span>
+                                    {% else %}
+                                    <span class="text-danger"><i class="fas fa-ban"></i> ملغي</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>المبلغ الإجمالي</td>
+                                <td class="fw-bold">{{ payment.amount }} د.ك</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- تفاصيل البطاقة -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-id-card"></i> تفاصيل البطاقة</h5>
+                </div>
+                <div class="card-body">
+                    <table class="info-table">
+                        <tbody>
+                            <tr>
+                                <td>اسم حامل البطاقة</td>
+                                <td>{{ payment.card_name|default:"—" }}</td>
+                            </tr>
+                            <tr>
+                                <td>رقم البطاقة</td>
+                                <td>{{ payment.masked_card_number|default:"—" }}</td>
+                            </tr>
+                            <tr>
+                                <td>تاريخ الانتهاء</td>
+                                <td>{{ payment.expiry_date|default:"—" }}</td>
+                            </tr>
+                            <tr>
+                                <td>ملاحظات المعاملة</td>
+                                <td style="white-space: pre-line">{{ payment.notes|default:"—" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- أزرار الإجراءات -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-cogs"></i> الإجراءات المتاحة</h5>
+                </div>
+                <div class="actions-container">
+                    <div>
+                        <a href="{% url 'admin_payments' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-right"></i> العودة للسجل
+                        </a>
+                        <a href="{% url 'print_receipt' payment_id=payment.id %}" class="btn btn-primary">
+                            <i class="fas fa-print"></i> طباعة الإيصال
+                        </a>
+                        <a href="{% url 'download_receipt' payment_id=payment.id %}" class="btn btn-outline">
+                            <i class="fas fa-file-pdf"></i> تحميل PDF
+                        </a>
+                    </div>
+                    <div>
+                        {% if payment.status == 'pending' %}
+                        <a href="{% url 'mark_as_paid' payment_id=payment.id %}" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> تأكيد الدفع
+                        </a>
+                        <a href="{% url 'cancel_payment' payment_id=payment.id %}" 
+                           class="btn btn-danger"
+                           onclick="return confirm('هل أنت متأكد من حذف هذه الدفعة؟\n\nسيتم حذف الدفعة نهائياً من قاعدة البيانات ولن تتمكن من استعادتها لاحقاً.\n\nاضغط موافق للتأكيد.');">
+                            <i class="fas fa-trash-alt"></i> حذف نهائي
+                        </a>
+                        {% endif %}
+                        {% if payment.status == 'paid' %}
+                        <a href="{% url 'process_refund' payment_id=payment.id %}" class="btn btn-warning">
+                            <i class="fas fa-undo"></i> رد المبلغ
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- معلومات الحجز والعميل -->
+        <div class="col-lg-5">
+            <!-- معلومات السيارة -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-car"></i> معلومات السيارة</h5>
+                </div>
+                <div class="card-body">
+                    <div class="car-info">
+                        <div class="car-icon">
+                            <i class="fas fa-car-side"></i>
+                        </div>
+                        <div class="car-details">
+                            <h5>{{ payment.car.make }} {{ payment.car.model }}</h5>
+                            <p>{{ payment.car.year }} | {{ payment.car.category }}</p>
+                        </div>
+                    </div>
+
+                    <table class="info-table">
+                        <tbody>
+                            <tr>
+                                <td>رقم الحجز</td>
+                                <td><a href="#">#{{ payment.id }}</a></td>
+                            </tr>
+                            <tr>
+                                <td>حالة الحجز</td>
+                                <td>
+                                    {% if payment.status == 'pending' %}
+                                    <span class="text-warning"><i class="fas fa-clock"></i> معلق</span>
+                                    {% elif payment.status == 'confirmed' %}
+                                    <span class="text-success"><i class="fas fa-check"></i> مؤكد</span>
+                                    {% elif payment.status == 'completed' %}
+                                    <span class="text-success"><i class="fas fa-check-double"></i> مكتمل</span>
+                                    {% elif payment.status == 'cancelled' %}
+                                    <span class="text-danger"><i class="fas fa-ban"></i> ملغي</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>تاريخ الاستلام</td>
+                                <td>{% if is_english %}{{ payment.start_date|date:"m/d/Y" }}{% else %}{{ payment.start_date|date:"Y/m/d" }}{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td>تاريخ التسليم</td>
+                                <td>{% if is_english %}{{ payment.end_date|date:"m/d/Y" }}{% else %}{{ payment.end_date|date:"Y/m/d" }}{% endif %}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="data-summary">
+                        <h6 class="mb-3">ملخص التكاليف</h6>
+                        <table class="summary-table">
+                            <tbody>
+                                <tr>
+                                    <td>سعر الإيجار اليومي</td>
+                                    <td>{{ payment.car.daily_rate }} د.ك</td>
+                                </tr>
+                                <tr>
+                                    <td>عدد الأيام</td>
+                                    <td>{{ days }} يوم</td>
+                                </tr>
+                                <tr>
+                                    <td>المجموع الفرعي</td>
+                                    <td>{{ payment.car.daily_rate }} × {{ days }}</td>
+                                </tr>
+                                <tr>
+                                    <td>المجموع</td>
+                                    <td>{{ payment.amount }} د.ك</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- معلومات العميل -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-user"></i> معلومات العميل</h5>
+                </div>
+                <div class="card-body">
+                    <table class="info-table striped-rows">
+                        <tbody>
+                            <tr>
+                                <td>الاسم</td>
+                                <td>{{ payment.user.first_name }} {{ payment.user.last_name }}</td>
+                            </tr>
+                            <tr>
+                                <td>البريد الإلكتروني</td>
+                                <td>{{ payment.user.email }}</td>
+                            </tr>
+                            <tr>
+                                <td>رقم الهاتف</td>
+                                <td>{{ payment.user.phone_number|default:"—" }}</td>
+                            </tr>
+                            <tr>
+                                <td>تاريخ التسجيل</td>
+                                <td>{% if is_english %}{{ payment.user.date_joined|date:"M d, Y" }}{% else %}{{ payment.user.date_joined|date:"Y/m/d" }}{% endif %}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-footer">
+    <div class="container">
+        <div>&copy; {{ "now"|date:"Y" }} نظام تأجير السيارات العالمية | جميع الحقوق محفوظة</div>
+    </div>
+</div>
+
+<!-- Cache buster: {{ cache_buster }} -->
+{% endblock %}
