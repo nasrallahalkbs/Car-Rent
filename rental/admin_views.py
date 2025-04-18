@@ -580,8 +580,8 @@ def payment_details(request, payment_id):
     import time
     context['cache_buster'] = str(int(time.time()))
 
-    # استخدم قالب المتوفر بدلاً من البحث عن قالب غير موجود
-    template_name = 'admin/payment_detail_ultra_pro.html'
+    # تصحيح استخدام القالب 
+    template_name = 'admin/payment_detail_pro.html'
 
     return render(request, template_name, context)
 
