@@ -502,33 +502,15 @@ def admin_payments(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Get payment statistics
-    total_revenue = Reservation.objects.filter(payment_status='paid').aggregate(Sum('total_price'))['total_price__sum'] or 0
-    pending_revenue = Reservation.objects.filter(payment_status='pending', status='confirmed').aggregate(Sum('total_price'))['total_price__sum'] or 0
-    paid_count = Reservation.objects.filter(payment_status='paid').count()
+    # Get basic payment counts for filtering
     pending_count = Reservation.objects.filter(payment_status='pending').count()
-    refunded_count = Reservation.objects.filter(payment_status='refunded').count()
-
-    # Calculate daily and monthly revenue for statistics cards
-    today = timezone.now().date()
-    daily_revenue = Reservation.objects.filter(payment_status='paid', created_at__date=today).aggregate(Sum('total_price'))['total_price__sum'] or 0
-
-    month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    monthly_revenue = Reservation.objects.filter(payment_status='paid', created_at__gte=month_start).aggregate(Sum('total_price'))['total_price__sum'] or 0
 
     context = {
         'payments': page_obj,
-        'total_revenue': total_revenue,
-        'pending_revenue': pending_revenue,
-        'daily_revenue': daily_revenue,
-        'monthly_revenue': monthly_revenue,
-        'paid_count': paid_count,
-        'pending_count': pending_count,
-        'refunded_count': refunded_count,
         'payment_status': payment_status,
         'date_range': date_range,
         'search': search,
-        'pending_payments': pending_count,  # For the stats card
+        'pending_count': pending_count
     }
 
     return render(request, 'admin/payments_django.html', context)
