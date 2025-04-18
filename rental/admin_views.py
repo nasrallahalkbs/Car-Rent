@@ -659,6 +659,12 @@ def cancel_payment(request, payment_id):
 @admin_required
 def download_receipt(request, payment_id):
     """Download a payment receipt as PDF"""
+    from django.template.loader import render_to_string
+    from django.utils.translation import get_language
+    from weasyprint import HTML
+    from django.conf import settings
+    import tempfile
+    
     payment = get_object_or_404(Reservation, id=payment_id)
 
     # Only allow downloading receipts for paid reservations
@@ -666,21 +672,55 @@ def download_receipt(request, payment_id):
         messages.error(request, "لا يمكن تنزيل إيصال للمدفوعات غير المدفوعة!")
         return redirect('payment_details', payment_id=payment_id)
 
-    # In a real app, you would generate a PDF here
-    # For this demo, we'll generate a CSV file instead
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="receipt_{payment.id}.csv"'
+    # Calculate the number of days between start_date and end_date
+    delta = (payment.end_date - payment.start_date).days + 1
 
-    writer = csv.writer(response)
-    writer.writerow(['Receipt ID', f'R{payment.id:06d}'])
-    writer.writerow(['Date', payment.created_at.strftime('%Y-%m-%d %H:%M')])
-    writer.writerow(['Customer', f'{payment.user.first_name} {payment.user.last_name}'])
-    writer.writerow(['Email', payment.user.email])
-    writer.writerow(['Car', f'{payment.car.make} {payment.car.model} ({payment.car.year})'])
-    writer.writerow(['Rental Period', f'{payment.start_date} to {payment.end_date}'])
-    writer.writerow(['Amount', f'{payment.total_price} دينار'])
-    writer.writerow(['Status', 'Paid'])
+    # Add additional payment fields needed by template
+    payment.date = payment.created_at  # Use created_at for payment date
+    payment.reference_number = ''  # Default empty reference number
 
+    # Extract payment method and reference number from notes if available
+    if payment.notes:
+        notes_lines = payment.notes.split('\n')
+        for line in notes_lines:
+            if 'طريقة الدفع:' in line:
+                payment.payment_method = line.split('طريقة الدفع:')[1].strip()
+            elif 'رقم المرجع:' in line:
+                payment.reference_number = line.split('رقم المرجع:')[1].strip()
+
+    # Default values if not found in notes
+    if not hasattr(payment, 'payment_method'):
+        payment.payment_method = 'visa'  # Default payment method
+
+    # تحديد لغة المستخدم
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+
+    # Prepare context for template
+    context = {
+        'payment': payment,
+        'days': delta,
+        'amount': payment.total_price,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+    }
+
+    # Render template to string
+    html_string = render_to_string('admin/payment_receipt_pdf.html', context)
+    
+    # Create PDF from HTML
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="receipt_{payment.id}.pdf"'
+    
+    # Use a temp file to avoid memory issues with large PDFs
+    with tempfile.NamedTemporaryFile(suffix='.html') as temp:
+        temp.write(html_string.encode('utf-8'))
+        temp.flush()
+        
+        # Generate PDF from HTML
+        HTML(filename=temp.name).write_pdf(response)
+    
     return response
 
 @login_required

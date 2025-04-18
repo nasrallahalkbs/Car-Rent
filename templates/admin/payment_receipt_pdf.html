@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ar" {% if is_rtl %}dir="rtl"{% endif %}>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إيصال دفع #{{ payment.id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif;
+            line-height: 1.5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            direction: {% if is_rtl %}rtl{% else %}ltr{% endif %};
+        }
+        .receipt-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #05a566;
+            padding-bottom: 20px;
+        }
+        .receipt-header h1 {
+            color: #05a566;
+            margin: 0;
+            font-size: 24px;
+        }
+        .receipt-header .company-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .receipt-id {
+            text-align: center;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+        .receipt-id h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #343a40;
+        }
+        .receipt-id .receipt-date {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .receipt-status {
+            text-align: center;
+            font-weight: bold;
+            padding: 8px 15px;
+            margin: 20px auto;
+            max-width: 150px;
+            border-radius: 5px;
+        }
+        .status-paid {
+            background-color: #d4edda;
+            color: #28a745;
+            border: 1px solid #c3e6cb;
+        }
+        .receipt-section {
+            margin-bottom: 25px;
+        }
+        .receipt-section h3 {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 8px;
+            color: #343a40;
+            font-size: 16px;
+            margin-top: 0;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .details-table td {
+            padding: 8px 0;
+            vertical-align: top;
+        }
+        .details-table td:first-child {
+            width: 40%;
+            color: #6c757d;
+            font-weight: 500;
+            {% if is_rtl %}padding-left: 15px;{% else %}padding-right: 15px;{% endif %}
+        }
+        .customer-info {
+            display: flex;
+            justify-content: space-between;
+        }
+        .customer-info .info-box {
+            flex: 1;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            margin: 0 10px;
+        }
+        .customer-info .info-box:first-child {
+            margin-left: 0;
+        }
+        .customer-info .info-box:last-child {
+            margin-right: 0;
+        }
+        .info-box h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #343a40;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+            font-size: 14px;
+        }
+        .car-details {
+            display: flex;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        .car-image {
+            width: 80px;
+            height: 60px;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .car-info {
+            flex: 1;
+        }
+        .car-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+        }
+        .car-meta {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .total-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .total-table td {
+            padding: 8px 0;
+        }
+        .total-table tr:not(:last-child) td {
+            border-bottom: 1px solid #dee2e6;
+        }
+        .total-table td:last-child {
+            text-align: left;
+            font-weight: 600;
+        }
+        .total-row td {
+            padding-top: 15px;
+            font-weight: 700;
+            font-size: 18px;
+            border-top: 2px solid #dee2e6 !important;
+        }
+        .payment-method {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            border: 1px solid #dee2e6;
+        }
+        .payment-method-name {
+            font-weight: 600;
+        }
+        .payment-method-meta {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        /* RTL specific styles */
+        .rtl .car-image {
+            margin-right: 0;
+            margin-left: 15px;
+        }
+        .rtl .total-table td:last-child {
+            text-align: right;
+        }
+    </style>
+</head>
+<body class="{% if is_rtl %}rtl{% endif %}">
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <h1>شركة تأجير السيارات الحديثة</h1>
+            <div class="company-info">
+                <p>الكويت - شارع الخليج - مجمع الأفنيوز - الطابق الثاني</p>
+                <p>هاتف: 9999-9999-965+ | البريد الإلكتروني: info@modern-rental.com</p>
+            </div>
+        </div>
+
+        <div class="receipt-id">
+            <h2>إيصال دفع #{{ payment.id }}</h2>
+            <div class="receipt-date">
+                {% if is_english %}{{ payment.date|date:"F d, Y" }}{% else %}{{ payment.date|date:"Y/m/d" }}{% endif %} | {{ payment.date|time:"h:i A" }}
+            </div>
+        </div>
+
+        <div class="receipt-status status-paid">
+            مدفوع بالكامل
+        </div>
+
+        <div class="receipt-section">
+            <h3>تفاصيل السيارة</h3>
+            <div class="car-details">
+                <div class="car-image">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"></path>
+                        <circle cx="6.5" cy="16.5" r="2.5"></circle>
+                        <circle cx="16.5" cy="16.5" r="2.5"></circle>
+                    </svg>
+                </div>
+                <div class="car-info">
+                    <h4>{{ payment.car.make }} {{ payment.car.model }}</h4>
+                    <div class="car-meta">
+                        {{ payment.car.year }} | {{ payment.car.category }} | {{ payment.car.color }}
+                    </div>
+                    <div class="car-meta">
+                        <strong>فترة الإيجار:</strong> {% if is_english %}{{ payment.start_date|date:"m/d/Y" }}{% else %}{{ payment.start_date|date:"Y/m/d" }}{% endif %} إلى {% if is_english %}{{ payment.end_date|date:"m/d/Y" }}{% else %}{{ payment.end_date|date:"Y/m/d" }}{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="receipt-section">
+            <h3>تفاصيل الدفع</h3>
+            <table class="details-table">
+                <tr>
+                    <td>رقم المرجع</td>
+                    <td>{{ payment.reference_number|default:"—" }}</td>
+                </tr>
+                <tr>
+                    <td>طريقة الدفع</td>
+                    <td>
+                        <div class="payment-method">
+                            <div class="payment-method-name">
+                                {% if payment.payment_method == 'visa' %}
+                                فيزا
+                                {% elif payment.payment_method == 'mastercard' %}
+                                ماستركارد
+                                {% elif payment.payment_method == 'amex' %}
+                                أمريكان إكسبرس
+                                {% elif payment.payment_method == 'cash' %}
+                                نقداً
+                                {% elif payment.payment_method == 'bank_transfer' %}
+                                حوالة بنكية
+                                {% else %}
+                                {{ payment.payment_method }}
+                                {% endif %}
+                            </div>
+                            {% if payment.masked_card_number %}
+                            <div class="payment-method-meta">
+                                <strong>رقم البطاقة:</strong> {{ payment.masked_card_number }}
+                                {% if payment.expiry_date %}
+                                <strong>تاريخ الانتهاء:</strong> {{ payment.expiry_date }}
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="receipt-section">
+            <h3>ملخص التكاليف</h3>
+            <table class="total-table">
+                <tr>
+                    <td>سعر الإيجار اليومي</td>
+                    <td>{{ payment.car.daily_rate }} د.ك</td>
+                </tr>
+                <tr>
+                    <td>عدد الأيام</td>
+                    <td>{{ days }} يوم</td>
+                </tr>
+                <tr>
+                    <td>المجموع الفرعي</td>
+                    <td>{{ payment.car.daily_rate }} × {{ days }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td>المجموع</td>
+                    <td>{{ payment.amount }} د.ك</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="receipt-section">
+            <h3>معلومات العميل</h3>
+            <div class="customer-info">
+                <div class="info-box">
+                    <h4>معلومات الاتصال</h4>
+                    <p><strong>{{ payment.user.first_name }} {{ payment.user.last_name }}</strong></p>
+                    <p>{{ payment.user.email }}</p>
+                    {% if payment.user.phone_number %}
+                    <p>{{ payment.user.phone_number }}</p>
+                    {% endif %}
+                </div>
+                <div class="info-box">
+                    <h4>معلومات الحساب</h4>
+                    <p><strong>اسم المستخدم:</strong> {{ payment.user.username }}</p>
+                    <p><strong>تاريخ التسجيل:</strong> {% if is_english %}{{ payment.user.date_joined|date:"M d, Y" }}{% else %}{{ payment.user.date_joined|date:"Y/m/d" }}{% endif %}</p>
+                    <p><strong>رقم الحجز:</strong> #{{ payment.id }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>شكراً لاختيارك شركة تأجير السيارات الحديثة</p>
+            <p>هذا الإيصال صدر إلكترونياً وهو دليل على إتمام الدفع</p>
+            <p>يرجى الاحتفاظ بنسخة من هذا الإيصال للرجوع إليه في المستقبل</p>
+        </div>
+    </div>
+</body>
+</html>

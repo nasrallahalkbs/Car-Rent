@@ -1,6 +1,11 @@
 {pkgs}: {
   deps = [
     pkgs.openssh
+    pkgs.pango
+    pkgs.harfbuzz
+    pkgs.glib
+    pkgs.ghostscript
+    pkgs.fontconfig
     pkgs.iproute2
     pkgs.gettext
     pkgs.zlib
