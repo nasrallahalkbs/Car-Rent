@@ -657,90 +657,206 @@ def cancel_payment(request, payment_id):
 
 @login_required
 @admin_required
-def download_receipt(request, payment_id):
-    """Download a payment receipt as CSV"""
-    import io
-    import csv
-    from datetime import datetime
-    from django.utils.translation import gettext as _
+def print_receipt(request, payment_id):
+    """Show a printable receipt"""
+    from django.utils.translation import get_language
     
     payment = get_object_or_404(Reservation, id=payment_id)
 
-    # Only allow downloading receipts for paid reservations
+    # Only allow viewing receipts for paid reservations
     if payment.payment_status != 'paid':
-        messages.error(request, "لا يمكن تنزيل إيصال للمدفوعات غير المدفوعة!")
+        messages.error(request, "لا يمكن طباعة إيصال للمدفوعات غير المدفوعة!")
         return redirect('payment_details', payment_id=payment_id)
 
     # Calculate the number of days between start_date and end_date
     delta = (payment.end_date - payment.start_date).days + 1
-    total_price = payment.total_price
-    daily_rate = payment.car.daily_rate
-    
-    # Extract payment method from notes if available
-    payment_method = 'غير معروف'
-    reference_number = ''
+
+    # Add additional payment fields needed by template
+    payment.date = payment.created_at  # Use created_at for payment date
+    payment.reference_number = ''  # Default empty reference number
+
+    # Extract payment method and reference number from notes if available
     if payment.notes:
         notes_lines = payment.notes.split('\n')
         for line in notes_lines:
             if 'طريقة الدفع:' in line:
-                payment_method = line.split('طريقة الدفع:')[1].strip()
+                payment.payment_method = line.split('طريقة الدفع:')[1].strip()
             elif 'رقم المرجع:' in line:
-                reference_number = line.split('رقم المرجع:')[1].strip()
+                payment.reference_number = line.split('رقم المرجع:')[1].strip()
 
-    # Create a CSV file with better formatting and UTF-8 BOM for Arabic support
-    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
-    response['Content-Disposition'] = f'attachment; filename="إيصال_دفع_{payment.id}.csv"'
+    # Default values if not found in notes
+    if not hasattr(payment, 'payment_method'):
+        payment.payment_method = 'visa'  # Default payment method
+
+    # تحديد لغة المستخدم
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+
+    context = {
+        'payment': payment,
+        'days': delta,
+        'amount': payment.total_price,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+    }
+
+    return render(request, 'admin/payment_receipt_printable.html', context)
+
+@login_required
+@admin_required
+def download_receipt(request, payment_id):
+    """Generate a PDF receipt for download"""
+    import io
+    import tempfile
+    from django.utils.translation import get_language
     
-    writer = csv.writer(response)
-    
-    # إضافة عنوان الإيصال
-    writer.writerow(['شركة تأجير السيارات الحديثة'])
-    writer.writerow(['الكويت - شارع الخليج - مجمع الأفنيوز - الطابق الثاني'])
-    writer.writerow(['هاتف: 9999-9999-965+ | البريد الإلكتروني: info@modern-rental.com'])
-    writer.writerow([''])
-    
-    # معلومات الإيصال
-    writer.writerow([f'رقم الإيصال', f'#{payment.id:06d}'])
-    writer.writerow(['تاريخ الإيصال', payment.created_at.strftime('%Y-%m-%d %H:%M')])
-    writer.writerow(['حالة الدفع', 'مدفوع بالكامل'])
-    writer.writerow([''])
-    
-    # معلومات العميل
-    writer.writerow(['معلومات العميل', ''])
-    writer.writerow(['الاسم', f'{payment.user.first_name} {payment.user.last_name}'])
-    writer.writerow(['البريد الإلكتروني', payment.user.email])
-    writer.writerow(['اسم المستخدم', payment.user.username])
-    writer.writerow([''])
-    
-    # تفاصيل السيارة
-    writer.writerow(['تفاصيل السيارة', ''])
-    writer.writerow(['السيارة', f'{payment.car.make} {payment.car.model} ({payment.car.year})'])
-    writer.writerow(['الفئة', payment.car.category])
-    writer.writerow(['اللون', payment.car.color])
-    writer.writerow(['فترة الإيجار', f'من {payment.start_date} إلى {payment.end_date}'])
-    writer.writerow([''])
-    
-    # تفاصيل الدفع
-    writer.writerow(['تفاصيل الدفع', ''])
-    writer.writerow(['طريقة الدفع', payment_method])
-    if reference_number:
-        writer.writerow(['رقم المرجع', reference_number])
-    writer.writerow([''])
-    
-    # معلومات التكلفة
-    writer.writerow(['ملخص التكلفة', ''])
-    writer.writerow(['سعر الإيجار اليومي', f'{daily_rate} د.ك'])
-    writer.writerow(['عدد الأيام', f'{delta} يوم'])
-    writer.writerow(['المجموع الفرعي', f'{daily_rate} × {delta}'])
-    writer.writerow(['المجموع', f'{total_price} د.ك'])
-    writer.writerow([''])
-    
-    # ملاحظة ختامية
-    writer.writerow(['شكراً لاختيارك شركة تأجير السيارات الحديثة'])
-    writer.writerow(['هذا الإيصال صدر إلكترونياً وهو دليل على إتمام الدفع'])
-    writer.writerow(['يرجى الاحتفاظ بنسخة من هذا الإيصال للرجوع إليه في المستقبل'])
-    
-    return response
+    # تجربة استخدام weasyprint
+    try:
+        from weasyprint import HTML
+        from django.template.loader import render_to_string
+        
+        payment = get_object_or_404(Reservation, id=payment_id)
+
+        # Only allow downloading receipts for paid reservations
+        if payment.payment_status != 'paid':
+            messages.error(request, "لا يمكن تنزيل إيصال للمدفوعات غير المدفوعة!")
+            return redirect('payment_details', payment_id=payment_id)
+
+        # Calculate the number of days between start_date and end_date
+        delta = (payment.end_date - payment.start_date).days + 1
+
+        # Add additional payment fields needed by template
+        payment.date = payment.created_at  # Use created_at for payment date
+        payment.reference_number = ''  # Default empty reference number
+
+        # Extract payment method and reference number from notes if available
+        if payment.notes:
+            notes_lines = payment.notes.split('\n')
+            for line in notes_lines:
+                if 'طريقة الدفع:' in line:
+                    payment.payment_method = line.split('طريقة الدفع:')[1].strip()
+                elif 'رقم المرجع:' in line:
+                    payment.reference_number = line.split('رقم المرجع:')[1].strip()
+
+        # Default values if not found in notes
+        if not hasattr(payment, 'payment_method'):
+            payment.payment_method = 'visa'  # Default payment method
+
+        # تحديد لغة المستخدم
+        current_language = get_language()
+        is_english = current_language == 'en'
+        is_rtl = current_language == 'ar'
+
+        context = {
+            'payment': payment,
+            'days': delta,
+            'amount': payment.total_price,
+            'is_english': is_english,
+            'is_rtl': is_rtl,
+        }
+
+        # هنا نستخدم نفس القالب الذي نستخدمه للطباعة لكن نحذف منه أزرار الطباعة
+        html_string = render_to_string('admin/payment_receipt_printable.html', context)
+        
+        # نحاول إنشاء ملف PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="إيصال_دفع_{payment.id}.pdf"'
+        
+        # استخدام ملف مؤقت لتجنب مشاكل الذاكرة مع ملفات PDF الكبيرة
+        with tempfile.NamedTemporaryFile(suffix='.html') as temp:
+            temp.write(html_string.encode('utf-8'))
+            temp.flush()
+            
+            # إنشاء PDF من HTML
+            HTML(filename=temp.name).write_pdf(response)
+        
+        return response
+        
+    # إذا فشلت عملية إنشاء PDF، نعود لإنشاء ملف CSV
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        
+        # Fall back to CSV
+        import csv
+        
+        payment = get_object_or_404(Reservation, id=payment_id)
+
+        # Only allow downloading receipts for paid reservations
+        if payment.payment_status != 'paid':
+            messages.error(request, "لا يمكن تنزيل إيصال للمدفوعات غير المدفوعة!")
+            return redirect('payment_details', payment_id=payment_id)
+
+        # Calculate the number of days between start_date and end_date
+        delta = (payment.end_date - payment.start_date).days + 1
+        total_price = payment.total_price
+        daily_rate = payment.car.daily_rate
+        
+        # Extract payment method from notes if available
+        payment_method = 'غير معروف'
+        reference_number = ''
+        if payment.notes:
+            notes_lines = payment.notes.split('\n')
+            for line in notes_lines:
+                if 'طريقة الدفع:' in line:
+                    payment_method = line.split('طريقة الدفع:')[1].strip()
+                elif 'رقم المرجع:' in line:
+                    reference_number = line.split('رقم المرجع:')[1].strip()
+
+        # Create a CSV file with better formatting and UTF-8 BOM for Arabic support
+        response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+        response['Content-Disposition'] = f'attachment; filename="إيصال_دفع_{payment.id}.csv"'
+        
+        writer = csv.writer(response)
+        
+        # إضافة عنوان الإيصال
+        writer.writerow(['شركة تأجير السيارات الحديثة'])
+        writer.writerow(['الكويت - شارع الخليج - مجمع الأفنيوز - الطابق الثاني'])
+        writer.writerow(['هاتف: 9999-9999-965+ | البريد الإلكتروني: info@modern-rental.com'])
+        writer.writerow([''])
+        
+        # معلومات الإيصال
+        writer.writerow([f'رقم الإيصال', f'#{payment.id:06d}'])
+        writer.writerow(['تاريخ الإيصال', payment.created_at.strftime('%Y-%m-%d %H:%M')])
+        writer.writerow(['حالة الدفع', 'مدفوع بالكامل'])
+        writer.writerow([''])
+        
+        # معلومات العميل
+        writer.writerow(['معلومات العميل', ''])
+        writer.writerow(['الاسم', f'{payment.user.first_name} {payment.user.last_name}'])
+        writer.writerow(['البريد الإلكتروني', payment.user.email])
+        writer.writerow(['اسم المستخدم', payment.user.username])
+        writer.writerow([''])
+        
+        # تفاصيل السيارة
+        writer.writerow(['تفاصيل السيارة', ''])
+        writer.writerow(['السيارة', f'{payment.car.make} {payment.car.model} ({payment.car.year})'])
+        writer.writerow(['الفئة', payment.car.category])
+        writer.writerow(['اللون', payment.car.color])
+        writer.writerow(['فترة الإيجار', f'من {payment.start_date} إلى {payment.end_date}'])
+        writer.writerow([''])
+        
+        # تفاصيل الدفع
+        writer.writerow(['تفاصيل الدفع', ''])
+        writer.writerow(['طريقة الدفع', payment_method])
+        if reference_number:
+            writer.writerow(['رقم المرجع', reference_number])
+        writer.writerow([''])
+        
+        # معلومات التكلفة
+        writer.writerow(['ملخص التكلفة', ''])
+        writer.writerow(['سعر الإيجار اليومي', f'{daily_rate} د.ك'])
+        writer.writerow(['عدد الأيام', f'{delta} يوم'])
+        writer.writerow(['المجموع الفرعي', f'{daily_rate} × {delta}'])
+        writer.writerow(['المجموع', f'{total_price} د.ك'])
+        writer.writerow([''])
+        
+        # ملاحظة ختامية
+        writer.writerow(['شكراً لاختيارك شركة تأجير السيارات الحديثة'])
+        writer.writerow(['هذا الإيصال صدر إلكترونياً وهو دليل على إتمام الدفع'])
+        writer.writerow(['يرجى الاحتفاظ بنسخة من هذا الإيصال للرجوع إليه في المستقبل'])
+        
+        return response
 
 @login_required
 @admin_required
