@@ -348,6 +348,245 @@ Analytics Dashboard - Admin Panel
         </div>
     </div>
     
+    <!-- Payment Analytics Section -->
+    <div class="analytics-section mt-5 mb-4">
+        <div class="section-header mb-4">
+            <h3 class="section-title">
+                <i class="fas fa-chart-line me-2 text-primary"></i>
+                {% if is_english %}
+                Payment & Revenue Analytics
+                {% else %}
+                تحليلات المدفوعات والإيرادات
+                {% endif %}
+            </h3>
+        </div>
+
+        <!-- Payment KPI Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light text-success p-3 rounded-circle me-3">
+                                <i class="fas fa-money-bill-wave fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">{{ total_payments }}</h6>
+                                <small class="text-muted">
+                                    {% if is_english %}
+                                    Total Revenue
+                                    {% else %}
+                                    إجمالي الإيرادات
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        {% if revenue_growth > 0 %}
+                        <div class="badge bg-success-subtle text-success mt-auto align-self-start">
+                            <i class="fas fa-arrow-up me-1"></i> {{ revenue_growth|floatformat:1 }}%
+                        </div>
+                        {% elif revenue_growth < 0 %}
+                        <div class="badge bg-danger-subtle text-danger mt-auto align-self-start">
+                            <i class="fas fa-arrow-down me-1"></i> {{ revenue_growth|floatformat:1|cut:"-" }}%
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light text-primary p-3 rounded-circle me-3">
+                                <i class="fas fa-file-invoice-dollar fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">{{ avg_reservation_value|floatformat:2 }}</h6>
+                                <small class="text-muted">
+                                    {% if is_english %}
+                                    Avg Reservation
+                                    {% else %}
+                                    متوسط قيمة الحجز
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light text-info p-3 rounded-circle me-3">
+                                <i class="fas fa-receipt fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">{{ paid_count }}</h6>
+                                <small class="text-muted">
+                                    {% if is_english %}
+                                    Paid Transactions
+                                    {% else %}
+                                    المعاملات المدفوعة
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        {% if reservation_growth > 0 %}
+                        <div class="badge bg-success-subtle text-success mt-auto align-self-start">
+                            <i class="fas fa-arrow-up me-1"></i> {{ reservation_growth|floatformat:1 }}%
+                        </div>
+                        {% elif reservation_growth < 0 %}
+                        <div class="badge bg-danger-subtle text-danger mt-auto align-self-start">
+                            <i class="fas fa-arrow-down me-1"></i> {{ reservation_growth|floatformat:1|cut:"-" }}%
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light text-warning p-3 rounded-circle me-3">
+                                <i class="fas fa-clock fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">{{ pending_revenue }}</h6>
+                                <small class="text-muted">
+                                    {% if is_english %}
+                                    Pending Revenue
+                                    {% else %}
+                                    الإيرادات المعلقة
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Method & Revenue by Category -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0">
+                            {% if is_english %}
+                            Revenue by Payment Method
+                            {% else %}
+                            الإيرادات حسب طريقة الدفع
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="paymentMethodChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0">
+                            {% if is_english %}
+                            Revenue by Car Category
+                            {% else %}
+                            الإيرادات حسب فئة السيارة
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="carCategoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Spending Users -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    {% if is_english %}
+                    Top Spending Customers
+                    {% else %}
+                    أكثر العملاء إنفاقاً
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>
+                                    {% if is_english %}
+                                    Customer
+                                    {% else %}
+                                    العميل
+                                    {% endif %}
+                                </th>
+                                <th>
+                                    {% if is_english %}
+                                    Email
+                                    {% else %}
+                                    البريد الإلكتروني
+                                    {% endif %}
+                                </th>
+                                <th>
+                                    {% if is_english %}
+                                    Total Spent
+                                    {% else %}
+                                    إجمالي الإنفاق
+                                    {% endif %}
+                                </th>
+                                <th>
+                                    {% if is_english %}
+                                    Reservations
+                                    {% else %}
+                                    عدد الحجوزات
+                                    {% endif %}
+                                </th>
+                                <th>
+                                    {% if is_english %}
+                                    Average Value
+                                    {% else %}
+                                    متوسط القيمة
+                                    {% endif %}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in top_spending_users %}
+                            <tr>
+                                <td class="fw-bold">{{ user.user__first_name }} {{ user.user__last_name }}</td>
+                                <td>{{ user.user__email }}</td>
+                                <td>{{ user.total_spent }}</td>
+                                <td>{{ user.reservation_count }}</td>
+                                <td>{{ user.total_spent|floatformat:2|default:0|unlocalize }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">
+                                    {% if is_english %}
+                                    No data available
+                                    {% else %}
+                                    لا توجد بيانات متاحة
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Revenue Charts -->
     <div class="two-columns">
         <div class="analytics-card">
@@ -987,6 +1226,90 @@ Analytics Dashboard - Admin Panel
             }
         }
     });
+    
+    // Payment Methods Chart
+    const paymentMethodCtx = document.getElementById('paymentMethodChart');
+    if (paymentMethodCtx) {
+        const paymentMethodsLabels = {{ payment_methods_labels|safe }};
+        const paymentMethodsData = {{ payment_methods_data|safe }};
+        
+        new Chart(paymentMethodCtx, {
+            type: 'doughnut',
+            data: {
+                labels: paymentMethodsLabels,
+                datasets: [{
+                    data: paymentMethodsData,
+                    backgroundColor: [
+                        '#4f46e5', // Indigo
+                        '#06b6d4', // Cyan
+                        '#10b981', // Emerald
+                        '#f59e0b', // Amber
+                        '#ef4444', // Red
+                        '#8b5cf6', // Purple
+                        '#ec4899'  // Pink
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+    }
+    
+    // Car Category Revenue Chart
+    const carCategoryCtx = document.getElementById('carCategoryChart');
+    if (carCategoryCtx) {
+        const carTypesLabels = {{ car_types_labels|safe }};
+        const carTypesData = {{ car_types_data|safe }};
+        
+        new Chart(carCategoryCtx, {
+            type: 'pie',
+            data: {
+                labels: carTypesLabels,
+                datasets: [{
+                    data: carTypesData,
+                    backgroundColor: [
+                        '#3b82f6', // Blue
+                        '#10b981', // Green
+                        '#f59e0b', // Yellow
+                        '#ec4899', // Pink
+                        '#8b5cf6', // Purple
+                        '#06b6d4', // Cyan
+                        '#ef4444'  // Red
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15
+                        }
+                    }
+                }
+            }
+        });
+    }
     
     // تحديث البيانات عند النقر على زر التحديث
     document.getElementById('refreshBtn').addEventListener('click', function() {
