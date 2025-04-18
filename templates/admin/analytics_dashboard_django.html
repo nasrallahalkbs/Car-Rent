@@ -1,0 +1,996 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}
+{% if is_english %}
+Analytics Dashboard - Admin Panel
+{% else %}
+لوحة التحليلات - لوحة التحكم
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        flex: 1;
+        min-width: 200px;
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        max-width: calc(25% - 15px);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card .stat-icon {
+        position: absolute;
+        top: 20px;
+        {% if is_rtl %}
+        left: 20px;
+        {% else %}
+        right: 20px;
+        {% endif %}
+        font-size: 48px;
+        color: rgba(13, 110, 253, 0.1);
+    }
+    
+    .stat-card .stat-title {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #0d6efd;
+        margin-bottom: 5px;
+    }
+    
+    .stat-card .stat-description {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    .analytics-card {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    
+    .analytics-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    
+    .analytics-card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #343a40;
+        margin: 0;
+    }
+    
+    .analytics-card-description {
+        font-size: 14px;
+        color: #6c757d;
+        margin: 5px 0 0;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .data-table th {
+        background-color: #f8f9fa;
+        color: #495057;
+        padding: 12px 15px;
+        font-weight: 600;
+        text-align: {% if is_rtl %}right{% else %}left{% endif %};
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .data-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        color: #6c757d;
+        text-align: {% if is_rtl %}right{% else %}left{% endif %};
+    }
+    
+    .data-table tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .data-table .highlight {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+    
+    .analytics-tabs {
+        display: flex;
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    .analytics-tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    .analytics-tab:hover {
+        color: #0d6efd;
+    }
+    
+    .analytics-tab.active {
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .status-pill {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .status-confirmed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-completed {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    
+    .status-expired {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .progress-bar {
+        height: 8px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        background-color: #0d6efd;
+        border-radius: 4px;
+    }
+    
+    .two-columns {
+        display: flex;
+        gap: 30px;
+    }
+    
+    .two-columns > div {
+        flex: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .two-columns {
+            flex-direction: column;
+        }
+        
+        .stat-card {
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            {% if is_english %}
+            Analytics Dashboard
+            {% else %}
+            لوحة التحليلات
+            {% endif %}
+        </h1>
+        <div>
+            <button class="btn btn-sm btn-outline-secondary" id="dateRangeBtn">
+                <i class="fas fa-calendar"></i> 
+                {% if is_english %}
+                This Year
+                {% else %}
+                هذه السنة
+                {% endif %}
+            </button>
+            <button class="btn btn-sm btn-outline-primary ms-2" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i>
+                {% if is_english %}
+                Refresh
+                {% else %}
+                تحديث
+                {% endif %}
+            </button>
+        </div>
+    </div>
+    
+    <!-- Key Metrics -->
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-car"></i>
+            </div>
+            <div class="stat-title">
+                {% if is_english %}
+                Total Cars
+                {% else %}
+                إجمالي السيارات
+                {% endif %}
+            </div>
+            <div class="stat-value">{{ total_cars }}</div>
+            <div class="stat-description">
+                {% if is_english %}
+                Available in the fleet
+                {% else %}
+                متوفرة في الأسطول
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-title">
+                {% if is_english %}
+                Total Reservations
+                {% else %}
+                إجمالي الحجوزات
+                {% endif %}
+            </div>
+            <div class="stat-value">{{ total_reservations }}</div>
+            <div class="stat-description">
+                {% if is_english %}
+                {{ active_reservations }} active reservations
+                {% else %}
+                {{ active_reservations }} حجز نشط
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-title">
+                {% if is_english %}
+                Registered Users
+                {% else %}
+                المستخدمين المسجلين
+                {% endif %}
+            </div>
+            <div class="stat-value">{{ total_users }}</div>
+            <div class="stat-description">
+                {% if is_english %}
+                Customer accounts
+                {% else %}
+                حساب عميل
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="stat-title">
+                {% if is_english %}
+                Total Revenue
+                {% else %}
+                إجمالي الإيرادات
+                {% endif %}
+            </div>
+            <div class="stat-value">{{ total_payments }}</div>
+            <div class="stat-description">
+                {% if is_english %}
+                Completed payments
+                {% else %}
+                المدفوعات المكتملة
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Revenue Charts -->
+    <div class="two-columns">
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Monthly Revenue
+                        {% else %}
+                        الإيرادات الشهرية
+                        {% endif %}
+                    </h4>
+                    <p class="analytics-card-description">
+                        {% if is_english %}
+                        Revenue generated month-by-month for the current year
+                        {% else %}
+                        الإيرادات المحققة شهرياً للسنة الحالية
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="monthlyRevenueChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Revenue by Car Category
+                        {% else %}
+                        الإيرادات حسب فئة السيارة
+                        {% endif %}
+                    </h4>
+                    <p class="analytics-card-description">
+                        {% if is_english %}
+                        Distribution of revenue across car categories
+                        {% else %}
+                        توزيع الإيرادات على فئات السيارات
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="categoryRevenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reservation Analysis -->
+    <div class="two-columns">
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Reservation Status
+                        {% else %}
+                        حالة الحجوزات
+                        {% endif %}
+                    </h4>
+                    <p class="analytics-card-description">
+                        {% if is_english %}
+                        Distribution of reservations by status
+                        {% else %}
+                        توزيع الحجوزات حسب الحالة
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="reservationStatusChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Most Popular Cars
+                        {% else %}
+                        السيارات الأكثر شعبية
+                        {% endif %}
+                    </h4>
+                    <p class="analytics-card-description">
+                        {% if is_english %}
+                        Top 5 cars by number of reservations
+                        {% else %}
+                        أفضل 5 سيارات حسب عدد الحجوزات
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="popularCarsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Bookings & Payment Methods -->
+    <div class="two-columns">
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Top Rented Cars
+                        {% else %}
+                        السيارات الأكثر تأجيراً
+                        {% endif %}
+                    </h4>
+                </div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>
+                            {% if is_english %}
+                            Car
+                            {% else %}
+                            السيارة
+                            {% endif %}
+                        </th>
+                        <th>
+                            {% if is_english %}
+                            Category
+                            {% else %}
+                            الفئة
+                            {% endif %}
+                        </th>
+                        <th class="text-center">
+                            {% if is_english %}
+                            Reservations
+                            {% else %}
+                            الحجوزات
+                            {% endif %}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for car in most_booked_cars %}
+                    <tr>
+                        <td class="highlight">{{ car.car__make }} {{ car.car__model }}</td>
+                        <td>{{ car.car__category }}</td>
+                        <td class="text-center">{{ car.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Payment Methods
+                        {% else %}
+                        طرق الدفع
+                        {% endif %}
+                    </h4>
+                </div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>
+                            {% if is_english %}
+                            Method
+                            {% else %}
+                            الطريقة
+                            {% endif %}
+                        </th>
+                        <th class="text-center">
+                            {% if is_english %}
+                            Count
+                            {% else %}
+                            العدد
+                            {% endif %}
+                        </th>
+                        <th class="text-center">
+                            {% if is_english %}
+                            Amount
+                            {% else %}
+                            المبلغ
+                            {% endif %}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for method in payment_by_method %}
+                    <tr>
+                        <td class="highlight">
+                            {% if method.payment_method == 'credit_card' %}
+                                {% if is_english %}Credit Card{% else %}بطاقة ائتمانية{% endif %}
+                            {% elif method.payment_method == 'paypal' %}
+                                PayPal
+                            {% elif method.payment_method == 'bank_transfer' %}
+                                {% if is_english %}Bank Transfer{% else %}تحويل بنكي{% endif %}
+                            {% elif method.payment_method == 'cash' %}
+                                {% if is_english %}Cash{% else %}نقداً{% endif %}
+                            {% elif method.payment_method == 'international' %}
+                                {% if is_english %}International Payment{% else %}دفع دولي{% endif %}
+                            {% else %}
+                                {{ method.payment_method }}
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ method.count }}</td>
+                        <td class="text-center">{{ method.total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Car Category Data -->
+    <div class="analytics-card">
+        <div class="analytics-card-header">
+            <div>
+                <h4 class="analytics-card-title">
+                    {% if is_english %}
+                    Performance by Car Category
+                    {% else %}
+                    الأداء حسب فئة السيارة
+                    {% endif %}
+                </h4>
+            </div>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>
+                        {% if is_english %}
+                        Category
+                        {% else %}
+                        الفئة
+                        {% endif %}
+                    </th>
+                    <th class="text-center">
+                        {% if is_english %}
+                        Reservations
+                        {% else %}
+                        الحجوزات
+                        {% endif %}
+                    </th>
+                    <th class="text-center">
+                        {% if is_english %}
+                        Revenue
+                        {% else %}
+                        الإيرادات
+                        {% endif %}
+                    </th>
+                    <th>
+                        {% if is_english %}
+                        % of Total
+                        {% else %}
+                        % من الإجمالي
+                        {% endif %}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in category_stats %}
+                <tr>
+                    <td class="highlight">
+                        {% if is_english %}
+                            {% if item.car__category == 'economy' %}Economy
+                            {% elif item.car__category == 'compact' %}Compact
+                            {% elif item.car__category == 'midsize' %}Midsize
+                            {% elif item.car__category == 'fullsize' %}Full Size
+                            {% elif item.car__category == 'luxury' %}Luxury
+                            {% elif item.car__category == 'suv' %}SUV
+                            {% elif item.car__category == 'convertible' %}Convertible
+                            {% elif item.car__category == 'van' %}Van
+                            {% else %}{{ item.car__category }}{% endif %}
+                        {% else %}
+                            {% if item.car__category == 'economy' %}اقتصادية
+                            {% elif item.car__category == 'compact' %}صغيرة
+                            {% elif item.car__category == 'midsize' %}متوسطة
+                            {% elif item.car__category == 'fullsize' %}كبيرة
+                            {% elif item.car__category == 'luxury' %}فاخرة
+                            {% elif item.car__category == 'suv' %}دفع رباعي
+                            {% elif item.car__category == 'convertible' %}مكشوفة
+                            {% elif item.car__category == 'van' %}فان
+                            {% else %}{{ item.car__category }}{% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ item.count }}</td>
+                    <td class="text-center">{{ item.revenue }}</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: {{ item.count|default:0|floatformat:0 }}%"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+    // تكوين Chart.js
+    Chart.defaults.font.family = "'Tajawal', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
+    Chart.defaults.font.size = 14;
+    Chart.defaults.color = '#6c757d';
+    
+    // اتجاه RTL للمخططات
+    const isRTL = {% if is_rtl %}true{% else %}false{% endif %};
+    if (isRTL) {
+        Chart.defaults.scale.ticks.align = 'end';
+    }
+    
+    // ألوان المخططات
+    const chartColors = [
+        '#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545',
+        '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0'
+    ];
+    
+    // بيانات المخططات
+    const monthsLabels = {{ months_labels|safe }};
+    const monthsData = {{ months_data|safe }};
+    const categoryLabels = {{ category_labels|safe }};
+    const categoryData = {{ category_data|safe }};
+    const categoryRevenue = {{ category_revenue|safe }};
+    const mostBookedLabels = {{ most_booked_labels|safe }};
+    const mostBookedData = {{ most_booked_data|safe }};
+    
+    // مخطط الإيرادات الشهرية
+    const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+    const monthlyRevenueChart = new Chart(monthlyRevenueCtx, {
+        type: 'bar',
+        data: {
+            labels: monthsLabels,
+            datasets: [{
+                label: {% if is_english %}'Revenue'{% else %}'الإيرادات'{% endif %},
+                data: monthsData,
+                backgroundColor: '#0d6efd',
+                borderColor: '#0b5ed7',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false,
+                        display: true,
+                        drawOnChartArea: true,
+                        drawTicks: false
+                    },
+                    ticks: {
+                        padding: 10,
+                        callback: function(value) {
+                            return value.toFixed(0);
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        drawBorder: false,
+                        display: false,
+                        drawOnChartArea: false,
+                        drawTicks: false
+                    },
+                    ticks: {
+                        padding: 10
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: '#fff',
+                    titleColor: '#000',
+                    bodyColor: '#6c757d',
+                    borderColor: '#e9ecef',
+                    borderWidth: 1,
+                    usePointStyle: true,
+                    boxPadding: 5,
+                    boxWidth: 8,
+                    boxHeight: 8,
+                    rtl: isRTL,
+                    titleAlign: isRTL ? 'right' : 'left',
+                    bodyAlign: isRTL ? 'right' : 'left',
+                    footerAlign: isRTL ? 'right' : 'left',
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toLocaleString();
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // مخطط الإيرادات حسب الفئة
+    const categoryRevenueCtx = document.getElementById('categoryRevenueChart').getContext('2d');
+    const categoryRevenueChart = new Chart(categoryRevenueCtx, {
+        type: 'doughnut',
+        data: {
+            labels: categoryLabels.map(label => {
+                if ({% if is_english %}false{% else %}true{% endif %}) {
+                    // ترجمة تصنيفات السيارات للعربية
+                    switch(label) {
+                        case 'economy': return 'اقتصادية';
+                        case 'compact': return 'صغيرة';
+                        case 'midsize': return 'متوسطة';
+                        case 'fullsize': return 'كبيرة';
+                        case 'luxury': return 'فاخرة';
+                        case 'suv': return 'دفع رباعي';
+                        case 'convertible': return 'مكشوفة';
+                        case 'van': return 'فان';
+                        default: return label;
+                    }
+                } else {
+                    // ترجمة تصنيفات السيارات للإنجليزية
+                    switch(label) {
+                        case 'economy': return 'Economy';
+                        case 'compact': return 'Compact';
+                        case 'midsize': return 'Midsize';
+                        case 'fullsize': return 'Full Size';
+                        case 'luxury': return 'Luxury';
+                        case 'suv': return 'SUV';
+                        case 'convertible': return 'Convertible';
+                        case 'van': return 'Van';
+                        default: return label;
+                    }
+                }
+            }),
+            datasets: [{
+                data: categoryRevenue,
+                backgroundColor: chartColors,
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: isRTL ? 'left' : 'right',
+                    align: 'center',
+                    rtl: isRTL,
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#fff',
+                    titleColor: '#000',
+                    bodyColor: '#6c757d',
+                    borderColor: '#e9ecef',
+                    borderWidth: 1,
+                    usePointStyle: true,
+                    boxPadding: 5,
+                    boxWidth: 8,
+                    boxHeight: 8,
+                    rtl: isRTL,
+                    titleAlign: isRTL ? 'right' : 'left',
+                    bodyAlign: isRTL ? 'right' : 'left'
+                }
+            }
+        }
+    });
+    
+    // مخطط حالة الحجوزات
+    const reservationStatusLabels = [];
+    const reservationStatusData = [];
+    const reservationStatusColors = [];
+    
+    {% for status in reservation_by_status %}
+    reservationStatusLabels.push(
+        {% if is_english %}
+            {% if status.status == 'pending' %}'Pending'
+            {% elif status.status == 'confirmed' %}'Confirmed'
+            {% elif status.status == 'active' %}'Active'
+            {% elif status.status == 'completed' %}'Completed'
+            {% elif status.status == 'cancelled' %}'Cancelled'
+            {% elif status.status == 'expired' %}'Expired'
+            {% else %}status.status{% endif %}
+        {% else %}
+            {% if status.status == 'pending' %}'قيد الانتظار'
+            {% elif status.status == 'confirmed' %}'مؤكد'
+            {% elif status.status == 'active' %}'نشط'
+            {% elif status.status == 'completed' %}'مكتمل'
+            {% elif status.status == 'cancelled' %}'ملغي'
+            {% elif status.status == 'expired' %}'منتهي الصلاحية'
+            {% else %}status.status{% endif %}
+        {% endif %}
+    );
+    reservationStatusData.push({{ status.count }});
+    
+    {% if status.status == 'pending' %}
+        reservationStatusColors.push('#ffc107');
+    {% elif status.status == 'confirmed' %}
+        reservationStatusColors.push('#0d6efd');
+    {% elif status.status == 'active' %}
+        reservationStatusColors.push('#20c997');
+    {% elif status.status == 'completed' %}
+        reservationStatusColors.push('#198754');
+    {% elif status.status == 'cancelled' %}
+        reservationStatusColors.push('#dc3545');
+    {% elif status.status == 'expired' %}
+        reservationStatusColors.push('#6c757d');
+    {% else %}
+        reservationStatusColors.push('#0dcaf0');
+    {% endif %}
+    {% endfor %}
+    
+    const reservationStatusCtx = document.getElementById('reservationStatusChart').getContext('2d');
+    const reservationStatusChart = new Chart(reservationStatusCtx, {
+        type: 'pie',
+        data: {
+            labels: reservationStatusLabels,
+            datasets: [{
+                data: reservationStatusData,
+                backgroundColor: reservationStatusColors,
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: isRTL ? 'left' : 'right',
+                    align: 'center',
+                    rtl: isRTL,
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#fff',
+                    titleColor: '#000',
+                    bodyColor: '#6c757d',
+                    borderColor: '#e9ecef',
+                    borderWidth: 1,
+                    usePointStyle: true,
+                    boxPadding: 5,
+                    boxWidth: 8,
+                    boxHeight: 8,
+                    rtl: isRTL,
+                    titleAlign: isRTL ? 'right' : 'left',
+                    bodyAlign: isRTL ? 'right' : 'left'
+                }
+            }
+        }
+    });
+    
+    // مخطط السيارات الأكثر شعبية
+    const popularCarsCtx = document.getElementById('popularCarsChart').getContext('2d');
+    const popularCarsChart = new Chart(popularCarsCtx, {
+        type: 'bar',
+        data: {
+            labels: mostBookedLabels.slice(0, 5),
+            datasets: [{
+                label: {% if is_english %}'Reservations'{% else %}'الحجوزات'{% endif %},
+                data: mostBookedData.slice(0, 5),
+                backgroundColor: chartColors,
+                borderColor: '#fff',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: '#fff',
+                    titleColor: '#000',
+                    bodyColor: '#6c757d',
+                    borderColor: '#e9ecef',
+                    borderWidth: 1,
+                    usePointStyle: true,
+                    boxPadding: 5,
+                    boxWidth: 8,
+                    boxHeight: 8,
+                    rtl: isRTL,
+                    titleAlign: isRTL ? 'right' : 'left',
+                    bodyAlign: isRTL ? 'right' : 'left'
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false,
+                        display: true,
+                        drawOnChartArea: true,
+                        drawTicks: false
+                    },
+                    ticks: {
+                        padding: 10
+                    }
+                },
+                y: {
+                    grid: {
+                        drawBorder: false,
+                        display: false,
+                        drawOnChartArea: false,
+                        drawTicks: false
+                    },
+                    ticks: {
+                        padding: 10
+                    }
+                }
+            }
+        }
+    });
+    
+    // تحديث البيانات عند النقر على زر التحديث
+    document.getElementById('refreshBtn').addEventListener('click', function() {
+        location.reload();
+    });
+</script>
+{% endblock %}

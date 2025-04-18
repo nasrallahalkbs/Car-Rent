@@ -1,6 +1,6 @@
 from django.urls import path
 from django.shortcuts import render
-from . import views, admin_views, payment_views
+from . import views, admin_views, payment_views, analytics_views
 from .csrf_debug import csrf_debug_view, csrf_debug_page
 
 urlpatterns = [
@@ -64,6 +64,8 @@ urlpatterns = [
     path('dashboard/payments/<str:payment_id>/mark-paid/', admin_views.mark_as_paid, name='mark_as_paid'),
     path('dashboard/payments/<str:payment_id>/cancel/', admin_views.cancel_payment, name='cancel_payment'),
     path('api/users/<int:user_id>/reservations/', admin_views.get_user_reservations, name='get_user_reservations'),
+    # Analytics Routes
+    path('dashboard/analytics/', analytics_views.admin_dashboard_analytics, name='admin_dashboard_analytics'),
     
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
