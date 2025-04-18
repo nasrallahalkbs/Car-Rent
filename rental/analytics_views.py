@@ -35,6 +35,7 @@ def get_template_by_language(request, template_name):
 def admin_dashboard_analytics(request):
     """
     عرض الإحصائيات والتقارير الرئيسية للوحة التحكم
+    تشمل تقارير المدفوعات والإيرادات
     """
     # الإحصائيات العامة
     total_cars = Car.objects.count()
@@ -59,10 +60,61 @@ def admin_dashboard_analytics(request):
         count=Count('id'),
         total=Sum('total_price')
     ).order_by('-total')
+
+    # إحصائيات المدفوعات والإيرادات - بيانات لصفحة التقارير المالية
+    pending_revenue = Reservation.objects.filter(payment_status='pending', status='confirmed').aggregate(total=Sum('total_price'))['total'] or 0
+    refunded_amount = Reservation.objects.filter(payment_status='refunded').aggregate(total=Sum('total_price'))['total'] or 0
+    
+    paid_count = Reservation.objects.filter(payment_status='paid').count()
+    pending_count = Reservation.objects.filter(payment_status='pending').count()
+    refunded_count = Reservation.objects.filter(payment_status='refunded').count()
+    
+    # حساب متوسط قيمة الحجز
+    avg_reservation_value = 0
+    if paid_count > 0:
+        avg_reservation_value = total_payments / paid_count
+
+    # الإيرادات حسب فترات زمنية محددة
+    today = timezone.now().date()
+    daily_revenue_value = Reservation.objects.filter(payment_status='paid', created_at__date=today).aggregate(total=Sum('total_price'))['total'] or 0
+    
+    week_ago = timezone.now() - timedelta(days=7)
+    weekly_revenue = Reservation.objects.filter(payment_status='paid', created_at__gte=week_ago).aggregate(total=Sum('total_price'))['total'] or 0
+    
+    month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    monthly_revenue = Reservation.objects.filter(payment_status='paid', created_at__gte=month_start).aggregate(total=Sum('total_price'))['total'] or 0
+    
+    # مؤشرات النمو (مقارنة بالشهر السابق)
+    previous_month_start = (month_start - timedelta(days=1)).replace(day=1)
+    previous_month_revenue = Reservation.objects.filter(
+        payment_status='paid',
+        created_at__gte=previous_month_start,
+        created_at__lt=month_start
+    ).aggregate(total=Sum('total_price'))['total'] or 0
+    
+    previous_month_count = Reservation.objects.filter(
+        payment_status='paid',
+        created_at__gte=previous_month_start,
+        created_at__lt=month_start
+    ).count()
+    
+    # حساب معدلات النمو
+    revenue_growth = 0
+    reservation_growth = 0
+    
+    if previous_month_revenue > 0:
+        revenue_growth = ((monthly_revenue - previous_month_revenue) / previous_month_revenue) * 100
+    
+    if previous_month_count > 0:
+        current_month_count = Reservation.objects.filter(
+            payment_status='paid',
+            created_at__gte=month_start
+        ).count()
+        reservation_growth = ((current_month_count - previous_month_count) / previous_month_count) * 100
     
     # الإيرادات الشهرية للسنة الحالية
     current_year = timezone.now().year
-    monthly_revenue = Reservation.objects.filter(
+    monthly_revenue_data = Reservation.objects.filter(
         payment_status='paid',
         created_at__year=current_year
     ).annotate(
@@ -73,7 +125,7 @@ def admin_dashboard_analytics(request):
     
     # تحويل البيانات إلى تنسيق مناسب للرسم البياني
     months_data = [0] * 12  # إعداد مصفوفة فارغة للأشهر
-    for item in monthly_revenue:
+    for item in monthly_revenue_data:
         month_index = item['month'].month - 1  # الفهرس يبدأ من 0
         months_data[month_index] = float(item['total'])
     
@@ -137,6 +189,32 @@ def admin_dashboard_analytics(request):
     category_data = [item['count'] for item in category_stats]
     category_revenue = [float(item['revenue'] or 0) for item in category_stats]
     
+    # أكثر المستخدمين إنفاقاً - بيانات تقارير المدفوعات
+    top_spending_users = Reservation.objects.filter(
+        payment_status='paid'
+    ).values(
+        'user__id', 'user__first_name', 'user__last_name', 'user__email'
+    ).annotate(
+        total_spent=Sum('total_price'),
+        reservation_count=Count('id')
+    ).order_by('-total_spent')[:10]  # أفضل 10 مستخدمين
+
+    # الإيرادات حسب أنواع السيارات - بيانات تقارير المدفوعات
+    car_type_revenue = Reservation.objects.filter(
+        payment_status='paid'
+    ).values('car__category').annotate(
+        total=Sum('total_price'),
+        count=Count('id')
+    ).order_by('-total')
+    
+    car_types_labels = [car_type['car__category'] for car_type in car_type_revenue]
+    car_types_data = [float(car_type['total'] or 0) for car_type in car_type_revenue]
+    
+    # تحضير بيانات طرق الدفع للرسم البياني - بيانات تقارير المدفوعات
+    payment_methods_labels = [method['payment_method'] or "غير محدد" for method in payment_by_method]
+    payment_methods_data = [float(method['total'] or 0) for method in payment_by_method]
+    payment_methods_count = [method['count'] for method in payment_by_method]
+    
     template_name, context = get_template_by_language(request, 'admin/analytics_dashboard')
     
     context.update({
@@ -162,6 +240,25 @@ def admin_dashboard_analytics(request):
         'most_booked_cars': most_booked_cars,
         'category_stats': category_stats,
         'cache_buster': int(datetime.now().timestamp()),
+        # بيانات تقارير المدفوعات الإضافية
+        'pending_revenue': pending_revenue,
+        'refunded_amount': refunded_amount,
+        'paid_count': paid_count,
+        'pending_count': pending_count,
+        'refunded_count': refunded_count,
+        'avg_reservation_value': avg_reservation_value,
+        'daily_revenue': daily_revenue_value,
+        'weekly_revenue': weekly_revenue,
+        'monthly_revenue': monthly_revenue,
+        'payment_methods_labels': json.dumps(payment_methods_labels),
+        'payment_methods_data': json.dumps(payment_methods_data),
+        'payment_methods_count': json.dumps(payment_methods_count),
+        'top_spending_users': top_spending_users,
+        'car_type_revenue': car_type_revenue,
+        'car_types_labels': json.dumps(car_types_labels),
+        'car_types_data': json.dumps(car_types_data),
+        'revenue_growth': revenue_growth,
+        'reservation_growth': reservation_growth,
     })
     
     return render(request, template_name, context)

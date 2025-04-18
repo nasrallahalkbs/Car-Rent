@@ -66,7 +66,6 @@ urlpatterns = [
     path('api/users/<int:user_id>/reservations/', admin_views.get_user_reservations, name='get_user_reservations'),
     # Analytics Routes
     path('dashboard/analytics/', analytics_views.admin_dashboard_analytics, name='admin_dashboard_analytics'),
-    path('dashboard/analytics/payments/', analytics_views.admin_payment_analytics, name='admin_payment_analytics'),
     
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
