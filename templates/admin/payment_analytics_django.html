@@ -1,0 +1,717 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}
+{% if is_english %}
+Payment Analytics - Admin Panel
+{% else %}
+تحليلات المدفوعات - لوحة التحكم
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analytics-card {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    
+    .analytics-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    
+    .analytics-card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #343a40;
+        margin: 0;
+    }
+    
+    .analytics-card-description {
+        font-size: 14px;
+        color: #6c757d;
+        margin: 5px 0 0;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    
+    .kpi-cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .kpi-card {
+        flex: 1;
+        min-width: 200px;
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        max-width: calc(25% - 15px);
+    }
+    
+    .kpi-card .title {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    
+    .kpi-card .value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #0d6efd;
+        margin-bottom: 5px;
+    }
+    
+    .kpi-card .sub-title {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    .kpi-card .icon {
+        position: absolute;
+        top: 20px;
+        {% if is_rtl %}
+        left: 20px;
+        {% else %}
+        right: 20px;
+        {% endif %}
+        font-size: 42px;
+        color: rgba(13, 110, 253, 0.1);
+    }
+    
+    .growth {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 5px;
+    }
+    
+    .growth.positive {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .growth.negative {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .two-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .two-columns {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .data-table th {
+        background-color: #f8f9fa;
+        color: #495057;
+        padding: 12px 15px;
+        font-weight: 600;
+        text-align: {% if is_rtl %}right{% else %}left{% endif %};
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .data-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        color: #6c757d;
+        text-align: {% if is_rtl %}right{% else %}left{% endif %};
+    }
+    
+    .data-table tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .data-table .highlight {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            {% if is_english %}
+            Payment & Revenue Analytics
+            {% else %}
+            تحليلات المدفوعات والإيرادات
+            {% endif %}
+        </h1>
+        <div>
+            <button class="btn btn-sm btn-outline-secondary" id="dateRangeBtn">
+                <i class="fas fa-calendar"></i> 
+                {% if is_english %}
+                This Year
+                {% else %}
+                هذه السنة
+                {% endif %}
+            </button>
+            <button class="btn btn-sm btn-outline-primary ms-2" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i>
+                {% if is_english %}
+                Refresh
+                {% else %}
+                تحديث
+                {% endif %}
+            </button>
+        </div>
+    </div>
+    
+    <!-- KPI Cards -->
+    <div class="kpi-cards">
+        <div class="kpi-card">
+            <div class="icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="title">
+                {% if is_english %}
+                Total Revenue
+                {% else %}
+                إجمالي الإيرادات
+                {% endif %}
+            </div>
+            <div class="value">{{ total_revenue }}</div>
+            <div class="sub-title">
+                {% if is_english %}
+                Completed payments
+                {% else %}
+                المدفوعات المكتملة
+                {% endif %}
+            </div>
+            {% if revenue_growth > 0 %}
+            <div class="growth positive">
+                <i class="fas fa-arrow-up me-1"></i> {{ revenue_growth|floatformat:1 }}%
+            </div>
+            {% elif revenue_growth < 0 %}
+            <div class="growth negative">
+                <i class="fas fa-arrow-down me-1"></i> {{ revenue_growth|floatformat:1|abs }}%
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="kpi-card">
+            <div class="icon">
+                <i class="fas fa-hand-holding-usd"></i>
+            </div>
+            <div class="title">
+                {% if is_english %}
+                Average Reservation Value
+                {% else %}
+                متوسط قيمة الحجز
+                {% endif %}
+            </div>
+            <div class="value">{{ avg_reservation_value|floatformat:2 }}</div>
+            <div class="sub-title">
+                {% if is_english %}
+                Per reservation
+                {% else %}
+                لكل حجز
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="icon">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div class="title">
+                {% if is_english %}
+                Paid Transactions
+                {% else %}
+                المعاملات المدفوعة
+                {% endif %}
+            </div>
+            <div class="value">{{ paid_count }}</div>
+            <div class="sub-title">
+                {% if is_english %}
+                Completed bookings
+                {% else %}
+                الحجوزات المكتملة
+                {% endif %}
+            </div>
+            {% if reservation_growth > 0 %}
+            <div class="growth positive">
+                <i class="fas fa-arrow-up me-1"></i> {{ reservation_growth|floatformat:1 }}%
+            </div>
+            {% elif reservation_growth < 0 %}
+            <div class="growth negative">
+                <i class="fas fa-arrow-down me-1"></i> {{ reservation_growth|floatformat:1|abs }}%
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="kpi-card">
+            <div class="icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="title">
+                {% if is_english %}
+                Pending Revenue
+                {% else %}
+                الإيرادات المعلقة
+                {% endif %}
+            </div>
+            <div class="value">{{ pending_revenue }}</div>
+            <div class="sub-title">
+                {% if is_english %}
+                Awaiting payment ({{ pending_count }})
+                {% else %}
+                في انتظار الدفع ({{ pending_count }})
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Revenue Timeline -->
+    <div class="analytics-card">
+        <div class="analytics-card-header">
+            <div>
+                <h4 class="analytics-card-title">
+                    {% if is_english %}
+                    Monthly Revenue
+                    {% else %}
+                    الإيرادات الشهرية
+                    {% endif %}
+                </h4>
+                <p class="analytics-card-description">
+                    {% if is_english %}
+                    Revenue generated month-by-month for the current year
+                    {% else %}
+                    الإيرادات المحققة شهرياً للسنة الحالية
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="monthlyRevenueChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Payment Method Distribution -->
+    <div class="two-columns">
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Revenue by Payment Method
+                        {% else %}
+                        الإيرادات حسب طريقة الدفع
+                        {% endif %}
+                    </h4>
+                    <p class="analytics-card-description">
+                        {% if is_english %}
+                        Distribution of revenue across payment methods
+                        {% else %}
+                        توزيع الإيرادات على طرق الدفع المختلفة
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="paymentMethodChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Revenue by Car Category
+                        {% else %}
+                        الإيرادات حسب فئة السيارة
+                        {% endif %}
+                    </h4>
+                    <p class="analytics-card-description">
+                        {% if is_english %}
+                        Distribution of revenue across car categories
+                        {% else %}
+                        توزيع الإيرادات على فئات السيارات
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="carCategoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Revenue Statistics Cards -->
+    <div class="two-columns">
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Revenue Overview
+                        {% else %}
+                        نظرة عامة على الإيرادات
+                        {% endif %}
+                    </h4>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="fw-bold text-muted">
+                                        {% if is_english %}
+                                        Today's Revenue
+                                        {% else %}
+                                        إيرادات اليوم
+                                        {% endif %}
+                                    </h5>
+                                    <h3 class="mb-0">{{ daily_revenue }}</h3>
+                                </div>
+                                <div class="bg-light rounded-circle p-3">
+                                    <i class="fas fa-calendar-day text-primary fs-4"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="fw-bold text-muted">
+                                        {% if is_english %}
+                                        Weekly Revenue
+                                        {% else %}
+                                        إيرادات الأسبوع
+                                        {% endif %}
+                                    </h5>
+                                    <h3 class="mb-0">{{ weekly_revenue }}</h3>
+                                </div>
+                                <div class="bg-light rounded-circle p-3">
+                                    <i class="fas fa-calendar-week text-success fs-4"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="fw-bold text-muted">
+                                        {% if is_english %}
+                                        Monthly Revenue
+                                        {% else %}
+                                        إيرادات الشهر
+                                        {% endif %}
+                                    </h5>
+                                    <h3 class="mb-0">{{ monthly_revenue }}</h3>
+                                </div>
+                                <div class="bg-light rounded-circle p-3">
+                                    <i class="fas fa-calendar-alt text-warning fs-4"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="analytics-card">
+            <div class="analytics-card-header">
+                <div>
+                    <h4 class="analytics-card-title">
+                        {% if is_english %}
+                        Transaction Status
+                        {% else %}
+                        حالة المعاملات
+                        {% endif %}
+                    </h4>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="transactionStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Spending Users -->
+    <div class="analytics-card">
+        <div class="analytics-card-header">
+            <div>
+                <h4 class="analytics-card-title">
+                    {% if is_english %}
+                    Top Spending Customers
+                    {% else %}
+                    أكثر العملاء إنفاقاً
+                    {% endif %}
+                </h4>
+                <p class="analytics-card-description">
+                    {% if is_english %}
+                    Customers who have spent the most money
+                    {% else %}
+                    العملاء الذين أنفقوا أكبر مبلغ من المال
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>
+                            {% if is_english %}
+                            Customer
+                            {% else %}
+                            العميل
+                            {% endif %}
+                        </th>
+                        <th>
+                            {% if is_english %}
+                            Email
+                            {% else %}
+                            البريد الإلكتروني
+                            {% endif %}
+                        </th>
+                        <th>
+                            {% if is_english %}
+                            Total Spent
+                            {% else %}
+                            إجمالي الإنفاق
+                            {% endif %}
+                        </th>
+                        <th>
+                            {% if is_english %}
+                            Reservations
+                            {% else %}
+                            عدد الحجوزات
+                            {% endif %}
+                        </th>
+                        <th>
+                            {% if is_english %}
+                            Average Value
+                            {% else %}
+                            متوسط القيمة
+                            {% endif %}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in top_spending_users %}
+                    <tr>
+                        <td class="highlight">{{ user.user__first_name }} {{ user.user__last_name }}</td>
+                        <td>{{ user.user__email }}</td>
+                        <td>{{ user.total_spent }}</td>
+                        <td>{{ user.reservation_count }}</td>
+                        <td>{{ user.total_spent|floatformat:2|default:0|unlocalize }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-3">
+                            {% if is_english %}
+                            No data available
+                            {% else %}
+                            لا توجد بيانات متاحة
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // مخطط الإيرادات الشهرية
+        var monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+        var monthlyRevenueChart = new Chart(monthlyRevenueCtx, {
+            type: 'line',
+            data: {
+                labels: {{ months_labels|safe }},
+                datasets: [{
+                    label: {% if is_english %}'Monthly Revenue'{% else %}'الإيرادات الشهرية'{% endif %},
+                    data: {{ months_data|safe }},
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false,
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // مخطط طرق الدفع
+        var paymentMethodCtx = document.getElementById('paymentMethodChart').getContext('2d');
+        var paymentMethodChart = new Chart(paymentMethodCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ payment_methods_labels|safe }},
+                datasets: [{
+                    data: {{ payment_methods_data|safe }},
+                    backgroundColor: [
+                        '#4f46e5',
+                        '#06b6d4',
+                        '#10b981',
+                        '#f59e0b',
+                        '#ef4444',
+                        '#8b5cf6',
+                        '#ec4899'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+        
+        // مخطط فئات السيارات
+        var carCategoryCtx = document.getElementById('carCategoryChart').getContext('2d');
+        var carCategoryChart = new Chart(carCategoryCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ car_types_labels|safe }},
+                datasets: [{
+                    data: {{ car_types_data|safe }},
+                    backgroundColor: [
+                        '#3b82f6',
+                        '#10b981',
+                        '#f59e0b',
+                        '#ec4899',
+                        '#8b5cf6',
+                        '#06b6d4',
+                        '#ef4444'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15
+                        }
+                    }
+                }
+            }
+        });
+        
+        // مخطط حالة المعاملات
+        var transactionStatusCtx = document.getElementById('transactionStatusChart').getContext('2d');
+        var transactionStatusChart = new Chart(transactionStatusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    {% if is_english %}'Paid'{% else %}'مدفوع'{% endif %},
+                    {% if is_english %}'Pending'{% else %}'قيد الانتظار'{% endif %},
+                    {% if is_english %}'Refunded'{% else %}'مسترد'{% endif %}
+                ],
+                datasets: [{
+                    data: [{{ paid_count }}, {{ pending_count }}, {{ refunded_count }}],
+                    backgroundColor: [
+                        '#10b981',
+                        '#f59e0b',
+                        '#ef4444'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+        
+        // تحديث البيانات عند النقر على زر التحديث
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            window.location.reload();
+        });
+    });
+</script>
+{% endblock extra_scripts %}
