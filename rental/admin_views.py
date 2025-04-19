@@ -362,7 +362,7 @@ def update_reservation_status(request, reservation_id, status):
     # تشخيص الأخطاء
     print(f"DIAGNOSTIC: Request received for reservation {reservation_id} with status {status}")
     
-    valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled', 'view', 'details']
+    valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled', 'view', 'details', 'delete']
     if status not in valid_statuses:
         print(f"ERROR: Invalid status '{status}' received for reservation {reservation_id}")
         messages.error(request, f"حالة الحجز غير صالحة: {status}")
@@ -372,6 +372,12 @@ def update_reservation_status(request, reservation_id, status):
     if status in ['view', 'details']:
         # عرض التفاصيل بدلاً من تحديث الحالة
         return admin_reservation_detail(request, reservation_id)
+        
+    # معالجة حالة 'delete' الخاصة
+    if status == 'delete':
+        # توجيه الطلب مباشرة إلى دالة حذف الحجز
+        print(f"DIAGNOSTIC: Redirecting delete request for reservation {reservation_id} to delete_reservation")
+        return delete_reservation(request, reservation_id)
 
     # Update reservation status
     reservation.status = status
