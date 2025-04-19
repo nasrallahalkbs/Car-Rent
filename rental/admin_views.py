@@ -428,6 +428,8 @@ def admin_reservation_detail(request, reservation_id):
     template = 'admin/reservation_detail_django.html'
     return render(request, template, context)
 
+@login_required
+@admin_required
 def delete_reservation(request, reservation_id):
     """Admin view to permanently delete a reservation"""
     reservation = get_object_or_404(Reservation, id=reservation_id)
