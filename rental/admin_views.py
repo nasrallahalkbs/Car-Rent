@@ -550,19 +550,20 @@ def delete_reservation(request, reservation_id):
     try:
         reservation = get_object_or_404(Reservation, id=reservation_id)
         
-        if request.method == 'POST':
-            # Store info before deletion
+        # اسمح بالحذف عبر طلبات GET (بعد تأكيد جافا سكريبت) أو طلبات POST
+        if request.method == 'GET' or request.method == 'POST':
+            # تخزين المعلومات قبل الحذف
             reservation_id_str = str(reservation_id)
             car_info = f"{reservation.car.make} {reservation.car.model}"
             user_info = f"{reservation.user.get_full_name() or reservation.user.username}"
             
-            # Make car available if it was reserved
+            # جعل السيارة متاحة إذا كانت محجوزة
             if reservation.status in ['confirmed', 'pending'] and not reservation.car.is_available:
                 car = reservation.car
                 car.is_available = True
                 car.save()
             
-            # Delete the reservation
+            # حذف الحجز
             reservation.delete()
             
             messages.success(
@@ -571,8 +572,8 @@ def delete_reservation(request, reservation_id):
             )
             return redirect('admin_reservations')
         
-        # Show confirmation page for GET requests
-        return render(request, 'admin/delete_reservation.html', {'reservation': reservation})
+        # في حالة طلبات أخرى، إعادة توجيه للصفحة الرئيسية للحجوزات
+        return redirect('admin_reservations')
         
     except Exception as e:
         logger.error(f"Error deleting reservation: {str(e)}")
