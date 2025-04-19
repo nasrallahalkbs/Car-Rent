@@ -469,12 +469,22 @@ def complete_reservation(request, reservation_id):
 def admin_reservation_detail(request, reservation_id):
     """Admin view to show reservation details"""
     try:
-        # إضافة تسجيل للمساعدة في تتبع المشكلة
+        # إضافة تسجيل للمساعدة في تتبع المشكلة بشكل أكثر تفصيلاً
         logger.info(f"Accessing reservation details for ID: {reservation_id}")
+        print(f"Accessing reservation details for ID: {reservation_id}")
+        
+        # التحقق من المسار الكامل للقالب
+        import os
+        template_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates')
+        template_path = 'admin/reservation_detail_django.html'
+        full_template_path = os.path.join(template_dir, template_path)
+        print(f"Template directory: {template_dir}")
+        print(f"Full template path: {full_template_path}")
+        print(f"Template exists: {os.path.exists(full_template_path)}")
         
         # محاولة العثور على الحجز
         reservation = get_object_or_404(Reservation, id=reservation_id)
-        logger.info(f"Found reservation: {reservation.id}, user: {reservation.user.username}, car: {reservation.car.make} {reservation.car.model}")
+        print(f"Found reservation: {reservation.id}, user: {reservation.user.username}, car: {reservation.car.make} {reservation.car.model}")
         
         # حساب عدد الأيام بين تاريخ البداية وتاريخ النهاية
         delta = (reservation.end_date - reservation.start_date).days + 1
@@ -484,12 +494,15 @@ def admin_reservation_detail(request, reservation_id):
         current_language = get_language()
         is_english = current_language == 'en'
         is_rtl = current_language == 'ar'
-        logger.info(f"Language: {current_language}, is_english: {is_english}, is_rtl: {is_rtl}")
+        print(f"Language: {current_language}, is_english: {is_english}, is_rtl: {is_rtl}")
         
         # للحصول على معلومات إضافية للعرض
         total_price = reservation.total_price
         daily_rate = reservation.car.daily_rate
         user_full_name = f"{reservation.user.first_name} {reservation.user.last_name}"
+        
+        # الطباعة أيضًا مفيدة لتتبع الأخطاء
+        print(f"Total price: {total_price}, Daily rate: {daily_rate}")
         
         # إعداد سياق القالب بجميع المعلومات المطلوبة
         context = {
@@ -505,16 +518,32 @@ def admin_reservation_detail(request, reservation_id):
             'user_full_name': user_full_name,
         }
         
-        # المسار الكامل للقالب
-        template_path = 'admin/reservation_detail_django.html'
-        logger.info(f"Rendering template: {template_path}")
+        # التحقق من القوالب المتاحة
+        from django.template.loader import get_template
+        try:
+            get_template(template_path)
+            print(f"Template '{template_path}' loaded successfully")
+        except Exception as template_error:
+            print(f"Error loading template: {str(template_error)}")
+            # إذا كان هناك خطأ، حاول استخدام مسار قالب بديل
+            try:
+                alt_template_path = 'reservation_detail_django.html'
+                get_template(alt_template_path)
+                print(f"Alternative template '{alt_template_path}' loaded successfully")
+                template_path = alt_template_path
+            except Exception as alt_template_error:
+                print(f"Error loading alternative template: {str(alt_template_error)}")
         
         # استخدام قالب لوحة التحكم - تأكد من وجود القالب
         return render(request, template_path, context)
     
     except Exception as e:
-        # تسجيل أي أخطاء واظهارها للمستخدم
-        logger.error(f"Error showing reservation details: {str(e)}")
+        # تسجيل أي أخطاء واظهارها للمستخدم بشكل مفصل
+        error_message = f"Error showing reservation details: {str(e)}"
+        logger.error(error_message)
+        print(f"ERROR in admin_reservation_detail: {error_message}")
+        import traceback
+        traceback.print_exc()
         messages.error(request, f"حدث خطأ أثناء محاولة عرض تفاصيل الحجز: {str(e)}")
         return redirect('admin_reservations')
 
