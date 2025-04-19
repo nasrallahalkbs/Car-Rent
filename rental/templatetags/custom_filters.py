@@ -19,3 +19,15 @@ def get_item(dictionary, key):
     
     # Try to get from dictionary with the key, or return 0 if not found
     return dictionary.get(key, 0)
+
+@register.filter
+def abs(value):
+    """
+    Returns the absolute value of a number.
+    
+    Usage: {{ value|abs }}
+    """
+    try:
+        return abs(value)
+    except (ValueError, TypeError):
+        return value
