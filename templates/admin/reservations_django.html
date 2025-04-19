@@ -294,4 +294,41 @@
         padding: 20px;
     }
 </style>
+
+<script>
+    // تصحيح مشكلة الأزرار عن طريق التقاط الأحداث
+    document.addEventListener('DOMContentLoaded', function() {
+        // زر الموافقة
+        const confirmButtons = document.querySelectorAll('a[href*="update_reservation_status"][href*="confirmed"]');
+        confirmButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const reservation_id = this.href.split('/').slice(-3)[0];
+                window.location.href = `/ar/dashboard/reservations/${reservation_id}/confirmed/`;
+            });
+        });
+
+        // زر الإلغاء
+        const cancelButtons = document.querySelectorAll('a[href*="update_reservation_status"][href*="cancelled"]');
+        cancelButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟')) {
+                    const reservation_id = this.href.split('/').slice(-3)[0];
+                    window.location.href = `/ar/dashboard/reservations/${reservation_id}/cancelled/`;
+                }
+            });
+        });
+
+        // زر الإكمال
+        const completeButtons = document.querySelectorAll('a[href*="update_reservation_status"][href*="completed"]');
+        completeButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const reservation_id = this.href.split('/').slice(-3)[0];
+                window.location.href = `/ar/dashboard/reservations/${reservation_id}/completed/`;
+            });
+        });
+    });
+</script>
 {% endblock %}
