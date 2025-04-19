@@ -10,6 +10,44 @@
 <li class="breadcrumb-item active">إدارة الحجوزات</li>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+  /* تعديل القائمة الجانبية لجعلها ثابتة */
+  .admin-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    width: 16.666% !important; /* عرض col-lg-2 */
+    z-index: 1000 !important;
+  }
+  
+  /* تعديل المحتوى الرئيسي للتماشي مع القائمة الثابتة */
+  .admin-main {
+    width: 83.333% !important; /* عرض col-lg-10 */
+    margin-right: 16.666% !important;
+  }
+  
+  /* للشاشات الصغيرة */
+  @media (max-width: 992px) {
+    .admin-sidebar {
+      margin-right: -100% !important;
+      width: 250px !important;
+    }
+    
+    .admin-sidebar.show {
+      margin-right: 0 !important;
+    }
+    
+    .admin-main {
+      width: 100% !important;
+      margin-right: 0 !important;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block styles %}
 <style>
   .reservation-card {
@@ -134,6 +172,16 @@
 {% endblock %}
 
 {% block content %}
+<!-- زر إظهار/إخفاء القائمة الجانبية للشاشات الصغيرة -->
+<div class="d-lg-none position-fixed" style="top: 70px; right: 10px; z-index: 1001;">
+  <button id="toggleSidebar" class="btn btn-primary btn-sm shadow">
+    <i class="fas fa-bars"></i>
+  </button>
+</div>
+
+<!-- طبقة التظليل عند فتح القائمة في الشاشات الصغيرة -->
+<div id="sidebarOverlay" class="position-fixed d-none" style="top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1040;"></div>
+
 <div class="container-fluid py-4">
   <!-- Header with Quick Actions -->
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -613,6 +661,28 @@
 
 {% block scripts %}
 <script>
+// تفعيل زر إظهار/إخفاء القائمة الجانبية
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleBtn = document.getElementById('toggleSidebar');
+  const sidebar = document.querySelector('.admin-sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  
+  if (toggleBtn && sidebar && overlay) {
+    toggleBtn.addEventListener('click', function() {
+      sidebar.classList.toggle('show');
+      if (sidebar.classList.contains('show')) {
+        overlay.classList.remove('d-none');
+      } else {
+        overlay.classList.add('d-none');
+      }
+    });
+    
+    overlay.addEventListener('click', function() {
+      sidebar.classList.remove('show');
+      overlay.classList.add('d-none');
+    });
+  }
+});
   // Initialize tooltips
   var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
   var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {

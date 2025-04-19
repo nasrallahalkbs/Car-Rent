@@ -453,7 +453,7 @@ def admin_reservations(request):
     }
 
     # استخدام القالب الاحترافي الجديد
-    return render(request, 'admin/enhanced/reservations_fixed_sidebar.html', context)
+    return render(request, 'admin/enhanced/reservations_professional.html', context)
 
 @login_required
 @admin_required
