@@ -87,6 +87,11 @@
                                 <i class="fas fa-info-circle ms-2" ms-1></i> لا توجد إجراءات متاحة
                             </a></li>
                         {% endif %}
+                        <!-- زر الحذف النهائي (مرئي دائماً) -->
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0);" onclick="confirmDelete({{ item.reservation.id }})">
+                            <i class="fas fa-trash-alt ms-2" ms-1></i> حذف نهائي
+                        </a></li>
                     </ul>
                 </div>
             </td>
@@ -142,4 +147,30 @@
             });
         });
     });
+
+    // دالة تأكيد الحذف
+    function confirmDelete(reservationId) {
+        if (confirm('هل أنت متأكد من رغبتك في حذف هذا الحجز نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) {
+            window.location.href = `/ar/dashboard/reservations/${reservationId}/delete/`;
+        }
+    }
 </script>
+
+<!-- مربع حوار تأكيد الحذف -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">تأكيد الحذف</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        هل أنت متأكد من رغبتك في حذف هذا الحجز نهائياً؟ لا يمكن التراجع عن هذا الإجراء.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <a href="#" class="btn btn-danger" id="confirmDeleteBtn">حذف نهائي</a>
+      </div>
+    </div>
+  </div>
+</div>
