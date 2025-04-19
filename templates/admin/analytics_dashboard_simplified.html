@@ -1,0 +1,346 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}
+{% if is_english %}
+Dashboard Overview - Admin Panel
+{% else %}
+لوحة المعلومات - لوحة التحكم
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        flex: 1;
+        min-width: 200px;
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        max-width: calc(25% - 15px);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card .stat-icon {
+        position: absolute;
+        top: 20px;
+        {% if is_rtl %}
+        left: 20px;
+        {% else %}
+        right: 20px;
+        {% endif %}
+        font-size: 48px;
+        color: rgba(13, 110, 253, 0.1);
+    }
+    
+    .stat-card .stat-title {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #0d6efd;
+        margin-bottom: 5px;
+    }
+    
+    .stat-card .stat-description {
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .analytics-redirect-card {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        padding: 30px;
+        text-align: center;
+        margin-top: 30px;
+        border-top: 4px solid #0d6efd;
+    }
+
+    .analytics-redirect-card .icon {
+        font-size: 48px;
+        color: #0d6efd;
+        margin-bottom: 20px;
+    }
+
+    .analytics-redirect-card .title {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #343a40;
+    }
+
+    .analytics-redirect-card .description {
+        color: #6c757d;
+        margin-bottom: 25px;
+        max-width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            {% if is_english %}
+            Dashboard Overview
+            {% else %}
+            لوحة المعلومات
+            {% endif %}
+        </h1>
+        <div>
+            <button class="btn btn-sm btn-outline-primary ms-2" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i>
+                {% if is_english %}
+                Refresh
+                {% else %}
+                تحديث
+                {% endif %}
+            </button>
+        </div>
+    </div>
+    
+    <!-- Key Metrics -->
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-car"></i>
+            </div>
+            <div class="stat-title">
+                {% if is_english %}
+                Total Cars
+                {% else %}
+                إجمالي السيارات
+                {% endif %}
+            </div>
+            <div class="stat-value">{{ total_cars }}</div>
+            <div class="stat-description">
+                {% if is_english %}
+                Available in the fleet
+                {% else %}
+                متوفرة في الأسطول
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-title">
+                {% if is_english %}
+                Total Reservations
+                {% else %}
+                إجمالي الحجوزات
+                {% endif %}
+            </div>
+            <div class="stat-value">{{ total_reservations }}</div>
+            <div class="stat-description">
+                {% if is_english %}
+                {{ active_reservations }} active reservations
+                {% else %}
+                {{ active_reservations }} حجز نشط
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-title">
+                {% if is_english %}
+                Registered Users
+                {% else %}
+                المستخدمين المسجلين
+                {% endif %}
+            </div>
+            <div class="stat-value">{{ total_users }}</div>
+            <div class="stat-description">
+                {% if is_english %}
+                Customer accounts
+                {% else %}
+                حساب عميل
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="stat-title">
+                {% if is_english %}
+                Total Revenue
+                {% else %}
+                إجمالي الإيرادات
+                {% endif %}
+            </div>
+            <div class="stat-value">{{ total_payments }}</div>
+            <div class="stat-description">
+                {% if is_english %}
+                Completed payments
+                {% else %}
+                المدفوعات المكتملة
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Analytics Redirect Card -->
+    <div class="analytics-redirect-card">
+        <div class="icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <h2 class="title">
+            {% if is_english %}
+            Detailed Analytics Reports
+            {% else %}
+            التقارير التحليلية المفصلة
+            {% endif %}
+        </h2>
+        <p class="description">
+            {% if is_english %}
+            For comprehensive analytics, charts, revenue insights, and detailed reports, please visit our dedicated Analytics Reports page.
+            {% else %}
+            للحصول على تحليلات شاملة ورسوم بيانية ورؤى الإيرادات وتقارير مفصلة، يرجى زيارة صفحة التقارير التحليلية المخصصة.
+            {% endif %}
+        </p>
+        <a href="{% url 'admin_payment_analytics' %}" class="btn btn-primary btn-lg px-4">
+            <i class="fas fa-external-link-alt me-2"></i>
+            {% if is_english %}
+            View Analytics Reports
+            {% else %}
+            عرض التقارير التحليلية
+            {% endif %}
+        </a>
+    </div>
+    
+    <!-- Recent Activity Section (Optional) -->
+    {% if recent_reservations %}
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">
+                {% if is_english %}
+                Recent Reservations
+                {% else %}
+                الحجوزات الأخيرة
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>
+                                {% if is_english %}
+                                Reservation ID
+                                {% else %}
+                                رقم الحجز
+                                {% endif %}
+                            </th>
+                            <th>
+                                {% if is_english %}
+                                Customer
+                                {% else %}
+                                العميل
+                                {% endif %}
+                            </th>
+                            <th>
+                                {% if is_english %}
+                                Car
+                                {% else %}
+                                السيارة
+                                {% endif %}
+                            </th>
+                            <th>
+                                {% if is_english %}
+                                Date
+                                {% else %}
+                                التاريخ
+                                {% endif %}
+                            </th>
+                            <th>
+                                {% if is_english %}
+                                Status
+                                {% else %}
+                                الحالة
+                                {% endif %}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in recent_reservations %}
+                        <tr>
+                            <td>{{ reservation.id }}</td>
+                            <td>{{ reservation.user.get_full_name }}</td>
+                            <td>{{ reservation.car.make }} {{ reservation.car.model }}</td>
+                            <td>{{ reservation.created_at|date:"Y-m-d" }}</td>
+                            <td>
+                                <span class="badge
+                                    {% if reservation.status == 'confirmed' %}bg-success
+                                    {% elif reservation.status == 'pending' %}bg-warning
+                                    {% elif reservation.status == 'cancelled' %}bg-danger
+                                    {% elif reservation.status == 'completed' %}bg-info
+                                    {% else %}bg-secondary{% endif %}">
+                                    {% if is_english %}
+                                        {% if reservation.status == 'confirmed' %}Confirmed
+                                        {% elif reservation.status == 'pending' %}Pending
+                                        {% elif reservation.status == 'cancelled' %}Cancelled
+                                        {% elif reservation.status == 'completed' %}Completed
+                                        {% else %}{{ reservation.status }}{% endif %}
+                                    {% else %}
+                                        {% if reservation.status == 'confirmed' %}مؤكد
+                                        {% elif reservation.status == 'pending' %}معلق
+                                        {% elif reservation.status == 'cancelled' %}ملغي
+                                        {% elif reservation.status == 'completed' %}مكتمل
+                                        {% else %}{{ reservation.status }}{% endif %}
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Refresh button functionality
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                location.reload();
+            });
+        }
+    });
+</script>
+{% endblock %}
