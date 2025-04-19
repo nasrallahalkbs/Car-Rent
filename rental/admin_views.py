@@ -478,7 +478,7 @@ def complete_reservation(request, reservation_id):
 def admin_reservation_detail(request, reservation_id):
     """Admin view to show reservation details"""
     try:
-        # إضافة تسجيل بسيط
+        # إضافة تسجيل للمتابعة
         logger.info(f"Accessing reservation details for ID: {reservation_id}")
         print(f"DIAGNOSTIC: Accessing reservation details for ID: {reservation_id}")
         
@@ -496,6 +496,10 @@ def admin_reservation_detail(request, reservation_id):
         is_rtl = current_language == 'ar'
         print(f"DIAGNOSTIC: Language: {current_language}, is_rtl: {is_rtl}")
         
+        # إضافة معلومات عن المستخدم وعدد الحجوزات
+        user = reservation.user
+        user.reservation_count = Reservation.objects.filter(user=user).count()
+        
         # إعداد سياق القالب بجميع المعلومات المطلوبة
         context = {
             'reservation': reservation,
@@ -505,9 +509,29 @@ def admin_reservation_detail(request, reservation_id):
             'current_user': request.user,
         }
         
-        # استخدام القالب البسيط الذي تم إنشاؤه
-        print(f"DIAGNOSTIC: Rendering template: reservation_detail_simple.html")
-        return render(request, 'admin/reservation_detail_simple.html', context)
+        # إضافة معلومات الدفع إذا كانت متوفرة
+        if hasattr(reservation, 'payment_method') or (reservation.notes and ('طريقة الدفع:' in reservation.notes)):
+            if hasattr(reservation, 'payment_method'):
+                # استخدام القيمة المخزنة مباشرة إذا كانت موجودة
+                context['payment_method'] = reservation.payment_method
+            else:
+                # استخراج طريقة الدفع من الملاحظات
+                notes_lines = reservation.notes.split('\n')
+                for line in notes_lines:
+                    if 'طريقة الدفع:' in line:
+                        context['payment_method'] = line.split('طريقة الدفع:')[1].strip()
+                        break
+            
+            # استخراج رقم المرجع من الملاحظات
+            notes_lines = reservation.notes.split('\n') if reservation.notes else []
+            for line in notes_lines:
+                if 'رقم المرجع:' in line:
+                    context['payment_reference'] = line.split('رقم المرجع:')[1].strip()
+                    break
+        
+        # استخدام قالب التصميم الاحترافي
+        print(f"DIAGNOSTIC: Rendering professional template")
+        return render(request, 'admin/reservation_detail_professional.html', context)
     
     except Exception as e:
         # تسجيل أي أخطاء واظهارها للمستخدم بشكل مفصل
