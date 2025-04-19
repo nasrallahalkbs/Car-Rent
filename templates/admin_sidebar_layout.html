@@ -1,0 +1,398 @@
+{% load i18n %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="{% trans "en" %}" dir="{% trans "ltr" %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% trans "CarRental - Admin Dashboard" %}{% endblock %}</title>
+    
+    <!-- Bootstrap RTL CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap{% if not is_english %}.rtl{% endif %}.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Google Fonts for Arabic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- Dark Mode CSS (conditionally loaded) -->
+    {% if dark_mode %}
+    <link rel="stylesheet" href="{% static 'css/dark-mode.css' %}">
+    {% endif %}
+    
+    <style>
+        body {
+            font-family: 'Tajawal', 'Poppins', sans-serif;
+        }
+        
+        /* Sidebar Styles */
+        .admin-sidebar {
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding-top: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+            {% if is_english %}left: 0;{% else %}right: 0;{% endif %}
+            top: 0;
+            transition: all 0.3s;
+        }
+        
+        .admin-content {
+            {% if is_english %}margin-left: 250px;{% else %}margin-right: 250px;{% endif %}
+            width: calc(100% - 250px);
+            transition: all 0.3s;
+        }
+        
+        .admin-logo-container {
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-heading {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 10px 15px;
+        }
+        
+        .admin-sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 2px 15px;
+            border-radius: 5px;
+            padding: 8px 15px;
+            transition: all 0.3s;
+        }
+        
+        .admin-sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .admin-sidebar .nav-link.active {
+            background-color: #3498db;
+            color: #fff;
+        }
+        
+        .admin-sidebar .nav-link i {
+            margin-{% if is_english %}right{% else %}left{% endif %}: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .admin-sidebar {
+                {% if is_english %}left: -250px;{% else %}right: -250px;{% endif %}
+            }
+            
+            .admin-content {
+                {% if is_english %}margin-left: 0;{% else %}margin-right: 0;{% endif %}
+                width: 100%;
+            }
+            
+            .admin-sidebar.show {
+                {% if is_english %}left: 0;{% else %}right: 0;{% endif %}
+            }
+            
+            .page-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+            
+            .page-overlay.show {
+                display: block;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+    {% block styles %}{% endblock %}
+</head>
+<body {% if dark_mode %}class="dark-mode"{% endif %}>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-logo-container text-center">
+                <a href="{% url 'index' %}">
+                    <img src="{% static 'images/car-rental-logo-white.svg' %}" alt="{% trans "CarRental" %}" height="40">
+                </a>
+            </div>
+            
+            <!-- User Profile -->
+            <div class="text-center mb-4">
+                <div class="d-inline-block position-relative">
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; margin: 0 auto;">
+                        <i class="fas fa-user-shield text-dark fa-2x"></i>
+                    </div>
+                    <span class="position-absolute bottom-0 {% if is_english %}end-0{% else %}start-0{% endif %} bg-success rounded-circle p-1" style="width: 15px; height: 15px;"></span>
+                </div>
+                <h6 class="mt-2 mb-0 text-white">{{ user.first_name|default:user.username }}</h6>
+                <small class="text-light opacity-75">{% trans "Administrator" %}</small>
+            </div>
+            
+            <!-- نقطه فصل -->
+            <div class="px-3 mb-4">
+                <hr class="border-secondary">
+            </div>
+            
+            <!-- Dashboard Navigation -->
+            <div class="sidebar-heading">{% trans "Dashboard" %}</div>
+            <ul class="nav flex-column mb-3">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/dashboard/' or request.path == '/ar/dashboard/' %}active{% endif %}" 
+                       href="{% url 'admin_index' %}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        {% trans "Dashboard" %}
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Reservations Navigation -->
+            <div class="sidebar-heading">{% trans "Reservations" %}</div>
+            <ul class="nav flex-column mb-3">
+                <li class="nav-item">
+                    <a class="nav-link {% if 'dashboard/reservations' in request.path %}active{% endif %}"
+                       href="{% url 'admin_reservations' %}">
+                        <i class="fas fa-calendar-alt"></i>
+                        {% trans "Manage Reservations" %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'dashboard/payments' in request.path %}active{% endif %}"
+                       href="{% url 'admin_payments' %}">
+                        <i class="fas fa-money-bill-wave"></i>
+                        {% trans "Payments" %}
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Cars Navigation -->
+            <div class="sidebar-heading">{% trans "Cars" %}</div>
+            <ul class="nav flex-column mb-3">
+                <li class="nav-item">
+                    <a class="nav-link {% if 'dashboard/cars' in request.path %}active{% endif %}"
+                       href="{% url 'admin_cars' %}">
+                        <i class="fas fa-car"></i>
+                        {% trans "Manage Cars" %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'dashboard/add_car' in request.path %}active{% endif %}"
+                       href="{% url 'add_car' %}">
+                        <i class="fas fa-plus-circle"></i>
+                        {% trans "Add New Car" %}
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Analytics Navigation -->
+            <div class="sidebar-heading">{% trans "Analytics" %}</div>
+            <ul class="nav flex-column mb-3">
+                <li class="nav-item">
+                    <a class="nav-link {% if 'dashboard/analytics' in request.path %}active{% endif %}"
+                       href="{% url 'admin_payment_analytics' %}">
+                        <i class="fas fa-chart-line"></i>
+                        {% trans "Analytical Reports" %}
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Divider -->
+            <div class="px-3 mb-4">
+                <hr class="border-secondary">
+            </div>
+            
+            <!-- Account Settings -->
+            <ul class="nav flex-column mb-3">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'index' %}">
+                        <i class="fas fa-home"></i>
+                        {% trans "View Site" %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'toggle_dark_mode' %}">
+                        {% if dark_mode %}
+                        <i class="fas fa-sun"></i>
+                        {% trans "Light Mode" %}
+                        {% else %}
+                        <i class="fas fa-moon"></i>
+                        {% trans "Dark Mode" %}
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'toggle_language' %}">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                        <i class="fas fa-globe"></i>
+                        English
+                        {% else %}
+                        <i class="fas fa-globe"></i>
+                        العربية
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="{% url 'logout' %}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        {% trans "Logout" %}
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Main content -->
+        <div class="admin-content">
+            <!-- Top Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom shadow-sm">
+                <div class="container-fluid">
+                    <!-- Toggle Sidebar Button for Mobile -->
+                    <button class="btn" id="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <h5 class="mb-0">{% block page_title %}{% trans "Admin Dashboard" %}{% endblock %}</h5>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb mb-0 small">
+                                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">{% trans "Dashboard" %}</a></li>
+                                    {% block breadcrumb %}{% endblock %}
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <!-- Notifications -->
+                        <div class="dropdown">
+                            <a class="nav-link position-relative" href="#" role="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    3
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown">
+                                <li><h6 class="dropdown-header">{% trans "Notifications" %}</h6></li>
+                                <li><a class="dropdown-item" href="#">{% trans "New reservation request" %}</a></li>
+                                <li><a class="dropdown-item" href="#">{% trans "New payment received" %}</a></li>
+                                <li><a class="dropdown-item" href="#">{% trans "System update available" %}</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-primary" href="#">{% trans "View all notifications" %}</a></li>
+                            </ul>
+                        </div>
+                        
+                        <!-- User Menu -->
+                        <div class="dropdown ms-3">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                    <i class="fas fa-user-shield text-dark"></i>
+                                </div>
+                                <span>{{ user.first_name|default:user.username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog {% trans "me-2" %}"></i> {% trans "Profile" %}</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog {% trans "me-2" %}"></i> {% trans "Settings" %}</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt {% trans "me-2" %}"></i> {% trans "Logout" %}</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            
+            <!-- Flash Messages -->
+            {% if messages %}
+            <div class="container-fluid mt-3">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Main Content -->
+            <main class="py-4">
+                {% block content %}{% endblock %}
+            </main>
+            
+            <!-- Footer -->
+            <footer class="bg-white py-3 mt-5 border-top">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <p class="mb-0 text-muted">&copy; 2025 {% trans "Car Rental Admin Panel" %}. {% trans "All rights reserved" %}.</p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+    
+    <!-- Overlay for mobile sidebar -->
+    <div class="page-overlay" id="page-overlay"></div>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Sidebar toggle for mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('admin-sidebar');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const pageOverlay = document.getElementById('page-overlay');
+            
+            function toggleSidebar() {
+                sidebar.classList.toggle('show');
+                pageOverlay.classList.toggle('show');
+            }
+            
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebar);
+            }
+            
+            if (pageOverlay) {
+                pageOverlay.addEventListener('click', toggleSidebar);
+            }
+            
+            // Close sidebar when window is resized to desktop size
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 992) {
+                    sidebar.classList.remove('show');
+                    pageOverlay.classList.remove('show');
+                }
+            });
+        });
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
