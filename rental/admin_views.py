@@ -353,7 +353,8 @@ def admin_reservations(request):
 @admin_required
 def update_reservation_status(request, reservation_id, status):
     """Admin view to update reservation status"""
-    from datetime import datetime, timedelta
+    # استخدام timezone لضمان استخدام الوقت المناسب مع مراعاة المنطقة الزمنية
+    from django.utils import timezone
 
     reservation = get_object_or_404(Reservation, id=reservation_id)
     car = reservation.car
@@ -373,7 +374,8 @@ def update_reservation_status(request, reservation_id, status):
         car.save()
 
         # Set auto-expiry time (24 hours from now)
-        expiry_time = datetime.now() + timedelta(hours=24)
+        # استخدام timezone.now() بدلاً من datetime.now() للحصول على التاريخ المناسب مع المنطقة الزمنية
+        expiry_time = timezone.now() + timezone.timedelta(hours=24)
         reservation.confirmation_expiry = expiry_time
 
     elif status == 'cancelled':
@@ -416,7 +418,8 @@ def confirm_reservation(request, reservation_id):
     car.save()
     
     # تعيين تاريخ انتهاء مهلة الدفع (24 ساعة من الآن)
-    reservation.expiry_date = timezone.now() + timezone.timedelta(hours=24)
+    # استخدام confirmation_expiry الذي يتم استخدامه في النموذج بدلاً من expiry_date
+    reservation.confirmation_expiry = timezone.now() + timezone.timedelta(hours=24)
     
     reservation.save()
     
