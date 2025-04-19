@@ -405,85 +405,85 @@ def update_reservation_status(request, reservation_id, status):
 @admin_required
 def admin_reservation_detail(request, reservation_id):
     """Admin view to show reservation details"""
-    reservation = get_object_or_404(Reservation, id=reservation_id)
+    try:
+        # محاولة العثور على الحجز
+        reservation = get_object_or_404(Reservation, id=reservation_id)
+        
+        # حساب عدد الأيام بين تاريخ البداية وتاريخ النهاية
+        delta = (reservation.end_date - reservation.start_date).days + 1
+        
+        # تحديد لغة المستخدم
+        from django.utils.translation import get_language
+        current_language = get_language()
+        is_english = current_language == 'en'
+        is_rtl = current_language == 'ar'
+        
+        # للحصول على معلومات إضافية للعرض
+        total_price = reservation.total_price
+        daily_rate = reservation.car.daily_rate
+        user_full_name = f"{reservation.user.first_name} {reservation.user.last_name}"
+        
+        # إعداد سياق القالب بجميع المعلومات المطلوبة
+        context = {
+            'reservation': reservation,
+            'days': delta,
+            'is_english': is_english,
+            'is_rtl': is_rtl,
+            'current_user': request.user,  # أضف المستخدم الحالي لوصول القالب
+            'car': reservation.car,
+            'user': reservation.user,
+            'total_price': total_price,
+            'daily_rate': daily_rate,
+            'user_full_name': user_full_name,
+        }
+        
+        # استخدام قالب لوحة التحكم - تأكد من وجود القالب
+        return render(request, 'admin/reservation_detail_django.html', context)
     
-    # Calculate the number of days between start_date and end_date
-    delta = (reservation.end_date - reservation.start_date).days + 1
-    
-    # تحديد لغة المستخدم
-    from django.utils.translation import get_language
-    current_language = get_language()
-    is_english = current_language == 'en'
-    is_rtl = current_language == 'ar'
-    
-    # للحصول على معلومات إضافية للعرض
-    total_price = reservation.total_price
-    daily_rate = reservation.car.daily_rate
-    user_full_name = f"{reservation.user.first_name} {reservation.user.last_name}"
-    
-    context = {
-        'reservation': reservation,
-        'days': delta,
-        'is_english': is_english,
-        'is_rtl': is_rtl,
-        'current_user': request.user,  # أضف المستخدم الحالي لوصول القالب
-        'car': reservation.car,
-        'user': reservation.user,
-        'total_price': total_price,
-        'daily_rate': daily_rate,
-        'user_full_name': user_full_name,
-    }
-    
-    # استخدام قالب لوحة التحكم بدلاً من قالب واجهة المستخدم
-    template = 'admin/reservation_detail_django.html'
-    return render(request, template, context)
+    except Exception as e:
+        # تسجيل أي أخطاء واظهارها للمستخدم
+        logger.error(f"Error showing reservation details: {str(e)}")
+        messages.error(request, f"حدث خطأ أثناء محاولة عرض تفاصيل الحجز: {str(e)}")
+        return redirect('admin_reservations')
 
 @login_required
 @admin_required
 def delete_reservation(request, reservation_id):
     """Admin view to permanently delete a reservation"""
-    reservation = get_object_or_404(Reservation, id=reservation_id)
-    
-    # جلب معلومات الحجز قبل الحذف للتأكيد
-    reservation_id_str = str(reservation_id)
-    car_info = f"{reservation.car.make} {reservation.car.model}"
-    user_info = f"{reservation.user.get_full_name() or reservation.user.username}"
-    
-    # يدعم كلاً من طلبات GET و POST للمرونة
-    # يتم استخدام GET من صفحة الإدارة مع تأكيد JavaScript
-    # سيتم استخدام POST من صفحة تأكيد منفصلة إذا تم تنفيذها
-    if request.method == 'GET' or request.method == 'POST':
-        try:
-            # تأكد من أن السيارة متاحة إذا كان الحجز قد تم تأكيده
-            if reservation.status == 'confirmed' and not reservation.car.is_available:
-                car = reservation.car
-                car.is_available = True
-                car.save()
-                
-            # حذف الحجز نهائياً
-            reservation.delete()
-            
-            # إضافة رسالة تأكيد
-            messages.success(
-                request, 
-                f"تم حذف الحجز #{reservation_id_str} نهائياً. (السيارة: {car_info}, المستخدم: {user_info})"
-            )
-        except Exception as e:
-            # التعامل مع الأخطاء المحتملة
-            messages.error(
-                request,
-                f"حدث خطأ أثناء محاولة حذف الحجز: {str(e)}"
-            )
+    try:
+        reservation = get_object_or_404(Reservation, id=reservation_id)
         
-        return redirect('admin_reservations')
+        # جلب معلومات الحجز قبل الحذف للتأكيد
+        reservation_id_str = str(reservation_id)
+        car_info = f"{reservation.car.make} {reservation.car.model}"
+        user_info = f"{reservation.user.get_full_name() or reservation.user.username}"
+        
+        # يدعم كلاً من طلبات GET و POST للمرونة
+        # تتم معالجة طلبات GET و POST بنفس الطريقة للتبسيط
+        # تأكد من أن السيارة متاحة إذا كان الحجز قد تم تأكيده
+        if reservation.status == 'confirmed' and not reservation.car.is_available:
+            car = reservation.car
+            car.is_available = True
+            car.save()
+            
+        # حذف الحجز نهائياً
+        reservation.delete()
+        
+        # إضافة رسالة تأكيد
+        messages.success(
+            request, 
+            f"تم حذف الحجز #{reservation_id_str} نهائياً. (السيارة: {car_info}, المستخدم: {user_info})"
+        )
+    except Exception as e:
+        # تسجيل الخطأ في المستعرض والسجلات
+        logger.error(f"Error deleting reservation: {str(e)}")
+        messages.error(
+            request,
+            f"حدث خطأ أثناء محاولة حذف الحجز: {str(e)}"
+        )
     
-    # عرض صفحة تأكيد الحذف - هذا احتياطي لا يستخدم مع واجهة المستخدم الحالية
-    context = {
-        'reservation': reservation,
-        'current_user': request.user,  # إضافة المستخدم الحالي لوصول القالب
-    }
-    
-    return render(request, 'admin/delete_reservation.html', context)
+    # إعادة التوجيه إلى قائمة الحجوزات دائماً
+    return redirect('admin_reservations')
 
 @login_required
 @admin_required

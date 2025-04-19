@@ -1,3 +1,4 @@
+
 {% extends "admin_layout.html" %}
 {% load i18n %}
 {% load static %}
@@ -85,7 +86,7 @@
                             {% endif %}
 
                             <!-- زر الحذف النهائي (مرئي دائماً) -->
-                            <a href="{% url 'delete_reservation' reservation_id=reservation.id %}" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا الحجز بشكل نهائي؟');">
+                            <a href="javascript:void(0);" onclick="confirmDelete({{ reservation.id }})" class="btn btn-danger">
                                 <i class="fas fa-trash-alt ms-1"></i> حذف نهائي
                             </a>
                         </div>
@@ -297,4 +298,35 @@
         </div>
     </div>
 </div>
+
+<!-- نافذة التأكيد للحذف -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">تأكيد الحذف</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        هل أنت متأكد من رغبتك في حذف هذا الحجز نهائياً؟ هذا الإجراء لا يمكن التراجع عنه.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <a href="#" id="confirmDeleteBtn" class="btn btn-danger">تأكيد الحذف</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- سكريبت تأكيد الحذف -->
+<script>
+function confirmDelete(reservationId) {
+    // تعيين رابط الحذف الصحيح
+    document.getElementById('confirmDeleteBtn').href = "{% url 'delete_reservation' reservation_id=0 %}".replace('0', reservationId);
+    
+    // عرض نافذة التأكيد
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
 {% endblock %}
