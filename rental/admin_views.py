@@ -452,8 +452,8 @@ def admin_reservations(request):
         'sort_by': sort_by,
     }
 
-    # استخدام القالب الاحترافي الجديد
-    return render(request, 'admin/enhanced/reservations_professional.html', context)
+    # استخدام القالب المحسن الجديد مع القائمة الجانبية
+    return render(request, 'admin/enhanced/reservations_with_sidebar.html', context)
 
 @login_required
 @admin_required
