@@ -424,7 +424,8 @@ def admin_reservation_detail(request, reservation_id):
         'is_rtl': is_rtl,
     }
     
-    template = 'reservation_detail_django.html'
+    # استخدام قالب لوحة التحكم بدلاً من قالب واجهة المستخدم
+    template = 'admin/reservation_detail_django.html'
     return render(request, template, context)
 
 def delete_reservation(request, reservation_id):
