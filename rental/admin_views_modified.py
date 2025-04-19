@@ -469,13 +469,45 @@ def complete_reservation(request, reservation_id):
 def admin_reservation_detail(request, reservation_id):
     """Admin view to show reservation details"""
     try:
+        # إضافة سجل بسيط
+        print(f"Accessing reservation details for ID: {reservation_id}")
+        
+        # الحصول على تفاصيل الحجز
+        reservation = get_object_or_404(Reservation, id=reservation_id)
+        
+        # حساب عدد الأيام
+        delta = (reservation.end_date - reservation.start_date).days + 1
+        
+        # تحديد اللغة
+        from django.utils.translation import get_language
+        current_language = get_language()
+        is_english = current_language == 'en'
+        is_rtl = current_language == 'ar'
+        
+        # إعداد سياق القالب
+        context = {
+            'reservation': reservation,
+            'days': delta,
+            'is_english': is_english,
+            'is_rtl': is_rtl,
+            'current_user': request.user,
+        }
+        
+        # استخدام القالب البسيط
+        return render(request, 'admin/reservation_detail_simple.html', context)
+    
+    except Exception as e:
+        # تسجيل الخطأ
+        print(f"Error showing reservation details: {str(e)}")
+        messages.error(request, f"حدث خطأ أثناء عرض تفاصيل الحجز: {str(e)}")
+        return redirect('admin_reservations')(request, reservation_id):
+    """Admin view to show reservation details"""
+    try:
         # إضافة تسجيل بسيط
         logger.info(f"Accessing reservation details for ID: {reservation_id}")
-        print(f"DIAGNOSTIC: Accessing reservation details for ID: {reservation_id}")
         
         # محاولة العثور على الحجز
         reservation = get_object_or_404(Reservation, id=reservation_id)
-        print(f"DIAGNOSTIC: Found reservation: {reservation.id}, car: {reservation.car.make}")
         
         # حساب عدد الأيام بين تاريخ البداية وتاريخ النهاية
         delta = (reservation.end_date - reservation.start_date).days + 1
@@ -485,7 +517,6 @@ def admin_reservation_detail(request, reservation_id):
         current_language = get_language()
         is_english = current_language == 'en'
         is_rtl = current_language == 'ar'
-        print(f"DIAGNOSTIC: Language: {current_language}, is_rtl: {is_rtl}")
         
         # إعداد سياق القالب بجميع المعلومات المطلوبة
         context = {
@@ -496,17 +527,12 @@ def admin_reservation_detail(request, reservation_id):
             'current_user': request.user,
         }
         
-        # استخدام القالب البسيط الذي تم إنشاؤه
-        print(f"DIAGNOSTIC: Rendering template: reservation_detail_simple.html")
-        return render(request, 'admin/reservation_detail_simple.html', context)
+        # استخدام قالب مبسط لعرض تفاصيل الحجز
+        return render(request, 'admin/admin_reservation_simple.html', context)
     
     except Exception as e:
-        # تسجيل أي أخطاء واظهارها للمستخدم بشكل مفصل
-        error_message = f"Error showing reservation details: {str(e)}"
-        logger.error(error_message)
-        print(f"ERROR in admin_reservation_detail: {error_message}")
-        import traceback
-        traceback.print_exc()
+        # تسجيل أي أخطاء واظهارها للمستخدم
+        logger.error(f"Error showing reservation details: {str(e)}")
         messages.error(request, f"حدث خطأ أثناء محاولة عرض تفاصيل الحجز: {str(e)}")
         return redirect('admin_reservations')
 
