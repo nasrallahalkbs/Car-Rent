@@ -469,33 +469,11 @@ def complete_reservation(request, reservation_id):
 def admin_reservation_detail(request, reservation_id):
     """Admin view to show reservation details"""
     try:
-        # إضافة تسجيل للمساعدة في تتبع المشكلة بشكل أكثر تفصيلاً
-        logger.error(f"### Accessing reservation details for ID: {reservation_id} ###")
-        print(f"### Accessing reservation details for ID: {reservation_id} ###")
-        
-        # طباعة معلومات الطلب للتشخيص
-        print(f"Request path: {request.path}")
-        print(f"Request method: {request.method}")
-        print(f"Request GET params: {request.GET}")
-        
-        # التحقق من المسار الكامل للقالب
-        import os
-        template_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates')
-        template_path = 'admin/reservation_detail_django.html'
-        full_template_path = os.path.join(template_dir, template_path)
-        print(f"Template directory: {template_dir}")
-        print(f"Full template path: {full_template_path}")
-        print(f"Template exists: {os.path.exists(full_template_path)}")
-        
-        # التحقق من وجود الملف الأساسي للقالب
-        admin_layout_path = os.path.join(template_dir, 'admin_layout.html')
-        print(f"Admin layout path: {admin_layout_path}")
-        print(f"Admin layout exists: {os.path.exists(admin_layout_path)}")
+        # إضافة تسجيل بسيط
+        logger.info(f"Accessing reservation details for ID: {reservation_id}")
         
         # محاولة العثور على الحجز
-        print(f"Searching for reservation with ID: {reservation_id}")
         reservation = get_object_or_404(Reservation, id=reservation_id)
-        print(f"Found reservation: {reservation.id}, user: {reservation.user.username}, car: {reservation.car.make} {reservation.car.model}")
         
         # حساب عدد الأيام بين تاريخ البداية وتاريخ النهاية
         delta = (reservation.end_date - reservation.start_date).days + 1
@@ -505,15 +483,6 @@ def admin_reservation_detail(request, reservation_id):
         current_language = get_language()
         is_english = current_language == 'en'
         is_rtl = current_language == 'ar'
-        print(f"Language: {current_language}, is_english: {is_english}, is_rtl: {is_rtl}")
-        
-        # للحصول على معلومات إضافية للعرض
-        total_price = reservation.total_price
-        daily_rate = reservation.car.daily_rate
-        user_full_name = f"{reservation.user.first_name} {reservation.user.last_name}"
-        
-        # الطباعة أيضًا مفيدة لتتبع الأخطاء
-        print(f"Total price: {total_price}, Daily rate: {daily_rate}")
         
         # إعداد سياق القالب بجميع المعلومات المطلوبة
         context = {
@@ -521,47 +490,15 @@ def admin_reservation_detail(request, reservation_id):
             'days': delta,
             'is_english': is_english,
             'is_rtl': is_rtl,
-            'current_user': request.user,  # أضف المستخدم الحالي لوصول القالب
-            'car': reservation.car,
-            'user': reservation.user,
-            'total_price': total_price,
-            'daily_rate': daily_rate,
-            'user_full_name': user_full_name,
+            'current_user': request.user,
         }
-        print(f"Context prepared with keys: {list(context.keys())}")
         
-        # التحقق من القوالب المتاحة ومحاولة التعديل مباشرة
-        # استخدام سلسلة من مسارات القوالب البديلة في حالة فشل أحدها
-        template_paths = [
-            'admin/reservation_detail_django.html',  # المسار الأصلي
-            'admin/reservation_detail.html',         # مسار بديل 1
-            'reservation_detail_django.html',        # مسار بديل 2
-            'reservation_detail.html'                # مسار بديل 3
-        ]
-        
-        from django.template.loader import get_template
-        for path in template_paths:
-            try:
-                template = get_template(path)
-                print(f"Template '{path}' loaded successfully")
-                template_path = path
-                break
-            except Exception as template_error:
-                print(f"Error loading template '{path}': {str(template_error)}")
-        
-        # محاولة عرض الصفحة
-        print(f"Rendering template: {template_path}")
-        response = render(request, template_path, context)
-        print(f"Template rendered successfully: {response.status_code}")
-        return response
+        # استخدام قالب مبسط لعرض تفاصيل الحجز
+        return render(request, 'admin/admin_reservation_simple.html', context)
     
     except Exception as e:
-        # تسجيل أي أخطاء واظهارها للمستخدم بشكل مفصل
-        error_message = f"Error showing reservation details: {str(e)}"
-        logger.error(error_message)
-        print(f"ERROR in admin_reservation_detail: {error_message}")
-        import traceback
-        traceback.print_exc()
+        # تسجيل أي أخطاء واظهارها للمستخدم
+        logger.error(f"Error showing reservation details: {str(e)}")
         messages.error(request, f"حدث خطأ أثناء محاولة عرض تفاصيل الحجز: {str(e)}")
         return redirect('admin_reservations')
 
