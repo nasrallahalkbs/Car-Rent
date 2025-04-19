@@ -470,8 +470,13 @@ def admin_reservation_detail(request, reservation_id):
     """Admin view to show reservation details"""
     try:
         # إضافة تسجيل للمساعدة في تتبع المشكلة بشكل أكثر تفصيلاً
-        logger.info(f"Accessing reservation details for ID: {reservation_id}")
-        print(f"Accessing reservation details for ID: {reservation_id}")
+        logger.error(f"### Accessing reservation details for ID: {reservation_id} ###")
+        print(f"### Accessing reservation details for ID: {reservation_id} ###")
+        
+        # طباعة معلومات الطلب للتشخيص
+        print(f"Request path: {request.path}")
+        print(f"Request method: {request.method}")
+        print(f"Request GET params: {request.GET}")
         
         # التحقق من المسار الكامل للقالب
         import os
@@ -482,7 +487,13 @@ def admin_reservation_detail(request, reservation_id):
         print(f"Full template path: {full_template_path}")
         print(f"Template exists: {os.path.exists(full_template_path)}")
         
+        # التحقق من وجود الملف الأساسي للقالب
+        admin_layout_path = os.path.join(template_dir, 'admin_layout.html')
+        print(f"Admin layout path: {admin_layout_path}")
+        print(f"Admin layout exists: {os.path.exists(admin_layout_path)}")
+        
         # محاولة العثور على الحجز
+        print(f"Searching for reservation with ID: {reservation_id}")
         reservation = get_object_or_404(Reservation, id=reservation_id)
         print(f"Found reservation: {reservation.id}, user: {reservation.user.username}, car: {reservation.car.make} {reservation.car.model}")
         
@@ -517,25 +528,32 @@ def admin_reservation_detail(request, reservation_id):
             'daily_rate': daily_rate,
             'user_full_name': user_full_name,
         }
+        print(f"Context prepared with keys: {list(context.keys())}")
         
-        # التحقق من القوالب المتاحة
+        # التحقق من القوالب المتاحة ومحاولة التعديل مباشرة
+        # استخدام سلسلة من مسارات القوالب البديلة في حالة فشل أحدها
+        template_paths = [
+            'admin/reservation_detail_django.html',  # المسار الأصلي
+            'admin/reservation_detail.html',         # مسار بديل 1
+            'reservation_detail_django.html',        # مسار بديل 2
+            'reservation_detail.html'                # مسار بديل 3
+        ]
+        
         from django.template.loader import get_template
-        try:
-            get_template(template_path)
-            print(f"Template '{template_path}' loaded successfully")
-        except Exception as template_error:
-            print(f"Error loading template: {str(template_error)}")
-            # إذا كان هناك خطأ، حاول استخدام مسار قالب بديل
+        for path in template_paths:
             try:
-                alt_template_path = 'reservation_detail_django.html'
-                get_template(alt_template_path)
-                print(f"Alternative template '{alt_template_path}' loaded successfully")
-                template_path = alt_template_path
-            except Exception as alt_template_error:
-                print(f"Error loading alternative template: {str(alt_template_error)}")
+                template = get_template(path)
+                print(f"Template '{path}' loaded successfully")
+                template_path = path
+                break
+            except Exception as template_error:
+                print(f"Error loading template '{path}': {str(template_error)}")
         
-        # استخدام قالب لوحة التحكم - تأكد من وجود القالب
-        return render(request, template_path, context)
+        # محاولة عرض الصفحة
+        print(f"Rendering template: {template_path}")
+        response = render(request, template_path, context)
+        print(f"Template rendered successfully: {response.status_code}")
+        return response
     
     except Exception as e:
         # تسجيل أي أخطاء واظهارها للمستخدم بشكل مفصل
