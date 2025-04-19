@@ -514,38 +514,36 @@ def admin_reservation_detail(request, reservation_id):
 def delete_reservation(request, reservation_id):
     """Admin view to permanently delete a reservation"""
     try:
-        # محاولة العثور على الحجز
         reservation = get_object_or_404(Reservation, id=reservation_id)
         
-        # جلب معلومات الحجز قبل الحذف للتأكيد
-        reservation_id_str = str(reservation_id)
-        car_info = f"{reservation.car.make} {reservation.car.model}"
-        user_info = f"{reservation.user.get_full_name() or reservation.user.username}"
-        
-        # تأكد من أن السيارة متاحة إذا كان الحجز قد تم تأكيده
-        if reservation.status == 'confirmed' and not reservation.car.is_available:
-            car = reservation.car
-            car.is_available = True
-            car.save()
+        if request.method == 'POST':
+            # Store info before deletion
+            reservation_id_str = str(reservation_id)
+            car_info = f"{reservation.car.make} {reservation.car.model}"
+            user_info = f"{reservation.user.get_full_name() or reservation.user.username}"
             
-        # حذف الحجز نهائياً
-        reservation.delete()
+            # Make car available if it was reserved
+            if reservation.status in ['confirmed', 'pending'] and not reservation.car.is_available:
+                car = reservation.car
+                car.is_available = True
+                car.save()
+            
+            # Delete the reservation
+            reservation.delete()
+            
+            messages.success(
+                request, 
+                f"تم حذف الحجز #{reservation_id_str} نهائياً. (السيارة: {car_info}, المستخدم: {user_info})"
+            )
+            return redirect('admin_reservations')
         
-        # إضافة رسالة تأكيد
-        messages.success(
-            request, 
-            f"تم حذف الحجز #{reservation_id_str} نهائياً. (السيارة: {car_info}, المستخدم: {user_info})"
-        )
+        # Show confirmation page for GET requests
+        return render(request, 'admin/delete_reservation.html', {'reservation': reservation})
+        
     except Exception as e:
-        # تسجيل الخطأ في المستعرض والسجلات
         logger.error(f"Error deleting reservation: {str(e)}")
-        messages.error(
-            request,
-            f"حدث خطأ أثناء محاولة حذف الحجز: {str(e)}"
-        )
-    
-    # إعادة التوجيه إلى قائمة الحجوزات دائماً
-    return redirect('admin_reservations')
+        messages.error(request, f"حدث خطأ أثناء محاولة حذف الحجز: {str(e)}")
+        return redirect('admin_reservations')
 
 @login_required
 @admin_required
