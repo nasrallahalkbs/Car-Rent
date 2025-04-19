@@ -400,6 +400,66 @@ def update_reservation_status(request, reservation_id, status):
 
     messages.success(request, status_messages[status])
     return redirect('admin_reservations')
+
+@login_required
+@admin_required
+def confirm_reservation(request, reservation_id):
+    """Admin view to confirm a reservation - simplified URL pattern"""
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    
+    # حفظ الحالة الجديدة
+    reservation.status = 'confirmed'
+    
+    # تعديل حالة توفر السيارة
+    car = reservation.car
+    car.is_available = False
+    car.save()
+    
+    # تعيين تاريخ انتهاء مهلة الدفع (24 ساعة من الآن)
+    reservation.expiry_date = timezone.now() + timezone.timedelta(hours=24)
+    
+    reservation.save()
+    
+    # رسالة تأكيد
+    messages.success(request, "تم تأكيد الحجز بنجاح! سيبقى الحجز مفعلاً لمدة 24 ساعة حتى يتم الدفع.")
+    return redirect('admin_reservations')
+
+@login_required
+@admin_required
+def cancel_reservation_admin(request, reservation_id):
+    """Admin view to cancel a reservation - simplified URL pattern"""
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    
+    # حفظ الحالة الجديدة
+    reservation.status = 'cancelled'
+    
+    # إعادة السيارة إلى حالة متاحة
+    car = reservation.car
+    car.is_available = True
+    car.save()
+    
+    # إعادة تعيين حالة الدفع
+    reservation.payment_status = 'pending'
+    
+    reservation.save()
+    
+    # رسالة تأكيد
+    messages.success(request, "تم إلغاء الحجز!")
+    return redirect('admin_reservations')
+
+@login_required
+@admin_required
+def complete_reservation(request, reservation_id):
+    """Admin view to mark a reservation as completed - simplified URL pattern"""
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    
+    # حفظ الحالة الجديدة
+    reservation.status = 'completed'
+    reservation.save()
+    
+    # رسالة تأكيد
+    messages.success(request, "تم إكمال الحجز بنجاح!")
+    return redirect('admin_reservations')
     
 @login_required
 @admin_required

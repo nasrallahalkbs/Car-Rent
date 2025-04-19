@@ -51,6 +51,10 @@ urlpatterns = [
     path('dashboard/cars/<int:car_id>/delete/', admin_views.delete_car, name='delete_car'),
     path('dashboard/reservations/', admin_views.admin_reservations, name='admin_reservations'),
     path('dashboard/reservations/<int:reservation_id>/<str:status>/', admin_views.update_reservation_status, name='update_reservation_status'),
+    # إضافة مسارات مباشرة لكل حالة لتجاوز مشكلة المعلمات
+    path('dashboard/reservations/<int:reservation_id>/confirm/', admin_views.confirm_reservation, name='confirm_reservation'),
+    path('dashboard/reservations/<int:reservation_id>/cancel/', admin_views.cancel_reservation_admin, name='cancel_reservation_admin'),
+    path('dashboard/reservations/<int:reservation_id>/complete/', admin_views.complete_reservation, name='complete_reservation'),
     path('dashboard/reservations/<int:reservation_id>/delete/', admin_views.delete_reservation, name='delete_reservation'),
     path('dashboard/reservations/<int:reservation_id>/view/', admin_views.admin_reservation_detail, name='admin_reservation_detail'),
     path('dashboard/users/', admin_views.admin_users, name='admin_users'),
