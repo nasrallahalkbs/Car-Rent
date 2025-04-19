@@ -403,6 +403,30 @@ def update_reservation_status(request, reservation_id, status):
     
 @login_required
 @admin_required
+def admin_reservation_detail(request, reservation_id):
+    """Admin view to show reservation details"""
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    
+    # Calculate the number of days between start_date and end_date
+    delta = (reservation.end_date - reservation.start_date).days + 1
+    reservation.days = delta
+    
+    # تحديد لغة المستخدم
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    context = {
+        'reservation': reservation,
+        'days': delta,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+    }
+    
+    template = 'reservation_detail_django.html'
+    return render(request, template, context)
+
 def delete_reservation(request, reservation_id):
     """Admin view to permanently delete a reservation"""
     reservation = get_object_or_404(Reservation, id=reservation_id)

@@ -52,6 +52,7 @@ urlpatterns = [
     path('dashboard/reservations/', admin_views.admin_reservations, name='admin_reservations'),
     path('dashboard/reservations/<int:reservation_id>/<str:status>/', admin_views.update_reservation_status, name='update_reservation_status'),
     path('dashboard/reservations/<int:reservation_id>/delete/', admin_views.delete_reservation, name='delete_reservation'),
+    path('dashboard/reservations/<int:reservation_id>/view/', admin_views.admin_reservation_detail, name='admin_reservation_detail'),
     path('dashboard/users/', admin_views.admin_users, name='admin_users'),
     path('dashboard/users/add/', admin_views.add_user, name='add_user'),
     path('dashboard/users/<int:user_id>/', admin_views.user_details, name='user_details'),
