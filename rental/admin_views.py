@@ -451,7 +451,6 @@ def admin_reservation_detail(request, reservation_id):
 def delete_reservation(request, reservation_id):
     """Admin view to permanently delete a reservation"""
     try:
-        # محاولة العثور على الحجز
         reservation = get_object_or_404(Reservation, id=reservation_id)
         
         # جلب معلومات الحجز قبل الحذف للتأكيد
@@ -459,6 +458,8 @@ def delete_reservation(request, reservation_id):
         car_info = f"{reservation.car.make} {reservation.car.model}"
         user_info = f"{reservation.user.get_full_name() or reservation.user.username}"
         
+        # يدعم كلاً من طلبات GET و POST للمرونة
+        # تتم معالجة طلبات GET و POST بنفس الطريقة للتبسيط
         # تأكد من أن السيارة متاحة إذا كان الحجز قد تم تأكيده
         if reservation.status == 'confirmed' and not reservation.car.is_available:
             car = reservation.car
