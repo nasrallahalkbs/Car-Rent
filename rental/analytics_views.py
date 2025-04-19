@@ -28,6 +28,10 @@ def get_template_by_language(request, template_name):
     if template_name.endswith('.html'):
         template_name = template_name[:-5]
     
+    # تعديل لدعم القالب المبسط
+    if template_name == 'admin/analytics_dashboard_simplified':
+        return f"{template_name}_django.html", {"is_english": is_english, "is_rtl": is_rtl}
+    
     return f"{template_name}_django.html", {"is_english": is_english, "is_rtl": is_rtl}
 
 @login_required
