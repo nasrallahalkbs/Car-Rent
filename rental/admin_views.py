@@ -359,10 +359,19 @@ def update_reservation_status(request, reservation_id, status):
     reservation = get_object_or_404(Reservation, id=reservation_id)
     car = reservation.car
 
-    valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled']
+    # تشخيص الأخطاء
+    print(f"DIAGNOSTIC: Request received for reservation {reservation_id} with status {status}")
+    
+    valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled', 'view', 'details']
     if status not in valid_statuses:
-        messages.error(request, "حالة الحجز غير صالحة!")
+        print(f"ERROR: Invalid status '{status}' received for reservation {reservation_id}")
+        messages.error(request, f"حالة الحجز غير صالحة: {status}")
         return redirect('admin_reservations')
+        
+    # معالجة حالة 'view' أو 'details' الخاصة
+    if status in ['view', 'details']:
+        # عرض التفاصيل بدلاً من تحديث الحالة
+        return admin_reservation_detail(request, reservation_id)
 
     # Update reservation status
     reservation.status = status
