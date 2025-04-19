@@ -469,8 +469,12 @@ def complete_reservation(request, reservation_id):
 def admin_reservation_detail(request, reservation_id):
     """Admin view to show reservation details"""
     try:
+        # إضافة تسجيل للمساعدة في تتبع المشكلة
+        logger.info(f"Accessing reservation details for ID: {reservation_id}")
+        
         # محاولة العثور على الحجز
         reservation = get_object_or_404(Reservation, id=reservation_id)
+        logger.info(f"Found reservation: {reservation.id}, user: {reservation.user.username}, car: {reservation.car.make} {reservation.car.model}")
         
         # حساب عدد الأيام بين تاريخ البداية وتاريخ النهاية
         delta = (reservation.end_date - reservation.start_date).days + 1
@@ -480,6 +484,7 @@ def admin_reservation_detail(request, reservation_id):
         current_language = get_language()
         is_english = current_language == 'en'
         is_rtl = current_language == 'ar'
+        logger.info(f"Language: {current_language}, is_english: {is_english}, is_rtl: {is_rtl}")
         
         # للحصول على معلومات إضافية للعرض
         total_price = reservation.total_price
@@ -500,8 +505,12 @@ def admin_reservation_detail(request, reservation_id):
             'user_full_name': user_full_name,
         }
         
+        # المسار الكامل للقالب
+        template_path = 'admin/reservation_detail_django.html'
+        logger.info(f"Rendering template: {template_path}")
+        
         # استخدام قالب لوحة التحكم - تأكد من وجود القالب
-        return render(request, 'admin/reservation_detail_django.html', context)
+        return render(request, template_path, context)
     
     except Exception as e:
         # تسجيل أي أخطاء واظهارها للمستخدم
