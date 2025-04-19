@@ -287,6 +287,7 @@ def admin_reservations(request):
     # استدعاء دالة فحص الحجوزات المنتهية من views.py
     from rental.views import check_expired_confirmations
     import logging
+    from datetime import datetime, timedelta
 
     logger = logging.getLogger(__name__)
 
@@ -302,6 +303,8 @@ def admin_reservations(request):
     status = request.GET.get('status', '')
     payment_status = request.GET.get('payment_status', '')
     search = request.GET.get('search', '')
+    date_range = request.GET.get('date_range', '')
+    sort_by = request.GET.get('sort', 'newest')  # Default sort is newest first
 
     # Start with all reservations
     reservations = Reservation.objects.all()
@@ -313,28 +316,124 @@ def admin_reservations(request):
     if payment_status:
         reservations = reservations.filter(payment_status=payment_status)
 
+    if date_range:
+        if date_range == 'today':
+            today = timezone.now().date()
+            reservations = reservations.filter(created_at__date=today)
+        elif date_range == 'week':
+            week_ago = timezone.now() - timedelta(days=7)
+            reservations = reservations.filter(created_at__gte=week_ago)
+        elif date_range == 'month':
+            month_ago = timezone.now() - timedelta(days=30)
+            reservations = reservations.filter(created_at__gte=month_ago)
+
     if search:
         reservations = reservations.filter(
             Q(user__first_name__icontains=search) | 
             Q(user__last_name__icontains=search) | 
             Q(user__email__icontains=search) | 
             Q(car__make__icontains=search) | 
-            Q(car__model__icontains=search)
+            Q(car__model__icontains=search) |
+            Q(id__icontains=search)
         )
 
-    # Order by creation date descending (newest first)
-    reservations = reservations.order_by('-created_at')
-
-    # Pagination
-    paginator = Paginator(reservations, 10)  # Show 10 reservations per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Apply sorting
+    if sort_by == 'newest':
+        reservations = reservations.order_by('-created_at')
+    elif sort_by == 'oldest':
+        reservations = reservations.order_by('created_at')
+    elif sort_by == 'price_high':
+        reservations = reservations.order_by('-total_price')
+    elif sort_by == 'price_low':
+        reservations = reservations.order_by('total_price')
+    else:
+        # Default to newest first
+        reservations = reservations.order_by('-created_at')
 
     # Get counts for status summary
     pending_count = Reservation.objects.filter(status='pending').count()
     confirmed_count = Reservation.objects.filter(status='confirmed').count()
     completed_count = Reservation.objects.filter(status='completed').count()
     cancelled_count = Reservation.objects.filter(status='cancelled').count()
+    
+    # Calculate differences for the daily stats
+    # Initialize with default values
+    pending_diff = 0
+    confirmed_diff = 0
+    completed_diff = 0
+    cancelled_diff = 0
+    
+    try:
+        # Get yesterday's counts for comparison
+        yesterday = timezone.now().date() - timedelta(days=1)
+        yesterday_start = timezone.make_aware(datetime.combine(yesterday, datetime.min.time()))
+        yesterday_end = timezone.make_aware(datetime.combine(yesterday, datetime.max.time()))
+        
+        yesterday_pending = Reservation.objects.filter(
+            status='pending', 
+            created_at__gte=yesterday_start, 
+            created_at__lte=yesterday_end
+        ).count()
+        
+        yesterday_confirmed = Reservation.objects.filter(
+            status='confirmed', 
+            created_at__gte=yesterday_start, 
+            created_at__lte=yesterday_end
+        ).count()
+        
+        yesterday_completed = Reservation.objects.filter(
+            status='completed', 
+            created_at__gte=yesterday_start, 
+            created_at__lte=yesterday_end
+        ).count()
+        
+        yesterday_cancelled = Reservation.objects.filter(
+            status='cancelled', 
+            created_at__gte=yesterday_start, 
+            created_at__lte=yesterday_end
+        ).count()
+        
+        # Calculate differences with today's counts
+        today = timezone.now().date()
+        today_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+        today_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+        
+        today_pending = Reservation.objects.filter(
+            status='pending', 
+            created_at__gte=today_start, 
+            created_at__lte=today_end
+        ).count()
+        
+        today_confirmed = Reservation.objects.filter(
+            status='confirmed', 
+            created_at__gte=today_start, 
+            created_at__lte=today_end
+        ).count()
+        
+        today_completed = Reservation.objects.filter(
+            status='completed', 
+            created_at__gte=today_start, 
+            created_at__lte=today_end
+        ).count()
+        
+        today_cancelled = Reservation.objects.filter(
+            status='cancelled', 
+            created_at__gte=today_start, 
+            created_at__lte=today_end
+        ).count()
+        
+        pending_diff = today_pending - yesterday_pending
+        confirmed_diff = today_confirmed - yesterday_confirmed
+        completed_diff = today_completed - yesterday_completed
+        cancelled_diff = today_cancelled - yesterday_cancelled
+    except Exception as e:
+        # Log error but continue processing
+        logger.error(f"Error calculating reservation differences: {str(e)}")
+
+    # Pagination
+    paginator = Paginator(reservations, 10)  # Show 10 reservations per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
         'reservations': page_obj,
@@ -342,12 +441,19 @@ def admin_reservations(request):
         'confirmed_count': confirmed_count,
         'completed_count': completed_count,
         'cancelled_count': cancelled_count,
+        'pending_diff': pending_diff,
+        'confirmed_diff': confirmed_diff,
+        'completed_diff': completed_diff,
+        'cancelled_diff': cancelled_diff,
         'status': status,
         'payment_status': payment_status,
         'search': search,
+        'date_range': date_range,
+        'sort_by': sort_by,
     }
 
-    return render(request, 'admin/reservations_django.html', context)
+    # استخدام القالب الاحترافي الجديد
+    return render(request, 'admin/enhanced/reservations_professional.html', context)
 
 @login_required
 @admin_required
