@@ -215,7 +215,7 @@ def admin_dashboard_analytics(request):
     payment_methods_data = [float(method['total'] or 0) for method in payment_by_method]
     payment_methods_count = [method['count'] for method in payment_by_method]
     
-    template_name, context = get_template_by_language(request, 'admin/analytics_dashboard')
+    template_name, context = get_template_by_language(request, 'admin/analytics_dashboard_simplified')
     
     context.update({
         'title': _('Analytics Dashboard'),
