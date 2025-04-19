@@ -400,6 +400,41 @@ def update_reservation_status(request, reservation_id, status):
 
     messages.success(request, status_messages[status])
     return redirect('admin_reservations')
+    
+@login_required
+@admin_required
+def delete_reservation(request, reservation_id):
+    """Admin view to permanently delete a reservation"""
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    
+    if request.method == 'POST':
+        # جلب معلومات الحجز قبل الحذف للتأكيد
+        reservation_id_str = str(reservation_id)
+        car_info = f"{reservation.car.make} {reservation.car.model}"
+        user_info = f"{reservation.user.username}"
+        
+        # تأكد من أن السيارة متاحة إذا كان الحجز قد تم تأكيده
+        if reservation.status == 'confirmed' and not reservation.car.is_available:
+            car = reservation.car
+            car.is_available = True
+            car.save()
+            
+        # حذف الحجز نهائياً
+        reservation.delete()
+        
+        # إضافة رسالة تأكيد
+        messages.success(
+            request, 
+            f"تم حذف الحجز #{reservation_id_str} نهائياً. (السيارة: {car_info}, المستخدم: {user_info})"
+        )
+        return redirect('admin_reservations')
+    
+    # عرض صفحة تأكيد الحذف
+    context = {
+        'reservation': reservation,
+    }
+    
+    return render(request, 'admin/delete_reservation.html', context)
 
 @login_required
 @admin_required
