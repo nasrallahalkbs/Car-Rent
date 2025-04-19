@@ -434,12 +434,15 @@ def delete_reservation(request, reservation_id):
     """Admin view to permanently delete a reservation"""
     reservation = get_object_or_404(Reservation, id=reservation_id)
     
-    if request.method == 'POST':
-        # جلب معلومات الحجز قبل الحذف للتأكيد
-        reservation_id_str = str(reservation_id)
-        car_info = f"{reservation.car.make} {reservation.car.model}"
-        user_info = f"{reservation.user.username}"
-        
+    # جلب معلومات الحجز قبل الحذف للتأكيد
+    reservation_id_str = str(reservation_id)
+    car_info = f"{reservation.car.make} {reservation.car.model}"
+    user_info = f"{reservation.user.username}"
+    
+    # Support both GET and POST requests for flexibility
+    # GET is used from the admin page with JavaScript confirmation
+    # POST would be used from a separate confirmation page if implemented
+    if request.method == 'GET' or request.method == 'POST':
         # تأكد من أن السيارة متاحة إذا كان الحجز قد تم تأكيده
         if reservation.status == 'confirmed' and not reservation.car.is_available:
             car = reservation.car
@@ -456,7 +459,7 @@ def delete_reservation(request, reservation_id):
         )
         return redirect('admin_reservations')
     
-    # عرض صفحة تأكيد الحذف
+    # عرض صفحة تأكيد الحذف - this is a fallback that's not used with the current UI
     context = {
         'reservation': reservation,
     }
