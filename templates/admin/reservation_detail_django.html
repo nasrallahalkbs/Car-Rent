@@ -56,16 +56,16 @@
                     <div>
                         <!-- الإجراءات -->
                         <div class="btn-group" role="group">
-                            <!-- إذا كان الحجز قيد المراجعة، أظهر زر الموافقة -->
+                            <!-- إذا كان الحجز قيد المراجعة، أظهر زر الموافقة - استخدام المسار الجديد -->
                             {% if reservation.status == 'pending' %}
-                            <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="btn btn-success">
+                            <a href="{% url 'confirm_reservation' reservation.id %}" class="btn btn-success">
                                 <i class="fas fa-check ms-1"></i> تأكيد الحجز
                             </a>
                             {% endif %}
 
-                            <!-- إذا لم يكن الحجز ملغياً، أظهر زر الإلغاء -->
+                            <!-- إذا لم يكن الحجز ملغياً، أظهر زر الإلغاء - استخدام المسار الجديد -->
                             {% if reservation.status != 'cancelled' %}
-                            <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="btn btn-warning">
+                            <a href="{% url 'cancel_reservation_admin' reservation.id %}" class="btn btn-warning">
                                 <i class="fas fa-times ms-1"></i> إلغاء الحجز
                             </a>
                             {% endif %}
@@ -330,35 +330,35 @@ function confirmDelete(reservationId) {
 
 // تصحيح مشكلة الأزرار عن طريق التقاط الأحداث
 document.addEventListener('DOMContentLoaded', function() {
-    // زر الموافقة
+    // زر الموافقة - استخدام العناوين الجديدة المباشرة
     const confirmButtons = document.querySelectorAll('a[href*="update_reservation_status"][href*="confirmed"]');
     confirmButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
             const reservation_id = {{ reservation.id }};
-            window.location.href = `/ar/dashboard/reservations/${reservation_id}/confirmed/`;
+            window.location.href = `/ar/dashboard/reservations/${reservation_id}/confirm/`;
         });
     });
 
-    // زر الإلغاء
+    // زر الإلغاء - استخدام العناوين الجديدة المباشرة
     const cancelButtons = document.querySelectorAll('a[href*="update_reservation_status"][href*="cancelled"]');
     cancelButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟')) {
                 const reservation_id = {{ reservation.id }};
-                window.location.href = `/ar/dashboard/reservations/${reservation_id}/cancelled/`;
+                window.location.href = `/ar/dashboard/reservations/${reservation_id}/cancel/`;
             }
         });
     });
 
-    // زر الإكمال
+    // زر الإكمال - استخدام العناوين الجديدة المباشرة
     const completeButtons = document.querySelectorAll('a[href*="update_reservation_status"][href*="completed"]');
     completeButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
             const reservation_id = {{ reservation.id }};
-            window.location.href = `/ar/dashboard/reservations/${reservation_id}/completed/`;
+            window.location.href = `/ar/dashboard/reservations/${reservation_id}/complete/`;
         });
     });
 });
