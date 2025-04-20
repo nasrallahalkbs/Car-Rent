@@ -363,7 +363,7 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    # استخدام التصميم الأصلي
+    # استخدام التصميم الأصلي البسيط
     return render(request, 'admin/reservations_django.html', context)
 
 def admin_analytics(request):
