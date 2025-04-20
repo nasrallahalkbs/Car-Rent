@@ -15,6 +15,8 @@ from datetime import datetime, date, timedelta
 import uuid
 import csv
 import logging
+from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 logger = logging.getLogger(__name__)
 
@@ -283,81 +285,91 @@ def delete_car(request, car_id):
 @login_required
 @admin_required
 def admin_reservations(request):
-    """Admin view to manage reservations"""
-    # استدعاء دالة فحص الحجوزات المنتهية من views.py
-    from rental.views import check_expired_confirmations
-    import logging
-    from datetime import datetime, timedelta
-
-    logger = logging.getLogger(__name__)
-
-    # تحقق من الحجوزات المنتهية قبل عرض الصفحة
-    expired_count = check_expired_confirmations()
-    if expired_count > 0:
-        logger.info(f"Automatically cancelled {expired_count} expired reservations during admin_reservations view.")
-        # إضافة رسالة للمسؤول
-        from django.contrib import messages
-        messages.info(request, f"تم إلغاء {expired_count} حجز منتهي الصلاحية تلقائيًا (بسبب عدم الدفع خلال 24 ساعة).")
-
-    # Get filter values from query parameters
+    # التحقق من صلاحيات المستخدم
+    if not is_admin(request):
+        return redirect('home')
+    
+    # الحصول على معلمات التصفية
     status = request.GET.get('status', '')
     payment_status = request.GET.get('payment_status', '')
+    start_date_str = request.GET.get('start_date', '')
+    end_date_str = request.GET.get('end_date', '')
     search = request.GET.get('search', '')
-    date_range = request.GET.get('date_range', '')
-    sort_by = request.GET.get('sort', 'newest')  # Default sort is newest first
-
-    # Start with all reservations
-    reservations = Reservation.objects.all()
-
-    # Apply filters
+    
+    # تصفية الحجوزات
+    reservations = Reservation.objects.all().order_by('-created_at')
+    
+    # تطبيق التصفية حسب الحالة
     if status:
         reservations = reservations.filter(status=status)
-
+    
+    # تطبيق التصفية حسب حالة الدفع
     if payment_status:
         reservations = reservations.filter(payment_status=payment_status)
-
-    if date_range:
-        if date_range == 'today':
-            today = timezone.now().date()
-            reservations = reservations.filter(created_at__date=today)
-        elif date_range == 'week':
-            week_ago = timezone.now() - timedelta(days=7)
-            reservations = reservations.filter(created_at__gte=week_ago)
-        elif date_range == 'month':
-            month_ago = timezone.now() - timedelta(days=30)
-            reservations = reservations.filter(created_at__gte=month_ago)
-
+    
+    # تطبيق التصفية حسب التاريخ
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            reservations = reservations.filter(pickup_date__gte=start_date)
+        except ValueError:
+            pass
+    
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            reservations = reservations.filter(return_date__lte=end_date)
+        except ValueError:
+            pass
+    
+    # تطبيق البحث
     if search:
         reservations = reservations.filter(
-            Q(user__first_name__icontains=search) | 
-            Q(user__last_name__icontains=search) | 
-            Q(user__email__icontains=search) | 
-            Q(car__make__icontains=search) | 
-            Q(car__model__icontains=search) |
-            Q(id__icontains=search)
+            Q(reservation_number__icontains=search) |
+            Q(user__first_name__icontains=search) |
+            Q(user__last_name__icontains=search) |
+            Q(user__email__icontains=search) |
+            Q(car__make__icontains=search) |
+            Q(car__model__icontains=search)
         )
-
-    # Apply sorting
-    if sort_by == 'newest':
-        reservations = reservations.order_by('-created_at')
-    elif sort_by == 'oldest':
-        reservations = reservations.order_by('created_at')
-    elif sort_by == 'price_high':
-        reservations = reservations.order_by('-total_price')
-    elif sort_by == 'price_low':
-        reservations = reservations.order_by('total_price')
-    else:
-        # Default to newest first
-        reservations = reservations.order_by('-created_at')
-
-    # Get counts for status summary
+    
+    # إحصائيات عدد الحجوزات حسب الحالة
     pending_count = Reservation.objects.filter(status='pending').count()
     confirmed_count = Reservation.objects.filter(status='confirmed').count()
-    completed_count = Reservation.objects.filter(status='completed').count()
     cancelled_count = Reservation.objects.filter(status='cancelled').count()
+    completed_count = Reservation.objects.filter(status='completed').count()
     
-    # Calculate differences for the daily stats
-    # Initialize with default values
+    # ترقيم الصفحات
+    paginator = Paginator(reservations, 10)  # 10 حجوزات في كل صفحة
+    page_number = request.GET.get('page', 1)
+    
+    try:
+        reservations = paginator.page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        reservations = paginator.page(1)
+    
+    # تحديد لغة المستخدم
+    current_language = get_language()
+    is_english = current_language == 'en'
+    
+    context = {
+        'reservations': reservations,
+        'pending_count': pending_count,
+        'confirmed_count': confirmed_count,
+        'cancelled_count': cancelled_count,
+        'completed_count': completed_count,
+        'status': status,
+        'payment_status': payment_status,
+        'start_date': start_date_str,
+        'end_date': end_date_str,
+        'search': search,
+        'is_english': is_english,
+        'is_rtl': current_language == 'ar'
+    }
+    
+    return render(request, 'admin/reservations_django.html', context)
+
+default values
     pending_diff = 0
     confirmed_diff = 0
     completed_diff = 0
