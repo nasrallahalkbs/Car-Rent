@@ -28,6 +28,7 @@ def abs(value):
     Usage: {{ value|abs }}
     """
     try:
-        return abs(value)
+        # Use Python's built-in abs function, not recursively calling this function
+        return __builtins__['abs'](value)
     except (ValueError, TypeError):
         return value
