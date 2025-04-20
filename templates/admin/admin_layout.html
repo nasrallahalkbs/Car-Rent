@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+{% load static %}
+{% load i18n %}
+<html lang="{{ LANGUAGE_CODE }}" {% if is_rtl %}dir="rtl"{% endif %}>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% trans "Admin Dashboard" %} | {% trans "Car Rental" %}{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- RTL Bootstrap if needed -->
+    {% if is_rtl %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    {% endif %}
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- Admin Dashboard Specific Styles -->
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --primary-color: #3b82f6;
+            --primary-color-hover: #2563eb;
+            --sidebar-bg: #1e293b;
+            --sidebar-active: #334155;
+            --text-light: #f8fafc;
+        }
+        
+        body {
+            background-color: #f1f5f9;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .admin-sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            color: var(--text-light);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .admin-main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        [dir="rtl"] .admin-main {
+            margin-left: 0;
+            margin-right: var(--sidebar-width);
+        }
+        
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .logo-icon {
+            font-size: 1.75rem;
+            color: var(--primary-color);
+        }
+        
+        .sidebar-menu {
+            padding: 15px 0;
+        }
+        
+        .sidebar-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .menu-item {
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .menu-item:hover, .menu-item.active {
+            background-color: var(--sidebar-active);
+            color: white;
+        }
+        
+        .menu-icon {
+            width: 24px;
+            text-align: center;
+        }
+        
+        .menu-subheader {
+            padding: 10px 15px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 15px;
+        }
+        
+        .user-section {
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .user-details {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+        
+        .user-role {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .logout-btn {
+            margin-top: 10px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            [dir="rtl"] .admin-sidebar {
+                transform: translateX(100%);
+            }
+            
+            .admin-sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .admin-main {
+                margin-left: 0;
+                margin-right: 0;
+            }
+            
+            .sidebar-toggle {
+                display: block;
+            }
+        }
+        
+        .sidebar-toggle {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1001;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            display: none;
+        }
+        
+        [dir="rtl"] .sidebar-toggle {
+            left: auto;
+            right: 10px;
+        }
+        
+        /* For extra sections */
+        {% block extra_css %}{% endblock %}
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar Toggle Button (Mobile) -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <a href="{% url 'admin_dashboard' %}" class="sidebar-brand">
+                <span class="logo-icon"><i class="fas fa-car"></i></span>
+                {% if is_english %}
+                <span>CarRental Admin</span>
+                {% else %}
+                <span>لوحة تحكم الإدارة</span>
+                {% endif %}
+            </a>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <ul>
+                <li>
+                    <a href="{% url 'admin_dashboard' %}" class="menu-item {% if request.path == '/ar/dashboard/' or request.path == '/en/dashboard/' %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-home"></i></span>
+                        <span>{% trans "Dashboard" %}</span>
+                    </a>
+                </li>
+                
+                <!-- User Management Section -->
+                <div class="menu-subheader">{% trans "User Management" %}</div>
+                <li>
+                    <a href="{% url 'admin_users' %}" class="menu-item {% if 'users' in request.path %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-users"></i></span>
+                        <span>{% trans "Users" %}</span>
+                    </a>
+                </li>
+                
+                <!-- Car Management Section -->
+                <div class="menu-subheader">{% trans "Car Management" %}</div>
+                <li>
+                    <a href="{% url 'admin_cars' %}" class="menu-item {% if 'cars' in request.path and 'categories' not in request.path %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-car"></i></span>
+                        <span>{% trans "Cars" %}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'admin_categories' %}" class="menu-item {% if 'categories' in request.path %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-tags"></i></span>
+                        <span>{% trans "Categories" %}</span>
+                    </a>
+                </li>
+                
+                <!-- Reservation Management Section -->
+                <div class="menu-subheader">{% trans "Reservation Management" %}</div>
+                <li>
+                    <a href="{% url 'admin_reservations' %}" class="menu-item {% if 'reservations' in request.path %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
+                        <span>{% trans "Reservations" %}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'admin_payments' %}" class="menu-item {% if 'payments' in request.path %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-credit-card"></i></span>
+                        <span>{% trans "Payments" %}</span>
+                    </a>
+                </li>
+                
+                <!-- Analytics Section -->
+                <div class="menu-subheader">{% trans "Analytics" %}</div>
+                <li>
+                    <a href="{% url 'admin_analytics' %}" class="menu-item {% if 'analytics' in request.path %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-chart-bar"></i></span>
+                        <span>{% trans "Analytics" %}</span>
+                    </a>
+                </li>
+                
+                <!-- Settings -->
+                <div class="menu-subheader">{% trans "Settings" %}</div>
+                <li>
+                    <a href="{% url 'admin_settings' %}" class="menu-item {% if 'settings' in request.path %}active{% endif %}">
+                        <span class="menu-icon"><i class="fas fa-cogs"></i></span>
+                        <span>{% trans "Settings" %}</span>
+                    </a>
+                </li>
+                
+                <!-- Language Toggle -->
+                <div class="menu-subheader">{% trans "Language" %}</div>
+                <li>
+                    {% if is_english %}
+                    <a href="{% url 'set_language' 'ar' %}?next={{ request.path }}" class="menu-item">
+                        <span class="menu-icon"><i class="fas fa-language"></i></span>
+                        <span>العربية</span>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'set_language' 'en' %}?next={{ request.path }}" class="menu-item">
+                        <span class="menu-icon"><i class="fas fa-language"></i></span>
+                        <span>English</span>
+                    </a>
+                    {% endif %}
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">{{ current_user.first_name }} {{ current_user.last_name }}</p>
+                    <p class="user-role">{% trans "Administrator" %}</p>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="btn logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>{% trans "Logout" %}</span>
+            </a>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Alert Messages -->
+        {% if messages %}
+            <div class="messages mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Page Content -->
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Sidebar Toggle for Mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const adminSidebar = document.getElementById('adminSidebar');
+            
+            if (sidebarToggle && adminSidebar) {
+                sidebarToggle.addEventListener('click', function() {
+                    adminSidebar.classList.toggle('show');
+                });
+            }
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768 && adminSidebar.classList.contains('show')) {
+                    // Check if the click is outside the sidebar and toggle button
+                    if (!adminSidebar.contains(e.target) && e.target !== sidebarToggle) {
+                        adminSidebar.classList.remove('show');
+                    }
+                }
+            });
+        });
+    </script>
+    
+    <!-- Additional JavaScript -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>
