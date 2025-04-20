@@ -452,8 +452,8 @@ def admin_reservations(request):
         'sort_by': sort_by,
     }
 
-    # استخدام القالب الاحترافي الأصلي
-    return render(request, 'admin/enhanced/reservations_professional.html', context)
+    # استخدام القالب الاحترافي الأصلي مع قائمة لوحة التحكم الأصلية
+    return render(request, 'admin/enhanced/reservations_original.html', context)
 
 @login_required
 @admin_required

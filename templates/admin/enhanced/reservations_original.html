@@ -1,0 +1,402 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{% trans "Manage Reservations" %} | {% trans "Admin Dashboard" %}{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">{% trans "Manage Reservations" %}</h1>
+      <p class="mb-0 text-muted">{% trans "View and manage all customer reservations" %}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button onclick="printTable()" class="btn btn-outline-secondary">
+        <i class="fa fa-print"></i> {% trans "Print" %}
+      </button>
+      <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#export-modal">
+        <i class="fa fa-download"></i> {% trans "Export" %}
+      </button>
+    </div>
+  </div>
+
+  <!-- نموذج البحث والتصفية -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-white py-3">
+      <h6 class="m-0 font-weight-bold text-primary">{% trans "Filter Reservations" %}</h6>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row">
+        <div class="col-md-3 mb-3">
+          <label for="status-filter" class="form-label">{% trans "Status" %}</label>
+          <select name="status" id="status-filter" class="form-select">
+            <option value="" {% if not status %}selected{% endif %}>{% trans "All Statuses" %}</option>
+            <option value="pending" {% if status == 'pending' %}selected{% endif %}>{% trans "Pending" %}</option>
+            <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>{% trans "Confirmed" %}</option>
+            <option value="completed" {% if status == 'completed' %}selected{% endif %}>{% trans "Completed" %}</option>
+            <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>{% trans "Cancelled" %}</option>
+            <option value="expired" {% if status == 'expired' %}selected{% endif %}>{% trans "Expired" %}</option>
+          </select>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="payment-status-filter" class="form-label">{% trans "Payment Status" %}</label>
+          <select name="payment_status" id="payment-status-filter" class="form-select">
+            <option value="" {% if not payment_status %}selected{% endif %}>{% trans "All Statuses" %}</option>
+            <option value="pending" {% if payment_status == 'pending' %}selected{% endif %}>{% trans "Pending" %}</option>
+            <option value="paid" {% if payment_status == 'paid' %}selected{% endif %}>{% trans "Paid" %}</option>
+            <option value="refunded" {% if payment_status == 'refunded' %}selected{% endif %}>{% trans "Refunded" %}</option>
+          </select>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="date-range" class="form-label">{% trans "Date Range" %}</label>
+          <select name="date_range" id="date-range" class="form-select">
+            <option value="all" {% if date_range == 'all' %}selected{% endif %}>{% trans "All Time" %}</option>
+            <option value="today" {% if date_range == 'today' %}selected{% endif %}>{% trans "Today" %}</option>
+            <option value="yesterday" {% if date_range == 'yesterday' %}selected{% endif %}>{% trans "Yesterday" %}</option>
+            <option value="this_week" {% if date_range == 'this_week' %}selected{% endif %}>{% trans "This Week" %}</option>
+            <option value="last_week" {% if date_range == 'last_week' %}selected{% endif %}>{% trans "Last Week" %}</option>
+            <option value="this_month" {% if date_range == 'this_month' %}selected{% endif %}>{% trans "This Month" %}</option>
+            <option value="last_month" {% if date_range == 'last_month' %}selected{% endif %}>{% trans "Last Month" %}</option>
+          </select>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label for="search-input" class="form-label">{% trans "Search" %}</label>
+          <div class="input-group">
+            <input type="text" id="search-input" name="search" class="form-control" placeholder="{% trans 'Reservation ID, Name, Email...' %}" value="{{ search }}">
+            <button type="submit" class="btn btn-primary">
+              <i class="fa fa-search"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- جدول الحجوزات -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+      <h6 class="m-0 font-weight-bold text-primary">
+        {% trans "Reservation List" %}
+        {% if filter_applied %}
+        <span class="text-muted font-weight-normal">({{ reservations.paginator.count }} {% trans "results" %})</span>
+        {% endif %}
+      </h6>
+      <div>
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown">
+          <i class="fa fa-sort"></i> {% trans "Sort By" %}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sortDropdown">
+          <li><a class="dropdown-item {% if sort_by == 'created_at' %}active{% endif %}" href="?{{ current_url_params }}&sort_by=created_at">{% trans "Creation Date" %}</a></li>
+          <li><a class="dropdown-item {% if sort_by == '-created_at' %}active{% endif %}" href="?{{ current_url_params }}&sort_by=-created_at">{% trans "Creation Date (Desc)" %}</a></li>
+          <li><a class="dropdown-item {% if sort_by == 'start_date' %}active{% endif %}" href="?{{ current_url_params }}&sort_by=start_date">{% trans "Pickup Date" %}</a></li>
+          <li><a class="dropdown-item {% if sort_by == '-start_date' %}active{% endif %}" href="?{{ current_url_params }}&sort_by=-start_date">{% trans "Pickup Date (Desc)" %}</a></li>
+          <li><a class="dropdown-item {% if sort_by == 'total_price' %}active{% endif %}" href="?{{ current_url_params }}&sort_by=total_price">{% trans "Price" %}</a></li>
+          <li><a class="dropdown-item {% if sort_by == '-total_price' %}active{% endif %}" href="?{{ current_url_params }}&sort_by=-total_price">{% trans "Price (Desc)" %}</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-container table-responsive">
+        {% if reservations %}
+        <table class="table table-striped table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">{% trans "ID" %}</th>
+              <th scope="col">{% trans "Customer" %}</th>
+              <th scope="col">{% trans "Car" %}</th>
+              <th scope="col">{% trans "Pickup Date" %}</th>
+              <th scope="col">{% trans "Return Date" %}</th>
+              <th scope="col">{% trans "Total" %}</th>
+              <th scope="col">{% trans "Status" %}</th>
+              <th scope="col">{% trans "Payment" %}</th>
+              <th scope="col">{% trans "Actions" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reservation in reservations %}
+            <tr>
+              <td class="fw-semibold">{{ reservation.id }}</td>
+              <td>
+                {{ reservation.user.get_full_name|default:reservation.user.username }}
+                <div class="small text-muted">{{ reservation.user.email }}</div>
+              </td>
+              <td>
+                {{ reservation.car.make }} {{ reservation.car.model }}
+                <div class="small text-muted">{{ reservation.car.category }}</div>
+              </td>
+              <td>
+                {% if is_english %}
+                  {{ reservation.start_date|date:"M d, Y" }}
+                {% else %}
+                  {{ reservation.start_date|date:"j F Y" }}
+                {% endif %}
+              </td>
+              <td>
+                {% if is_english %}
+                  {{ reservation.end_date|date:"M d, Y" }}
+                {% else %}
+                  {{ reservation.end_date|date:"j F Y" }}
+                {% endif %}
+              </td>
+              <td class="fw-semibold">
+                ${{ reservation.total_price }}
+              </td>
+              <td>
+                {% if reservation.status == 'pending' %}
+                <span class="badge bg-warning text-dark">{% trans "Pending" %}</span>
+                {% elif reservation.status == 'confirmed' %}
+                <span class="badge bg-info">{% trans "Confirmed" %}</span>
+                {% elif reservation.status == 'completed' %}
+                <span class="badge bg-success">{% trans "Completed" %}</span>
+                {% elif reservation.status == 'cancelled' %}
+                <span class="badge bg-danger">{% trans "Cancelled" %}</span>
+                {% elif reservation.status == 'expired' %}
+                <span class="badge bg-secondary">{% trans "Expired" %}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if reservation.payment_status == 'pending' %}
+                <span class="badge bg-warning text-dark">{% trans "Pending" %}</span>
+                {% elif reservation.payment_status == 'paid' %}
+                <span class="badge bg-success">{% trans "Paid" %}</span>
+                {% elif reservation.payment_status == 'refunded' %}
+                <span class="badge bg-info">{% trans "Refunded" %}</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="actionDropdown{{ reservation.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% trans "Actions" %}
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown{{ reservation.id }}">
+                    <li><a class="dropdown-item" href="{% url 'admin_reservation_detail' reservation.id %}"><i class="fa fa-eye me-2"></i> {% trans "View Details" %}</a></li>
+                    
+                    {% if reservation.status == 'pending' %}
+                    <li><a class="dropdown-item" href="{% url 'update_reservation_status' reservation.id 'confirmed' %}"><i class="fa fa-check me-2"></i> {% trans "Confirm" %}</a></li>
+                    <li><a class="dropdown-item" href="{% url 'update_reservation_status' reservation.id 'cancelled' %}"><i class="fa fa-times me-2"></i> {% trans "Cancel" %}</a></li>
+                    {% endif %}
+                    
+                    {% if reservation.status == 'confirmed' %}
+                    <li><a class="dropdown-item" href="{% url 'update_reservation_status' reservation.id 'completed' %}"><i class="fa fa-check-circle me-2"></i> {% trans "Mark Completed" %}</a></li>
+                    <li><a class="dropdown-item" href="{% url 'update_reservation_status' reservation.id 'cancelled' %}"><i class="fa fa-times me-2"></i> {% trans "Cancel" %}</a></li>
+                    {% endif %}
+                    
+                    {% if reservation.payment_status == 'pending' %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'admin_payment_detail' reservation.id %}"><i class="fa fa-money-bill-wave me-2"></i> {% trans "Payment Details" %}</a></li>
+                    {% endif %}
+                    
+                    {% if reservation.payment_status == 'paid' %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'admin_payment_detail' reservation.id %}"><i class="fa fa-receipt me-2"></i> {% trans "View Payment" %}</a></li>
+                    {% endif %}
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        {% if reservations.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if reservations.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page=1{% if current_url_query %}&{{ current_url_query }}{% endif %}" aria-label="First">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ reservations.previous_page_number }}{% if current_url_query %}&{{ current_url_query }}{% endif %}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <a class="page-link" href="#" aria-label="First">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item disabled">
+              <a class="page-link" href="#" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            {% endif %}
+            
+            {% for i in reservations.paginator.page_range %}
+              {% if reservations.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+              {% elif i > reservations.number|add:'-3' and i < reservations.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if current_url_query %}&{{ current_url_query }}{% endif %}">{{ i }}</a></li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if reservations.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ reservations.next_page_number }}{% if current_url_query %}&{{ current_url_query }}{% endif %}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ reservations.paginator.num_pages }}{% if current_url_query %}&{{ current_url_query }}{% endif %}" aria-label="Last">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+              </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <a class="page-link" href="#" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+            <li class="page-item disabled">
+              <a class="page-link" href="#" aria-label="Last">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+          <i class="fa fa-calendar-times fa-4x text-muted mb-3"></i>
+          <h4>{% trans "No reservations found" %}</h4>
+          <p class="text-muted">{% trans "Try changing your search criteria or check back later" %}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal - Export Reservations -->
+  <div class="modal fade" id="export-modal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exportModalLabel">{% trans "Export Reservations" %}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="export-format" class="form-label">{% trans "Export Format" %}</label>
+            <select id="export-format" class="form-select">
+              <option value="csv">CSV</option>
+              <option value="excel">Excel</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="export-date-range" class="form-label">{% trans "Date Range" %}</label>
+            <select id="export-date-range" class="form-select">
+              <option value="all">{% trans "All Time" %}</option>
+              <option value="today">{% trans "Today" %}</option>
+              <option value="yesterday">{% trans "Yesterday" %}</option>
+              <option value="this_week">{% trans "This Week" %}</option>
+              <option value="last_week">{% trans "Last Week" %}</option>
+              <option value="this_month">{% trans "This Month" %}</option>
+              <option value="last_month">{% trans "Last Month" %}</option>
+              <option value="custom">{% trans "Custom Date Range" %}</option>
+            </select>
+          </div>
+          <div id="custom-date-range" style="display: none;">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="export-start-date" class="form-label">{% trans "Start Date" %}</label>
+                  <input type="date" id="export-start-date" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="export-end-date" class="form-label">{% trans "End Date" %}</label>
+                  <input type="date" id="export-end-date" class="form-control">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="export-status" class="form-label">{% trans "Reservation Status" %}</label>
+            <select id="export-status" class="form-select">
+              <option value="all">{% trans "All Statuses" %}</option>
+              <option value="pending">{% trans "Pending" %}</option>
+              <option value="confirmed">{% trans "Confirmed" %}</option>
+              <option value="completed">{% trans "Completed" %}</option>
+              <option value="cancelled">{% trans "Cancelled" %}</option>
+              <option value="expired">{% trans "Expired" %}</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+          <button type="button" id="export-btn" class="btn btn-primary">{% trans "Export" %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock admin_content %}
+
+{% block scripts %}
+<script>
+// تفعيل زر إظهار/إخفاء القائمة الجانبية
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleBtn = document.getElementById('toggleSidebar');
+  const sidebar = document.querySelector('.admin-sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  
+  if (toggleBtn && sidebar && overlay) {
+    toggleBtn.addEventListener('click', function() {
+      sidebar.classList.toggle('show');
+      if (sidebar.classList.contains('show')) {
+        overlay.classList.remove('d-none');
+      } else {
+        overlay.classList.add('d-none');
+      }
+    });
+    
+    overlay.addEventListener('click', function() {
+      sidebar.classList.remove('show');
+      overlay.classList.add('d-none');
+    });
+  }
+});
+  // Initialize tooltips
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  });
+  
+  // Print table functionality
+  function printTable() {
+    var printContents = document.querySelector('.table-container').innerHTML;
+    var originalContents = document.body.innerHTML;
+    document.body.innerHTML = '<h1 class="text-center mb-4">قائمة الحجوزات</h1>' + printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+    location.reload();
+  }
+  
+  // Export modal functionality
+  document.getElementById('export-date-range').addEventListener('change', function() {
+    if (this.value === 'custom') {
+      document.getElementById('custom-date-range').style.display = 'block';
+    } else {
+      document.getElementById('custom-date-range').style.display = 'none';
+    }
+  });
+  
+  document.getElementById('export-btn').addEventListener('click', function() {
+    // In a real implementation, this would call an API endpoint to generate the export
+    alert('سيتم تحميل الملف بالصيغة المحددة');
+    // Close the modal
+    var modal = bootstrap.Modal.getInstance(document.getElementById('export-modal'));
+    modal.hide();
+  });
+</script>
+{% endblock scripts %}
