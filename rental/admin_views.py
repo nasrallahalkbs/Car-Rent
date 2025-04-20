@@ -435,6 +435,11 @@ def admin_reservations(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # تحديد لغة المستخدم
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
     context = {
         'reservations': page_obj,
         'pending_count': pending_count,
@@ -450,6 +455,9 @@ def admin_reservations(request):
         'search': search,
         'date_range': date_range,
         'sort_by': sort_by,
+        'current_language': current_language,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
     }
 
     # استخدام القالب الاحترافي الأصلي مع قائمة لوحة التحكم الأصلية
