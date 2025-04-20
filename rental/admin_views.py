@@ -363,8 +363,8 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    # استخدام التصميم المحسن مع القائمة الجانبية الثابتة
-    return render(request, 'admin/enhanced/reservations_with_sidebar.html', context)
+    # استخدام التصميم الأصلي
+    return render(request, 'admin/reservations_django.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status
