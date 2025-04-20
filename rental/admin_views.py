@@ -369,105 +369,29 @@ def admin_reservations(request):
     
     return render(request, 'admin/reservations_django.html', context)
 
-default values
-    pending_diff = 0
-    confirmed_diff = 0
-    completed_diff = 0
-    cancelled_diff = 0
+@login_required
+@admin_required
+def admin_analytics(request):
+    # Get all reservations count by status
+    pending_count = Reservation.objects.filter(status='pending').count()
+    confirmed_count = Reservation.objects.filter(status='confirmed').count()
+    completed_count = Reservation.objects.filter(status='completed').count()
+    cancelled_count = Reservation.objects.filter(status='cancelled').count()
     
-    try:
-        # Get yesterday's counts for comparison
-        yesterday = timezone.now().date() - timedelta(days=1)
-        yesterday_start = timezone.make_aware(datetime.combine(yesterday, datetime.min.time()))
-        yesterday_end = timezone.make_aware(datetime.combine(yesterday, datetime.max.time()))
-        
-        yesterday_pending = Reservation.objects.filter(
-            status='pending', 
-            created_at__gte=yesterday_start, 
-            created_at__lte=yesterday_end
-        ).count()
-        
-        yesterday_confirmed = Reservation.objects.filter(
-            status='confirmed', 
-            created_at__gte=yesterday_start, 
-            created_at__lte=yesterday_end
-        ).count()
-        
-        yesterday_completed = Reservation.objects.filter(
-            status='completed', 
-            created_at__gte=yesterday_start, 
-            created_at__lte=yesterday_end
-        ).count()
-        
-        yesterday_cancelled = Reservation.objects.filter(
-            status='cancelled', 
-            created_at__gte=yesterday_start, 
-            created_at__lte=yesterday_end
-        ).count()
-        
-        # Calculate differences with today's counts
-        today = timezone.now().date()
-        today_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
-        today_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
-        
-        today_pending = Reservation.objects.filter(
-            status='pending', 
-            created_at__gte=today_start, 
-            created_at__lte=today_end
-        ).count()
-        
-        today_confirmed = Reservation.objects.filter(
-            status='confirmed', 
-            created_at__gte=today_start, 
-            created_at__lte=today_end
-        ).count()
-        
-        today_completed = Reservation.objects.filter(
-            status='completed', 
-            created_at__gte=today_start, 
-            created_at__lte=today_end
-        ).count()
-        
-        today_cancelled = Reservation.objects.filter(
-            status='cancelled', 
-            created_at__gte=today_start, 
-            created_at__lte=today_end
-        ).count()
-        
-        pending_diff = today_pending - yesterday_pending
-        confirmed_diff = today_confirmed - yesterday_confirmed
-        completed_diff = today_completed - yesterday_completed
-        cancelled_diff = today_cancelled - yesterday_cancelled
-    except Exception as e:
-        # Log error but continue processing
-        logger.error(f"Error calculating reservation differences: {str(e)}")
-
-    # Pagination
-    paginator = Paginator(reservations, 10)  # Show 10 reservations per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
+    # Get all reservations
+    reservations = Reservation.objects.all().order_by('-created_at')
+    
     # تحديد لغة المستخدم
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
     context = {
-        'reservations': page_obj,
+        'reservations': reservations,
         'pending_count': pending_count,
         'confirmed_count': confirmed_count,
         'completed_count': completed_count,
         'cancelled_count': cancelled_count,
-        'pending_diff': pending_diff,
-        'confirmed_diff': confirmed_diff,
-        'completed_diff': completed_diff,
-        'cancelled_diff': cancelled_diff,
-        'status': status,
-        'payment_status': payment_status,
-        'search': search,
-        'date_range': date_range,
-        'sort_by': sort_by,
-        'current_language': current_language,
         'is_english': is_english,
         'is_rtl': is_rtl,
     }
