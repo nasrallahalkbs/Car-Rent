@@ -285,9 +285,7 @@ def delete_car(request, car_id):
 @login_required
 @admin_required
 def admin_reservations(request):
-    # التحقق من صلاحيات المستخدم
-    if not is_admin(request):
-        return redirect('home')
+    # المستخدم مصرح له بالفعل بفضل مصفي @admin_required
     
     # الحصول على معلمات التصفية
     status = request.GET.get('status', '')
