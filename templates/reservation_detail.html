@@ -1,4 +1,5 @@
-<!-- Template updated: 2025-04-20 20:05:42 -->
+<!-- Template updated: 2025-04-20 22:49:30 -->
+<!-- CACHE_BUSTER 1745189370 -->
 {% extends 'layout_django.html' %}
 {% load i18n %}
 {% load static %}
@@ -35,80 +36,103 @@
                 </div>
 
                 <div class="card-body">
-                    <!-- Car Information -->
-                    <div class="car-info mb-4">
-                        <h5 class="section-title mb-3 border-bottom pb-2">معلومات السيارة</h5>
-                        <div class="row align-items-center">
-                            <div class="col-md-3 mb-3 mb-md-0">
-                                {% if reservation.car.image_url %}
-                                <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="img-fluid rounded">
-                                {% else %}
-                                <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="img-fluid rounded">
-                                {% endif %}
-                            </div>
-                            <div class="col-md-9">
-                                <h4 class="car-title">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</h4>
-                                <div class="car-specs mb-2">
-                                    <span class="badge bg-primary me-1"><i class="fas fa-car ms-1"></i>{{ reservation.car.category }}</span>
-                                    <span class="badge bg-secondary me-1"><i class="fas fa-cog ms-1"></i>{{ reservation.car.transmission }}</span>
-                                    <span class="badge bg-info"><i class="fas fa-gas-pump ms-1"></i>{{ reservation.car.fuel_type }}</span>
+                    <!-- معلومات السيارة والعميل في صف واحد -->
+                    <div class="row mb-4">
+                        <!-- معلومات السيارة -->
+                        <div class="col-md-6">
+                            <div class="car-info h-100 border bg-light rounded p-3">
+                                <h5 class="section-title mb-3 border-bottom pb-2">معلومات السيارة</h5>
+                                <div class="text-center mb-3">
+                                    {% if reservation.car.image_url %}
+                                    <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }}" class="img-fluid rounded" style="max-height: 120px;">
+                                    {% else %}
+                                    <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }}" class="img-fluid rounded" style="max-height: 120px;">
+                                    {% endif %}
                                 </div>
-                                <div class="car-features">
-                                    <small class="text-muted">{{ reservation.car.seats }} مقاعد • {{ reservation.car.daily_rate }} دينار/يوم</small>
+                                <div class="text-center mb-3">
+                                    <h5 class="car-title">{{ reservation.car.make }} {{ reservation.car.model }} {{ reservation.car.year }}</h5>
+                                    <div class="car-specs mb-2">
+                                        <span class="badge bg-primary me-1"><i class="fas fa-car ms-1"></i>{{ reservation.car.category }}</span>
+                                        <span class="badge bg-secondary me-1"><i class="fas fa-cog ms-1"></i>{{ reservation.car.transmission }}</span>
+                                        <span class="badge bg-info"><i class="fas fa-gas-pump ms-1"></i>{{ reservation.car.fuel_type }}</span>
+                                    </div>
+                                    <div class="car-features">
+                                        <small class="text-muted">{{ reservation.car.seats }} مقاعد • {{ reservation.car.daily_rate }} دينار/يوم</small>
+                                    </div>
+                                </div>
+                                <div class="car-details mt-3">
+                                    <div class="row mb-2">
+                                        <div class="col-6 text-muted">رقم اللوحة:</div>
+                                        <div class="col-6 fw-bold">{{ reservation.car.license_plate }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- معلومات العميل -->
+                        <div class="col-md-6">
+                            <div class="customer-info h-100 border bg-light rounded p-3">
+                                <h5 class="section-title mb-3 border-bottom pb-2">معلومات العميل</h5>
+                                <div class="card-body p-0">
+                                    <div class="row g-3">
+                                        <div class="col-md-12">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="me-2">
+                                                    <i class="fas fa-user text-primary"></i>
+                                                </div>
+                                                <small class="text-muted">اسم العميل</small>
+                                            </div>
+                                            <div class="fw-semibold">{{ reservation.full_name|default:reservation.user.get_full_name }}</div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="me-2">
+                                                    <i class="fas fa-envelope text-primary"></i>
+                                                </div>
+                                                <small class="text-muted">البريد الإلكتروني</small>
+                                            </div>
+                                            <div class="fw-semibold">{{ reservation.user.email }}</div>
+                                        </div>
+                                        {% if reservation.national_id %}
+                                        <div class="col-md-12">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="me-2">
+                                                    <i class="fas fa-id-card text-primary"></i>
+                                                </div>
+                                                <small class="text-muted">الرقم الوطني</small>
+                                            </div>
+                                            <div class="fw-semibold">{{ reservation.national_id }}</div>
+                                        </div>
+                                        {% endif %}
+                                        {% if reservation.user.phone_number %}
+                                        <div class="col-md-12">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="me-2">
+                                                    <i class="fas fa-phone text-primary"></i>
+                                                </div>
+                                                <small class="text-muted">رقم الهاتف</small>
+                                            </div>
+                                            <div class="fw-semibold">{{ reservation.user.phone_number }}</div>
+                                        </div>
+                                        {% endif %}
+                                        {% if reservation.id_card_image %}
+                                        <div class="col-md-12 mt-2">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="me-2">
+                                                    <i class="fas fa-id-card text-primary"></i>
+                                                </div>
+                                                <small class="text-muted">صورة بطاقة الهوية</small>
+                                            </div>
+                                            <div class="text-center">
+                                                <img src="{{ reservation.id_card_image.url }}" alt="صورة الهوية" class="img-fluid rounded border" style="max-height: 100px;">
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- معلومات العميل -->
-                    <div class="reservation-details mb-4">
-                        <h5 class="section-title mb-3 border-bottom pb-2">معلومات العميل</h5>
-                        <div class="card border-0 bg-light mb-4">
-                            <div class="card-body p-3">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="me-2">
-                                                <i class="fas fa-user text-primary"></i>
-                                            </div>
-                                            <small class="text-muted">اسم العميل</small>
-                                        </div>
-                                        <div class="fw-semibold">{{ reservation.full_name|default:reservation.user.get_full_name }}</div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="me-2">
-                                                <i class="fas fa-envelope text-primary"></i>
-                                            </div>
-                                            <small class="text-muted">البريد الإلكتروني</small>
-                                        </div>
-                                        <div class="fw-semibold">{{ reservation.user.email }}</div>
-                                    </div>
-                                    {% if reservation.national_id %}
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="me-2">
-                                                <i class="fas fa-id-card text-primary"></i>
-                                            </div>
-                                            <small class="text-muted">الرقم الوطني</small>
-                                        </div>
-                                        <div class="fw-semibold">{{ reservation.national_id }}</div>
-                                    </div>
-                                    {% endif %}
-                                    {% if reservation.user.phone_number %}
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="me-2">
-                                                <i class="fas fa-phone text-primary"></i>
-                                            </div>
-                                            <small class="text-muted">رقم الهاتف</small>
-                                        </div>
-                                        <div class="fw-semibold">{{ reservation.user.phone_number }}</div>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
 
                     <!-- Reservation Details -->
                     <div class="reservation-details mb-4">
