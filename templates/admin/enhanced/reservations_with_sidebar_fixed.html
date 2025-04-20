@@ -283,35 +283,37 @@
                   </div>
                 </td>
                 <td>
-                  <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="actionDropdown{{ reservation.id }}" data-bs-toggle="dropdown" aria-expanded="false">
-                      الإجراءات
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown{{ reservation.id }}">
-                      <li><a class="dropdown-item" href="{% url 'update_reservation_status' reservation.id 'view' %}"><i class="fa fa-eye me-2"></i> عرض التفاصيل</a></li>
-                      
-                      {% if reservation.status == 'pending' %}
-                      <li><a class="dropdown-item" href="{% url 'update_reservation_status' reservation.id 'confirmed' %}"><i class="fa fa-check me-2"></i> تأكيد</a></li>
-                      <li><a class="dropdown-item" href="{% url 'update_reservation_status' reservation.id 'cancelled' %}"><i class="fa fa-times me-2"></i> إلغاء</a></li>
-                      {% endif %}
-                      
-                      {% if reservation.status == 'confirmed' %}
-                      <li><a class="dropdown-item" href="{% url 'update_reservation_status' reservation.id 'completed' %}"><i class="fa fa-check-circle me-2"></i> تحديد كمكتمل</a></li>
-                      <li><a class="dropdown-item" href="{% url 'update_reservation_status' reservation.id 'cancelled' %}"><i class="fa fa-times me-2"></i> إلغاء</a></li>
-                      {% endif %}
-                      
-                      {% if reservation.payment_status == 'pending' %}
-                      <li><hr class="dropdown-divider"></li>
-                      <li><a class="dropdown-item" href="/ar/dashboard/payments/{{ reservation.id }}/mark-as-paid/"><i class="fa fa-money-bill me-2"></i> تحديد كمدفوع</a></li>
-                      {% endif %}
-                      
-                      <li><hr class="dropdown-divider"></li>
-                      <li>
-                        <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ reservation.id }}">
-                          <i class="fa fa-trash me-2"></i> حذف الحجز
-                        </a>
-                      </li>
-                    </ul>
+                  <div class="action-buttons d-flex justify-content-center flex-wrap">
+                    <!-- View details button -->
+                    <a href="{% url 'update_reservation_status' reservation.id 'view' %}" class="btn btn-sm btn-primary me-1 mb-1" data-bs-toggle="tooltip" title="عرض التفاصيل">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    
+                    <!-- Confirm reservation button (if pending) -->
+                    {% if reservation.status == 'pending' %}
+                    <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="btn btn-sm btn-success me-1 mb-1" data-bs-toggle="tooltip" title="تأكيد الحجز">
+                      <i class="fas fa-check"></i>
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Complete reservation button (if confirmed) -->
+                    {% if reservation.status == 'confirmed' %}
+                    <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="btn btn-sm btn-info me-1 mb-1" data-bs-toggle="tooltip" title="إكمال الحجز">
+                      <i class="fas fa-flag-checkered"></i>
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Cancel reservation button (if not completed or cancelled) -->
+                    {% if reservation.status != 'completed' and reservation.status != 'cancelled' %}
+                    <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="btn btn-sm btn-warning me-1 mb-1" data-bs-toggle="tooltip" title="إلغاء الحجز">
+                      <i class="fas fa-ban"></i>
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Delete reservation button -->
+                    <a href="#" class="btn btn-sm btn-danger mb-1" data-bs-toggle="modal" data-bs-target="#deleteModal{{ reservation.id }}" title="حذف الحجز">
+                      <i class="fas fa-trash"></i>
+                    </a>
                   </div>
                     
                   <!-- Delete confirmation modal -->
