@@ -391,7 +391,7 @@ def admin_analytics(request):
     }
 
     # استخدام القالب الاحترافي المحسن مع قائمة لوحة التحكم
-    return render(request, 'admin/enhanced/reservations_with_sidebar.html', context)
+    return render(request, 'admin/enhanced/reservations_with_sidebar_fixed.html', context)
 
 @login_required
 @admin_required
