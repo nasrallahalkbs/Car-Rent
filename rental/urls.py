@@ -57,6 +57,8 @@ urlpatterns = [
     path('dashboard/reservations/<int:reservation_id>/complete/', admin_views.complete_reservation, name='complete_reservation'),
     path('dashboard/reservations/<int:reservation_id>/delete/', admin_views.delete_reservation, name='delete_reservation'),
     path('dashboard/reservations/<int:reservation_id>/details/', admin_views.admin_reservation_detail, name='admin_reservation_detail'),
+    # مسار بديل ومكافئ للسماح باستخدام /view/ أيضًا
+    path('dashboard/reservations/<int:reservation_id>/view/', admin_views.admin_reservation_detail, name='admin_reservation_view'),
     path('dashboard/users/', admin_views.admin_users, name='admin_users'),
     path('dashboard/users/add/', admin_views.add_user, name='add_user'),
     path('dashboard/users/<int:user_id>/', admin_views.user_details, name='user_details'),

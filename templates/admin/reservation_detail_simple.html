@@ -1,4 +1,4 @@
-<!-- CACHE_BUSTER 1745190476 --><!-- CACHE_BUSTER 1745172262 --><!-- CACHE_BUSTER 1745165835 --><!-- CACHE_BUSTER 1745111182 -->{% extends "admin_layout.html" %}
+<!-- CACHE_BUSTER 1745193490 -->{% extends "admin_layout.html" %}
 {% load i18n %}
 {% load static %}
 
@@ -24,6 +24,42 @@
                             <p><strong>تاريخ التسليم:</strong> {{ reservation.end_date|date:"Y/m/d" }}</p>
                             <p><strong>عدد الأيام:</strong> {{ days }} يوم</p>
                             <p><strong>المبلغ الإجمالي:</strong> {{ reservation.total_price }} د.ك</p>
+                            
+                            {% if reservation.rental_type %}
+                            <p><strong>نوع الإيجار:</strong>
+                                {% if reservation.rental_type == 'daily' %}
+                                    إيجار يومي
+                                {% elif reservation.rental_type == 'weekly' %}
+                                    إيجار أسبوعي
+                                {% elif reservation.rental_type == 'monthly' %}
+                                    إيجار شهري
+                                {% elif reservation.rental_type == 'corporate' %}
+                                    إيجار شركات
+                                {% elif reservation.rental_type == 'special' %}
+                                    مناسبة خاصة
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                            
+                            {% if reservation.payment_method %}
+                            <p><strong>طريقة الدفع:</strong>
+                                {% if reservation.payment_method == 'credit_card' %}
+                                    بطاقة ائتمان/خصم
+                                {% elif reservation.payment_method == 'paypal' %}
+                                    باي بال
+                                {% elif reservation.payment_method == 'cash' %}
+                                    نقدًا عند الاستلام
+                                {% elif reservation.payment_method == 'bank_transfer' %}
+                                    تحويل بنكي
+                                {% elif reservation.payment_method == 'electronic' %}
+                                    دفع إلكتروني
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                            
+                            {% if reservation.payment_reference %}
+                            <p><strong>مرجع الدفع:</strong> {{ reservation.payment_reference }}</p>
+                            {% endif %}
                             
                             <h5 class="mt-4 mb-3">حالة الحجز</h5>
                             <p>
@@ -51,9 +87,42 @@
                         
                         <div class="col-md-6">
                             <h5 class="mb-3">معلومات العميل</h5>
-                            <p><strong>الاسم:</strong> {{ reservation.user.get_full_name }}</p>
+                            <p><strong>الاسم:</strong> {{ reservation.full_name|default:reservation.user.get_full_name }}</p>
                             <p><strong>البريد الإلكتروني:</strong> {{ reservation.user.email }}</p>
                             <p><strong>اسم المستخدم:</strong> {{ reservation.user.username }}</p>
+                            
+                            {% if reservation.national_id %}
+                            <p><strong>رقم الهوية الوطنية:</strong> {{ reservation.national_id }}</p>
+                            {% endif %}
+                            
+                            {% if reservation.guarantee_type %}
+                            <p><strong>نوع الضمان:</strong> 
+                                {% if reservation.guarantee_type == 'id_card' %}
+                                    بطاقة الهوية الوطنية
+                                {% elif reservation.guarantee_type == 'passport' %}
+                                    جواز السفر
+                                {% elif reservation.guarantee_type == 'driving_license' %}
+                                    رخصة القيادة
+                                {% elif reservation.guarantee_type == 'deposit' %}
+                                    وديعة تأمين
+                                {% elif reservation.guarantee_type == 'credit_card' %}
+                                    بطاقة ائتمان
+                                {% elif reservation.guarantee_type == 'property_doc' %}
+                                    وثيقة ملكية عقار
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                            
+                            {% if reservation.guarantee_details %}
+                            <p><strong>تفاصيل الضمان:</strong> {{ reservation.guarantee_details }}</p>
+                            {% endif %}
+                            
+                            {% if reservation.id_card_image %}
+                            <div class="mb-3">
+                                <p><strong>صورة الهوية:</strong></p>
+                                <img src="{{ reservation.id_card_image.url }}" class="img-fluid img-thumbnail" style="max-width: 300px;" alt="صورة الهوية">
+                            </div>
+                            {% endif %}
 
                             <h5 class="mt-4 mb-3">معلومات السيارة</h5>
                             <p><strong>السيارة:</strong> {{ reservation.car.make }} {{ reservation.car.model }} ({{ reservation.car.year }})</p>
