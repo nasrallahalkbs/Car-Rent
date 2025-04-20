@@ -285,6 +285,10 @@ def delete_car(request, car_id):
 @login_required
 @admin_required
 def admin_reservations(request):
+    # التحقق من صلاحيات المستخدم
+    if not is_admin(request):
+        return redirect('home')
+    
     # الحصول على معلمات التصفية
     status = request.GET.get('status', '')
     payment_status = request.GET.get('payment_status', '')
@@ -363,7 +367,6 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    # استخدام التصميم الأصلي البسيط
     return render(request, 'admin/reservations_django.html', context)
 
 def admin_analytics(request):
