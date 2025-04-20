@@ -579,9 +579,9 @@ def admin_reservation_detail(request, reservation_id):
                     context['payment_reference'] = line.split('رقم المرجع:')[1].strip()
                     break
         
-        # استخدام قالب التصميم الاحترافي
-        print(f"DIAGNOSTIC: Rendering professional template")
-        return render(request, 'admin/reservation_detail_professional.html', context)
+        # استخدام قالب التصميم الاحترافي المصحح
+        print(f"DIAGNOSTIC: Rendering fixed professional template")
+        return render(request, 'admin/reservation_detail_fix.html', context)
     
     except Exception as e:
         # تسجيل أي أخطاء واظهارها للمستخدم بشكل مفصل
