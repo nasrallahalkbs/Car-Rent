@@ -4,6 +4,117 @@
 
 {% block title %}تفاصيل الحجز - {{ reservation.id }}{% endblock %}
 
+{% block styles %}
+<style>
+    /* تنسيقات الأزرار الشفافة */
+    .transparent-btn {
+        background-color: transparent;
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        backdrop-filter: blur(5px);
+    }
+
+    .transparent-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-color: rgba(0,0,0,0.2);
+    }
+
+    .transparent-btn:active {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    }
+
+    .transparent-btn-circle {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border-radius: 50%;
+        background-color: transparent;
+        border: 1px solid transparent;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        backdrop-filter: blur(5px);
+    }
+
+    .transparent-btn-circle::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: currentColor;
+        border-radius: 50%;
+        opacity: 0.08;
+        z-index: -1;
+        transform: scale(0);
+        transition: all 0.3s ease;
+    }
+
+    .transparent-btn-circle:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-color: rgba(0,0,0,0.05);
+    }
+
+    .transparent-btn-circle:hover::before {
+        transform: scale(1);
+        opacity: 0.12;
+    }
+
+    .transparent-btn-circle:active {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    }
+
+    .transparent-btn-circle i {
+        margin-left: 0;
+        font-size: 1rem;
+    }
+
+    /* تنسيقات الألوان للأزرار */
+    .transparent-btn-primary {
+        color: #0d6efd;
+    }
+
+    .transparent-btn-success {
+        color: #198754;
+    }
+
+    .transparent-btn-info {
+        color: #0dcaf0;
+    }
+
+    .transparent-btn-warning {
+        color: #ffc107;
+    }
+
+    .transparent-btn-danger {
+        color: #dc3545;
+    }
+
+    .transparent-btn-secondary {
+        color: #6c757d;
+    }
+
+    /* تعديل مجموعة الأزرار */
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <nav aria-label="breadcrumb" class="mb-4">
@@ -55,37 +166,37 @@
                     </div>
                     <div>
                         <!-- الإجراءات -->
-                        <div class="btn-group" role="group">
+                        <div class="action-buttons">
                             <!-- إذا كان الحجز قيد المراجعة، أظهر زر الموافقة - استخدام المسار الجديد -->
                             {% if reservation.status == 'pending' %}
-                            <a href="{% url 'confirm_reservation' reservation.id %}" class="btn btn-success">
+                            <a href="{% url 'confirm_reservation' reservation.id %}" class="transparent-btn transparent-btn-success">
                                 <i class="fas fa-check ms-1"></i> تأكيد الحجز
                             </a>
                             {% endif %}
 
                             <!-- إذا لم يكن الحجز ملغياً، أظهر زر الإلغاء - استخدام المسار الجديد -->
                             {% if reservation.status != 'cancelled' %}
-                            <a href="{% url 'cancel_reservation_admin' reservation.id %}" class="btn btn-warning">
+                            <a href="{% url 'cancel_reservation_admin' reservation.id %}" class="transparent-btn transparent-btn-warning">
                                 <i class="fas fa-times ms-1"></i> إلغاء الحجز
                             </a>
                             {% endif %}
 
                             <!-- إذا كان الحجز مؤكداً وغير مدفوع، أظهر زر وضع علامة مدفوع -->
                             {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                            <a href="{% url 'mark_as_paid' payment_id=reservation.id %}" class="btn btn-primary">
+                            <a href="{% url 'mark_as_paid' payment_id=reservation.id %}" class="transparent-btn transparent-btn-primary">
                                 <i class="fas fa-money-bill ms-1"></i> تعيين كمدفوع
                             </a>
                             {% endif %}
 
                             <!-- إذا كان الحجز مؤكداً ومدفوعاً، أظهر زر الإكمال - استخدام المسار الجديد -->
                             {% if reservation.status == 'confirmed' and reservation.payment_status == 'paid' %}
-                            <a href="{% url 'complete_reservation' reservation.id %}" class="btn btn-info">
+                            <a href="{% url 'complete_reservation' reservation.id %}" class="transparent-btn transparent-btn-info">
                                 <i class="fas fa-flag-checkered ms-1"></i> تعيين كمكتمل
                             </a>
                             {% endif %}
 
                             <!-- زر الحذف النهائي (مرئي دائماً) -->
-                            <a href="javascript:void(0);" onclick="confirmDelete({{ reservation.id }})" class="btn btn-danger" id="deleteBtn">
+                            <a href="javascript:void(0);" onclick="confirmDelete({{ reservation.id }})" class="transparent-btn transparent-btn-danger" id="deleteBtn">
                                 <i class="fas fa-trash-alt ms-1"></i> حذف نهائي
                             </a>
                         </div>
@@ -198,7 +309,7 @@
                             </p>
                         </div>
                         <div class="col-md-4 text-end">
-                            <a href="{% url 'user_details' user_id=reservation.user.id %}" class="btn btn-outline-primary">
+                            <a href="{% url 'user_details' user_id=reservation.user.id %}" class="transparent-btn transparent-btn-primary">
                                 <i class="fas fa-user ms-1"></i> عرض الملف الشخصي
                             </a>
                         </div>
@@ -210,7 +321,7 @@
                         <div class="col-md-12">
                             <h6>صورة الهوية</h6>
                             <div class="mt-2">
-                                <a href="{{ reservation.id_card_image.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                <a href="{{ reservation.id_card_image.url }}" target="_blank" class="transparent-btn transparent-btn-secondary">
                                     <i class="fas fa-id-card ms-1"></i> عرض صورة الهوية
                                 </a>
                             </div>
