@@ -363,7 +363,7 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    return render(request, 'admin/enhanced/reservations_original.html', context)
+    return render(request, 'admin/enhanced/reservations_professional.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status
@@ -390,8 +390,8 @@ def admin_analytics(request):
         'is_rtl': is_rtl,
     }
 
-    # استخدام القالب الاحترافي الأصلي مع قائمة لوحة التحكم الأصلية
-    return render(request, 'admin/enhanced/reservations_original.html', context)
+    # استخدام القالب الاحترافي المحسن مع قائمة لوحة التحكم
+    return render(request, 'admin/enhanced/reservations_professional.html', context)
 
 @login_required
 @admin_required
