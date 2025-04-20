@@ -5,6 +5,161 @@
 
 {% block title %}{% trans "Manage Reservations" %} | {% trans "Admin Dashboard" %}{% endblock %}
 
+{% block styles %}
+<style>
+  .reservation-card {
+    transition: all 0.2s ease;
+    border-radius: 12px;
+  }
+  .reservation-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-weight: 500;
+    font-size: 0.85rem;
+  }
+  .notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 10px;
+    width: 20px;
+    height: 20px;
+    background: #ff5722;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dropdown-menu-custom {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    padding: 10px;
+  }
+  .dropdown-item {
+    border-radius: 8px;
+    padding: 8px 15px;
+    margin-bottom: 3px;
+  }
+  .dropdown-item:active, .dropdown-item:focus {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+  }
+  .dropdown-item i {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    margin-left: 8px;
+  }
+  .action-btn {
+    border-radius: 8px;
+    min-width: 40px;
+    height: 36px;
+    padding: 0.375rem 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    border-radius: 20px;
+    margin-right: 4px;
+  }
+  .action-buttons .btn i {
+    margin-left: 4px;
+  }
+  .summary-card {
+    border-radius: 15px;
+    overflow: hidden;
+    border: none;
+    transition: all 0.3s ease;
+  }
+  .summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  .summary-card .card-body {
+    padding: 20px;
+  }
+  .summary-card .icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .filters-bar {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  .filters-bar .form-select, 
+  .filters-bar .form-control {
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+  }
+  .table thead th {
+    font-weight: 600;
+    border-top: none;
+    border-bottom: 2px solid #eaeaea;
+  }
+  .empty-state {
+    padding: 40px 0;
+  }
+  .table-container {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .customer-info,
+  .car-info {
+    display: flex;
+    align-items: center;
+  }
+  .customer-avatar,
+  .car-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    flex-shrink: 0;
+  }
+  .table thead th {
+    white-space: nowrap;
+  }
+  .quick-indicators {
+    margin-bottom: 20px;
+  }
+  .stats-title {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-bottom: 5px;
+  }
+  .stats-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0;
+  }
+  .search-box {
+    position: relative;
+  }
+  .search-box i {
+    position: absolute;
+    left: 12px;
+    top: 10px;
+    color: #999;
+  }
+</style>
+{% endblock %}
+
 {% block admin_content %}
 <div class="container-fluid px-4 py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -13,12 +168,100 @@
       <p class="mb-0 text-muted">{% trans "View and manage all customer reservations" %}</p>
     </div>
     <div class="d-flex gap-2">
-      <button onclick="printTable()" class="btn btn-outline-secondary">
+      <button onclick="printTable()" class="btn btn-outline-secondary rounded-pill">
         <i class="fa fa-print"></i> {% trans "Print" %}
       </button>
-      <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#export-modal">
+      <button class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#export-modal">
         <i class="fa fa-download"></i> {% trans "Export" %}
       </button>
+    </div>
+  </div>
+  
+  <!-- بطاقات الإحصائيات -->
+  <div class="row quick-indicators">
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="summary-card card shadow-sm h-100">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <p class="stats-title">{% trans "Pending" %}</p>
+              <h3 class="stats-value">{{ pending_count }}</h3>
+              <p class="mb-0 small text-muted">
+                <span class="{% if pending_diff > 0 %}text-success{% elif pending_diff < 0 %}text-danger{% endif %}">
+                  {% if pending_diff > 0 %}<i class="fas fa-arrow-up"></i> {{ pending_diff }}{% elif pending_diff < 0 %}<i class="fas fa-arrow-down"></i> {% with pending_diff_abs=pending_diff|abs %}{{ pending_diff_abs }}{% endwith %}{% else %}0{% endif %}
+                </span>
+                <span class="ms-1">{% trans "since yesterday" %}</span>
+              </p>
+            </div>
+            <div class="icon-box bg-warning bg-opacity-10 text-warning">
+              <i class="fas fa-hourglass-half fa-fw fa-lg"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="summary-card card shadow-sm h-100">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <p class="stats-title">{% trans "Confirmed" %}</p>
+              <h3 class="stats-value">{{ confirmed_count }}</h3>
+              <p class="mb-0 small text-muted">
+                <span class="{% if confirmed_diff > 0 %}text-success{% elif confirmed_diff < 0 %}text-danger{% endif %}">
+                  {% if confirmed_diff > 0 %}<i class="fas fa-arrow-up"></i> {{ confirmed_diff }}{% elif confirmed_diff < 0 %}<i class="fas fa-arrow-down"></i> {% with confirmed_diff_abs=confirmed_diff|abs %}{{ confirmed_diff_abs }}{% endwith %}{% else %}0{% endif %}
+                </span>
+                <span class="ms-1">{% trans "since yesterday" %}</span>
+              </p>
+            </div>
+            <div class="icon-box bg-success bg-opacity-10 text-success">
+              <i class="fas fa-check-circle fa-fw fa-lg"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="summary-card card shadow-sm h-100">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <p class="stats-title">{% trans "Completed" %}</p>
+              <h3 class="stats-value">{{ completed_count }}</h3>
+              <p class="mb-0 small text-muted">
+                <span class="{% if completed_diff > 0 %}text-success{% elif completed_diff < 0 %}text-danger{% endif %}">
+                  {% if completed_diff > 0 %}<i class="fas fa-arrow-up"></i> {{ completed_diff }}{% elif completed_diff < 0 %}<i class="fas fa-arrow-down"></i> {% with completed_diff_abs=completed_diff|abs %}{{ completed_diff_abs }}{% endwith %}{% else %}0{% endif %}
+                </span>
+                <span class="ms-1">{% trans "since yesterday" %}</span>
+              </p>
+            </div>
+            <div class="icon-box bg-info bg-opacity-10 text-info">
+              <i class="fas fa-flag-checkered fa-fw fa-lg"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="summary-card card shadow-sm h-100">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <p class="stats-title">{% trans "Cancelled" %}</p>
+              <h3 class="stats-value">{{ cancelled_count }}</h3>
+              <p class="mb-0 small text-muted">
+                <span class="{% if cancelled_diff > 0 %}text-danger{% elif cancelled_diff < 0 %}text-success{% endif %}">
+                  {% if cancelled_diff > 0 %}<i class="fas fa-arrow-up"></i> {{ cancelled_diff }}{% elif cancelled_diff < 0 %}<i class="fas fa-arrow-down"></i> {% with cancelled_diff_abs=cancelled_diff|abs %}{{ cancelled_diff_abs }}{% endwith %}{% else %}0{% endif %}
+                </span>
+                <span class="ms-1">{% trans "since yesterday" %}</span>
+              </p>
+            </div>
+            <div class="icon-box bg-danger bg-opacity-10 text-danger">
+              <i class="fas fa-ban fa-fw fa-lg"></i>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
