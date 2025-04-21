@@ -40,7 +40,7 @@ urlpatterns = [
     path('payment-test/', lambda request: render(request, 'payment_test.html'), name='payment_test'),
     path('favorites/', views.favorite_cars, name='favorite_cars'),
     path('favorites/toggle/<int:car_id>/', views.toggle_favorite, name='toggle_favorite'),
-    
+
     # API endpoints
     path('api/car/<int:car_id>/unavailable-dates/', views.get_unavailable_dates_api, name='get_unavailable_dates_api'),
     # Admin views
@@ -75,7 +75,7 @@ urlpatterns = [
     # Analytics Routes
     path('dashboard/analytics/', analytics_views.admin_dashboard_analytics, name='admin_dashboard_analytics'),
     path('dashboard/analytics/reports/', analytics_views.admin_payment_analytics, name='admin_payment_analytics'),
-    
+
     # مسارات نظام الأرشيف الإلكتروني
     path('dashboard/archive/', admin_views.admin_archive, name='admin_archive'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
@@ -84,7 +84,7 @@ urlpatterns = [
     path('dashboard/archive/<int:document_id>/delete/', admin_views.admin_archive_delete, name='admin_archive_delete'),
     path('dashboard/archive/<int:document_id>/download/', admin_views.admin_archive_download, name='admin_archive_download'),
     path('dashboard/archive/<int:document_id>/view/', admin_views.admin_archive_view, name='admin_archive_view'),
-    
+
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
     path('csrf-debug-page/', csrf_debug_page, name='csrf_debug_page'),

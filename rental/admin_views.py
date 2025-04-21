@@ -547,6 +547,270 @@ def admin_reservation_detail(request, reservation_id):
         
         # تحديد لغة المستخدم
         from django.utils.translation import get_language
+
+# وظائف الأرشيف الإلكتروني
+@login_required
+def archive_list(request):
+    """عرض قائمة الوثائق المؤرشفة"""
+    # التحقق من أن المستخدم مسؤول
+    if not request.user.is_admin:
+        messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
+        return redirect('index')
+    
+    # البحث والتصفية
+    search_query = request.GET.get('search', '')
+    document_type = request.GET.get('document_type', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # استعلام قاعدة البيانات
+    documents = Document.objects.all().order_by('-created_at')
+    
+    # تطبيق عوامل التصفية
+    if search_query:
+        documents = documents.filter(
+            Q(title__icontains=search_query) |
+            Q(reference_number__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(tags__icontains=search_query)
+        )
+    
+    if document_type:
+        documents = documents.filter(document_type=document_type)
+    
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            documents = documents.filter(document_date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            documents = documents.filter(document_date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    # الحصول على إحصائيات الأرشيف
+    stats = {
+        'total_documents': Document.objects.count(),
+        'contracts': Document.objects.filter(document_type='contract').count(),
+        'receipts': Document.objects.filter(document_type='receipt').count(),
+        'custody': Document.objects.filter(document_type='custody').count(),
+        'custody_release': Document.objects.filter(document_type='custody_release').count(),
+        'official_documents': Document.objects.filter(document_type='official_document').count(),
+        'other': Document.objects.filter(document_type='other').count(),
+    }
+    
+    context = {
+        'documents': documents,
+        'stats': stats,
+        'search_query': search_query,
+        'document_type': document_type,
+        'date_from': date_from,
+        'date_to': date_to,
+        'document_type_choices': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_choices': Document.RELATED_TO_CHOICES,
+    }
+    
+    # عرض القالب
+    return render(request, 'admin/archive/documents.html', context)
+
+@login_required
+def add_document(request):
+    """إضافة وثيقة جديدة إلى الأرشيف"""
+    # التحقق من أن المستخدم مسؤول
+    if not request.user.is_admin:
+        messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
+        return redirect('index')
+    
+    if request.method == 'POST':
+        # معالجة نموذج إضافة وثيقة
+        title = request.POST.get('title')
+        document_type = request.POST.get('document_type')
+        description = request.POST.get('description')
+        related_to = request.POST.get('related_to')
+        document_date = request.POST.get('document_date')
+        expiry_date = request.POST.get('expiry_date')
+        tags = request.POST.get('tags')
+        
+        # استخراج المعرفات المرتبطة
+        reservation_id = request.POST.get('reservation_id')
+        car_id = request.POST.get('car_id')
+        user_id = request.POST.get('user_id')
+        reference_number = request.POST.get('reference_number')
+        
+        # إنشاء كائن الوثيقة
+        document = Document(
+            title=title,
+            document_type=document_type,
+            description=description,
+            related_to=related_to,
+            tags=tags,
+            reference_number=reference_number,
+            added_by=request.user
+        )
+        
+        # ضبط التواريخ
+        if document_date:
+            try:
+                document.document_date = datetime.strptime(document_date, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        if expiry_date:
+            try:
+                document.expiry_date = datetime.strptime(expiry_date, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        # ضبط العلاقات
+        if reservation_id:
+            document.reservation_id = reservation_id
+        
+        if car_id:
+            document.car_id = car_id
+        
+        if user_id:
+            document.user_id = user_id
+        
+        # حفظ ملف الوثيقة
+        if 'file' in request.FILES:
+            document.file = request.FILES['file']
+        
+        # حفظ الوثيقة
+        document.save()
+        
+        messages.success(request, "تمت إضافة الوثيقة بنجاح")
+        return redirect('admin_archive')
+    
+    # نموذج إضافة وثيقة جديدة
+    context = {
+        'document_type_choices': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_choices': Document.RELATED_TO_CHOICES,
+        'reservations': Reservation.objects.filter(status__in=['confirmed', 'completed']).order_by('-created_at')[:50],
+        'cars': Car.objects.all().order_by('make'),
+        'users': User.objects.all().order_by('username'),
+    }
+    
+    return render(request, 'admin/archive/add_document.html', context)
+
+@login_required
+def document_detail(request, document_id):
+    """عرض تفاصيل وثيقة"""
+    # التحقق من أن المستخدم مسؤول
+    if not request.user.is_admin:
+        messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
+        return redirect('index')
+    
+    document = get_object_or_404(Document, id=document_id)
+    
+    context = {
+        'document': document
+    }
+    
+    return render(request, 'admin/archive/document_detail.html', context)
+
+@login_required
+def edit_document(request, document_id):
+    """تعديل وثيقة"""
+    # التحقق من أن المستخدم مسؤول
+    if not request.user.is_admin:
+        messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
+        return redirect('index')
+    
+    document = get_object_or_404(Document, id=document_id)
+    
+    if request.method == 'POST':
+        # تحديث معلومات الوثيقة
+        document.title = request.POST.get('title')
+        document.document_type = request.POST.get('document_type')
+        document.description = request.POST.get('description')
+        document.related_to = request.POST.get('related_to')
+        document.tags = request.POST.get('tags')
+        document.reference_number = request.POST.get('reference_number')
+        
+        # ضبط التواريخ
+        document_date = request.POST.get('document_date')
+        expiry_date = request.POST.get('expiry_date')
+        
+        if document_date:
+            try:
+                document.document_date = datetime.strptime(document_date, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        if expiry_date:
+            try:
+                document.expiry_date = datetime.strptime(expiry_date, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        # ضبط العلاقات
+        reservation_id = request.POST.get('reservation_id')
+        car_id = request.POST.get('car_id')
+        user_id = request.POST.get('user_id')
+        
+        if reservation_id:
+            document.reservation_id = reservation_id
+        else:
+            document.reservation = None
+        
+        if car_id:
+            document.car_id = car_id
+        else:
+            document.car = None
+        
+        if user_id:
+            document.user_id = user_id
+        else:
+            document.user = None
+        
+        # تحديث ملف الوثيقة إذا تم تحميل ملف جديد
+        if 'file' in request.FILES:
+            document.file = request.FILES['file']
+        
+        # حفظ التعديلات
+        document.save()
+        
+        messages.success(request, "تم تحديث الوثيقة بنجاح")
+        return redirect('admin_document_detail', document_id=document.id)
+    
+    # نموذج تعديل الوثيقة
+    context = {
+        'document': document,
+        'document_type_choices': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_choices': Document.RELATED_TO_CHOICES,
+        'reservations': Reservation.objects.filter(status__in=['confirmed', 'completed']).order_by('-created_at')[:50],
+        'cars': Car.objects.all().order_by('make'),
+        'users': User.objects.all().order_by('username'),
+    }
+    
+    return render(request, 'admin/archive/edit_document.html', context)
+
+@login_required
+def delete_document(request, document_id):
+    """حذف وثيقة"""
+    # التحقق من أن المستخدم مسؤول
+    if not request.user.is_admin:
+        messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
+        return redirect('index')
+    
+    document = get_object_or_404(Document, id=document_id)
+    
+    if request.method == 'POST':
+        # حذف الوثيقة
+        document.delete()
+        messages.success(request, "تم حذف الوثيقة بنجاح")
+        return redirect('admin_archive')
+    
+    context = {
+        'document': document
+    }
+    
+    return render(request, 'admin/archive/delete_document.html', context)
+
         current_language = get_language()
         is_english = current_language == 'en'
         is_rtl = current_language == 'ar'

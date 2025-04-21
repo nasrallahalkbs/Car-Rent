@@ -562,3 +562,279 @@
     });
 </script>
 {% endblock %}
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}تعديل الوثيقة - {{ document.title }}{% endblock %}
+
+{% block additional_head %}
+<style>
+    .form-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .form-section-title {
+        border-bottom: 2px solid #e3e6f0;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .document-preview {
+        border: 2px dashed #ccc;
+        padding: 20px;
+        text-align: center;
+        margin-top: 20px;
+        border-radius: 10px;
+    }
+    
+    .current-file {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">تعديل الوثيقة</h1>
+        <div>
+            <a href="{% url 'admin_document_detail' document.id %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-right fa-sm text-white-50 ms-1"></i> العودة للتفاصيل
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- معلومات المستند الأساسية -->
+                <div class="form-section">
+                    <h5 class="form-section-title">معلومات المستند الأساسية</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="title" class="form-label">عنوان المستند *</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ document.title }}" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="document_type" class="form-label">نوع المستند *</label>
+                            <select class="form-select" id="document_type" name="document_type" required>
+                                <option value="">اختر نوع المستند</option>
+                                {% for type_code, type_name in document_type_choices %}
+                                <option value="{{ type_code }}" {% if document.document_type == type_code %}selected{% endif %}>{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="reference_number" class="form-label">الرقم المرجعي</label>
+                            <input type="text" class="form-control" id="reference_number" name="reference_number" value="{{ document.reference_number }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="description" class="form-label">وصف المستند</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ document.description }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ملف المستند -->
+                <div class="form-section">
+                    <h5 class="form-section-title">ملف المستند</h5>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="current-file">
+                                <div class="d-flex align-items-center">
+                                    {% if document.is_image %}
+                                    <img src="{{ document.file.url }}" alt="{{ document.title }}" style="max-height: 100px; max-width: 100px;" class="me-3">
+                                    {% elif document.is_pdf %}
+                                    <i class="far fa-file-pdf fa-3x text-danger me-3"></i>
+                                    {% else %}
+                                    <i class="far fa-file fa-3x me-3"></i>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0">{{ document.file.name|slice:"25:" }}</h6>
+                                        <p class="text-muted mb-0">الحجم: {{ document.file_size_display }}</p>
+                                        <a href="{{ document.file.url }}" class="btn btn-sm btn-outline-primary mt-2" target="_blank">معاينة الملف</a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <label for="file" class="form-label">تغيير الملف</label>
+                            <input type="file" class="form-control" id="file" name="file">
+                            <small class="text-muted">اترك هذا الحقل فارغًا للاحتفاظ بالملف الحالي. الملفات المدعومة: PDF, JPG, PNG, DOCX (الحد الأقصى: 10 ميجابايت)</small>
+                        </div>
+                    </div>
+                    <div class="document-preview" id="filePreview">
+                        <i class="fas fa-upload fa-3x mb-3"></i>
+                        <p>اسحب الملف هنا أو انقر للاختيار</p>
+                    </div>
+                </div>
+                
+                <!-- تواريخ المستند -->
+                <div class="form-section">
+                    <h5 class="form-section-title">تواريخ المستند</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="document_date" class="form-label">تاريخ المستند *</label>
+                            <input type="date" class="form-control" id="document_date" name="document_date" value="{{ document.document_date|date:'Y-m-d' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="expiry_date" class="form-label">تاريخ انتهاء الصلاحية</label>
+                            <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="{% if document.expiry_date %}{{ document.expiry_date|date:'Y-m-d' }}{% endif %}">
+                            <small class="text-muted">اتركه فارغاً إذا كان المستند غير محدد المدة</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- علاقات المستند -->
+                <div class="form-section">
+                    <h5 class="form-section-title">علاقات المستند</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="related_to" class="form-label">متعلق بـ *</label>
+                            <select class="form-select" id="related_to" name="related_to" required>
+                                <option value="">اختر نوع العلاقة</option>
+                                {% for relation_code, relation_name in related_to_choices %}
+                                <option value="{{ relation_code }}" {% if document.related_to == relation_code %}selected{% endif %}>{{ relation_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3 relation-field" id="reservation_relation">
+                            <label for="reservation_id" class="form-label">الحجز المرتبط</label>
+                            <select class="form-select" id="reservation_id" name="reservation_id">
+                                <option value="">اختر حجزًا</option>
+                                {% for reservation in reservations %}
+                                <option value="{{ reservation.id }}" {% if document.reservation and document.reservation.id == reservation.id %}selected{% endif %}>{{ reservation.reservation_number }} - {{ reservation.car }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3 relation-field" id="car_relation">
+                            <label for="car_id" class="form-label">السيارة المرتبطة</label>
+                            <select class="form-select" id="car_id" name="car_id">
+                                <option value="">اختر سيارة</option>
+                                {% for car in cars %}
+                                <option value="{{ car.id }}" {% if document.car and document.car.id == car.id %}selected{% endif %}>{{ car }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3 relation-field" id="user_relation">
+                            <label for="user_id" class="form-label">المستخدم المرتبط</label>
+                            <select class="form-select" id="user_id" name="user_id">
+                                <option value="">اختر مستخدمًا</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" {% if document.user and document.user.id == user.id %}selected{% endif %}>{{ user.username }} ({{ user.get_full_name|default:user.username }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-12 mb-3">
+                            <label for="tags" class="form-label">الكلمات المفتاحية</label>
+                            <input type="text" class="form-control" id="tags" name="tags" placeholder="أدخل الكلمات المفتاحية مفصولة بفواصل..." value="{{ document.tags }}">
+                            <small class="text-muted">مثال: عقد إيجار، سيارة، عميل</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i> حفظ التغييرات</button>
+                    <a href="{% url 'admin_document_detail' document.id %}" class="btn btn-light btn-lg">إلغاء</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // إخفاء جميع حقول العلاقة
+        $('.relation-field').hide();
+        
+        // عرض حقل العلاقة المناسب بناءً على نوع العلاقة الحالي
+        var currentRelation = $('#related_to').val();
+        if (currentRelation === 'reservation') {
+            $('#reservation_relation').show();
+        } else if (currentRelation === 'car') {
+            $('#car_relation').show();
+        } else if (currentRelation === 'user') {
+            $('#user_relation').show();
+        }
+        
+        // عرض حقل العلاقة المناسب عند تغيير نوع العلاقة
+        $('#related_to').change(function() {
+            var relatedTo = $(this).val();
+            $('.relation-field').hide();
+            
+            if (relatedTo === 'reservation') {
+                $('#reservation_relation').show();
+            } else if (relatedTo === 'car') {
+                $('#car_relation').show();
+            } else if (relatedTo === 'user') {
+                $('#user_relation').show();
+            }
+        });
+        
+        // معاينة الملف عند اختياره
+        $('#file').change(function() {
+            var file = this.files[0];
+            var filePreview = $('#filePreview');
+            
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    if (file.type.match('image.*')) {
+                        filePreview.html('<img src="' + e.target.result + '" class="img-fluid" style="max-height: 300px;">');
+                    } else if (file.type === 'application/pdf') {
+                        filePreview.html('<i class="far fa-file-pdf fa-5x text-danger"></i><p class="mt-2">' + file.name + '</p>');
+                    } else {
+                        filePreview.html('<i class="far fa-file fa-5x"></i><p class="mt-2">' + file.name + '</p>');
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                filePreview.html('<i class="fas fa-upload fa-3x mb-3"></i><p>اسحب الملف هنا أو انقر للاختيار</p>');
+            }
+        });
+        
+        // إضافة سحب وإفلات للملفات
+        var fileInput = document.getElementById('file');
+        var dropZone = document.getElementById('filePreview');
+        
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropZone.classList.add('bg-light');
+        });
+        
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('bg-light');
+        });
+        
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('bg-light');
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                $(fileInput).trigger('change');
+            }
+        });
+        
+        dropZone.addEventListener('click', function() {
+            fileInput.click();
+        });
+    });
+</script>
+{% endblock %}

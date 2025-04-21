@@ -572,3 +572,262 @@
     });
 </script>
 {% endblock %}
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}الأرشيف الإلكتروني - لوحة التحكم{% endblock %}
+
+{% block additional_head %}
+<style>
+    .document-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .document-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .doc-icon {
+        font-size: 2rem;
+        padding: 15px;
+        border-radius: 50%;
+        margin-bottom: 10px;
+    }
+    
+    .stats-card {
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+    
+    .document-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .search-filters {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">الأرشيف الإلكتروني</h1>
+        <a href="{% url 'admin_add_document' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50 ms-1"></i> إضافة وثيقة جديدة
+        </a>
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">إجمالي الوثائق</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ stats.total_documents }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-archive fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card bg-success text-white">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">العقود</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ stats.contracts }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-contract fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card bg-info text-white">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">الإيصالات</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ stats.receipts }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-receipt fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card bg-warning text-white">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">العهد</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ stats.custody|add:stats.custody_release }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- البحث والتصفية -->
+    <div class="search-filters mb-4">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label for="search" class="form-label">بحث</label>
+                <input type="text" class="form-control" id="search" name="search" placeholder="ابحث عن عنوان أو رقم مرجعي أو وصف..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-2">
+                <label for="document_type" class="form-label">نوع الوثيقة</label>
+                <select class="form-select" id="document_type" name="document_type">
+                    <option value="">الكل</option>
+                    {% for type_code, type_name in document_type_choices %}
+                    <option value="{{ type_code }}" {% if document_type == type_code %}selected{% endif %}>{{ type_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">من تاريخ</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">إلى تاريخ</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+            </div>
+            <div class="col-12 mt-3">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search me-2"></i> بحث</button>
+                <a href="{% url 'admin_archive' %}" class="btn btn-secondary"><i class="fas fa-redo me-2"></i> إعادة ضبط</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- قائمة الوثائق -->
+    {% if documents %}
+    <div class="card mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">الوثائق المؤرشفة</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="documentsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>العنوان</th>
+                            <th>النوع</th>
+                            <th>الرقم المرجعي</th>
+                            <th>تاريخ المستند</th>
+                            <th>تاريخ الإضافة</th>
+                            <th>متعلق بـ</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for document in documents %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'admin_document_detail' document.id %}">{{ document.title }}</a>
+                                {% if document.tags %}
+                                <div>
+                                    {% for tag in document.tags_list %}
+                                    <span class="badge bg-light text-dark">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if document.document_type == 'contract' %}
+                                <span class="badge bg-success">عقد</span>
+                                {% elif document.document_type == 'receipt' %}
+                                <span class="badge bg-info">إيصال</span>
+                                {% elif document.document_type == 'custody' %}
+                                <span class="badge bg-warning">عهدة</span>
+                                {% elif document.document_type == 'custody_release' %}
+                                <span class="badge bg-danger">إخلاء عهدة</span>
+                                {% elif document.document_type == 'official_document' %}
+                                <span class="badge bg-primary">وثيقة رسمية</span>
+                                {% else %}
+                                <span class="badge bg-secondary">أخرى</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ document.reference_number }}</td>
+                            <td>{{ document.document_date|date:"d/m/Y" }}</td>
+                            <td>{{ document.created_at|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if document.related_to == 'reservation' and document.reservation %}
+                                <a href="{% url 'admin_reservation_detail' document.reservation.id %}">حجز #{{ document.reservation.id }}</a>
+                                {% elif document.related_to == 'car' and document.car %}
+                                <a href="{% url 'admin_car_edit' document.car.id %}">{{ document.car }}</a>
+                                {% elif document.related_to == 'user' and document.user %}
+                                <a href="{% url 'admin_user_detail' document.user.id %}">{{ document.user.username }}</a>
+                                {% else %}
+                                {{ document.get_related_to_display }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'admin_document_detail' document.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'admin_edit_document' document.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'admin_delete_document' document.id %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> لا توجد وثائق مطابقة لمعايير البحث.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // تهيئة طاولة البيانات
+        $('#documentsTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json"
+            },
+            "order": [[4, "desc"]]
+        });
+    });
+</script>
+{% endblock %}

@@ -733,3 +733,239 @@
     });
 </script>
 {% endblock %}
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}{{ document.title }} - الأرشيف الإلكتروني{% endblock %}
+
+{% block additional_head %}
+<style>
+    .document-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .document-header {
+        border-bottom: 2px solid #e3e6f0;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .file-viewer {
+        width: 100%;
+        min-height: 500px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    
+    .file-preview {
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .file-preview img {
+        max-width: 100%;
+        max-height: 600px;
+        border-radius: 5px;
+    }
+    
+    .property-label {
+        font-weight: bold;
+        color: #4e73df;
+    }
+    
+    .tags-container .badge {
+        margin-right: 5px;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
+    
+    .relation-box {
+        border: 1px solid #e3e6f0;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">تفاصيل الوثيقة</h1>
+        <div>
+            <a href="{% url 'admin_edit_document' document.id %}" class="d-none d-sm-inline-block btn btn-warning shadow-sm me-2">
+                <i class="fas fa-edit fa-sm text-white-50 ms-1"></i> تعديل
+            </a>
+            <a href="{% url 'admin_delete_document' document.id %}" class="d-none d-sm-inline-block btn btn-danger shadow-sm me-2">
+                <i class="fas fa-trash fa-sm text-white-50 ms-1"></i> حذف
+            </a>
+            <a href="{% url 'admin_archive' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-right fa-sm text-white-50 ms-1"></i> العودة إلى الأرشيف
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <!-- معلومات الوثيقة -->
+            <div class="card mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">معلومات الوثيقة</h6>
+                </div>
+                <div class="card-body">
+                    <div class="document-header">
+                        <h4>{{ document.title }}</h4>
+                        <div class="mt-2">
+                            {% if document.document_type == 'contract' %}
+                            <span class="badge bg-success">عقد</span>
+                            {% elif document.document_type == 'receipt' %}
+                            <span class="badge bg-info">إيصال</span>
+                            {% elif document.document_type == 'custody' %}
+                            <span class="badge bg-warning">عهدة</span>
+                            {% elif document.document_type == 'custody_release' %}
+                            <span class="badge bg-danger">إخلاء عهدة</span>
+                            {% elif document.document_type == 'official_document' %}
+                            <span class="badge bg-primary">وثيقة رسمية</span>
+                            {% else %}
+                            <span class="badge bg-secondary">أخرى</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <p class="property-label">الرقم المرجعي</p>
+                            <p>{{ document.reference_number }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="property-label">تاريخ الإضافة</p>
+                            <p>{{ document.created_at|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <p class="property-label">تاريخ المستند</p>
+                            <p>{{ document.document_date|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="property-label">تاريخ الانتهاء</p>
+                            <p>{{ document.expiry_date|date:"d/m/Y"|default:"غير محدد" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p class="property-label">الوصف</p>
+                        <p>{{ document.description|default:"لا يوجد وصف"|linebreaks }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p class="property-label">أضيف بواسطة</p>
+                        <p>{{ document.added_by.get_full_name|default:document.added_by.username }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p class="property-label">حجم الملف</p>
+                        <p>{{ document.file_size_display }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p class="property-label">الكلمات المفتاحية</p>
+                        <div class="tags-container">
+                            {% if document.tags_list %}
+                                {% for tag in document.tags_list %}
+                                <span class="badge bg-light text-dark">{{ tag }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">لا توجد كلمات مفتاحية</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- معلومات العلاقات -->
+            <div class="card mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">العلاقات</h6>
+                </div>
+                <div class="card-body">
+                    <p class="property-label">متعلق بـ</p>
+                    <p>{{ document.get_related_to_display }}</p>
+                    
+                    {% if document.related_to == 'reservation' and document.reservation %}
+                    <div class="relation-box">
+                        <h6 class="font-weight-bold">معلومات الحجز</h6>
+                        <p><strong>رقم الحجز:</strong> {{ document.reservation.reservation_number }}</p>
+                        <p><strong>السيارة:</strong> {{ document.reservation.car }}</p>
+                        <p><strong>العميل:</strong> {{ document.reservation.user.get_full_name|default:document.reservation.user.username }}</p>
+                        <p><strong>الفترة:</strong> {{ document.reservation.start_date|date:"d/m/Y" }} إلى {{ document.reservation.end_date|date:"d/m/Y" }}</p>
+                        <a href="{% url 'admin_reservation_detail' document.reservation.id %}" class="btn btn-sm btn-outline-primary mt-2">عرض تفاصيل الحجز</a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if document.related_to == 'car' and document.car %}
+                    <div class="relation-box">
+                        <h6 class="font-weight-bold">معلومات السيارة</h6>
+                        <p><strong>الطراز:</strong> {{ document.car.make }} {{ document.car.model }} {{ document.car.year }}</p>
+                        <p><strong>رقم اللوحة:</strong> {{ document.car.license_plate }}</p>
+                        <p><strong>الفئة:</strong> {{ document.car.get_category_display }}</p>
+                        <a href="{% url 'admin_car_edit' document.car.id %}" class="btn btn-sm btn-outline-primary mt-2">عرض تفاصيل السيارة</a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if document.related_to == 'user' and document.user %}
+                    <div class="relation-box">
+                        <h6 class="font-weight-bold">معلومات المستخدم</h6>
+                        <p><strong>اسم المستخدم:</strong> {{ document.user.username }}</p>
+                        <p><strong>الاسم الكامل:</strong> {{ document.user.get_full_name|default:"غير محدد" }}</p>
+                        <p><strong>البريد الإلكتروني:</strong> {{ document.user.email|default:"غير محدد" }}</p>
+                        <a href="{% url 'admin_user_detail' document.user.id %}" class="btn btn-sm btn-outline-primary mt-2">عرض تفاصيل المستخدم</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <!-- عارض الملف -->
+            <div class="card mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">الملف المرفق</h6>
+                    <div>
+                        <a href="{{ document.file.url }}" class="btn btn-sm btn-primary" download>
+                            <i class="fas fa-download me-1"></i> تنزيل الملف
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if document.is_image %}
+                    <div class="file-preview">
+                        <img src="{{ document.file.url }}" alt="{{ document.title }}">
+                    </div>
+                    {% elif document.is_pdf %}
+                    <iframe src="{{ document.file.url }}" class="file-viewer"></iframe>
+                    {% else %}
+                    <div class="file-preview">
+                        <div class="text-center">
+                            <i class="far fa-file fa-6x text-muted mb-3"></i>
+                            <h5>{{ document.file.name|slice:"25:" }}</h5>
+                            <p class="text-muted">نوع الملف: {{ document.file_extension|upper }}</p>
+                            <p class="text-muted">الحجم: {{ document.file_size_display }}</p>
+                            <a href="{{ document.file.url }}" class="btn btn-primary mt-3" download>
+                                <i class="fas fa-download me-1"></i> تنزيل الملف
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
