@@ -1680,6 +1680,12 @@ def admin_archive(request):
     car_docs = Document.objects.filter(related_to='car').count()
     user_docs = Document.objects.filter(related_to='user').count()
     
+    # تحديد لغة المستخدم
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
     context = {
         'documents': documents_page,
         'total_documents': total_documents,
@@ -1699,6 +1705,8 @@ def admin_archive(request):
         'document_types': Document.DOCUMENT_TYPE_CHOICES,
         'related_to_types': Document.RELATED_TO_CHOICES,
         'current_user': request.user,
+        'is_english': is_english,
+        'is_rtl': is_rtl
     }
     
     return render(request, 'admin/archive/documents.html', context)
@@ -1787,6 +1795,12 @@ def admin_archive_add(request):
     cars = Car.objects.order_by('-id')[:50]
     users = User.objects.order_by('-date_joined')[:50]
     
+    # تحديد لغة المستخدم
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
     context = {
         'document_types': Document.DOCUMENT_TYPE_CHOICES,
         'related_to_types': Document.RELATED_TO_CHOICES,
@@ -1795,6 +1809,8 @@ def admin_archive_add(request):
         'users': users,
         'current_user': request.user,
         'today': timezone.now().date().strftime('%Y-%m-%d'),
+        'is_english': is_english,
+        'is_rtl': is_rtl
     }
     
     return render(request, 'admin/archive/add_document.html', context)
@@ -1819,11 +1835,19 @@ def admin_archive_detail(request, document_id):
         related_entity = document.user
         related_entity_type = 'user'
     
+    # تحديد لغة المستخدم
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
     context = {
         'document': document,
         'related_entity': related_entity,
         'related_entity_type': related_entity_type,
         'current_user': request.user,
+        'is_english': is_english,
+        'is_rtl': is_rtl
     }
     
     return render(request, 'admin/archive/document_detail.html', context)
@@ -1930,6 +1954,12 @@ def admin_archive_edit(request, document_id):
     elif document.related_to == 'user' and document.user:
         current_related_id = document.user.id
     
+    # تحديد لغة المستخدم
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
     context = {
         'document': document,
         'document_types': Document.DOCUMENT_TYPE_CHOICES,
@@ -1939,6 +1969,8 @@ def admin_archive_edit(request, document_id):
         'users': users,
         'current_related_id': current_related_id,
         'current_user': request.user,
+        'is_english': is_english,
+        'is_rtl': is_rtl
     }
     
     return render(request, 'admin/archive/edit_document.html', context)
@@ -1964,9 +1996,17 @@ def admin_archive_delete(request, document_id):
         messages.success(request, f"تم حذف المستند '{document_title}' بنجاح")
         return redirect('admin_archive')
     
+    # تحديد لغة المستخدم
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
     context = {
         'document': document,
         'current_user': request.user,
+        'is_english': is_english,
+        'is_rtl': is_rtl
     }
     
     return render(request, 'admin/archive/delete_document.html', context)
