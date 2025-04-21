@@ -212,9 +212,117 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- القائمة الجانبية على اليمين -->
+        <div class="col-lg-2 admin-sidebar order-2">
+            <div class="py-4 px-3">
+                <div class="admin-logo-container mb-4 text-center">
+                    <img src="{% static 'images/car-rental-logo-white.svg' %}" alt="{% if is_english %}CarRental{% else %}كاررنتال{% endif %}" height="40" onerror="this.src='{% static 'images/logo.png' %}'; this.onerror='';">
+                </div>
+                
+                <div class="sidebar-heading">{% trans "Dashboard" %}</div>
+                <ul class="nav flex-column mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/ar/dashboard/' or request.path == '/en/dashboard/' %}active{% endif %}" 
+                           href="{% url 'admin_index' %}">
+                            <i class="fas fa-tachometer-alt {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Information Dashboard" %}
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="sidebar-heading">{% trans "Analytical Reports" %}</div>
+                <ul class="nav flex-column mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'dashboard/analytics' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_payment_analytics' %}">
+                            <i class="fas fa-chart-line {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Analytical Reports" %}
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="sidebar-heading">{% trans "Content Management" %}</div>
+                <ul class="nav flex-column mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'dashboard/cars' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_cars' %}">
+                            <i class="fas fa-car {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Cars Management" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'dashboard/reservations' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_reservations' %}">
+                            <i class="fas fa-calendar-alt {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Reservations Management" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'dashboard/users' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_users' %}">
+                            <i class="fas fa-users {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Users Management" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'dashboard/payments' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_payments' %}">
+                            <i class="fas fa-dollar-sign {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Payments Management" %}
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- قسم الأرشيف الإلكتروني -->
+                <div class="sidebar-heading">{% trans "Electronic Archive" %}</div>
+                <ul class="nav flex-column mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'dashboard/archive' in request.path and not 'archive/add' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_archive' %}">
+                            <i class="fas fa-folder-open {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Browse Archive" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'dashboard/archive/add' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_archive_add' %}">
+                            <i class="fas fa-file-upload {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Add New Document" %}
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="sidebar-heading">{% trans "Settings" %}</div>
+                <ul class="nav flex-column mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-cog {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Site Settings" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-user-cog {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Profile" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{% url 'logout' %}">
+                            <i class="fas fa-sign-out-alt {% if is_english %}me-2{% else %}ms-2{% endif %}"></i>
+                            {% trans "Logout" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- المحتوى الرئيسي -->
+        <div class="col-lg-10 order-1">
+            <div class="container-fluid">
+                <div class="row mb-4">
+                    <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h1 class="h2 mb-0">{% trans "Document Archive" %}</h1>
                 <div>
