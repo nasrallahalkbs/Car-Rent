@@ -1621,6 +1621,7 @@ def get_user_reservations(request, user_id):
 def admin_archive(request):
     """صفحة إدارة الأرشيف الإلكتروني للمستندات"""
     # تحديد لغة العرض
+    from django.utils.translation import get_language
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'

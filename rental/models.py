@@ -274,11 +274,19 @@ class SiteSettings(models.Model):
 
 
 def archive_document_path(instance, filename):
-    """تحديد مسار حفظ المستندات الأرشيفية بشكل منظم"""
+    """تحديد مسار حفظ المستندات الأرشيفية بشكل منظم باستخدام هيكل شجري"""
     # الحصول على امتداد الملف
     ext = filename.split('.')[-1]
     # إنشاء اسم ملف جديد فريد
-    filename = f"{uuid.uuid4()}.{ext}"
+    original_filename = os.path.splitext(filename)[0]
+    sanitized_filename = "".join([c for c in original_filename if c.isalnum() or c in [' ', '-', '_']]).strip()
+    if len(sanitized_filename) > 50:
+        sanitized_filename = sanitized_filename[:50]
+    if not sanitized_filename:
+        sanitized_filename = "document"
+    
+    unique_filename = f"{sanitized_filename}_{uuid.uuid4().hex[:8]}.{ext}"
+    
     # تنظيم الملفات حسب النوع والسنة والشهر
     year = timezone.now().strftime('%Y')
     month = timezone.now().strftime('%m')
@@ -293,9 +301,16 @@ def archive_document_path(instance, filename):
         folder = 'custody'
     elif instance.document_type == 'custody_release':
         folder = 'custody_release'
+    elif instance.document_type == 'official_document':
+        folder = 'official'
     
-    # إرجاع المسار الكامل
-    return os.path.join('archive', folder, year, month, filename)
+    # إضافة مسار إضافي حسب الارتباط إذا كان متاحًا
+    related_path = ''
+    if hasattr(instance, 'related_to') and instance.related_to:
+        related_path = instance.related_to
+    
+    # إرجاع المسار الكامل باستخدام هيكل شجري منظم
+    return os.path.join('archive', folder, year, month, related_path, unique_filename)
 
 
 class Document(models.Model):
