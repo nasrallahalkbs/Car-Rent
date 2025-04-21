@@ -10,6 +10,7 @@ import datetime
 templates = [
     'templates/reservation_detail.html',
     'templates/reservation_detail_django.html',
+    'templates/admin/archive/archive_main.html',
 ]
 
 # إضافة ختم زمني في سطر التعليق في بداية الملف
