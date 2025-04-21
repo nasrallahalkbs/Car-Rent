@@ -1620,6 +1620,11 @@ def get_user_reservations(request, user_id):
 @admin_required
 def admin_archive(request):
     """صفحة إدارة الأرشيف الإلكتروني للمستندات"""
+    # تحديد لغة العرض
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
     # الحصول على معلمات التصفية
     document_type = request.GET.get('document_type', '')
     related_to = request.GET.get('related_to', '')
