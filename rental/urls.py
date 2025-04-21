@@ -78,6 +78,7 @@ urlpatterns = [
 
     # مسارات نظام الأرشيف الإلكتروني
     path('dashboard/archive/', admin_views.admin_archive, name='admin_archive'),
+    path('dashboard/archive/tree/', admin_views.admin_archive_tree, name='admin_archive_tree'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
     path('dashboard/archive/<int:document_id>/', admin_views.admin_archive_detail, name='admin_archive_detail'),
     path('dashboard/archive/<int:document_id>/edit/', admin_views.admin_archive_edit, name='admin_archive_edit'),
@@ -93,7 +94,6 @@ urlpatterns = [
     path('dashboard/archive/folder/<int:folder_id>/delete/', admin_views.admin_archive_folder_delete, name='admin_archive_folder_delete'),
     path('dashboard/archive/folder/<int:folder_id>/documents/', admin_views.admin_archive_folder_documents, name='admin_archive_folder_documents'),
     path('dashboard/archive/folder/<int:folder_id>/add-document/', admin_views.admin_archive_folder_add_document, name='admin_archive_folder_add_document'),
-    path('dashboard/archive/tree/', admin_views.admin_archive_tree, name='admin_archive_tree'),
 
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
