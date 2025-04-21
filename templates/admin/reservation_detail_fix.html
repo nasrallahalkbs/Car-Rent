@@ -1,4 +1,4 @@
-<!-- CACHE_BUSTER 1745190476 -->
+<!-- CACHE_BUSTER 1745193920 -->
 {% extends "admin_layout.html" %}
 {% load i18n %}
 {% load static %}
@@ -156,7 +156,7 @@
                             </div>
                         </div>
                         <div class="ms-3">
-                            <h5 class="mb-1">{{ reservation.user.get_full_name }}</h5>
+                            <h5 class="mb-1">{{ reservation.full_name|default:reservation.user.get_full_name }}</h5>
                             <p class="text-muted mb-0">{{ reservation.user.email }}</p>
                             <p class="text-muted mb-0">اسم المستخدم: {{ reservation.user.username }}</p>
                         </div>
@@ -181,6 +181,38 @@
                                     <th class="ps-0">عنوان العميل</th>
                                     <td class="pe-0">{{ reservation.user.address|default:"--" }}</td>
                                 </tr>
+                                {% if reservation.national_id %}
+                                <tr>
+                                    <th class="ps-0">رقم الهوية الوطنية</th>
+                                    <td class="pe-0">{{ reservation.national_id }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if reservation.guarantee_type %}
+                                <tr>
+                                    <th class="ps-0">نوع الضمان</th>
+                                    <td class="pe-0">
+                                        {% if reservation.guarantee_type == 'id_card' %}
+                                            بطاقة الهوية الوطنية
+                                        {% elif reservation.guarantee_type == 'passport' %}
+                                            جواز السفر
+                                        {% elif reservation.guarantee_type == 'driving_license' %}
+                                            رخصة القيادة
+                                        {% elif reservation.guarantee_type == 'deposit' %}
+                                            وديعة تأمين
+                                        {% elif reservation.guarantee_type == 'credit_card' %}
+                                            بطاقة ائتمان
+                                        {% elif reservation.guarantee_type == 'property_doc' %}
+                                            وثيقة ملكية عقار
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if reservation.guarantee_details %}
+                                <tr>
+                                    <th class="ps-0">تفاصيل الضمان</th>
+                                    <td class="pe-0">{{ reservation.guarantee_details }}</td>
+                                </tr>
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
