@@ -2173,7 +2173,7 @@ def admin_archive_folder_add(request):
 @login_required
 @admin_required
 def admin_archive_folder_view(request, folder_id):
-    """عرض محتويات مجلد معين"""
+    """عرض محتويات مجلد معين - النظام الشجري الجديد"""
     folder = get_object_or_404(ArchiveFolder, id=folder_id)
     
     # تحديد لغة العرض
@@ -2182,16 +2182,39 @@ def admin_archive_folder_view(request, folder_id):
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
+    # البحث والتصفية
+    search = request.GET.get('search', '')
+    
     # الحصول على المجلدات الفرعية
     subfolders = folder.children.all().order_by('name')
     
-    # الحصول على المستندات في هذا المجلد
-    documents = folder.documents.all().order_by('-created_at')
+    # الحصول على المستندات في هذا المجلد مع تطبيق البحث إذا وجد
+    files = folder.documents.all().order_by('-created_at')
+    if search:
+        files = files.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search) | 
+            Q(reference_number__icontains=search) |
+            Q(tags__icontains=search)
+        )
     
-    # تقسيم الصفحات للمستندات
-    paginator = Paginator(documents, 10)  # عرض 10 مستندات في الصفحة
-    page_number = request.GET.get('page')
-    documents_page = paginator.get_page(page_number)
+    # بناء شجرة المجلدات للجافاسكريبت
+    def build_tree(folder_obj):
+        result = {
+            'id': folder_obj.id,
+            'text': folder_obj.name,
+            'icon': 'fas fa-folder',
+            'state': {
+                'opened': folder_obj.id == folder.id or any(p.id == folder_obj.id for p in folder_path)
+            },
+            'children': []
+        }
+        
+        # إضافة المجلدات الفرعية
+        for child in folder_obj.children.all().order_by('name'):
+            result['children'].append(build_tree(child))
+        
+        return result
     
     # الحصول على مسار المجلد الكامل (من الجذر إلى هذا المجلد)
     folder_path = []
@@ -2200,20 +2223,42 @@ def admin_archive_folder_view(request, folder_id):
         folder_path.insert(0, current)
         current = current.parent
     
+    # بناء شجرة كاملة من الجذر
+    root_folders = ArchiveFolder.get_root_folders()
+    folder_tree = []
+    
+    # إضافة نقطة الجذر (الرئيسية)
+    folder_tree.append({
+        'id': '#',
+        'text': _('الرئيسية'),
+        'icon': 'fas fa-hdd',
+        'state': {
+            'opened': True
+        }
+    })
+    
+    # إضافة المجلدات الرئيسية
+    for root_folder in root_folders:
+        folder_tree.append(build_tree(root_folder))
+    
     context = {
         'folder': folder,
         'folder_path': folder_path,
         'subfolders': subfolders,
-        'documents': documents_page,
-        'total_subfolders': subfolders.count(),
-        'total_documents': documents.count(),
+        'files': files,
+        'total_folders': subfolders.count(),
+        'total_files': files.count(),
+        'folder_tree': json.dumps(folder_tree),
+        'search': search,
+        'today': timezone.now().date().strftime('%Y-%m-%d'),
+        'current_folder': folder,
         'is_english': is_english,
         'is_rtl': is_rtl,
         'current_user': request.user,
         'active_section': 'archive'
     }
     
-    return render(request, 'admin/archive/folder_view.html', context)
+    return render(request, 'admin/archive/archive_main.html', context)
 
 @login_required
 @admin_required
@@ -2559,54 +2604,84 @@ def admin_archive_folder_add_document(request, folder_id):
 @login_required
 @admin_required
 def admin_archive_tree(request):
-    """عرض هيكل المجلدات بشكل شجري"""
+    """عرض هيكل المجلدات بشكل شجري - الواجهة الجديدة للأرشيف"""
     # تحديد لغة العرض
     from django.utils.translation import get_language
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
+    # البحث والتصفية
+    search = request.GET.get('search', '')
+    
     # الحصول على مجلدات الجذر
     root_folders = ArchiveFolder.get_root_folders()
     
-    # إعداد هيكل البيانات المناسب لعرض الشجرة
+    # الحصول على المستندات في المجلد الرئيسي (بدون مجلد) مع تطبيق البحث إذا وجد
+    files = Document.objects.filter(folder__isnull=True).order_by('-created_at')
+    if search:
+        files = files.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search) | 
+            Q(reference_number__icontains=search) |
+            Q(tags__icontains=search)
+        )
+    
+    # بناء هيكل البيانات الشجري للعرض في jsTree
     def build_tree(folder):
         result = {
             'id': folder.id,
-            'name': folder.name,
-            'type': folder.folder_type or 'folder',
-            'is_system': folder.is_system_folder,
-            'document_count': folder.document_count,
+            'text': folder.name,
+            'icon': 'fas fa-folder',
+            'state': {
+                'opened': False
+            },
             'children': []
         }
         
-        # إضافة المجلدات الفرعية بشكل عودي
+        # إضافة المجلدات الفرعية
         for child in folder.children.all().order_by('name'):
             result['children'].append(build_tree(child))
         
         return result
     
-    # بناء الشجرة
+    # بناء شجرة المجلدات للعرض في جافاسكريبت
     folder_tree = []
+    
+    # إضافة نقطة الجذر (الرئيسية)
+    folder_tree.append({
+        'id': '#',
+        'text': _('الرئيسية'),
+        'icon': 'fas fa-hdd',
+        'state': {
+            'opened': True
+        }
+    })
+    
+    # إضافة المجلدات الرئيسية
     for folder in root_folders:
         folder_tree.append(build_tree(folder))
     
-    # إحصائيات المجلدات والمستندات
+    # إحصائيات النظام
     total_folders = ArchiveFolder.objects.count()
-    total_documents = Document.objects.count()
+    total_files = Document.objects.count()
     system_folders = ArchiveFolder.objects.filter(is_system_folder=True).count()
     custom_folders = total_folders - system_folders
     
     context = {
         'folder_tree': json.dumps(folder_tree),
+        'subfolders': root_folders,
+        'files': files,
         'total_folders': total_folders,
-        'total_documents': total_documents,
+        'total_files': total_files,
         'system_folders': system_folders,
         'custom_folders': custom_folders,
+        'search': search,
+        'today': timezone.now().date().strftime('%Y-%m-%d'),
         'is_english': is_english,
         'is_rtl': is_rtl,
         'current_user': request.user,
         'active_section': 'archive'
     }
     
-    return render(request, 'admin/archive/folder_tree.html', context)
+    return render(request, 'admin/archive/archive_main.html', context)
