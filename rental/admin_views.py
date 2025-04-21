@@ -2,21 +2,25 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .views import get_template_by_language
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
 from django.utils.translation import get_language
-from .models import User, Car, Reservation, CartItem, SiteSettings
+from .models import User, Car, Reservation, CartItem, SiteSettings, Document
 from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm, SiteSettingsForm
 from functools import wraps
 from datetime import datetime, date, timedelta
 import uuid
 import csv
 import logging
+import os
+import mimetypes
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.files.storage import default_storage
+from django.utils.text import slugify
 
 logger = logging.getLogger(__name__)
 
@@ -1346,3 +1350,426 @@ def get_user_reservations(request, user_id):
     result = {'reservations': reservations_data}
     print(f"Returning data: {result}")
     return JsonResponse(result)
+
+
+@login_required
+@admin_required
+def admin_archive(request):
+    """صفحة إدارة الأرشيف الإلكتروني للمستندات"""
+    # الحصول على معلمات التصفية
+    document_type = request.GET.get('document_type', '')
+    related_to = request.GET.get('related_to', '')
+    start_date_str = request.GET.get('start_date', '')
+    end_date_str = request.GET.get('end_date', '')
+    search = request.GET.get('search', '')
+    
+    # تصفية المستندات
+    documents = Document.objects.all().order_by('-created_at')
+    
+    # تطبيق التصفية حسب نوع المستند
+    if document_type:
+        documents = documents.filter(document_type=document_type)
+    
+    # تطبيق التصفية حسب الارتباط
+    if related_to:
+        documents = documents.filter(related_to=related_to)
+    
+    # تطبيق التصفية حسب التاريخ
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            documents = documents.filter(document_date__gte=start_date)
+        except ValueError:
+            pass
+    
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            documents = documents.filter(document_date__lte=end_date)
+        except ValueError:
+            pass
+    
+    # تطبيق البحث
+    if search:
+        documents = documents.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search) | 
+            Q(reference_number__icontains=search) |
+            Q(tags__icontains=search)
+        )
+    
+    # تقسيم الصفحات
+    paginator = Paginator(documents, 12)  # عرض 12 مستند في الصفحة
+    page_number = request.GET.get('page')
+    documents_page = paginator.get_page(page_number)
+    
+    # إحصائيات المستندات
+    total_documents = Document.objects.count()
+    contracts_count = Document.objects.filter(document_type='contract').count()
+    receipts_count = Document.objects.filter(document_type='receipt').count()
+    custody_count = Document.objects.filter(document_type='custody').count()
+    custody_release_count = Document.objects.filter(document_type='custody_release').count()
+    other_count = Document.objects.filter(document_type='other').count()
+    
+    # العدد حسب الارتباط
+    reservation_docs = Document.objects.filter(related_to='reservation').count()
+    car_docs = Document.objects.filter(related_to='car').count()
+    user_docs = Document.objects.filter(related_to='user').count()
+    
+    context = {
+        'documents': documents_page,
+        'total_documents': total_documents,
+        'contracts_count': contracts_count,
+        'receipts_count': receipts_count,
+        'custody_count': custody_count,
+        'custody_release_count': custody_release_count,
+        'other_count': other_count,
+        'reservation_docs': reservation_docs,
+        'car_docs': car_docs,
+        'user_docs': user_docs,
+        'document_type_filter': document_type,
+        'related_to_filter': related_to,
+        'start_date': start_date_str,
+        'end_date': end_date_str,
+        'search': search,
+        'document_types': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_types': Document.RELATED_TO_CHOICES,
+        'current_user': request.user,
+    }
+    
+    return render(request, 'admin/archive/documents.html', context)
+
+@login_required
+@admin_required
+def admin_archive_add(request):
+    """صفحة إضافة مستند جديد للأرشيف"""
+    if request.method == 'POST':
+        # الحصول على بيانات النموذج
+        title = request.POST.get('title')
+        document_type = request.POST.get('document_type')
+        description = request.POST.get('description', '')
+        document_date_str = request.POST.get('document_date')
+        expiry_date_str = request.POST.get('expiry_date', '')
+        related_to = request.POST.get('related_to')
+        related_id = request.POST.get('related_id', '')
+        tags = request.POST.get('tags', '')
+        
+        # التحقق من الحقول الإلزامية
+        if not title or not document_type or not document_date_str or not related_to:
+            messages.error(request, "يرجى ملء جميع الحقول الإلزامية")
+            return redirect('admin_archive_add')
+        
+        # التحقق من وجود ملف مرفق
+        if 'file' not in request.FILES:
+            messages.error(request, "يرجى تحميل ملف المستند")
+            return redirect('admin_archive_add')
+        
+        # تحويل التواريخ
+        try:
+            document_date = datetime.strptime(document_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, "تنسيق تاريخ المستند غير صحيح")
+            return redirect('admin_archive_add')
+        
+        expiry_date = None
+        if expiry_date_str:
+            try:
+                expiry_date = datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                messages.error(request, "تنسيق تاريخ انتهاء الصلاحية غير صحيح")
+                return redirect('admin_archive_add')
+        
+        # إنشاء المستند
+        document = Document(
+            title=title,
+            document_type=document_type,
+            description=description,
+            document_date=document_date,
+            expiry_date=expiry_date,
+            related_to=related_to,
+            file=request.FILES['file'],
+            tags=tags,
+            added_by=request.user
+        )
+        
+        # تعيين العلاقات حسب نوع الارتباط
+        if related_to == 'reservation' and related_id:
+            try:
+                reservation = Reservation.objects.get(id=related_id)
+                document.reservation = reservation
+            except Reservation.DoesNotExist:
+                pass
+        elif related_to == 'car' and related_id:
+            try:
+                car = Car.objects.get(id=related_id)
+                document.car = car
+            except Car.DoesNotExist:
+                pass
+        elif related_to == 'user' and related_id:
+            try:
+                user = User.objects.get(id=related_id)
+                document.user = user
+            except User.DoesNotExist:
+                pass
+        
+        # حفظ المستند
+        document.save()
+        
+        messages.success(request, f"تم إضافة المستند '{title}' بنجاح")
+        return redirect('admin_archive')
+    
+    # الحصول على قوائم للعلاقات
+    reservations = Reservation.objects.order_by('-created_at')[:50]
+    cars = Car.objects.order_by('-id')[:50]
+    users = User.objects.order_by('-date_joined')[:50]
+    
+    context = {
+        'document_types': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_types': Document.RELATED_TO_CHOICES,
+        'reservations': reservations,
+        'cars': cars,
+        'users': users,
+        'current_user': request.user,
+        'today': timezone.now().date().strftime('%Y-%m-%d'),
+    }
+    
+    return render(request, 'admin/archive/add_document.html', context)
+
+@login_required
+@admin_required
+def admin_archive_detail(request, document_id):
+    """عرض تفاصيل مستند في الأرشيف"""
+    document = get_object_or_404(Document, id=document_id)
+    
+    # التحقق إذا كان المستند مرتبط بأي كيانات
+    related_entity = None
+    related_entity_type = None
+    
+    if document.reservation:
+        related_entity = document.reservation
+        related_entity_type = 'reservation'
+    elif document.car:
+        related_entity = document.car
+        related_entity_type = 'car'
+    elif document.user:
+        related_entity = document.user
+        related_entity_type = 'user'
+    
+    context = {
+        'document': document,
+        'related_entity': related_entity,
+        'related_entity_type': related_entity_type,
+        'current_user': request.user,
+    }
+    
+    return render(request, 'admin/archive/document_detail.html', context)
+
+@login_required
+@admin_required
+def admin_archive_edit(request, document_id):
+    """تعديل مستند في الأرشيف"""
+    document = get_object_or_404(Document, id=document_id)
+    
+    if request.method == 'POST':
+        # الحصول على بيانات النموذج
+        title = request.POST.get('title')
+        document_type = request.POST.get('document_type')
+        description = request.POST.get('description', '')
+        document_date_str = request.POST.get('document_date')
+        expiry_date_str = request.POST.get('expiry_date', '')
+        related_to = request.POST.get('related_to')
+        related_id = request.POST.get('related_id', '')
+        tags = request.POST.get('tags', '')
+        
+        # التحقق من الحقول الإلزامية
+        if not title or not document_type or not document_date_str or not related_to:
+            messages.error(request, "يرجى ملء جميع الحقول الإلزامية")
+            return redirect('admin_archive_edit', document_id=document_id)
+        
+        # تحويل التواريخ
+        try:
+            document_date = datetime.strptime(document_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, "تنسيق تاريخ المستند غير صحيح")
+            return redirect('admin_archive_edit', document_id=document_id)
+        
+        expiry_date = None
+        if expiry_date_str:
+            try:
+                expiry_date = datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                messages.error(request, "تنسيق تاريخ انتهاء الصلاحية غير صحيح")
+                return redirect('admin_archive_edit', document_id=document_id)
+        
+        # تحديث بيانات المستند
+        document.title = title
+        document.document_type = document_type
+        document.description = description
+        document.document_date = document_date
+        document.expiry_date = expiry_date
+        document.related_to = related_to
+        document.tags = tags
+        
+        # تحديث الملف إذا تم تقديم ملف جديد
+        if 'file' in request.FILES:
+            # حذف الملف القديم
+            if document.file:
+                try:
+                    default_storage.delete(document.file.path)
+                except:
+                    pass  # تجاهل الأخطاء إذا لم يمكن حذف الملف
+            
+            document.file = request.FILES['file']
+        
+        # تعيين العلاقات حسب نوع الارتباط
+        # إعادة تعيين العلاقات
+        document.reservation = None
+        document.car = None
+        document.user = None
+        
+        if related_to == 'reservation' and related_id:
+            try:
+                reservation = Reservation.objects.get(id=related_id)
+                document.reservation = reservation
+            except Reservation.DoesNotExist:
+                pass
+        elif related_to == 'car' and related_id:
+            try:
+                car = Car.objects.get(id=related_id)
+                document.car = car
+            except Car.DoesNotExist:
+                pass
+        elif related_to == 'user' and related_id:
+            try:
+                user = User.objects.get(id=related_id)
+                document.user = user
+            except User.DoesNotExist:
+                pass
+        
+        # حفظ المستند
+        document.save()
+        
+        messages.success(request, f"تم تحديث المستند '{title}' بنجاح")
+        return redirect('admin_archive_detail', document_id=document_id)
+    
+    # الحصول على قوائم للعلاقات
+    reservations = Reservation.objects.order_by('-created_at')[:50]
+    cars = Car.objects.order_by('-id')[:50]
+    users = User.objects.order_by('-date_joined')[:50]
+    
+    # تحديد الكيان المرتبط الحالي
+    current_related_id = None
+    if document.related_to == 'reservation' and document.reservation:
+        current_related_id = document.reservation.id
+    elif document.related_to == 'car' and document.car:
+        current_related_id = document.car.id
+    elif document.related_to == 'user' and document.user:
+        current_related_id = document.user.id
+    
+    context = {
+        'document': document,
+        'document_types': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_types': Document.RELATED_TO_CHOICES,
+        'reservations': reservations,
+        'cars': cars,
+        'users': users,
+        'current_related_id': current_related_id,
+        'current_user': request.user,
+    }
+    
+    return render(request, 'admin/archive/edit_document.html', context)
+
+@login_required
+@admin_required
+def admin_archive_delete(request, document_id):
+    """حذف مستند من الأرشيف"""
+    document = get_object_or_404(Document, id=document_id)
+    
+    if request.method == 'POST':
+        # حذف الملف من نظام الملفات
+        if document.file:
+            try:
+                default_storage.delete(document.file.path)
+            except:
+                pass  # تجاهل الأخطاء إذا لم يمكن حذف الملف
+        
+        # حذف المستند من قاعدة البيانات
+        document_title = document.title
+        document.delete()
+        
+        messages.success(request, f"تم حذف المستند '{document_title}' بنجاح")
+        return redirect('admin_archive')
+    
+    context = {
+        'document': document,
+        'current_user': request.user,
+    }
+    
+    return render(request, 'admin/archive/delete_document.html', context)
+
+@login_required
+@admin_required
+def admin_archive_download(request, document_id):
+    """تنزيل ملف مستند من الأرشيف"""
+    document = get_object_or_404(Document, id=document_id)
+    
+    if not document.file:
+        messages.error(request, "الملف غير موجود")
+        return redirect('admin_archive_detail', document_id=document_id)
+    
+    try:
+        file_path = document.file.path
+        
+        # التحقق من وجود الملف
+        if not os.path.exists(file_path):
+            messages.error(request, "الملف غير موجود على الخادم")
+            return redirect('admin_archive_detail', document_id=document_id)
+        
+        # تحديد نوع MIME للملف
+        content_type, encoding = mimetypes.guess_type(file_path)
+        if content_type is None:
+            content_type = 'application/octet-stream'
+        
+        # إنشاء اسم الملف للتنزيل
+        filename = os.path.basename(file_path)
+        
+        # إرجاع استجابة FileResponse
+        response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    
+    except Exception as e:
+        messages.error(request, f"حدث خطأ أثناء تنزيل الملف: {str(e)}")
+        return redirect('admin_archive_detail', document_id=document_id)
+
+@login_required
+@admin_required
+def admin_archive_view(request, document_id):
+    """عرض ملف مستند مباشرة في المتصفح"""
+    document = get_object_or_404(Document, id=document_id)
+    
+    if not document.file:
+        messages.error(request, "الملف غير موجود")
+        return redirect('admin_archive_detail', document_id=document_id)
+    
+    try:
+        file_path = document.file.path
+        
+        # التحقق من وجود الملف
+        if not os.path.exists(file_path):
+            messages.error(request, "الملف غير موجود على الخادم")
+            return redirect('admin_archive_detail', document_id=document_id)
+        
+        # تحديد نوع MIME للملف
+        content_type, encoding = mimetypes.guess_type(file_path)
+        if content_type is None:
+            content_type = 'application/octet-stream'
+        
+        # إرجاع استجابة FileResponse
+        response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+        response['Content-Disposition'] = 'inline'
+        return response
+    
+    except Exception as e:
+        messages.error(request, f"حدث خطأ أثناء عرض الملف: {str(e)}")
+        return redirect('admin_archive_detail', document_id=document_id)
