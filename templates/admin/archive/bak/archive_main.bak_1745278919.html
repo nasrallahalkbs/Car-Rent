@@ -1,69 +1,12 @@
-{% extends "admin_layout.html" %}
-{% load i18n %}
+{% extends 'admin_layout.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}{% trans "الأرشيف الإلكتروني" %} | {% trans "لوحة التحكم" %}{% endblock %}
 
-{% block extra_css %}
+{% block styles %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/themes/default/style.min.css">
 <style>
-    /* لوحة التحكم - الأسلوب المخصص */
-    :root {
-        --primary-color: #3b82f6;
-        --primary-dark: #1e40af;
-        --primary-light: #93c5fd;
-        --success-color: #10b981;
-        --warning-color: #f59e0b;
-        --danger-color: #ef4444;
-        --dark-color: #1e293b;
-        --light-color: #f1f5f9;
-        --border-radius: 0.5rem;
-        --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-    
-    /* تنسيق عام */
-    body.admin {
-        background-color: #f8fafc;
-    }
-    
-    /* القائمة الجانبية */
-    .admin-sidebar {
-        background: linear-gradient(135deg, #1e293b, #1e3a8a);
-        min-height: calc(100vh - 60px);
-        transition: all 0.3s;
-        z-index: 1000;
-        position: sticky;
-        top: 0;
-    }
-    
-    .admin-sidebar .nav-link {
-        color: rgba(255, 255, 255, 0.7);
-        border-radius: var(--border-radius);
-        margin: 0.3rem 0.5rem;
-        transition: all 0.3s;
-        padding: 0.7rem 1rem;
-        text-align: right;
-    }
-    
-    .admin-sidebar .nav-link:hover {
-        color: white;
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .admin-sidebar .nav-link.active {
-        color: white;
-        background-color: rgba(255, 255, 255, 0.2);
-        font-weight: 500;
-    }
-    
-    .admin-sidebar .sidebar-heading {
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.4);
-        font-weight: 600;
-        padding: 1rem 1.5rem 0.5rem;
-    }
-    
     /* تنسيقات نظام الأرشيف */
     .archive-container {
         display: grid;
@@ -273,14 +216,109 @@
             max-height: 300px;
         }
     }
+    
+    /* تنسيقات لوحة التحكم */
+    .admin-sidebar {
+        background-color: #343a40;
+        min-height: 100vh;
+        color: #ffffff;
+        position: sticky;
+        top: 0;
+    }
+    
+    .admin-sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.75);
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .admin-sidebar .nav-link:hover {
+        color: rgba(255, 255, 255, 0.95);
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .admin-sidebar .nav-link.active {
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .admin-sidebar .sidebar-heading {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.5);
+        padding: 0.75rem 1rem;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid p-0">
     <div class="row g-0">
-        <!-- المحتوى الرئيسي على اليسار -->
-        <div class="col-lg-10 order-1">
+        <!-- القائمة الجانبية للوحة التحكم -->
+        <div class="col-lg-2 admin-sidebar">
+            <div class="py-4 px-3">
+                <div class="admin-logo-container mb-4 text-center">
+                    <img src="{% static 'images/car-rental-logo-white.svg' %}" alt="كاررنتال" height="40">
+                </div>
+                
+                <div class="sidebar-heading">{% trans "لوحة التحكم" %}</div>
+                <ul class="nav flex-column mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/dashboard/' or request.path == '/ar/dashboard/' %}active{% endif %}" 
+                           href="{% url 'admin_index' %}">
+                           <i class="fas fa-tachometer-alt {% trans "ms-2" %}"></i> {% trans "الرئيسية" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/reservations' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_reservations' %}">
+                           <i class="fas fa-calendar-check {% trans "ms-2" %}"></i> {% trans "الحجوزات" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/cars' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_cars' %}">
+                           <i class="fas fa-car {% trans "ms-2" %}"></i> {% trans "السيارات" %}
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="sidebar-heading">{% trans "النظام" %}</div>
+                <ul class="nav flex-column mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/analytics' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_payment_analytics' %}">
+                           <i class="fas fa-chart-line {% trans "ms-2" %}"></i> {% trans "التحليلات" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/payments' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_payments' %}">
+                           <i class="fas fa-money-bill-wave {% trans "ms-2" %}"></i> {% trans "المدفوعات" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/users' in request.path %}active{% endif %}" 
+                           href="{% url 'admin_users' %}">
+                           <i class="fas fa-users {% trans "ms-2" %}"></i> {% trans "المستخدمين" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" 
+                           href="{% url 'admin_archive' %}">
+                           <i class="fas fa-archive {% trans "ms-2" %}"></i> {% trans "الأرشيف" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- المحتوى الرئيسي -->
+        <div class="col-lg-10">
             <div class="py-4 px-3">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1 class="h3 mb-0">
@@ -702,72 +740,6 @@
                 </div>
             </div>
         </div>
-        
-        <!-- القائمة الجانبية للوحة التحكم -->
-        <div class="col-lg-2 admin-sidebar order-2">
-            <div class="py-4 px-3">
-                <div class="admin-logo-container mb-4 text-center">
-                    <img src="{% static 'images/car-rental-logo-white.svg' %}" alt="كاررنتال" height="40">
-                </div>
-                
-                <div class="sidebar-heading">{% trans "لوحة التحكم" %}</div>
-                <ul class="nav flex-column mb-0">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/dashboard/' or request.path == '/ar/dashboard/' %}active{% endif %}" 
-                           href="{% url 'admin_index' %}">
-                            <i class="fas fa-tachometer-alt ms-2"></i>
-                            {% trans "الرئيسية" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/reservations' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_reservations' %}">
-                            <i class="fas fa-calendar-check ms-2"></i>
-                            {% trans "الحجوزات" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/cars' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_cars' %}">
-                            <i class="fas fa-car ms-2"></i>
-                            {% trans "السيارات" %}
-                        </a>
-                    </li>
-                </ul>
-                
-                <div class="sidebar-heading">{% trans "النظام" %}</div>
-                <ul class="nav flex-column mb-0">
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/analytics' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_payment_analytics' %}">
-                            <i class="fas fa-chart-line ms-2"></i>
-                            {% trans "التحليلات" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/payments' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_payments' %}">
-                            <i class="fas fa-money-bill-wave ms-2"></i>
-                            {% trans "المدفوعات" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/users' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_users' %}">
-                            <i class="fas fa-users ms-2"></i>
-                            {% trans "المستخدمين" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" 
-                           href="{% url 'admin_archive' %}">
-                            <i class="fas fa-archive ms-2"></i>
-                            {% trans "الأرشيف" %}
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}
@@ -800,32 +772,30 @@
         const fileNamePreview = document.getElementById('fileNamePreview');
         const removeFileBtn = document.getElementById('removeFile');
         
-        if (fileDropzone) {
-            fileDropzone.addEventListener('click', function() {
-                fileInput.click();
-            });
+        fileDropzone.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        fileDropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            fileDropzone.classList.add('border-primary');
+        });
+        
+        fileDropzone.addEventListener('dragleave', function() {
+            fileDropzone.classList.remove('border-primary');
+        });
+        
+        fileDropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            fileDropzone.classList.remove('border-primary');
             
-            fileDropzone.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                fileDropzone.classList.add('border-primary');
-            });
-            
-            fileDropzone.addEventListener('dragleave', function() {
-                fileDropzone.classList.remove('border-primary');
-            });
-            
-            fileDropzone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                fileDropzone.classList.remove('border-primary');
-                
-                if (e.dataTransfer.files.length) {
-                    fileInput.files = e.dataTransfer.files;
-                    updateFilePreview();
-                }
-            });
-            
-            fileInput.addEventListener('change', updateFilePreview);
-        }
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                updateFilePreview();
+            }
+        });
+        
+        fileInput.addEventListener('change', updateFilePreview);
         
         function updateFilePreview() {
             if (fileInput.files.length) {
@@ -837,12 +807,10 @@
             }
         }
         
-        if (removeFileBtn) {
-            removeFileBtn.addEventListener('click', function() {
-                fileInput.value = '';
-                filePreview.classList.add('d-none');
-            });
-        }
+        removeFileBtn.addEventListener('click', function() {
+            fileInput.value = '';
+            filePreview.classList.add('d-none');
+        });
         
         // عرض المستندات
         document.querySelectorAll('.file-item').forEach(item => {
@@ -876,13 +844,10 @@
         });
         
         // الزر الرئيسي في مسار المجلدات
-        const homeLink = document.querySelector('.home-link');
-        if (homeLink) {
-            homeLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.location.href = "{% url 'admin_archive' %}";
-            });
-        }
+        document.querySelector('.home-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = "{% url 'admin_archive' %}";
+        });
         
         // روابط المجلدات في مسار التنقل
         document.querySelectorAll('.folder-link').forEach(link => {
