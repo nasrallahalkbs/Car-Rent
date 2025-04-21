@@ -7,7 +7,7 @@ from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
-from django.utils.translation import get_language
+from django.utils.translation import get_language, gettext as _
 from .models import User, Car, Reservation, CartItem, SiteSettings, Document, ArchiveFolder
 from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm, SiteSettingsForm
 from functools import wraps
