@@ -132,6 +132,13 @@
         border-right: 1px solid #e0e0e0;
         background-color: #f8f9fa;
         overflow-y: auto;
+        max-height: 100%;
+        min-height: 400px;
+    }
+    
+    #folder-tree {
+        direction: rtl;
+        min-height: 300px;
     }
     
     /* لوحة محتوى المجلد */
@@ -830,8 +837,24 @@
                 'data' : {{ folder_tree|safe }},
                 'themes': {
                     'responsive': true
+                },
+                'multiple': false,
+                'check_callback': true,
+                'strings': {
+                    'Loading...': 'جاري التحميل...',
+                    'New node': 'مجلد جديد'
                 }
-            }
+            },
+            'rtl': true, // تفعيل دعم اللغة العربية (من اليمين إلى اليسار)
+            'types': {
+                'default': {
+                    'icon': 'fas fa-folder text-warning'
+                },
+                'file': {
+                    'icon': 'fas fa-file text-primary'
+                }
+            },
+            'plugins': ['types', 'wholerow', 'changed', 'state']
         }).on('select_node.jstree', function(e, data) {
             const folderId = data.node.id;
             if (folderId !== '#') {
