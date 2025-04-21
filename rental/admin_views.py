@@ -1620,104 +1620,85 @@ def get_user_reservations(request, user_id):
 @login_required
 @admin_required
 def admin_archive(request):
-    """صفحة إدارة الأرشيف الإلكتروني للمستندات"""
+    """صفحة إدارة الأرشيف الإلكتروني - الواجهة الرئيسية للأرشيف الشجري"""
     # تحديد لغة العرض
     from django.utils.translation import get_language
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
-    # الحصول على معلمات التصفية
-    document_type = request.GET.get('document_type', '')
-    related_to = request.GET.get('related_to', '')
-    start_date_str = request.GET.get('start_date', '')
-    end_date_str = request.GET.get('end_date', '')
+    # البحث والتصفية
     search = request.GET.get('search', '')
     
-    # تصفية المستندات
-    documents = Document.objects.all().order_by('-created_at')
+    # الحصول على مجلدات الجذر
+    root_folders = ArchiveFolder.get_root_folders()
     
-    # تطبيق التصفية حسب نوع المستند
-    if document_type:
-        documents = documents.filter(document_type=document_type)
+    # الحصول على المستندات في المجلد الرئيسي (بدون مجلد)
+    files = Document.objects.filter(folder__isnull=True).order_by('-created_at')
     
-    # تطبيق التصفية حسب الارتباط
-    if related_to:
-        documents = documents.filter(related_to=related_to)
-    
-    # تطبيق التصفية حسب التاريخ
-    if start_date_str:
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            documents = documents.filter(document_date__gte=start_date)
-        except ValueError:
-            pass
-    
-    if end_date_str:
-        try:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            documents = documents.filter(document_date__lte=end_date)
-        except ValueError:
-            pass
-    
-    # تطبيق البحث
+    # تطبيق البحث إذا كان موجودًا
     if search:
-        documents = documents.filter(
+        files = files.filter(
             Q(title__icontains=search) | 
             Q(description__icontains=search) | 
             Q(reference_number__icontains=search) |
             Q(tags__icontains=search)
         )
     
-    # تقسيم الصفحات
-    paginator = Paginator(documents, 12)  # عرض 12 مستند في الصفحة
-    page_number = request.GET.get('page')
-    documents_page = paginator.get_page(page_number)
+    # بناء هيكل البيانات الشجري الكامل للعرض في jsTree
+    def build_tree(folder):
+        result = {
+            'id': folder.id,
+            'text': folder.name,
+            'icon': 'fas fa-folder',
+            'state': {
+                'opened': False
+            },
+            'children': []
+        }
+        
+        # إضافة المجلدات الفرعية
+        for child in folder.children.all().order_by('name'):
+            result['children'].append(build_tree(child))
+        
+        return result
     
-    # إحصائيات المستندات
-    total_documents = Document.objects.count()
-    contracts_count = Document.objects.filter(document_type='contract').count()
-    receipts_count = Document.objects.filter(document_type='receipt').count()
-    custody_count = Document.objects.filter(document_type='custody').count()
-    custody_release_count = Document.objects.filter(document_type='custody_release').count()
-    other_count = Document.objects.filter(document_type='other').count()
+    # بناء شجرة المجلدات للعرض في جافاسكريبت
+    folder_tree = []
     
-    # العدد حسب الارتباط
-    reservation_docs = Document.objects.filter(related_to='reservation').count()
-    car_docs = Document.objects.filter(related_to='car').count()
-    user_docs = Document.objects.filter(related_to='user').count()
+    # إضافة نقطة الجذر (الرئيسية)
+    folder_tree.append({
+        'id': '#',
+        'text': _('الرئيسية'),
+        'icon': 'fas fa-hdd',
+        'state': {
+            'opened': True
+        }
+    })
     
-    # تحديد لغة المستخدم
-    from django.utils.translation import get_language
-    current_language = get_language()
-    is_english = current_language == 'en'
-    is_rtl = current_language == 'ar'
+    # إضافة المجلدات الرئيسية
+    for folder in root_folders:
+        folder_tree.append(build_tree(folder))
+    
+    # إحصائيات النظام
+    total_folders = ArchiveFolder.objects.count()
+    total_files = Document.objects.count()
     
     context = {
-        'documents': documents_page,
-        'total_documents': total_documents,
-        'contracts_count': contracts_count,
-        'receipts_count': receipts_count,
-        'custody_count': custody_count,
-        'custody_release_count': custody_release_count,
-        'other_count': other_count,
-        'reservation_docs': reservation_docs,
-        'car_docs': car_docs,
-        'user_docs': user_docs,
-        'document_type_filter': document_type,
-        'related_to_filter': related_to,
-        'start_date': start_date_str,
-        'end_date': end_date_str,
+        'folder_tree': json.dumps(folder_tree),
+        'subfolders': root_folders,
+        'files': files,
+        'total_folders': total_folders,
+        'total_files': total_files,
         'search': search,
-        'document_types': Document.DOCUMENT_TYPE_CHOICES,
-        'related_to_types': Document.RELATED_TO_CHOICES,
+        'today': timezone.now().date().strftime('%Y-%m-%d'),
         'current_user': request.user,
         'is_english': is_english,
         'is_rtl': is_rtl,
         'active_section': 'archive'
     }
     
-    return render(request, 'admin/archive/documents.html', context)
+    return render(request, 'admin/archive/archive_main.html', context)
 
 @login_required
 @admin_required
