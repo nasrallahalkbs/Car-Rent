@@ -1,0 +1,574 @@
+<!-- CACHE_BUSTER 1745190476 -->{% extends 'admin_sidebar_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Document Archive" %}{% endblock %}
+
+{% block page_title %}{% trans "Electronic Document Archive" %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">{% trans "Document Archive" %}</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* أنماط خاصة بالأرشيف الإلكتروني */
+    .document-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .document-card {
+        border-radius: 0.75rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+    
+    .document-card:hover {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        transform: translateY(-5px);
+    }
+    
+    .document-header {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+    }
+    
+    .document-icon {
+        width: 55px;
+        height: 55px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-{% if is_english %}right{% else %}left{% endif %}: 1rem;
+        font-size: 1.5rem;
+    }
+    
+    .document-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 0.25rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .document-subtitle {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .document-content {
+        flex-grow: 1;
+        padding: 0 1rem 1rem;
+    }
+    
+    .document-description {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .document-footer {
+        padding: 1rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .document-info {
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    
+    .document-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .document-actions .btn {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .document-tag {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background-color: #f1f5f9;
+        color: #475569;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        margin-{% if is_english %}right{% else %}left{% endif %}: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .document-placeholder {
+        background-color: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 150px;
+        border-radius: 0.75rem;
+    }
+    
+    .filters-card {
+        position: sticky;
+        top: 4.5rem;
+    }
+    
+    .document-type-badge {
+        position: absolute;
+        top: 1rem;
+        {% if is_english %}right{% else %}left{% endif %}: 1rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .doc-type-contract { background-color: #dbeafe; color: #2563eb; }
+    .doc-type-receipt { background-color: #dcfce7; color: #16a34a; }
+    .doc-type-custody { background-color: #fef3c7; color: #d97706; }
+    .doc-type-custody_release { background-color: #fce7f3; color: #db2777; }
+    .doc-type-official_document { background-color: #f3e8ff; color: #9333ea; }
+    .doc-type-other { background-color: #f1f5f9; color: #475569; }
+    
+    .doc-preview {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .doc-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background-color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        margin-{% if is_english %}right{% else %}left{% endif %}: 0.5rem;
+    }
+    
+    /* أنماط الإحصائيات */
+    .stat-card {
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        background-color: #fff;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+    
+    .stat-title {
+        font-size: 0.9rem;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    
+    /* لوحة البحث */
+    .search-panel {
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h2 mb-0">{% trans "Document Archive" %}</h1>
+                <a href="{% url 'admin_archive_add' %}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i> {% trans "Add New Document" %}
+                </a>
+            </div>
+            <p class="text-muted">{% trans "Manage and organize your electronic documents and contracts" %}</p>
+        </div>
+    </div>
+    
+    <!-- الإحصائيات -->
+    <div class="row mb-4">
+        <div class="col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary text-white">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div class="stat-title">{% trans "Total Documents" %}</div>
+                <div class="stat-value">{{ total_documents }}</div>
+            </div>
+        </div>
+        <div class="col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: #dbeafe; color: #2563eb;">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <div class="stat-title">{% trans "Contracts" %}</div>
+                <div class="stat-value">{{ contracts_count }}</div>
+            </div>
+        </div>
+        <div class="col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: #dcfce7; color: #16a34a;">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div class="stat-title">{% trans "Receipts" %}</div>
+                <div class="stat-value">{{ receipts_count }}</div>
+            </div>
+        </div>
+        <div class="col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: #fef3c7; color: #d97706;">
+                    <i class="fas fa-key"></i>
+                </div>
+                <div class="stat-title">{% trans "Custody" %}</div>
+                <div class="stat-value">{{ custody_count }}</div>
+            </div>
+        </div>
+        <div class="col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: #fce7f3; color: #db2777;">
+                    <i class="fas fa-unlock-alt"></i>
+                </div>
+                <div class="stat-title">{% trans "Custody Release" %}</div>
+                <div class="stat-value">{{ custody_release_count }}</div>
+            </div>
+        </div>
+        <div class="col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: #f1f5f9; color: #475569;">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-title">{% trans "Other" %}</div>
+                <div class="stat-value">{{ other_count }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- البحث والفلترة -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm search-panel">
+                <div class="card-body">
+                    <form method="get" action="{% url 'admin_archive' %}" class="row g-3">
+                        <div class="col-lg-3">
+                            <label for="search" class="form-label">{% trans "Search" %}</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="search" name="search" placeholder="{% trans 'Document title, description or tags' %}" value="{{ search }}">
+                            </div>
+                        </div>
+                        <div class="col-lg-2">
+                            <label for="document_type" class="form-label">{% trans "Document Type" %}</label>
+                            <select class="form-select" id="document_type" name="document_type">
+                                <option value="">{% trans "All Types" %}</option>
+                                {% for type_value, type_name in document_types %}
+                                <option value="{{ type_value }}" {% if document_type_filter == type_value %}selected{% endif %}>{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-2">
+                            <label for="related_to" class="form-label">{% trans "Related To" %}</label>
+                            <select class="form-select" id="related_to" name="related_to">
+                                <option value="">{% trans "All" %}</option>
+                                {% for type_value, type_name in related_to_types %}
+                                <option value="{{ type_value }}" {% if related_to_filter == type_value %}selected{% endif %}>{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-2">
+                            <label for="start_date" class="form-label">{% trans "Start Date" %}</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                        </div>
+                        <div class="col-lg-2">
+                            <label for="end_date" class="form-label">{% trans "End Date" %}</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                        </div>
+                        <div class="col-lg-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">{% trans "Filter" %}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if documents %}
+    <div class="row">
+        <div class="col-12">
+            <div class="document-grid">
+                {% for document in documents %}
+                <div class="card document-card">
+                    <!-- نوع المستند -->
+                    <div class="document-type-badge doc-type-{{ document.document_type }}">
+                        {% if document.document_type == 'contract' %}
+                        <i class="fas fa-file-contract me-1"></i> {% trans "Contract" %}
+                        {% elif document.document_type == 'receipt' %}
+                        <i class="fas fa-receipt me-1"></i> {% trans "Receipt" %}
+                        {% elif document.document_type == 'custody' %}
+                        <i class="fas fa-key me-1"></i> {% trans "Custody" %}
+                        {% elif document.document_type == 'custody_release' %}
+                        <i class="fas fa-unlock-alt me-1"></i> {% trans "Custody Release" %}
+                        {% elif document.document_type == 'official_document' %}
+                        <i class="fas fa-stamp me-1"></i> {% trans "Official" %}
+                        {% else %}
+                        <i class="fas fa-file-alt me-1"></i> {% trans "Other" %}
+                        {% endif %}
+                    </div>
+                    
+                    <!-- معاينة المستند -->
+                    {% if document.is_image %}
+                    <img src="{{ document.file.url }}" class="doc-preview" alt="{{ document.title }}">
+                    {% elif document.is_pdf %}
+                    <div class="doc-preview d-flex align-items-center justify-content-center" style="background-color: #f8fafc;">
+                        <i class="fas fa-file-pdf fa-3x text-danger"></i>
+                    </div>
+                    {% else %}
+                    <div class="doc-preview d-flex align-items-center justify-content-center" style="background-color: #f8fafc;">
+                        <i class="fas fa-file fa-3x text-secondary"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- معلومات المستند -->
+                    <div class="document-header">
+                        <div class="document-icon" style="background-color: #f1f5f9; color: #475569;">
+                            {% if document.document_type == 'contract' %}
+                            <i class="fas fa-file-contract"></i>
+                            {% elif document.document_type == 'receipt' %}
+                            <i class="fas fa-receipt"></i>
+                            {% elif document.document_type == 'custody' %}
+                            <i class="fas fa-key"></i>
+                            {% elif document.document_type == 'custody_release' %}
+                            <i class="fas fa-unlock-alt"></i>
+                            {% elif document.document_type == 'official_document' %}
+                            <i class="fas fa-stamp"></i>
+                            {% else %}
+                            <i class="fas fa-file-alt"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h5 class="document-title">{{ document.title }}</h5>
+                            <div class="document-subtitle">
+                                <span>{{ document.reference_number }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="document-content">
+                        {% if document.description %}
+                        <p class="document-description">{{ document.description }}</p>
+                        {% endif %}
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">{% trans "Document Date" %}:</small>
+                            <div class="fw-medium">{{ document.document_date|date:"j F Y" }}</div>
+                        </div>
+                        
+                        {% if document.expiry_date %}
+                        <div class="mb-2">
+                            <small class="text-muted">{% trans "Expiry Date" %}:</small>
+                            <div class="fw-medium">{{ document.expiry_date|date:"j F Y" }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">{% trans "Related To" %}:</small>
+                            <div class="fw-medium">
+                                {% if document.related_to == 'reservation' %}
+                                <i class="fas fa-calendar me-1"></i> 
+                                {% if document.reservation %}
+                                {% trans "Reservation" %} #{{ document.reservation.id }}
+                                {% else %}
+                                {% trans "Reservation" %}
+                                {% endif %}
+                                {% elif document.related_to == 'car' %}
+                                <i class="fas fa-car me-1"></i> 
+                                {% if document.car %}
+                                {{ document.car.make }} {{ document.car.model }}
+                                {% else %}
+                                {% trans "Car" %}
+                                {% endif %}
+                                {% elif document.related_to == 'user' %}
+                                <i class="fas fa-user me-1"></i> 
+                                {% if document.user %}
+                                {{ document.user.first_name }} {{ document.user.last_name }}
+                                {% else %}
+                                {% trans "User" %}
+                                {% endif %}
+                                {% else %}
+                                <i class="fas fa-folder me-1"></i> {% trans "Other" %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if document.tags %}
+                        <div class="mb-2">
+                            <small class="text-muted">{% trans "Tags" %}:</small>
+                            <div>
+                                {% for tag in document.tags_list %}
+                                <span class="document-tag">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="document-footer">
+                        <div class="document-info">
+                            <div class="d-flex align-items-center">
+                                <div class="doc-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                {% if document.added_by %}
+                                {{ document.added_by.username }}
+                                {% else %}
+                                {% trans "Unknown" %}
+                                {% endif %}
+                                <span class="mx-1">•</span>
+                                <small>{{ document.created_at|date:"j/n/Y" }}</small>
+                            </div>
+                        </div>
+                        <div class="document-actions">
+                            <a href="{% url 'admin_archive_detail' document.id %}" class="btn btn-sm btn-outline-primary" title="{% trans 'View details' %}">
+                                <i class="fas fa-info-circle"></i>
+                            </a>
+                            <a href="{% url 'admin_archive_view' document.id %}" target="_blank" class="btn btn-sm btn-outline-success" title="{% trans 'View file' %}">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'admin_archive_download' document.id %}" class="btn btn-sm btn-outline-secondary" title="{% trans 'Download' %}">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- الترقيم -->
+            {% if documents.has_other_pages %}
+            <div class="mt-4">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if documents.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="First">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ documents.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;&laquo;</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in documents.paginator.page_range %}
+                            {% if documents.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > documents.number|add:'-3' and num < documents.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if documents.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ documents.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ documents.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;&raquo;</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-folder-open fa-4x text-muted"></i>
+                    </div>
+                    <h4>{% trans "No documents found" %}</h4>
+                    <p class="text-muted">{% trans "There are no documents that match your search criteria. Try adjusting your filters or add a new document." %}</p>
+                    <a href="{% url 'admin_archive_add' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus-circle me-2"></i> {% trans "Add New Document" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // لا شيء للآن - يمكننا إضافة سكريبتات إضافية هنا لاحقًا
+    });
+</script>
+{% endblock %}

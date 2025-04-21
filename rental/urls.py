@@ -76,6 +76,15 @@ urlpatterns = [
     path('dashboard/analytics/', analytics_views.admin_dashboard_analytics, name='admin_dashboard_analytics'),
     path('dashboard/analytics/reports/', analytics_views.admin_payment_analytics, name='admin_payment_analytics'),
     
+    # مسارات نظام الأرشيف الإلكتروني
+    path('dashboard/archive/', admin_views.admin_archive, name='admin_archive'),
+    path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
+    path('dashboard/archive/<int:document_id>/', admin_views.admin_archive_detail, name='admin_archive_detail'),
+    path('dashboard/archive/<int:document_id>/edit/', admin_views.admin_archive_edit, name='admin_archive_edit'),
+    path('dashboard/archive/<int:document_id>/delete/', admin_views.admin_archive_delete, name='admin_archive_delete'),
+    path('dashboard/archive/<int:document_id>/download/', admin_views.admin_archive_download, name='admin_archive_download'),
+    path('dashboard/archive/<int:document_id>/view/', admin_views.admin_archive_view, name='admin_archive_view'),
+    
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
     path('csrf-debug-page/', csrf_debug_page, name='csrf_debug_page'),

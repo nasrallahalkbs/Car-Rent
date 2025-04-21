@@ -1,0 +1,176 @@
+<!-- CACHE_BUSTER 1745190476 -->{% extends 'admin_sidebar_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Delete Document" %} - {{ document.title }}{% endblock %}
+
+{% block page_title %}{% trans "Delete Document" %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'admin_archive' %}">{% trans "Document Archive" %}</a></li>
+<li class="breadcrumb-item"><a href="{% url 'admin_archive_detail' document.id %}">{% trans "Document Details" %}</a></li>
+<li class="breadcrumb-item active">{% trans "Delete Document" %}</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .document-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem auto;
+        font-size: 1.75rem;
+    }
+    
+    .related-info {
+        background-color: #f8fafc;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .document-info-row {
+        display: flex;
+        margin-bottom: 0.5rem;
+    }
+    
+    .document-info-label {
+        width: 150px;
+        font-weight: 500;
+        color: #64748b;
+    }
+    
+    .document-info-value {
+        flex: 1;
+        color: #334155;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="document-icon" style="
+                        {% if document.document_type == 'contract' %}
+                        background-color: #fee2e2; color: #ef4444;
+                        {% elif document.document_type == 'receipt' %}
+                        background-color: #fee2e2; color: #ef4444;
+                        {% elif document.document_type == 'custody' %}
+                        background-color: #fee2e2; color: #ef4444;
+                        {% elif document.document_type == 'custody_release' %}
+                        background-color: #fee2e2; color: #ef4444;
+                        {% elif document.document_type == 'official_document' %}
+                        background-color: #fee2e2; color: #ef4444;
+                        {% else %}
+                        background-color: #fee2e2; color: #ef4444;
+                        {% endif %}
+                    ">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                    
+                    <h2 class="mb-4">{% trans "Delete Document" %}</h2>
+                    <p class="lead text-danger mb-4">{% trans "Are you sure you want to delete this document?" %}</p>
+                    <p class="mb-3">{% trans "This action cannot be undone. The document and all associated information will be permanently deleted from the system." %}</p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% trans "Warning: Once deleted, the file and its metadata cannot be recovered." %}
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">{% trans "Document Information" %}</h5>
+                        </div>
+                        <div class="card-body text-start">
+                            <div class="document-info-row">
+                                <div class="document-info-label">{% trans "Document Title" %}</div>
+                                <div class="document-info-value">{{ document.title }}</div>
+                            </div>
+                            
+                            <div class="document-info-row">
+                                <div class="document-info-label">{% trans "Reference Number" %}</div>
+                                <div class="document-info-value">{{ document.reference_number|default:"-" }}</div>
+                            </div>
+                            
+                            <div class="document-info-row">
+                                <div class="document-info-label">{% trans "Document Type" %}</div>
+                                <div class="document-info-value">
+                                    {% if document.document_type == 'contract' %}
+                                    {% trans "Contract" %}
+                                    {% elif document.document_type == 'receipt' %}
+                                    {% trans "Receipt" %}
+                                    {% elif document.document_type == 'custody' %}
+                                    {% trans "Custody" %}
+                                    {% elif document.document_type == 'custody_release' %}
+                                    {% trans "Custody Release" %}
+                                    {% elif document.document_type == 'official_document' %}
+                                    {% trans "Official Document" %}
+                                    {% else %}
+                                    {% trans "Other" %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="document-info-row">
+                                <div class="document-info-label">{% trans "Document Date" %}</div>
+                                <div class="document-info-value">{{ document.document_date|date:"j F Y" }}</div>
+                            </div>
+                            
+                            {% if document.description %}
+                            <div class="document-info-row">
+                                <div class="document-info-label">{% trans "Description" %}</div>
+                                <div class="document-info-value">{{ document.description }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if document.related_to %}
+                            <div class="document-info-row">
+                                <div class="document-info-label">{% trans "Related To" %}</div>
+                                <div class="document-info-value">
+                                    {% if document.related_to == 'reservation' %}
+                                    {% trans "Reservation" %}
+                                    {% if document.reservation %}
+                                    #{{ document.reservation.id }}
+                                    {% endif %}
+                                    {% elif document.related_to == 'car' %}
+                                    {% trans "Car" %}
+                                    {% if document.car %}
+                                    - {{ document.car.make }} {{ document.car.model }}
+                                    {% endif %}
+                                    {% elif document.related_to == 'user' %}
+                                    {% trans "User" %}
+                                    {% if document.user %}
+                                    - {{ document.user.first_name|default:document.user.username }}
+                                    {% endif %}
+                                    {% else %}
+                                    {% trans "Other" %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <form method="post" action="{% url 'admin_archive_delete' document.id %}">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'admin_archive_detail' document.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i> {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-2"></i> {% trans "Delete Document Permanently" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
