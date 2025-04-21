@@ -547,6 +547,58 @@ def admin_reservation_detail(request, reservation_id):
         
         # تحديد لغة المستخدم
         from django.utils.translation import get_language
+        
+        current_language = get_language()
+        is_english = current_language == 'en'
+        is_rtl = current_language == 'ar'
+        print(f"DIAGNOSTIC: Language: {current_language}, is_rtl: {is_rtl}")
+        
+        # إضافة معلومات عن المستخدم وعدد الحجوزات
+        user = reservation.user
+        user.reservation_count = Reservation.objects.filter(user=user).count()
+        
+        # إعداد سياق القالب بجميع المعلومات المطلوبة
+        context = {
+            'reservation': reservation,
+            'days': delta,
+            'is_english': is_english,
+            'is_rtl': is_rtl,
+            'current_user': request.user,
+        }
+        
+        # إضافة معلومات الدفع إذا كانت متوفرة
+        if hasattr(reservation, 'payment_method') or (reservation.notes and ('طريقة الدفع:' in reservation.notes)):
+            if hasattr(reservation, 'payment_method'):
+                # استخدام القيمة المخزنة مباشرة إذا كانت موجودة
+                context['payment_method'] = reservation.payment_method
+            else:
+                # استخراج طريقة الدفع من الملاحظات
+                notes_lines = reservation.notes.split('\n')
+                for line in notes_lines:
+                    if 'طريقة الدفع:' in line:
+                        context['payment_method'] = line.split('طريقة الدفع:')[1].strip()
+                        break
+            
+            # استخراج رقم المرجع من الملاحظات
+            notes_lines = reservation.notes.split('\n') if reservation.notes else []
+            for line in notes_lines:
+                if 'رقم المرجع:' in line:
+                    context['payment_reference'] = line.split('رقم المرجع:')[1].strip()
+                    break
+        
+        # استخدام قالب التصميم الاحترافي المصحح
+        print(f"DIAGNOSTIC: Rendering fixed professional template")
+        return render(request, 'admin/reservation_detail_fix.html', context)
+        
+    except Exception as e:
+        # تسجيل أي أخطاء واظهارها للمستخدم بشكل مفصل
+        error_message = f"Error showing reservation details: {str(e)}"
+        logger.error(error_message)
+        print(f"ERROR in admin_reservation_detail: {error_message}")
+        import traceback
+        traceback.print_exc()
+        messages.error(request, f"حدث خطأ أثناء محاولة عرض تفاصيل الحجز: {str(e)}")
+        return redirect('admin_reservations')
 
 # وظائف الأرشيف الإلكتروني
 @login_required
@@ -810,58 +862,6 @@ def delete_document(request, document_id):
     }
     
     return render(request, 'admin/archive/delete_document.html', context)
-
-        current_language = get_language()
-        is_english = current_language == 'en'
-        is_rtl = current_language == 'ar'
-        print(f"DIAGNOSTIC: Language: {current_language}, is_rtl: {is_rtl}")
-        
-        # إضافة معلومات عن المستخدم وعدد الحجوزات
-        user = reservation.user
-        user.reservation_count = Reservation.objects.filter(user=user).count()
-        
-        # إعداد سياق القالب بجميع المعلومات المطلوبة
-        context = {
-            'reservation': reservation,
-            'days': delta,
-            'is_english': is_english,
-            'is_rtl': is_rtl,
-            'current_user': request.user,
-        }
-        
-        # إضافة معلومات الدفع إذا كانت متوفرة
-        if hasattr(reservation, 'payment_method') or (reservation.notes and ('طريقة الدفع:' in reservation.notes)):
-            if hasattr(reservation, 'payment_method'):
-                # استخدام القيمة المخزنة مباشرة إذا كانت موجودة
-                context['payment_method'] = reservation.payment_method
-            else:
-                # استخراج طريقة الدفع من الملاحظات
-                notes_lines = reservation.notes.split('\n')
-                for line in notes_lines:
-                    if 'طريقة الدفع:' in line:
-                        context['payment_method'] = line.split('طريقة الدفع:')[1].strip()
-                        break
-            
-            # استخراج رقم المرجع من الملاحظات
-            notes_lines = reservation.notes.split('\n') if reservation.notes else []
-            for line in notes_lines:
-                if 'رقم المرجع:' in line:
-                    context['payment_reference'] = line.split('رقم المرجع:')[1].strip()
-                    break
-        
-        # استخدام قالب التصميم الاحترافي المصحح
-        print(f"DIAGNOSTIC: Rendering fixed professional template")
-        return render(request, 'admin/reservation_detail_fix.html', context)
-    
-    except Exception as e:
-        # تسجيل أي أخطاء واظهارها للمستخدم بشكل مفصل
-        error_message = f"Error showing reservation details: {str(e)}"
-        logger.error(error_message)
-        print(f"ERROR in admin_reservation_detail: {error_message}")
-        import traceback
-        traceback.print_exc()
-        messages.error(request, f"حدث خطأ أثناء محاولة عرض تفاصيل الحجز: {str(e)}")
-        return redirect('admin_reservations')
 
 @login_required
 @admin_required
