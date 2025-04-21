@@ -407,54 +407,25 @@
                         
                         <div class="mb-2">
                             <small class="text-muted">{% trans "Document Date" %}:</small>
-                            <div class="fw-medium">{{ document.document_date|date:"j F Y" }}</div>
+                            <div class="fw-medium">{{ document.document_date|date:"d/m/Y" }}</div>
                         </div>
                         
-                        {% if document.expiry_date %}
+                        {% if document.folder %}
                         <div class="mb-2">
-                            <small class="text-muted">{% trans "Expiry Date" %}:</small>
-                            <div class="fw-medium">{{ document.expiry_date|date:"j F Y" }}</div>
+                            <small class="text-muted">{% trans "Folder" %}:</small>
+                            <div class="fw-medium">
+                                <a href="{% url 'admin_archive_folder_view' document.folder.id %}">
+                                    <i class="fas fa-folder text-warning me-1"></i> {{ document.folder.name }}
+                                </a>
+                            </div>
                         </div>
                         {% endif %}
                         
-                        <div class="mb-2">
-                            <small class="text-muted">{% trans "Related To" %}:</small>
-                            <div class="fw-medium">
-                                {% if document.related_to == 'reservation' %}
-                                <i class="fas fa-calendar me-1"></i> 
-                                {% if document.reservation %}
-                                {% trans "Reservation" %} #{{ document.reservation.id }}
-                                {% else %}
-                                {% trans "Reservation" %}
-                                {% endif %}
-                                {% elif document.related_to == 'car' %}
-                                <i class="fas fa-car me-1"></i> 
-                                {% if document.car %}
-                                {{ document.car.make }} {{ document.car.model }}
-                                {% else %}
-                                {% trans "Car" %}
-                                {% endif %}
-                                {% elif document.related_to == 'user' %}
-                                <i class="fas fa-user me-1"></i> 
-                                {% if document.user %}
-                                {{ document.user.first_name }} {{ document.user.last_name }}
-                                {% else %}
-                                {% trans "User" %}
-                                {% endif %}
-                                {% else %}
-                                <i class="fas fa-folder me-1"></i> {% trans "Other" %}
-                                {% endif %}
-                            </div>
-                        </div>
-                        
                         {% if document.tags %}
                         <div class="mb-2">
-                            <small class="text-muted">{% trans "Tags" %}:</small>
-                            <div>
-                                {% for tag in document.tags_list %}
-                                <span class="document-tag">{{ tag }}</span>
-                                {% endfor %}
-                            </div>
+                            {% for tag in document.tags_list %}
+                            <span class="document-tag">{{ tag }}</span>
+                            {% endfor %}
                         </div>
                         {% endif %}
                     </div>
@@ -465,23 +436,14 @@
                                 <div class="doc-avatar">
                                     <i class="fas fa-user"></i>
                                 </div>
-                                {% if document.added_by %}
-                                {{ document.added_by.username }}
-                                {% else %}
-                                {% trans "Unknown" %}
-                                {% endif %}
-                                <span class="mx-1">•</span>
-                                <small>{{ document.created_at|date:"j/n/Y" }}</small>
+                                <span>{{ document.added_by.username }}</span>
                             </div>
                         </div>
                         <div class="document-actions">
-                            <a href="{% url 'admin_archive_detail' document.id %}" class="btn btn-sm btn-outline-primary" title="{% trans 'View details' %}">
-                                <i class="fas fa-info-circle"></i>
+                            <a href="{% url 'admin_document_detail' document.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye me-1"></i> {% trans "View" %}
                             </a>
-                            <a href="{% url 'admin_archive_view' document.id %}" target="_blank" class="btn btn-sm btn-outline-success" title="{% trans 'View file' %}">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{% url 'admin_archive_download' document.id %}" class="btn btn-sm btn-outline-secondary" title="{% trans 'Download' %}">
+                            <a href="{{ document.file.url }}" class="btn btn-sm btn-outline-secondary" download>
                                 <i class="fas fa-download"></i>
                             </a>
                         </div>
@@ -490,60 +452,44 @@
                 {% endfor %}
             </div>
             
-            <!-- الترقيم -->
-            {% if documents.has_other_pages %}
-            <div class="mt-4">
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="d-flex justify-content-center mt-4">
                 <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center">
-                        {% if documents.has_previous %}
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
                         <li class="page-item">
                             <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="First">
                                 <span aria-hidden="true">&laquo;&laquo;</span>
                             </a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ documents.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Previous">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Previous">
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
                         </li>
-                        {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">&laquo;&laquo;</span>
-                        </li>
-                        <li class="page-item disabled">
-                            <span class="page-link">&laquo;</span>
-                        </li>
                         {% endif %}
                         
-                        {% for num in documents.paginator.page_range %}
-                            {% if documents.number == num %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                            {% elif num > documents.number|add:'-3' and num < documents.number|add:'3' %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ num }}</a>
-                            </li>
-                            {% endif %}
+                        {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
                         {% endfor %}
                         
-                        {% if documents.has_next %}
+                        {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ documents.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Next">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Next">
                                 <span aria-hidden="true">&raquo;</span>
                             </a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ documents.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Last">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if document_type_filter %}&document_type={{ document_type_filter }}{% endif %}{% if related_to_filter %}&related_to={{ related_to_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Last">
                                 <span aria-hidden="true">&raquo;&raquo;</span>
                             </a>
-                        </li>
-                        {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">&raquo;</span>
-                        </li>
-                        <li class="page-item disabled">
-                            <span class="page-link">&raquo;&raquo;</span>
                         </li>
                         {% endif %}
                     </ul>
@@ -555,15 +501,13 @@
     {% else %}
     <div class="row">
         <div class="col-12">
-            <div class="card">
+            <div class="card shadow-sm">
                 <div class="card-body text-center py-5">
-                    <div class="mb-4">
-                        <i class="fas fa-folder-open fa-4x text-muted"></i>
-                    </div>
-                    <h4>{% trans "No documents found" %}</h4>
-                    <p class="text-muted">{% trans "There are no documents that match your search criteria. Try adjusting your filters or add a new document." %}</p>
-                    <a href="{% url 'admin_archive_add' %}" class="btn btn-primary mt-3">
-                        <i class="fas fa-plus-circle me-2"></i> {% trans "Add New Document" %}
+                    <i class="fas fa-folder-open fa-4x text-muted mb-4"></i>
+                    <h4 class="mb-3">{% trans "No documents found" %}</h4>
+                    <p class="text-muted mb-4">{% trans "You haven't added any documents yet, or your search filters didn't match any documents." %}</p>
+                    <a href="{% url 'admin_archive_add' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i> {% trans "Add your first document" %}
                     </a>
                 </div>
             </div>
@@ -577,261 +521,6 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // لا شيء للآن - يمكننا إضافة سكريبتات إضافية هنا لاحقًا
-    });
-</script>
-{% endblock %}
-
-{% block additional_head %}
-<style>
-    .document-card {
-        transition: all 0.3s ease;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    
-    .document-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    }
-    
-    .doc-icon {
-        font-size: 2rem;
-        padding: 15px;
-        border-radius: 50%;
-        margin-bottom: 10px;
-    }
-    
-    .stats-card {
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-    }
-    
-    .stats-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-    }
-    
-    .document-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-    }
-    
-    .search-filters {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">الأرشيف الإلكتروني</h1>
-        <a href="{% url 'admin_add_document' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
-            <i class="fas fa-plus fa-sm text-white-50 ms-1"></i> إضافة وثيقة جديدة
-        </a>
-    </div>
-
-    <!-- إحصائيات سريعة -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="stats-card bg-primary text-white">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">إجمالي الوثائق</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ stats.total_documents }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-archive fa-2x text-white-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="stats-card bg-success text-white">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">العقود</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ stats.contracts }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-file-contract fa-2x text-white-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="stats-card bg-info text-white">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">الإيصالات</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ stats.receipts }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-receipt fa-2x text-white-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="stats-card bg-warning text-white">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">العهد</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ stats.custody|add:stats.custody_release }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clipboard-list fa-2x text-white-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- البحث والتصفية -->
-    <div class="search-filters mb-4">
-        <form method="get" class="row g-3">
-            <div class="col-md-6">
-                <label for="search" class="form-label">بحث</label>
-                <input type="text" class="form-control" id="search" name="search" placeholder="ابحث عن عنوان أو رقم مرجعي أو وصف..." value="{{ search_query }}">
-            </div>
-            <div class="col-md-2">
-                <label for="document_type" class="form-label">نوع الوثيقة</label>
-                <select class="form-select" id="document_type" name="document_type">
-                    <option value="">الكل</option>
-                    {% for type_code, type_name in document_type_choices %}
-                    <option value="{{ type_code }}" {% if document_type == type_code %}selected{% endif %}>{{ type_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label for="date_from" class="form-label">من تاريخ</label>
-                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
-            </div>
-            <div class="col-md-2">
-                <label for="date_to" class="form-label">إلى تاريخ</label>
-                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
-            </div>
-            <div class="col-12 mt-3">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-search me-2"></i> بحث</button>
-                <a href="{% url 'admin_archive' %}" class="btn btn-secondary"><i class="fas fa-redo me-2"></i> إعادة ضبط</a>
-            </div>
-        </form>
-    </div>
-
-    <!-- قائمة الوثائق -->
-    {% if documents %}
-    <div class="card mb-4">
-        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">الوثائق المؤرشفة</h6>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="documentsTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>العنوان</th>
-                            <th>النوع</th>
-                            <th>الرقم المرجعي</th>
-                            <th>تاريخ المستند</th>
-                            <th>تاريخ الإضافة</th>
-                            <th>متعلق بـ</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for document in documents %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'admin_document_detail' document.id %}">{{ document.title }}</a>
-                                {% if document.tags %}
-                                <div>
-                                    {% for tag in document.tags_list %}
-                                    <span class="badge bg-light text-dark">{{ tag }}</span>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if document.document_type == 'contract' %}
-                                <span class="badge bg-success">عقد</span>
-                                {% elif document.document_type == 'receipt' %}
-                                <span class="badge bg-info">إيصال</span>
-                                {% elif document.document_type == 'custody' %}
-                                <span class="badge bg-warning">عهدة</span>
-                                {% elif document.document_type == 'custody_release' %}
-                                <span class="badge bg-danger">إخلاء عهدة</span>
-                                {% elif document.document_type == 'official_document' %}
-                                <span class="badge bg-primary">وثيقة رسمية</span>
-                                {% else %}
-                                <span class="badge bg-secondary">أخرى</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ document.reference_number }}</td>
-                            <td>{{ document.document_date|date:"d/m/Y" }}</td>
-                            <td>{{ document.created_at|date:"d/m/Y" }}</td>
-                            <td>
-                                {% if document.related_to == 'reservation' and document.reservation %}
-                                <a href="{% url 'admin_reservation_detail' document.reservation.id %}">حجز #{{ document.reservation.id }}</a>
-                                {% elif document.related_to == 'car' and document.car %}
-                                <a href="{% url 'admin_car_edit' document.car.id %}">{{ document.car }}</a>
-                                {% elif document.related_to == 'user' and document.user %}
-                                <a href="{% url 'admin_user_detail' document.user.id %}">{{ document.user.username }}</a>
-                                {% else %}
-                                {{ document.get_related_to_display }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'admin_document_detail' document.id %}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{% url 'admin_edit_document' document.id %}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'admin_delete_document' document.id %}" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i> لا توجد وثائق مطابقة لمعايير البحث.
-    </div>
-    {% endif %}
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    $(document).ready(function() {
-        // تهيئة طاولة البيانات
-        $('#documentsTable').DataTable({
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json"
-            },
-            "order": [[4, "desc"]]
-        });
     });
 </script>
 {% endblock %}
