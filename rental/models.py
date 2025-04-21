@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+import os
+import uuid
 
 class User(AbstractUser):
     """Extended User model for car rental app"""
@@ -262,6 +264,168 @@ class SiteSettings(models.Model):
     enable_dark_mode = models.BooleanField(default=True, verbose_name=_('تفعيل الوضع المظلم'))
     
     # إعدادات الأمان
+    
+    def __str__(self):
+        return self.site_name
+        
+    class Meta:
+        verbose_name = _('إعدادات الموقع')
+        verbose_name_plural = _('إعدادات الموقع')
+
+
+def archive_document_path(instance, filename):
+    """تحديد مسار حفظ المستندات الأرشيفية بشكل منظم"""
+    # الحصول على امتداد الملف
+    ext = filename.split('.')[-1]
+    # إنشاء اسم ملف جديد فريد
+    filename = f"{uuid.uuid4()}.{ext}"
+    # تنظيم الملفات حسب النوع والسنة والشهر
+    year = timezone.now().strftime('%Y')
+    month = timezone.now().strftime('%m')
+    
+    # تحديد المجلد حسب نوع المستند
+    folder = 'other'
+    if instance.document_type == 'contract':
+        folder = 'contracts'
+    elif instance.document_type == 'receipt':
+        folder = 'receipts'
+    elif instance.document_type == 'custody':
+        folder = 'custody'
+    elif instance.document_type == 'custody_release':
+        folder = 'custody_release'
+    
+    # إرجاع المسار الكامل
+    return os.path.join('archive', folder, year, month, filename)
+
+
+class Document(models.Model):
+    """نموذج أرشيف الوثائق والعقود والاستلامات والعهد"""
+    
+    DOCUMENT_TYPE_CHOICES = [
+        ('contract', _('عقد')),
+        ('receipt', _('إيصال')),
+        ('custody', _('عهدة')),
+        ('custody_release', _('إخلاء عهدة')),
+        ('official_document', _('وثيقة رسمية')),
+        ('other', _('أخرى')),
+    ]
+    
+    RELATED_TO_CHOICES = [
+        ('reservation', _('حجز')),
+        ('car', _('سيارة')),
+        ('user', _('مستخدم')),
+        ('employee', _('موظف')),
+        ('other', _('أخرى')),
+    ]
+    
+    # معلومات المستند الأساسية
+    title = models.CharField(max_length=255, verbose_name=_('عنوان المستند'))
+    document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES, default='other', verbose_name=_('نوع المستند'))
+    description = models.TextField(blank=True, null=True, verbose_name=_('وصف المستند'))
+    
+    # ملف المستند
+    file = models.FileField(upload_to=archive_document_path, verbose_name=_('ملف المستند'))
+    file_size = models.PositiveIntegerField(default=0, editable=False, verbose_name=_('حجم الملف (بايت)'))
+    
+    # تاريخ المستند
+    document_date = models.DateField(default=timezone.now, verbose_name=_('تاريخ المستند'))
+    expiry_date = models.DateField(blank=True, null=True, verbose_name=_('تاريخ انتهاء الصلاحية'))
+    
+    # علاقات المستند
+    related_to = models.CharField(max_length=20, choices=RELATED_TO_CHOICES, default='other', verbose_name=_('متعلق بـ'))
+    reservation = models.ForeignKey(Reservation, blank=True, null=True, on_delete=models.SET_NULL, related_name='documents', verbose_name=_('الحجز المرتبط'))
+    car = models.ForeignKey(Car, blank=True, null=True, on_delete=models.SET_NULL, related_name='documents', verbose_name=_('السيارة المرتبطة'))
+    user = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='documents', verbose_name=_('المستخدم المرتبط'))
+    reference_number = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('الرقم المرجعي'))
+    
+    # الموظف المسؤول
+    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='added_documents', verbose_name=_('أضيف بواسطة'))
+    
+    # سجل المستند
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإضافة'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاريخ التحديث'))
+    is_archived = models.BooleanField(default=True, verbose_name=_('مؤرشف'))
+    tags = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('الكلمات المفتاحية'), help_text=_('فصل بفواصل'))
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        # حساب حجم الملف عند الحفظ
+        if self.file:
+            try:
+                self.file_size = self.file.size
+            except:
+                pass
+        
+        # إنشاء رقم مرجعي للمستند إذا لم يكن موجودًا
+        if not self.reference_number:
+            now = timezone.now()
+            year = now.strftime('%Y')
+            month = now.strftime('%m')
+            day = now.strftime('%d')
+            
+            # تحديد الرمز حسب نوع المستند
+            doc_code = 'DOC'
+            if self.document_type == 'contract':
+                doc_code = 'CNT'
+            elif self.document_type == 'receipt':
+                doc_code = 'RCT'
+            elif self.document_type == 'custody':
+                doc_code = 'CUS'
+            elif self.document_type == 'custody_release':
+                doc_code = 'CRL'
+            
+            # إنشاء رقم مرجعي فريد
+            # نحصل على عدد المستندات الموجودة من نفس النوع
+            doc_count = Document.objects.filter(document_type=self.document_type).count() + 1
+            self.reference_number = f"{doc_code}-{year}{month}{day}-{doc_count:04d}"
+        
+        super().save(*args, **kwargs)
+    
+    @property
+    def file_size_display(self):
+        """عرض حجم الملف بطريقة قابلة للقراءة"""
+        size = self.file_size
+        for unit in ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت']:
+            if size < 1024.0:
+                return f"{size:.2f} {unit}"
+            size /= 1024.0
+        return f"{size:.2f} تيرابايت"
+    
+    @property
+    def file_extension(self):
+        """الحصول على امتداد الملف"""
+        if self.file:
+            return os.path.splitext(self.file.name)[1][1:]  # استخراج الامتداد بدون النقطة
+        return ""
+    
+    @property
+    def is_image(self):
+        """التحقق مما إذا كان الملف صورة"""
+        image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
+        return self.file_extension.lower() in image_extensions
+    
+    @property
+    def is_pdf(self):
+        """التحقق مما إذا كان الملف PDF"""
+        return self.file_extension.lower() == 'pdf'
+    
+    @property
+    def tags_list(self):
+        """إرجاع الكلمات المفتاحية كقائمة"""
+        if not self.tags:
+            return []
+        return [tag.strip() for tag in self.tags.split(',')]
+    
+    def set_tags(self, tags_list):
+        """تعيين الكلمات المفتاحية من قائمة"""
+        self.tags = ', '.join(tags_list)
+    
+    class Meta:
+        verbose_name = _('وثيقة مؤرشفة')
+        verbose_name_plural = _('الوثائق المؤرشفة')
+        ordering = ['-created_at']
     enable_two_factor_auth = models.BooleanField(default=False, verbose_name=_('تفعيل المصادقة الثنائية'))
     booking_confirmation_expiry_hours = models.PositiveIntegerField(default=24, verbose_name=_('ساعات انتهاء صلاحية تأكيد الحجز'))
     session_timeout_minutes = models.PositiveIntegerField(default=60, verbose_name=_('مدة انتهاء الجلسة بالدقائق'))
