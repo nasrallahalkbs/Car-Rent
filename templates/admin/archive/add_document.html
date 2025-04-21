@@ -14,494 +14,6 @@
 {% block extra_css %}
 <style>
     .form-section {
-        margin-bottom: 2rem;
-    }
-    
-    .form-section-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .file-upload-container {
-        border: 2px dashed #cbd5e1;
-        border-radius: 0.75rem;
-        padding: 2rem;
-        text-align: center;
-        transition: all 0.3s;
-    }
-    
-    .file-upload-container:hover {
-        border-color: #94a3b8;
-    }
-    
-    .file-upload-container.dragover {
-        border-color: #3b82f6;
-        background-color: #dbeafe;
-    }
-    
-    .file-preview {
-        max-width: 100%;
-        max-height: 200px;
-        margin-top: 1rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-    
-    .file-info {
-        margin-top: 1rem;
-        color: #64748b;
-        font-size: 0.875rem;
-    }
-    
-    .btn-file {
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .btn-file input[type=file] {
-        position: absolute;
-        top: 0;
-        right: 0;
-        min-width: 100%;
-        min-height: 100%;
-        font-size: 100px;
-        text-align: right;
-        filter: alpha(opacity=0);
-        opacity: 0;
-        outline: none;
-        background: white;
-        cursor: pointer;
-        display: block;
-    }
-    
-    .related-entity-select {
-        display: none;
-    }
-    
-    .tag-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
-    }
-    
-    .tag {
-        background-color: #f1f5f9;
-        color: #475569;
-        border-radius: 0.25rem;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-        display: flex;
-        align-items: center;
-    }
-    
-    .tag .remove-tag {
-        margin-{% if is_english %}left{% else %}right{% endif %}: 0.25rem;
-        cursor: pointer;
-        color: #94a3b8;
-    }
-    
-    .tag .remove-tag:hover {
-        color: #ef4444;
-    }
-    
-    .required-label::after {
-        content: " *";
-        color: #ef4444;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1 class="h2 mb-0">{% trans "Add New Document" %}</h1>
-                    <p class="text-muted">{% trans "Upload a new document to the electronic archive" %}</p>
-                </div>
-                <a href="{% url 'admin_archive' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i> {% trans "Back to Archive" %}
-                </a>
-            </div>
-            
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form method="post" action="{% url 'admin_archive_add' %}" enctype="multipart/form-data" id="document-form">
-                        {% csrf_token %}
-                        
-                        <div class="row">
-                            <div class="col-lg-8">
-                                <!-- معلومات المستند -->
-                                <div class="form-section">
-                                    <h3 class="form-section-title">{% trans "Document Information" %}</h3>
-                                    
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label for="title" class="form-label required-label">{% trans "Document Title" %}</label>
-                                            <input type="text" class="form-control" id="title" name="title" required>
-                                            <div class="form-text">{% trans "Enter a descriptive title for the document" %}</div>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <label for="document_type" class="form-label required-label">{% trans "Document Type" %}</label>
-                                            <select class="form-select" id="document_type" name="document_type" required>
-                                                <option value="" selected disabled>{% trans "Select Document Type" %}</option>
-                                                {% for type_value, type_name in document_types %}
-                                                <option value="{{ type_value }}">{{ type_name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <label for="document_date" class="form-label required-label">{% trans "Document Date" %}</label>
-                                            <input type="date" class="form-control" id="document_date" name="document_date" value="{{ today }}" required>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <label for="expiry_date" class="form-label">{% trans "Expiry Date" %} <small class="text-muted">({% trans "if applicable" %})</small></label>
-                                            <input type="date" class="form-control" id="expiry_date" name="expiry_date">
-                                        </div>
-                                        
-                                        <div class="col-12">
-                                            <label for="description" class="form-label">{% trans "Description" %}</label>
-                                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- العلاقات -->
-                                <div class="form-section">
-                                    <h3 class="form-section-title">{% trans "Document Relationships" %}</h3>
-                                    
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label for="related_to" class="form-label required-label">{% trans "Related To" %}</label>
-                                            <select class="form-select" id="related_to" name="related_to" required>
-                                                <option value="" selected disabled>{% trans "Select Relationship Type" %}</option>
-                                                {% for type_value, type_name in related_to_types %}
-                                                <option value="{{ type_value }}">{{ type_name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <!-- قوائم الكيانات المختلفة -->
-                                            <div id="select-reservation" class="related-entity-select">
-                                                <label for="reservation_id" class="form-label">{% trans "Select Reservation" %}</label>
-                                                <select class="form-select" id="reservation_id" name="related_id">
-                                                    <option value="">{% trans "Select Reservation" %}</option>
-                                                    {% for reservation in reservations %}
-                                                    <option value="{{ reservation.id }}">{% trans "Reservation" %} #{{ reservation.id }} - {{ reservation.user.first_name|default:reservation.user.username }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            
-                                            <div id="select-car" class="related-entity-select">
-                                                <label for="car_id" class="form-label">{% trans "Select Car" %}</label>
-                                                <select class="form-select" id="car_id" name="related_id">
-                                                    <option value="">{% trans "Select Car" %}</option>
-                                                    {% for car in cars %}
-                                                    <option value="{{ car.id }}">{{ car.make }} {{ car.model }} ({{ car.license_plate }})</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            
-                                            <div id="select-user" class="related-entity-select">
-                                                <label for="user_id" class="form-label">{% trans "Select User" %}</label>
-                                                <select class="form-select" id="user_id" name="related_id">
-                                                    <option value="">{% trans "Select User" %}</option>
-                                                    {% for user in users %}
-                                                    <option value="{{ user.id }}">{{ user.first_name|default:user.username }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            
-                                            <div id="select-other" class="related-entity-select">
-                                                <div class="alert alert-info">
-                                                    {% trans "No specific entity needs to be selected for this relationship type." %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- الكلمات المفتاحية -->
-                                <div class="form-section">
-                                    <h3 class="form-section-title">{% trans "Tags & Keywords" %}</h3>
-                                    
-                                    <div class="row g-3">
-                                        <div class="col-12">
-                                            <label for="tag-input" class="form-label">{% trans "Tags" %}</label>
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" id="tag-input" placeholder="{% trans 'Add tags for better search' %}">
-                                                <button class="btn btn-outline-secondary" type="button" id="add-tag-btn">{% trans "Add" %}</button>
-                                            </div>
-                                            <div class="form-text">{% trans "Press Enter or click Add after typing each tag" %}</div>
-                                            
-                                            <div class="tag-container" id="tag-container"></div>
-                                            <input type="hidden" name="tags" id="tags-hidden">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-lg-4">
-                                <!-- تحميل الملف -->
-                                <div class="form-section">
-                                    <h3 class="form-section-title">{% trans "Document File" %}</h3>
-                                    
-                                    <div class="file-upload-container" id="file-drop-area">
-                                        <div class="file-icon mb-3">
-                                            <i class="fas fa-cloud-upload-alt fa-3x text-primary"></i>
-                                        </div>
-                                        <h5>{% trans "Upload Document File" %}</h5>
-                                        <p class="text-muted">{% trans "Drag and drop your file here, or click the button below to select a file" %}</p>
-                                        <div class="mt-3">
-                                            <button type="button" class="btn btn-primary btn-file">
-                                                <i class="fas fa-file-upload me-2"></i> {% trans "Select File" %}
-                                                <input type="file" name="file" id="file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.rtf,.csv" required>
-                                            </button>
-                                        </div>
-                                        <div id="file-preview-container" class="mt-3" style="display: none;">
-                                            <img id="file-preview" class="file-preview" style="display: none;">
-                                            <div id="file-icon" style="display: none;">
-                                                <i class="fas fa-5x"></i>
-                                            </div>
-                                            <div id="file-info" class="file-info"></div>
-                                        </div>
-                                    </div>
-                                    <div class="form-text mt-2">
-                                        {% trans "Supported file types: PDF, Word, Excel, Images, Text files" %}<br>
-                                        {% trans "Maximum file size: 10MB" %}
-                                    </div>
-                                </div>
-                                
-                                <!-- زر الحفظ -->
-                                <div class="form-section">
-                                    <button type="submit" class="btn btn-primary btn-lg w-100">
-                                        <i class="fas fa-save me-2"></i> {% trans "Save Document" %}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // التعامل مع ملف التحميل
-        const fileInput = document.getElementById('file-input');
-        const fileDropArea = document.getElementById('file-drop-area');
-        const filePreviewContainer = document.getElementById('file-preview-container');
-        const filePreview = document.getElementById('file-preview');
-        const fileIcon = document.getElementById('file-icon');
-        const fileInfo = document.getElementById('file-info');
-        
-        // التعامل مع تغيير اختيار الملف
-        fileInput.addEventListener('change', function(e) {
-            handleFileSelection(this.files[0]);
-        });
-        
-        // تفعيل خاصية السحب والإفلات
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            fileDropArea.addEventListener(eventName, preventDefaults, false);
-        });
-        
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        
-        ['dragenter', 'dragover'].forEach(eventName => {
-            fileDropArea.addEventListener(eventName, highlight, false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            fileDropArea.addEventListener(eventName, unhighlight, false);
-        });
-        
-        function highlight() {
-            fileDropArea.classList.add('dragover');
-        }
-        
-        function unhighlight() {
-            fileDropArea.classList.remove('dragover');
-        }
-        
-        fileDropArea.addEventListener('drop', function(e) {
-            const file = e.dataTransfer.files[0];
-            fileInput.files = e.dataTransfer.files;
-            handleFileSelection(file);
-        });
-        
-        function handleFileSelection(file) {
-            if (!file) return;
-            
-            // عرض معلومات الملف
-            filePreviewContainer.style.display = 'block';
-            fileInfo.innerHTML = `<strong>${file.name}</strong><br>${formatFileSize(file.size)}`;
-            
-            // التعامل مع أنواع الملفات المختلفة
-            const fileType = file.type;
-            
-            // إعادة تعيين
-            filePreview.style.display = 'none';
-            fileIcon.style.display = 'none';
-            
-            if (fileType.startsWith('image/')) {
-                // عرض معاينة للصور
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    filePreview.src = e.target.result;
-                    filePreview.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
-            } else {
-                // عرض أيقونة حسب نوع الملف
-                fileIcon.style.display = 'block';
-                let iconClass = 'fa-file';
-                
-                if (fileType.includes('pdf')) {
-                    iconClass = 'fa-file-pdf text-danger';
-                } else if (fileType.includes('word') || fileType.includes('document')) {
-                    iconClass = 'fa-file-word text-primary';
-                } else if (fileType.includes('excel') || fileType.includes('sheet')) {
-                    iconClass = 'fa-file-excel text-success';
-                } else if (fileType.includes('text')) {
-                    iconClass = 'fa-file-alt text-secondary';
-                }
-                
-                fileIcon.innerHTML = `<i class="fas ${iconClass} fa-5x"></i>`;
-            }
-        }
-        
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        // إدارة الكلمات المفتاحية (Tags)
-        const tagInput = document.getElementById('tag-input');
-        const addTagBtn = document.getElementById('add-tag-btn');
-        const tagContainer = document.getElementById('tag-container');
-        const tagsHidden = document.getElementById('tags-hidden');
-        let tags = [];
-        
-        function addTag(text) {
-            if (text === '' || tags.includes(text)) return;
-            
-            tags.push(text);
-            updateTags();
-            tagInput.value = '';
-        }
-        
-        function removeTag(index) {
-            tags.splice(index, 1);
-            updateTags();
-        }
-        
-        function updateTags() {
-            // تحديث عناصر DOM
-            tagContainer.innerHTML = '';
-            tags.forEach((tag, index) => {
-                const tagElement = document.createElement('div');
-                tagElement.classList.add('tag');
-                tagElement.innerHTML = `
-                    <i class="fas fa-times-circle remove-tag" data-index="${index}"></i>
-                    <span>${tag}</span>
-                `;
-                tagContainer.appendChild(tagElement);
-            });
-            
-            // تحديث الحقل المخفي للنموذج
-            tagsHidden.value = tags.join(', ');
-            
-            // إضافة مستمعات الأحداث لأزرار الحذف
-            document.querySelectorAll('.remove-tag').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    removeTag(this.getAttribute('data-index'));
-                });
-            });
-        }
-        
-        addTagBtn.addEventListener('click', function() {
-            addTag(tagInput.value.trim());
-        });
-        
-        tagInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTag(this.value.trim());
-            }
-        });
-        
-        // التعامل مع تغيير نوع العلاقة
-        const relatedToSelect = document.getElementById('related_to');
-        const relationshipSelects = {
-            reservation: document.getElementById('select-reservation'),
-            car: document.getElementById('select-car'),
-            user: document.getElementById('select-user'),
-            other: document.getElementById('select-other'),
-            employee: document.getElementById('select-other') // استخدام other لموظف
-        };
-        
-        relatedToSelect.addEventListener('change', function() {
-            // إخفاء جميع قوائم العلاقات
-            Object.values(relationshipSelects).forEach(select => {
-                select.style.display = 'none';
-            });
-            
-            // إظهار القائمة المناسبة
-            const selectedRelation = this.value;
-            if (relationshipSelects[selectedRelation]) {
-                relationshipSelects[selectedRelation].style.display = 'block';
-            }
-        });
-        
-        // التحقق من النموذج قبل الإرسال
-        document.getElementById('document-form').addEventListener('submit', function(e) {
-            const requiredFields = ['title', 'document_type', 'document_date', 'related_to', 'file-input'];
-            let isValid = true;
-            
-            requiredFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (!field.value) {
-                    isValid = false;
-                    field.classList.add('is-invalid');
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            });
-            
-            if (!isValid) {
-                e.preventDefault();
-                alert('{% trans "Please fill in all required fields" %}');
-            }
-        });
-    });
-</script>
-{% endblock %}
-
-{% block additional_head %}
-<style>
-    .form-section {
         background-color: #f8f9fa;
         border-radius: 10px;
         padding: 20px;
@@ -526,44 +38,53 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">إضافة وثيقة جديدة</h1>
-        <a href="{% url 'admin_archive' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
-            <i class="fas fa-arrow-right fa-sm text-white-50 ms-1"></i> العودة إلى الأرشيف
-        </a>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0">{% trans "Add New Document" %}</h1>
+                    <p class="text-muted">{% trans "Upload and organize your electronic documents" %}</p>
+                </div>
+                <div>
+                    <a href="{% url 'admin_archive' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i> {% trans "Back to Archive" %}
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card mb-4">
+    <div class="card shadow-sm">
         <div class="card-body">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 <!-- معلومات المستند الأساسية -->
                 <div class="form-section">
-                    <h5 class="form-section-title">معلومات المستند الأساسية</h5>
+                    <h5 class="form-section-title">{% trans "Basic Document Information" %}</h5>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="title" class="form-label">عنوان المستند *</label>
+                            <label for="title" class="form-label">{% trans "Document Title" %} *</label>
                             <input type="text" class="form-control" id="title" name="title" required>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label for="document_type" class="form-label">نوع المستند *</label>
+                            <label for="document_type" class="form-label">{% trans "Document Type" %} *</label>
                             <select class="form-select" id="document_type" name="document_type" required>
-                                <option value="">اختر نوع المستند</option>
+                                <option value="">{% trans "Select Document Type" %}</option>
                                 {% for type_code, type_name in document_type_choices %}
                                 <option value="{{ type_code }}">{{ type_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label for="reference_number" class="form-label">الرقم المرجعي</label>
-                            <input type="text" class="form-control" id="reference_number" name="reference_number" placeholder="سيتم إنشاؤه تلقائياً">
-                            <small class="text-muted">اتركه فارغاً للإنشاء التلقائي</small>
+                            <label for="reference_number" class="form-label">{% trans "Reference Number" %}</label>
+                            <input type="text" class="form-control" id="reference_number" name="reference_number" placeholder="{% trans 'Will be generated automatically' %}">
+                            <small class="text-muted">{% trans "Leave empty for automatic generation" %}</small>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-12 mb-3">
-                            <label for="description" class="form-label">وصف المستند</label>
+                            <label for="description" class="form-label">{% trans "Document Description" %}</label>
                             <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                         </div>
                     </div>
@@ -571,44 +92,54 @@
                 
                 <!-- ملف المستند -->
                 <div class="form-section">
-                    <h5 class="form-section-title">ملف المستند</h5>
+                    <h5 class="form-section-title">{% trans "Document File" %}</h5>
                     <div class="row">
                         <div class="col-md-12 mb-3">
-                            <label for="file" class="form-label">ملف المستند *</label>
+                            <label for="file" class="form-label">{% trans "Document File" %} *</label>
                             <input type="file" class="form-control" id="file" name="file" required>
-                            <small class="text-muted">الملفات المدعومة: PDF, JPG, PNG, DOCX (الحد الأقصى: 10 ميجابايت)</small>
+                            <small class="text-muted">{% trans "Supported files: PDF, JPG, PNG, DOCX (Max: 10MB)" %}</small>
                         </div>
                     </div>
                     <div class="document-preview" id="filePreview">
                         <i class="fas fa-upload fa-3x mb-3"></i>
-                        <p>اسحب الملف هنا أو انقر للاختيار</p>
+                        <p>{% trans "Drag files here or click to select" %}</p>
                     </div>
                 </div>
                 
                 <!-- تواريخ المستند -->
                 <div class="form-section">
-                    <h5 class="form-section-title">تواريخ المستند</h5>
+                    <h5 class="form-section-title">{% trans "Document Dates" %}</h5>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="document_date" class="form-label">تاريخ المستند *</label>
+                            <label for="document_date" class="form-label">{% trans "Document Date" %} *</label>
                             <input type="date" class="form-control" id="document_date" name="document_date" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="expiry_date" class="form-label">تاريخ انتهاء الصلاحية</label>
+                            <label for="expiry_date" class="form-label">{% trans "Expiry Date" %}</label>
                             <input type="date" class="form-control" id="expiry_date" name="expiry_date">
-                            <small class="text-muted">اتركه فارغاً إذا كان المستند غير محدد المدة</small>
+                            <small class="text-muted">{% trans "Leave empty if document does not expire" %}</small>
                         </div>
                     </div>
                 </div>
                 
                 <!-- علاقات المستند -->
                 <div class="form-section">
-                    <h5 class="form-section-title">علاقات المستند</h5>
+                    <h5 class="form-section-title">{% trans "Document Relations" %}</h5>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="related_to" class="form-label">متعلق بـ *</label>
+                            <label for="folder_id" class="form-label">{% trans "Folder" %}</label>
+                            <select class="form-select" id="folder_id" name="folder_id">
+                                <option value="">{% trans "Select Folder" %}</option>
+                                {% for folder in folders %}
+                                <option value="{{ folder.id }}">{{ folder.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="related_to" class="form-label">{% trans "Related To" %} *</label>
                             <select class="form-select" id="related_to" name="related_to" required>
-                                <option value="">اختر نوع العلاقة</option>
+                                <option value="">{% trans "Select Relation Type" %}</option>
                                 {% for relation_code, relation_name in related_to_choices %}
                                 <option value="{{ relation_code }}">{{ relation_name }}</option>
                                 {% endfor %}
@@ -616,9 +147,9 @@
                         </div>
                         
                         <div class="col-md-6 mb-3 relation-field" id="reservation_relation">
-                            <label for="reservation_id" class="form-label">الحجز المرتبط</label>
+                            <label for="reservation_id" class="form-label">{% trans "Related Reservation" %}</label>
                             <select class="form-select" id="reservation_id" name="reservation_id">
-                                <option value="">اختر حجزًا</option>
+                                <option value="">{% trans "Select Reservation" %}</option>
                                 {% for reservation in reservations %}
                                 <option value="{{ reservation.id }}">{{ reservation.reservation_number }} - {{ reservation.car }}</option>
                                 {% endfor %}
@@ -626,9 +157,9 @@
                         </div>
                         
                         <div class="col-md-6 mb-3 relation-field" id="car_relation">
-                            <label for="car_id" class="form-label">السيارة المرتبطة</label>
+                            <label for="car_id" class="form-label">{% trans "Related Car" %}</label>
                             <select class="form-select" id="car_id" name="car_id">
-                                <option value="">اختر سيارة</option>
+                                <option value="">{% trans "Select Car" %}</option>
                                 {% for car in cars %}
                                 <option value="{{ car.id }}">{{ car }}</option>
                                 {% endfor %}
@@ -636,9 +167,9 @@
                         </div>
                         
                         <div class="col-md-6 mb-3 relation-field" id="user_relation">
-                            <label for="user_id" class="form-label">المستخدم المرتبط</label>
+                            <label for="user_id" class="form-label">{% trans "Related User" %}</label>
                             <select class="form-select" id="user_id" name="user_id">
-                                <option value="">اختر مستخدمًا</option>
+                                <option value="">{% trans "Select User" %}</option>
                                 {% for user in users %}
                                 <option value="{{ user.id }}">{{ user.username }} ({{ user.get_full_name|default:user.username }})</option>
                                 {% endfor %}
@@ -646,16 +177,16 @@
                         </div>
                         
                         <div class="col-md-12 mb-3">
-                            <label for="tags" class="form-label">الكلمات المفتاحية</label>
-                            <input type="text" class="form-control" id="tags" name="tags" placeholder="أدخل الكلمات المفتاحية مفصولة بفواصل...">
-                            <small class="text-muted">مثال: عقد إيجار، سيارة، عميل</small>
+                            <label for="tags" class="form-label">{% trans "Tags" %}</label>
+                            <input type="text" class="form-control" id="tags" name="tags" placeholder="{% trans 'Enter tags separated by commas...' %}">
+                            <small class="text-muted">{% trans "Example: rental contract, car, customer" %}</small>
                         </div>
                     </div>
                 </div>
                 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i> حفظ الوثيقة</button>
-                    <a href="{% url 'admin_archive' %}" class="btn btn-light btn-lg">إلغاء</a>
+                    <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i> {% trans "Save Document" %}</button>
+                    <a href="{% url 'admin_archive' %}" class="btn btn-light btn-lg">{% trans "Cancel" %}</a>
                 </div>
             </form>
         </div>
@@ -663,9 +194,9 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_scripts %}
 <script>
-    $(document).ready(function() {
+    document.addEventListener('DOMContentLoaded', function() {
         // إخفاء حقول العلاقة في البداية
         $('.relation-field').hide();
         
@@ -701,11 +232,11 @@
                 };
                 reader.readAsDataURL(file);
             } else {
-                filePreview.html('<i class="fas fa-upload fa-3x mb-3"></i><p>اسحب الملف هنا أو انقر للاختيار</p>');
+                filePreview.html('<i class="fas fa-upload fa-3x mb-3"></i><p>{% trans "Drag files here or click to select" %}</p>');
             }
         });
         
-        // إضافة سحب وإفلات للملفات
+        // إضافة وظيفة سحب وإفلات للملفات
         var fileInput = document.getElementById('file');
         var dropZone = document.getElementById('filePreview');
         
@@ -732,6 +263,15 @@
         dropZone.addEventListener('click', function() {
             fileInput.click();
         });
+        
+        // وظيفة تحويل حجم الملف إلى صيغة مقروءة
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
     });
 </script>
 {% endblock %}
