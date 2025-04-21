@@ -313,6 +313,82 @@ def archive_document_path(instance, filename):
     return os.path.join('archive', folder, year, month, related_path, unique_filename)
 
 
+class ArchiveFolder(models.Model):
+    """نموذج المجلدات في الأرشيف الإلكتروني للتنظيم الشجري"""
+    
+    name = models.CharField(max_length=255, verbose_name=_('اسم المجلد'))
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, 
+                              related_name='children', verbose_name=_('المجلد الأب'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاريخ التحديث'))
+    description = models.TextField(blank=True, null=True, verbose_name=_('وصف المجلد'))
+    
+    # الموظف المسؤول
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, 
+                                  related_name='created_folders', verbose_name=_('أنشئ بواسطة'))
+    
+    is_system_folder = models.BooleanField(default=False, verbose_name=_('مجلد نظام'), 
+                                          help_text=_('إذا كان هذا مجلد نظام (يتم إنشاؤه تلقائيًا)'))
+    folder_type = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('نوع المجلد'),
+                                 help_text=_('نوع المجلد (مثل حجوزات، سيارات، ...إلخ)'))
+    
+    class Meta:
+        verbose_name = _('مجلد أرشيف')
+        verbose_name_plural = _('مجلدات الأرشيف')
+        unique_together = ('parent', 'name')
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+    
+    def get_path(self):
+        """الحصول على المسار الكامل للمجلد"""
+        if self.parent:
+            return f"{self.parent.get_path()}/{self.name}"
+        return self.name
+    
+    def get_absolute_url(self):
+        """الحصول على الرابط المطلق للمجلد"""
+        from django.urls import reverse
+        return reverse('admin_archive_folder', args=[self.id])
+    
+    @property
+    def document_count(self):
+        """عدد المستندات في هذا المجلد"""
+        return self.documents.count()
+    
+    @property
+    def all_document_count(self):
+        """عدد جميع المستندات في هذا المجلد وجميع المجلدات الفرعية"""
+        count = self.documents.count()
+        for child in self.children.all():
+            count += child.all_document_count
+        return count
+        
+    @classmethod
+    def get_or_create_system_folder(cls, folder_name, folder_type=None, parent=None):
+        """الحصول على أو إنشاء مجلد نظام"""
+        folder, created = cls.objects.get_or_create(
+            name=folder_name,
+            parent=parent,
+            defaults={
+                'is_system_folder': True,
+                'folder_type': folder_type,
+                'description': f'مجلد نظام لـ {folder_name}'
+            }
+        )
+        return folder
+        
+    @classmethod
+    def get_root_folders(cls):
+        """الحصول على مجلدات الجذر"""
+        return cls.objects.filter(parent=None)
+    
+    def has_children(self):
+        """التحقق مما إذا كان المجلد يحتوي على مجلدات فرعية"""
+        return self.children.exists()
+
+
 class Document(models.Model):
     """نموذج أرشيف الوثائق والعقود والاستلامات والعهد"""
     
@@ -361,6 +437,10 @@ class Document(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاريخ التحديث'))
     is_archived = models.BooleanField(default=True, verbose_name=_('مؤرشف'))
     tags = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('الكلمات المفتاحية'), help_text=_('فصل بفواصل'))
+    
+    # العلاقة مع المجلد
+    folder = models.ForeignKey(ArchiveFolder, on_delete=models.SET_NULL, null=True, blank=True, 
+                              related_name='documents', verbose_name=_('المجلد'))
     
     def __str__(self):
         return self.title

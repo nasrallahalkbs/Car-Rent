@@ -1,0 +1,594 @@
+{% extends 'admin_sidebar_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ folder.name }} - {% trans "Archive Folder" %}{% endblock %}
+
+{% block page_title %}{{ folder.name }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'admin_archive' %}">{% trans "Archive" %}</a></li>
+<li class="breadcrumb-item"><a href="{% url 'admin_archive_folders' %}">{% trans "Folders" %}</a></li>
+{% for parent in folder_path %}
+    {% if parent.id == folder.id %}
+        <li class="breadcrumb-item active">{{ parent.name }}</li>
+    {% else %}
+        <li class="breadcrumb-item"><a href="{% url 'admin_archive_folder' parent.id %}">{{ parent.name }}</a></li>
+    {% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .folder-header {
+        background-color: #f8fafc;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .folder-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .folder-meta {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .folder-description {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .folder-actions {
+        margin-top: 1rem;
+    }
+    
+    .subfolder-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .subfolder-card {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    
+    .subfolder-card:hover {
+        background-color: #f8fafc;
+        transform: translateY(-3px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .subfolder-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-{% if is_english %}right{% else %}left{% endif %}: 1rem;
+        color: #3a86ff;
+        font-size: 1.25rem;
+    }
+    
+    .subfolder-info {
+        flex-grow: 1;
+    }
+    
+    .subfolder-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .subfolder-count {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .nav-tabs .nav-link {
+        color: #64748b;
+        font-weight: 500;
+        padding: 0.75rem 1rem;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #3a86ff;
+        background-color: transparent;
+        border-bottom: 2px solid #3a86ff;
+    }
+    
+    .nav-tabs .nav-link:hover:not(.active) {
+        border-color: transparent;
+        background-color: #f8fafc;
+    }
+    
+    .tab-content {
+        padding: 1.5rem 0;
+    }
+    
+    .document-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .document-card {
+        border-radius: 0.75rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .document-card:hover {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        transform: translateY(-5px);
+    }
+    
+    .document-type-badge {
+        position: absolute;
+        top: 1rem;
+        {% if is_english %}right{% else %}left{% endif %}: 1rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .doc-type-contract { background-color: #dbeafe; color: #2563eb; }
+    .doc-type-receipt { background-color: #dcfce7; color: #16a34a; }
+    .doc-type-custody { background-color: #fef3c7; color: #d97706; }
+    .doc-type-custody_release { background-color: #fce7f3; color: #db2777; }
+    .doc-type-official_document { background-color: #f3e8ff; color: #9333ea; }
+    .doc-type-other { background-color: #f1f5f9; color: #475569; }
+    
+    .doc-preview {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .empty-state {
+        padding: 3rem;
+        text-align: center;
+        background-color: #f8fafc;
+        border-radius: 0.75rem;
+        margin-bottom: 2rem;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 0.75rem;
+    }
+    
+    .empty-state-description {
+        color: #64748b;
+        max-width: 500px;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .document-header {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+    }
+    
+    .document-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-{% if is_english %}right{% else %}left{% endif %}: 1rem;
+        font-size: 1.25rem;
+        background-color: #f1f5f9;
+        color: #475569;
+    }
+    
+    .document-title {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .document-subtitle {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .document-content {
+        flex-grow: 1;
+        padding: 0 1rem 1rem;
+    }
+    
+    .document-footer {
+        padding: 1rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="folder-header">
+        <div class="row">
+            <div class="col-md-7">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <span class="d-inline-block bg-primary text-white rounded-circle p-3">
+                            <i class="fas fa-folder-open fa-2x"></i>
+                        </span>
+                    </div>
+                    <div>
+                        <h1 class="folder-title mb-1">{{ folder.name }}</h1>
+                        <div class="folder-meta">
+                            {% if folder.folder_type %}
+                                <span class="badge bg-light text-dark me-2">{{ folder.folder_type }}</span>
+                            {% endif %}
+                            {% if folder.is_system_folder %}
+                                <span class="badge bg-purple text-white me-2">{% trans "System Folder" %}</span>
+                            {% endif %}
+                            <span class="me-3"><i class="fas fa-folder me-1"></i> {{ total_subfolders }} {% trans "subfolders" %}</span>
+                            <span><i class="fas fa-file-alt me-1"></i> {{ total_documents }} {% trans "documents" %}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if folder.description %}
+                    <div class="folder-description">
+                        {{ folder.description }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-5">
+                <div class="d-flex justify-content-md-end align-items-center h-100">
+                    <div class="folder-actions">
+                        <a href="{% url 'admin_archive_folder_add_document' folder.id %}" class="btn btn-primary me-2">
+                            <i class="fas fa-file-upload me-2"></i> {% trans "Add Document" %}
+                        </a>
+                        <a href="{% url 'admin_archive_folder_add' %}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-folder-plus me-2"></i> {% trans "Add Subfolder" %}
+                        </a>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'admin_archive_folder_edit' folder.id %}">
+                                    <i class="fas fa-edit me-2 text-primary"></i> {% trans "Edit Folder" %}
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'admin_archive_folder_documents' folder.id %}">
+                                    <i class="fas fa-search me-2 text-info"></i> {% trans "Search Documents" %}
+                                </a></li>
+                                {% if not folder.is_system_folder %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="{% url 'admin_archive_folder_delete' folder.id %}">
+                                        <i class="fas fa-trash me-2"></i> {% trans "Delete Folder" %}
+                                    </a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- المجلدات الفرعية -->
+    {% if subfolders %}
+        <h4 class="mb-3">{% trans "Subfolders" %}</h4>
+        <div class="subfolder-grid">
+            {% for subfolder in subfolders %}
+                <a href="{% url 'admin_archive_folder' subfolder.id %}" class="subfolder-card text-decoration-none text-dark">
+                    <div class="subfolder-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="subfolder-info">
+                        <div class="subfolder-name">{{ subfolder.name }}</div>
+                        <div class="subfolder-count">
+                            {{ subfolder.document_count }} {% trans "documents" %}
+                            {% if subfolder.children.count > 0 %}
+                                • {{ subfolder.children.count }} {% trans "subfolders" %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <i class="fas fa-chevron-{% if is_english %}right{% else %}left{% endif %} text-muted"></i>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- المستندات -->
+    <div class="mt-4">
+        <ul class="nav nav-tabs" id="folderTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="true">
+                    <i class="fas fa-file-alt me-2"></i> {% trans "Documents" %} <span class="badge bg-secondary ms-1">{{ total_documents }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="false">
+                    <i class="fas fa-info-circle me-2"></i> {% trans "Folder Details" %}
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="folderTabsContent">
+            <div class="tab-pane fade show active" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                {% if documents %}
+                    <div class="document-grid">
+                        {% for document in documents %}
+                            <div class="document-card">
+                                <!-- نوع المستند -->
+                                <div class="document-type-badge doc-type-{{ document.document_type }}">
+                                    {% if document.document_type == 'contract' %}
+                                    <i class="fas fa-file-contract me-1"></i> {% trans "Contract" %}
+                                    {% elif document.document_type == 'receipt' %}
+                                    <i class="fas fa-receipt me-1"></i> {% trans "Receipt" %}
+                                    {% elif document.document_type == 'custody' %}
+                                    <i class="fas fa-key me-1"></i> {% trans "Custody" %}
+                                    {% elif document.document_type == 'custody_release' %}
+                                    <i class="fas fa-unlock-alt me-1"></i> {% trans "Custody Release" %}
+                                    {% elif document.document_type == 'official_document' %}
+                                    <i class="fas fa-stamp me-1"></i> {% trans "Official" %}
+                                    {% else %}
+                                    <i class="fas fa-file-alt me-1"></i> {% trans "Other" %}
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- معاينة المستند -->
+                                {% if document.is_image %}
+                                <img src="{{ document.file.url }}" class="doc-preview" alt="{{ document.title }}">
+                                {% elif document.is_pdf %}
+                                <div class="doc-preview d-flex align-items-center justify-content-center" style="background-color: #f8fafc;">
+                                    <i class="fas fa-file-pdf fa-3x text-danger"></i>
+                                </div>
+                                {% else %}
+                                <div class="doc-preview d-flex align-items-center justify-content-center" style="background-color: #f8fafc;">
+                                    <i class="fas fa-file fa-3x text-secondary"></i>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- معلومات المستند -->
+                                <div class="document-header">
+                                    <div class="document-icon">
+                                        {% if document.document_type == 'contract' %}
+                                        <i class="fas fa-file-contract"></i>
+                                        {% elif document.document_type == 'receipt' %}
+                                        <i class="fas fa-receipt"></i>
+                                        {% elif document.document_type == 'custody' %}
+                                        <i class="fas fa-key"></i>
+                                        {% elif document.document_type == 'custody_release' %}
+                                        <i class="fas fa-unlock-alt"></i>
+                                        {% elif document.document_type == 'official_document' %}
+                                        <i class="fas fa-stamp"></i>
+                                        {% else %}
+                                        <i class="fas fa-file-alt"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h5 class="document-title">{{ document.title }}</h5>
+                                        <div class="document-subtitle">
+                                            <span>{{ document.reference_number }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="document-content">
+                                    <div class="mb-2">
+                                        <small class="text-muted">{% trans "Date" %}:</small>
+                                        <div class="fw-medium">{{ document.document_date|date:"j F Y" }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="document-footer">
+                                    <small class="text-muted">
+                                        <i class="far fa-calendar me-1"></i> {{ document.created_at|date:"j F Y" }}
+                                    </small>
+                                    <div>
+                                        <a href="{% url 'admin_archive_view' document.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'admin_archive_download' document.id %}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <a href="{% url 'admin_archive_detail' document.id %}" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-info-circle"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- ترقيم الصفحات -->
+                    {% if documents.has_other_pages %}
+                        <div class="d-flex justify-content-center mt-4">
+                            <ul class="pagination">
+                                {% if documents.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1" aria-label="First">
+                                            <span aria-hidden="true">&laquo;&laquo;</span>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ documents.previous_page_number }}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for i in documents.paginator.page_range %}
+                                    {% if documents.number == i %}
+                                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                                    {% elif i > documents.number|add:'-3' and i < documents.number|add:'3' %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if documents.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ documents.next_page_number }}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ documents.paginator.num_pages }}" aria-label="Last">
+                                            <span aria-hidden="true">&raquo;&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h3 class="empty-state-title">{% trans "No documents in this folder" %}</h3>
+                        <p class="empty-state-description">{% trans "This folder is empty. Start adding documents to organize your files efficiently." %}</p>
+                        <a href="{% url 'admin_archive_folder_add_document' folder.id %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-file-upload me-2"></i> {% trans "Add First Document" %}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="tab-pane fade" id="details" role="tabpanel" aria-labelledby="details-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">{% trans "Folder Information" %}</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3 text-muted">{% trans "Folder Name" %}</div>
+                            <div class="col-md-9 fw-medium">{{ folder.name }}</div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3 text-muted">{% trans "Folder Type" %}</div>
+                            <div class="col-md-9">
+                                {% if folder.folder_type %}
+                                    <span class="badge bg-light text-dark">{{ folder.folder_type }}</span>
+                                {% else %}
+                                    <span class="text-muted">{% trans "Not specified" %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3 text-muted">{% trans "Parent Folder" %}</div>
+                            <div class="col-md-9">
+                                {% if folder.parent %}
+                                    <a href="{% url 'admin_archive_folder' folder.parent.id %}">{{ folder.parent.name }}</a>
+                                {% else %}
+                                    <span class="text-muted">{% trans "Root folder" %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3 text-muted">{% trans "Description" %}</div>
+                            <div class="col-md-9">
+                                {% if folder.description %}
+                                    {{ folder.description }}
+                                {% else %}
+                                    <span class="text-muted">{% trans "No description available" %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3 text-muted">{% trans "Created By" %}</div>
+                            <div class="col-md-9">
+                                {% if folder.created_by %}
+                                    {{ folder.created_by.get_full_name|default:folder.created_by.username }}
+                                {% else %}
+                                    <span class="text-muted">{% trans "System" %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3 text-muted">{% trans "Creation Date" %}</div>
+                            <div class="col-md-9">{{ folder.created_at|date:"j F Y H:i" }}</div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3 text-muted">{% trans "Last Modified" %}</div>
+                            <div class="col-md-9">{{ folder.updated_at|date:"j F Y H:i" }}</div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3 text-muted">{% trans "Folder Path" %}</div>
+                            <div class="col-md-9">
+                                {% for parent in folder_path %}
+                                    {% if not forloop.first %} / {% endif %}
+                                    {% if parent.id == folder.id %}
+                                        <strong>{{ parent.name }}</strong>
+                                    {% else %}
+                                        <a href="{% url 'admin_archive_folder' parent.id %}">{{ parent.name }}</a>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3 text-muted">{% trans "Folder Status" %}</div>
+                            <div class="col-md-9">
+                                {% if folder.is_system_folder %}
+                                    <span class="badge bg-purple text-white">{% trans "System Folder" %}</span>
+                                {% else %}
+                                    <span class="badge bg-success text-white">{% trans "User Created" %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4 mb-5">
+        <a href="{% url 'admin_archive_folders' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> {% trans "Back to Folders" %}
+        </a>
+    </div>
+</div>
+{% endblock %}

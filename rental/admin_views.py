@@ -8,7 +8,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
 from django.utils.translation import get_language
-from .models import User, Car, Reservation, CartItem, SiteSettings, Document
+from .models import User, Car, Reservation, CartItem, SiteSettings, Document, ArchiveFolder
 from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm, SiteSettingsForm
 from functools import wraps
 from datetime import datetime, date, timedelta
@@ -2088,3 +2088,543 @@ def admin_archive_view(request, document_id):
     except Exception as e:
         messages.error(request, f"حدث خطأ أثناء عرض الملف: {str(e)}")
         return redirect('admin_archive_detail', document_id=document_id)
+
+# دوال إدارة المجلدات في نظام الأرشيف
+
+@login_required
+@admin_required
+def admin_archive_folders(request):
+    """صفحة إدارة مجلدات الأرشيف"""
+    # تحديد لغة العرض
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    # الحصول على جميع المجلدات الجذرية (بدون أب)
+    root_folders = ArchiveFolder.get_root_folders()
+    
+    # إحصائيات المجلدات
+    total_folders = ArchiveFolder.objects.count()
+    system_folders_count = ArchiveFolder.objects.filter(is_system_folder=True).count()
+    custom_folders_count = total_folders - system_folders_count
+    total_documents = Document.objects.count()
+    
+    # الحصول على عدد المستندات في كل مجلد جذري
+    for folder in root_folders:
+        folder.documents_count = folder.all_document_count
+    
+    context = {
+        'folders': root_folders,
+        'total_folders': total_folders,
+        'system_folders_count': system_folders_count,
+        'custom_folders_count': custom_folders_count,
+        'total_documents': total_documents,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/folders.html', context)
+
+@login_required
+@admin_required
+def admin_archive_folder_add(request):
+    """إضافة مجلد جديد للأرشيف"""
+    # تحديد لغة العرض
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    if request.method == 'POST':
+        folder_name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        parent_id = request.POST.get('parent_id')
+        folder_type = request.POST.get('folder_type', '')
+        
+        # التحقق من البيانات
+        if not folder_name:
+            messages.error(request, "يرجى إدخال اسم المجلد")
+            return redirect('admin_archive_folder_add')
+        
+        # إنشاء مجلد جديد
+        folder = ArchiveFolder(
+            name=folder_name,
+            description=description,
+            folder_type=folder_type,
+            created_by=request.user
+        )
+        
+        # تعيين المجلد الأب إذا كان موجودًا
+        if parent_id:
+            try:
+                parent_folder = ArchiveFolder.objects.get(id=parent_id)
+                folder.parent = parent_folder
+            except ArchiveFolder.DoesNotExist:
+                messages.warning(request, "لم يتم العثور على المجلد الأب المحدد")
+        
+        # حفظ المجلد
+        try:
+            folder.save()
+            messages.success(request, f"تم إنشاء المجلد '{folder_name}' بنجاح")
+            return redirect('admin_archive_folders')
+        except Exception as e:
+            messages.error(request, f"حدث خطأ أثناء إنشاء المجلد: {str(e)}")
+    
+    # الحصول على قائمة المجلدات الموجودة للاختيار من بينها
+    all_folders = ArchiveFolder.objects.all().order_by('name')
+    folder_types = ['حجوزات', 'سيارات', 'عقود', 'إيصالات', 'مستندات رسمية', 'أخرى']
+    
+    context = {
+        'all_folders': all_folders,
+        'folder_types': folder_types,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/add_folder.html', context)
+
+@login_required
+@admin_required
+def admin_archive_folder_view(request, folder_id):
+    """عرض محتويات مجلد معين"""
+    folder = get_object_or_404(ArchiveFolder, id=folder_id)
+    
+    # تحديد لغة العرض
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    # الحصول على المجلدات الفرعية
+    subfolders = folder.children.all().order_by('name')
+    
+    # الحصول على المستندات في هذا المجلد
+    documents = folder.documents.all().order_by('-created_at')
+    
+    # تقسيم الصفحات للمستندات
+    paginator = Paginator(documents, 10)  # عرض 10 مستندات في الصفحة
+    page_number = request.GET.get('page')
+    documents_page = paginator.get_page(page_number)
+    
+    # الحصول على مسار المجلد الكامل (من الجذر إلى هذا المجلد)
+    folder_path = []
+    current = folder
+    while current:
+        folder_path.insert(0, current)
+        current = current.parent
+    
+    context = {
+        'folder': folder,
+        'folder_path': folder_path,
+        'subfolders': subfolders,
+        'documents': documents_page,
+        'total_subfolders': subfolders.count(),
+        'total_documents': documents.count(),
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/folder_view.html', context)
+
+@login_required
+@admin_required
+def admin_archive_folder_edit(request, folder_id):
+    """تعديل مجلد في الأرشيف"""
+    folder = get_object_or_404(ArchiveFolder, id=folder_id)
+    
+    # تحديد لغة العرض
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    if request.method == 'POST':
+        folder_name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        parent_id = request.POST.get('parent_id')
+        folder_type = request.POST.get('folder_type', '')
+        
+        # التحقق من البيانات
+        if not folder_name:
+            messages.error(request, "يرجى إدخال اسم المجلد")
+            return redirect('admin_archive_folder_edit', folder_id=folder_id)
+        
+        # منع وضع المجلد كأب لنفسه أو أحد أبنائه (لتجنب الدورة)
+        if parent_id and int(parent_id) == folder.id:
+            messages.error(request, "لا يمكن جعل المجلد أباً لنفسه")
+            return redirect('admin_archive_folder_edit', folder_id=folder_id)
+        
+        # تحديث بيانات المجلد
+        folder.name = folder_name
+        folder.description = description
+        folder.folder_type = folder_type
+        
+        # تحديث المجلد الأب إذا تم تغييره
+        if parent_id:
+            try:
+                # التحقق من أن المجلد الجديد ليس من الأبناء لتجنب التداخل
+                new_parent = ArchiveFolder.objects.get(id=parent_id)
+                # فحص ما إذا كان المجلد الجديد هو ابن للمجلد الحالي
+                temp_parent = new_parent
+                while temp_parent:
+                    if temp_parent.id == folder.id:
+                        messages.error(request, "لا يمكن اختيار مجلد فرعي كأب")
+                        return redirect('admin_archive_folder_edit', folder_id=folder_id)
+                    temp_parent = temp_parent.parent
+                
+                folder.parent = new_parent
+            except ArchiveFolder.DoesNotExist:
+                folder.parent = None
+        else:
+            folder.parent = None
+        
+        # حفظ التغييرات
+        try:
+            folder.save()
+            messages.success(request, f"تم تحديث المجلد '{folder_name}' بنجاح")
+            return redirect('admin_archive_folder', folder_id=folder.id)
+        except Exception as e:
+            messages.error(request, f"حدث خطأ أثناء تحديث المجلد: {str(e)}")
+    
+    # الحصول على قائمة المجلدات الموجودة للاختيار من بينها (باستثناء هذا المجلد وأبنائه)
+    excluded_ids = [folder.id]
+    # الحصول على معرفات جميع الأبناء بشكل عودي
+    def get_child_ids(folder_obj):
+        child_ids = list(folder_obj.children.values_list('id', flat=True))
+        for child_id in list(child_ids):  # استخدام نسخة من القائمة لتجنب مشاكل التكرار
+            child = ArchiveFolder.objects.get(id=child_id)
+            child_ids.extend(get_child_ids(child))
+        return child_ids
+    
+    excluded_ids.extend(get_child_ids(folder))
+    selectable_folders = ArchiveFolder.objects.exclude(id__in=excluded_ids).order_by('name')
+    
+    folder_types = ['حجوزات', 'سيارات', 'عقود', 'إيصالات', 'مستندات رسمية', 'أخرى']
+    
+    context = {
+        'folder': folder,
+        'selectable_folders': selectable_folders,
+        'folder_types': folder_types,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/edit_folder.html', context)
+
+@login_required
+@admin_required
+def admin_archive_folder_delete(request, folder_id):
+    """حذف مجلد من الأرشيف"""
+    folder = get_object_or_404(ArchiveFolder, id=folder_id)
+    
+    # تحديد لغة العرض
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    # منع حذف المجلدات النظامية
+    if folder.is_system_folder:
+        messages.error(request, "لا يمكن حذف مجلدات النظام")
+        return redirect('admin_archive_folder', folder_id=folder_id)
+    
+    if request.method == 'POST':
+        parent_id = folder.parent.id if folder.parent else None
+        
+        # تحديد كيفية التعامل مع المحتويات
+        documents_action = request.POST.get('documents_action')
+        subfolders_action = request.POST.get('subfolders_action')
+        
+        # تحريك المستندات إلى المجلد الأب أو حذفها
+        if documents_action == 'move' and folder.parent:
+            Document.objects.filter(folder=folder).update(folder=folder.parent)
+        
+        # تحريك المجلدات الفرعية إلى المجلد الأب أو حذفها
+        if subfolders_action == 'move' and folder.parent:
+            ArchiveFolder.objects.filter(parent=folder).update(parent=folder.parent)
+        
+        # حذف المجلد
+        folder_name = folder.name
+        folder.delete()
+        
+        messages.success(request, f"تم حذف المجلد '{folder_name}' بنجاح")
+        if parent_id:
+            return redirect('admin_archive_folder', folder_id=parent_id)
+        else:
+            return redirect('admin_archive_folders')
+    
+    # حساب عدد المستندات والمجلدات الفرعية
+    documents_count = folder.documents.count()
+    subfolders_count = folder.children.count()
+    
+    context = {
+        'folder': folder,
+        'documents_count': documents_count,
+        'subfolders_count': subfolders_count,
+        'has_parent': folder.parent is not None,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/delete_folder.html', context)
+
+@login_required
+@admin_required
+def admin_archive_folder_documents(request, folder_id):
+    """عرض مستندات مجلد معين (مع تصفية وبحث)"""
+    folder = get_object_or_404(ArchiveFolder, id=folder_id)
+    
+    # تحديد لغة العرض
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    # الحصول على معلمات التصفية
+    document_type = request.GET.get('document_type', '')
+    related_to = request.GET.get('related_to', '')
+    start_date_str = request.GET.get('start_date', '')
+    end_date_str = request.GET.get('end_date', '')
+    search = request.GET.get('search', '')
+    
+    # تصفية المستندات
+    documents = folder.documents.all().order_by('-created_at')
+    
+    # تطبيق التصفية حسب نوع المستند
+    if document_type:
+        documents = documents.filter(document_type=document_type)
+    
+    # تطبيق التصفية حسب الارتباط
+    if related_to:
+        documents = documents.filter(related_to=related_to)
+    
+    # تطبيق التصفية حسب التاريخ
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            documents = documents.filter(document_date__gte=start_date)
+        except ValueError:
+            pass
+    
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            documents = documents.filter(document_date__lte=end_date)
+        except ValueError:
+            pass
+    
+    # تطبيق البحث
+    if search:
+        documents = documents.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search) | 
+            Q(reference_number__icontains=search) |
+            Q(tags__icontains=search)
+        )
+    
+    # تقسيم الصفحات
+    paginator = Paginator(documents, 12)  # عرض 12 مستند في الصفحة
+    page_number = request.GET.get('page')
+    documents_page = paginator.get_page(page_number)
+    
+    # الحصول على مسار المجلد الكامل
+    folder_path = []
+    current = folder
+    while current:
+        folder_path.insert(0, current)
+        current = current.parent
+    
+    context = {
+        'folder': folder,
+        'folder_path': folder_path,
+        'documents': documents_page,
+        'total_documents': documents.count(),
+        'document_type_filter': document_type,
+        'related_to_filter': related_to,
+        'start_date': start_date_str,
+        'end_date': end_date_str,
+        'search': search,
+        'document_types': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_types': Document.RELATED_TO_CHOICES,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/folder_documents.html', context)
+
+@login_required
+@admin_required
+def admin_archive_folder_add_document(request, folder_id):
+    """إضافة مستند جديد إلى مجلد محدد"""
+    folder = get_object_or_404(ArchiveFolder, id=folder_id)
+    
+    # تحديد لغة العرض
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    if request.method == 'POST':
+        # الحصول على بيانات النموذج
+        title = request.POST.get('title')
+        document_type = request.POST.get('document_type')
+        description = request.POST.get('description', '')
+        document_date_str = request.POST.get('document_date')
+        expiry_date_str = request.POST.get('expiry_date', '')
+        related_to = request.POST.get('related_to')
+        related_id = request.POST.get('related_id', '')
+        tags = request.POST.get('tags', '')
+        
+        # التحقق من الحقول الإلزامية
+        if not title or not document_type or not document_date_str or not related_to:
+            messages.error(request, "يرجى ملء جميع الحقول الإلزامية")
+            return redirect('admin_archive_folder_add_document', folder_id=folder_id)
+        
+        # التحقق من وجود ملف مرفق
+        if 'file' not in request.FILES:
+            messages.error(request, "يرجى تحميل ملف المستند")
+            return redirect('admin_archive_folder_add_document', folder_id=folder_id)
+        
+        # تحويل التواريخ
+        try:
+            document_date = datetime.strptime(document_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, "تنسيق تاريخ المستند غير صحيح")
+            return redirect('admin_archive_folder_add_document', folder_id=folder_id)
+        
+        expiry_date = None
+        if expiry_date_str:
+            try:
+                expiry_date = datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                messages.error(request, "تنسيق تاريخ انتهاء الصلاحية غير صحيح")
+                return redirect('admin_archive_folder_add_document', folder_id=folder_id)
+        
+        # إنشاء المستند
+        document = Document(
+            title=title,
+            document_type=document_type,
+            description=description,
+            document_date=document_date,
+            expiry_date=expiry_date,
+            related_to=related_to,
+            file=request.FILES['file'],
+            tags=tags,
+            added_by=request.user,
+            folder=folder
+        )
+        
+        # تعيين العلاقات حسب نوع الارتباط
+        if related_to == 'reservation' and related_id:
+            try:
+                reservation = Reservation.objects.get(id=related_id)
+                document.reservation = reservation
+            except Reservation.DoesNotExist:
+                pass
+        elif related_to == 'car' and related_id:
+            try:
+                car = Car.objects.get(id=related_id)
+                document.car = car
+            except Car.DoesNotExist:
+                pass
+        elif related_to == 'user' and related_id:
+            try:
+                user = User.objects.get(id=related_id)
+                document.user = user
+            except User.DoesNotExist:
+                pass
+        
+        # حفظ المستند
+        document.save()
+        
+        messages.success(request, f"تم إضافة المستند '{title}' إلى المجلد '{folder.name}' بنجاح")
+        return redirect('admin_archive_folder', folder_id=folder_id)
+    
+    # الحصول على قوائم للعلاقات
+    reservations = Reservation.objects.order_by('-created_at')[:50]
+    cars = Car.objects.order_by('-id')[:50]
+    users = User.objects.order_by('-date_joined')[:50]
+    
+    context = {
+        'folder': folder,
+        'document_types': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_types': Document.RELATED_TO_CHOICES,
+        'reservations': reservations,
+        'cars': cars,
+        'users': users,
+        'today': timezone.now().date().strftime('%Y-%m-%d'),
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/add_document_to_folder.html', context)
+
+@login_required
+@admin_required
+def admin_archive_tree(request):
+    """عرض هيكل المجلدات بشكل شجري"""
+    # تحديد لغة العرض
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    # الحصول على مجلدات الجذر
+    root_folders = ArchiveFolder.get_root_folders()
+    
+    # إعداد هيكل البيانات المناسب لعرض الشجرة
+    def build_tree(folder):
+        result = {
+            'id': folder.id,
+            'name': folder.name,
+            'type': folder.folder_type or 'folder',
+            'is_system': folder.is_system_folder,
+            'document_count': folder.document_count,
+            'children': []
+        }
+        
+        # إضافة المجلدات الفرعية بشكل عودي
+        for child in folder.children.all().order_by('name'):
+            result['children'].append(build_tree(child))
+        
+        return result
+    
+    # بناء الشجرة
+    folder_tree = []
+    for folder in root_folders:
+        folder_tree.append(build_tree(folder))
+    
+    # إحصائيات المجلدات والمستندات
+    total_folders = ArchiveFolder.objects.count()
+    total_documents = Document.objects.count()
+    system_folders = ArchiveFolder.objects.filter(is_system_folder=True).count()
+    custom_folders = total_folders - system_folders
+    
+    context = {
+        'folder_tree': json.dumps(folder_tree),
+        'total_folders': total_folders,
+        'total_documents': total_documents,
+        'system_folders': system_folders,
+        'custom_folders': custom_folders,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/folder_tree.html', context)
