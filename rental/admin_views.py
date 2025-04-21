@@ -1711,7 +1711,8 @@ def admin_archive(request):
         'related_to_types': Document.RELATED_TO_CHOICES,
         'current_user': request.user,
         'is_english': is_english,
-        'is_rtl': is_rtl
+        'is_rtl': is_rtl,
+        'active_section': 'archive'
     }
     
     return render(request, 'admin/archive/documents.html', context)
@@ -1815,7 +1816,8 @@ def admin_archive_add(request):
         'current_user': request.user,
         'today': timezone.now().date().strftime('%Y-%m-%d'),
         'is_english': is_english,
-        'is_rtl': is_rtl
+        'is_rtl': is_rtl,
+        'active_section': 'archive'
     }
     
     return render(request, 'admin/archive/add_document.html', context)
@@ -1852,7 +1854,8 @@ def admin_archive_detail(request, document_id):
         'related_entity_type': related_entity_type,
         'current_user': request.user,
         'is_english': is_english,
-        'is_rtl': is_rtl
+        'is_rtl': is_rtl,
+        'active_section': 'archive'
     }
     
     return render(request, 'admin/archive/document_detail.html', context)
@@ -1975,7 +1978,8 @@ def admin_archive_edit(request, document_id):
         'current_related_id': current_related_id,
         'current_user': request.user,
         'is_english': is_english,
-        'is_rtl': is_rtl
+        'is_rtl': is_rtl,
+        'active_section': 'archive'
     }
     
     return render(request, 'admin/archive/edit_document.html', context)
@@ -2011,7 +2015,8 @@ def admin_archive_delete(request, document_id):
         'document': document,
         'current_user': request.user,
         'is_english': is_english,
-        'is_rtl': is_rtl
+        'is_rtl': is_rtl,
+        'active_section': 'archive'
     }
     
     return render(request, 'admin/archive/delete_document.html', context)
