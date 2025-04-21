@@ -1,4 +1,4 @@
-<!-- CACHE_BUSTER 1745196320 -->
+<!-- CACHE_BUSTER 1745197458 -->
 {% extends "admin_layout.html" %}
 {% load i18n %}
 {% load static %}
@@ -133,6 +133,40 @@
                                 <tr>
                                     <th class="ps-0">تاريخ انتهاء مهلة الدفع</th>
                                     <td class="pe-0">{{ reservation.expiry_date|date:"Y/m/d H:i" }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if reservation.national_id %}
+                                <tr>
+                                    <th class="ps-0">رقم الهوية الوطنية</th>
+                                    <td class="pe-0">{{ reservation.national_id }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if reservation.guarantee_type %}
+                                <tr>
+                                    <th class="ps-0">نوع الضمان</th>
+                                    <td class="pe-0">
+                                        {% if reservation.guarantee_type == 'id_card' %}
+                                            بطاقة الهوية الوطنية
+                                        {% elif reservation.guarantee_type == 'passport' %}
+                                            جواز السفر
+                                        {% elif reservation.guarantee_type == 'driving_license' %}
+                                            رخصة القيادة
+                                        {% elif reservation.guarantee_type == 'deposit' %}
+                                            وديعة تأمين
+                                        {% elif reservation.guarantee_type == 'credit_card' %}
+                                            بطاقة ائتمان
+                                        {% elif reservation.guarantee_type == 'property_doc' %}
+                                            وثيقة ملكية عقار
+                                        {% else %}
+                                            {{ reservation.guarantee_type }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if reservation.guarantee_details %}
+                                <tr>
+                                    <th class="ps-0">تفاصيل الضمان</th>
+                                    <td class="pe-0">{{ reservation.guarantee_details }}</td>
                                 </tr>
                                 {% endif %}
                             </tbody>
@@ -402,58 +436,8 @@
                             </div>
                         </div>
                         
-                        <!-- Guarantees and Document Info -->
+                        <!-- Empty Column for Balance -->
                         <div class="col-md-6">
-                            <h6 class="fw-bold mb-3">معلومات الوثائق والضمان</h6>
-                            <div class="mb-4">
-                                <div class="table-responsive">
-                                    <table class="table">
-                                        <tbody>
-                                            <tr>
-                                                <th class="w-40 ps-0">رقم الهوية</th>
-                                                <td class="pe-0">{{ reservation.national_id|default:"--" }}</td>
-                                            </tr>
-                                            {% if reservation.guarantee_type %}
-                                            <tr>
-                                                <th class="ps-0">نوع الضمان</th>
-                                                <td class="pe-0">
-                                                    {% if reservation.guarantee_type == 'id_card' %}
-                                                        بطاقة الهوية الوطنية
-                                                    {% elif reservation.guarantee_type == 'passport' %}
-                                                        جواز السفر
-                                                    {% elif reservation.guarantee_type == 'driving_license' %}
-                                                        رخصة القيادة
-                                                    {% elif reservation.guarantee_type == 'deposit' %}
-                                                        وديعة تأمين
-                                                    {% elif reservation.guarantee_type == 'credit_card' %}
-                                                        بطاقة ائتمان
-                                                    {% elif reservation.guarantee_type == 'property_doc' %}
-                                                        وثيقة ملكية عقار
-                                                    {% else %}
-                                                        {{ reservation.guarantee_type }}
-                                                    {% endif %}
-                                                </td>
-                                            </tr>
-                                            {% endif %}
-                                            {% if reservation.guarantee_details %}
-                                            <tr>
-                                                <th class="ps-0">تفاصيل الضمان</th>
-                                                <td class="pe-0">{{ reservation.guarantee_details }}</td>
-                                            </tr>
-                                            {% endif %}
-                                            {% if reservation.user.license_number %}
-                                            <tr>
-                                                <th class="ps-0">رقم رخصة القيادة</th>
-                                                <td class="pe-0">{{ reservation.user.license_number }}</td>
-                                            </tr>
-                                            {% endif %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {% if not reservation.national_id and not reservation.guarantee_type and not reservation.guarantee_details and not reservation.user.license_number %}
-                                <p class="text-muted mb-0">لا توجد معلومات ضمان أو وثائق مسجلة</p>
-                                {% endif %}
-                            </div>
                         </div>
                     </div>
                 </div>
