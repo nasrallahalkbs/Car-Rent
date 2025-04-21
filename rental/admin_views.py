@@ -535,6 +535,8 @@ def admin_reservation_detail(request, reservation_id):
         # محاولة العثور على الحجز
         reservation = get_object_or_404(Reservation, id=reservation_id)
         print(f"DIAGNOSTIC: Found reservation: {reservation.id}, car: {reservation.car.make}")
+        print(f"DIAGNOSTIC: full_name: {reservation.full_name if hasattr(reservation, 'full_name') else 'Not available'}")
+        print(f"DIAGNOSTIC: hasattr(reservation, 'full_name'): {hasattr(reservation, 'full_name')}")
         
         # حساب عدد الأيام بين تاريخ البداية وتاريخ النهاية
         delta = (reservation.end_date - reservation.start_date).days + 1
