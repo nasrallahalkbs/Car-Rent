@@ -394,7 +394,7 @@
                 <div class="archive-container">
                     <!-- لوحة الشجرة الجانبية -->
                     <div class="tree-panel">
-                        <h5 class="mb-3">{% trans "هيكل المجلدات" %}</h5>
+                        <h5 class="mb-3">{% trans "تصميم (شجرة)" %}</h5>
                         <!-- مربع البحث في المجلدات -->
                         <div class="search-box mb-3">
                             <div class="input-group">
@@ -877,10 +877,50 @@
 <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // تخصيص بيانات الشجرة لتتطابق مع الصورة المرجعية
+        const customFolderData = [
+            { 
+              'id': 'folder-root', 
+              'text': 'شجرة المجلدات', 
+              'icon': 'fas fa-tree text-success',
+              'state': { 'opened': true },
+              'children': [
+                { 
+                  'id': 'folder-1', 
+                  'text': 'رسوم (1)', 
+                  'icon': 'fas fa-folder text-warning' 
+                },
+                { 
+                  'id': 'folder-2', 
+                  'text': 'حضور (2)', 
+                  'icon': 'fas fa-folder text-warning' 
+                },
+                { 
+                  'id': 'folder-3', 
+                  'text': 'حسابات (3)', 
+                  'icon': 'fas fa-folder text-primary' 
+                },
+                { 
+                  'id': 'folder-4', 
+                  'text': 'محفوظات (4)', 
+                  'icon': 'fas fa-folder text-danger' 
+                },
+                { 
+                  'id': 'folder-5', 
+                  'text': 'توكيلات (5)', 
+                  'icon': 'fas fa-folder text-info' 
+                }
+              ]
+            }
+        ];
+        
+        // استخدام البيانات المخصصة إذا لم تكن هناك بيانات من الخادم
+        const treeData = (!{{ folder_tree|safe }} || {{ folder_tree|safe }}.length === 0) ? customFolderData : {{ folder_tree|safe }};
+        
         // تهيئة شجرة المجلدات
         $('#folder-tree').jstree({
             'core' : {
-                'data' : {{ folder_tree|safe }},
+                'data' : treeData,
                 'themes': {
                     'responsive': true
                 },
