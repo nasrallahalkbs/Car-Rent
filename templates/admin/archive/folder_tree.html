@@ -217,7 +217,12 @@
                     </div>
                 </div>
                 
-                <div id="folder-tree" class="folder-tree"></div>
+                <div id="folder-tree" class="folder-tree" dir="{% if is_rtl %}rtl{% else %}ltr{% endif %}"></div>
+<div class="mt-3 d-flex justify-content-end">
+    <button class="btn btn-outline-secondary btn-sm print-tree-btn">
+        <i class="fas fa-print me-1"></i> {% trans "Print Tree" %}
+    </button>
+</div>
             </div>
         </div>
         
@@ -287,17 +292,17 @@
         // بيانات شجرة المجلدات
         const folderData = {{ folder_tree|safe }};
         
-        // تحويل البيانات إلى التنسيق المطلوب لـ jsTree
-        const treeData = folderData.map(folder => convertFolderToTreeNode(folder));
+        console.log("بيانات المجلدات:", folderData); // للمساعدة في التشخيص
         
         // إنشاء شجرة المجلدات
         $('#folder-tree').jstree({
             'core': {
-                'data': treeData,
+                'data': folderData,
                 'themes': {
                     'responsive': true,
                     'variant': 'large'
-                }
+                },
+                'check_callback': true
             },
             'plugins': ['search', 'types', 'wholerow'],
             'types': {
@@ -319,8 +324,20 @@
         
         // التعامل مع النقر على العناصر
         $('#folder-tree').on('select_node.jstree', function(e, data) {
-            if (data.node.original.folder_url) {
-                window.location.href = data.node.original.folder_url;
+            // تحقق مما إذا كان المعرف يبدأ بـ '#' (الجذر) أو يحتوي على 'folder-'
+            const nodeId = data.node.id;
+            
+            if (nodeId === '#') {
+                // الانتقال إلى الصفحة الرئيسية للأرشيف
+                window.location.href = "/dashboard/archive/";
+                return;
+            }
+            
+            // استخراج معرف المجلد من هوية العقدة
+            const idMatch = nodeId.match(/folder-(\d+)/);
+            if (idMatch && idMatch[1]) {
+                const folderId = idMatch[1];
+                window.location.href = `/dashboard/archive/folder/${folderId}/`;
             }
         });
         
@@ -338,53 +355,21 @@
             }, searchTimeout);
         });
         
-        // دالة تحويل بيانات المجلد إلى تنسيق jsTree
-        function convertFolderToTreeNode(folder) {
-            // تحديد نوع العقدة
-            let nodeType = 'default';
-            if (folder.is_system) {
-                nodeType = 'system-folder';
-            } else if (folder.document_count > 0) {
-                nodeType = 'document-folder';
+        // إضافة تفاعلية إضافية
+        $('#folder-tree').on('ready.jstree', function() {
+            // فتح كل المجلدات الجذرية عند التحميل
+            const rootNodes = $('#folder-tree').jstree(true).get_json('#', { flat: false });
+            for (const node of rootNodes) {
+                $('#folder-tree').jstree('open_node', node.id);
             }
             
-            // تحديد نص العقدة
-            let text = folder.name;
-            
-            // إضافة شارة نوع المجلد
-            if (folder.type && folder.type !== 'folder') {
-                text += `<span class="folder-badge bg-primary text-white">${folder.type}</span>`;
-            }
-            
-            // إضافة عدد المستندات
-            if (folder.document_count > 0) {
-                text += `<span class="folder-count">${folder.document_count} {% trans "documents" %}</span>`;
-            }
-            
-            // إضافة شارة المجلد النظامي
-            if (folder.is_system) {
-                text += `<span class="folder-badge" style="background-color: #8338ec; color: white;">{% trans "System" %}</span>`;
-            }
-            
-            // إنشاء العقدة
-            const node = {
-                id: `folder-${folder.id}`,
-                text: text,
-                type: nodeType,
-                folder_url: `/dashboard/archive/folder/${folder.id}/`,
-                state: {
-                    opened: folder.children.length > 0 && folder.children.length < 5,  // فتح المجلدات ذات الأبناء القليلة
-                    selected: false
-                }
-            };
-            
-            // إضافة الأبناء إذا وجدت
-            if (folder.children && folder.children.length > 0) {
-                node.children = folder.children.map(child => convertFolderToTreeNode(child));
-            }
-            
-            return node;
-        }
+            console.log("تم تحميل شجرة المجلدات بنجاح!");
+        });
+        
+        // دعم للطباعة
+        $('.print-tree-btn').on('click', function() {
+            window.print();
+        });
     });
 </script>
 {% endblock %}

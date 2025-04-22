@@ -2684,4 +2684,4 @@ def admin_archive_tree(request):
         'active_section': 'archive'
     }
     
-    return render(request, 'admin/archive/archive_main.html', context)
+    return render(request, 'admin/archive/folder_tree.html', context)
