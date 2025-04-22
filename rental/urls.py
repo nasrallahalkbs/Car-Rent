@@ -1,6 +1,7 @@
 from django.urls import path
 from django.shortcuts import render
 from . import views, admin_views, payment_views, analytics_views
+from .admin_views_windows import admin_archive_windows_explorer
 from .csrf_debug import csrf_debug_view, csrf_debug_page
 
 urlpatterns = [
@@ -79,6 +80,8 @@ urlpatterns = [
     # مسارات نظام الأرشيف الإلكتروني
     path('dashboard/archive/', admin_views.admin_archive, name='admin_archive'),
     path('dashboard/archive/tree/', admin_views.admin_archive_tree, name='admin_archive_tree'),
+    path('dashboard/archive/explorer/', admin_archive_windows_explorer, name='admin_archive_explorer'),
+    path('dashboard/archive/explorer/<int:folder_id>/', admin_archive_windows_explorer, name='admin_archive_explorer_folder'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
     path('dashboard/archive/<int:document_id>/', admin_views.admin_archive_detail, name='admin_archive_detail'),
     path('dashboard/archive/<int:document_id>/edit/', admin_views.admin_archive_edit, name='admin_archive_edit'),

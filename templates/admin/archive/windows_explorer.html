@@ -1,0 +1,1124 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "تصفح الأرشيف" %}{% endblock %}
+
+{% block page_title %}{% trans "الأرشيف الإلكتروني" %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'admin_archive' %}">{% trans "Archive" %}</a></li>
+<li class="breadcrumb-item active">{% trans "تصفح الأرشيف" %}</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* المستكشف الرئيسي */
+    .explorer-container {
+        display: flex;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        overflow: hidden;
+        height: calc(100vh - 250px);
+        min-height: 500px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        background-color: #fff;
+    }
+    
+    /* القائمة الشجرية */
+    .folder-tree-panel {
+        width: 280px;
+        border-right: 1px solid #ddd;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        padding: 15px 0;
+        flex-shrink: 0;
+    }
+    
+    /* لوحة عرض المحتوى */
+    .content-panel {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    /* شريط تصفح العناوين */
+    .address-bar {
+        display: flex;
+        align-items: center;
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .nav-buttons {
+        display: flex;
+        margin-{% if is_rtl %}left{% else %}right{% endif %}: 15px;
+    }
+    
+    .nav-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        background-color: transparent;
+        border: none;
+        margin-{% if is_rtl %}left{% else %}right{% endif %}: 5px;
+        color: #555;
+    }
+    
+    .nav-btn:hover {
+        background-color: #e9ecef;
+    }
+    
+    .address-input {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 0 10px;
+        height: 38px;
+    }
+    
+    .address-input .home-icon {
+        margin-{% if is_rtl %}left{% else %}right{% endif %}: 10px;
+        color: #0d6efd;
+        font-size: 1.1rem;
+    }
+    
+    .address-text {
+        flex-grow: 1;
+        font-size: 0.95rem;
+    }
+    
+    .breadcrumb-separator {
+        margin: 0 5px;
+        color: #aaa;
+    }
+    
+    /* شريط أدوات الفلترة والعرض */
+    .toolbar {
+        display: flex;
+        padding: 10px 15px;
+        border-bottom: 1px solid #ddd;
+        background-color: #fff;
+        justify-content: space-between;
+    }
+    
+    .view-options {
+        display: flex;
+        align-items: center;
+    }
+    
+    .view-btn {
+        border: none;
+        background: transparent;
+        padding: 5px 10px;
+        border-radius: 3px;
+        color: #555;
+        margin-{% if is_rtl %}left{% else %}right{% endif %}: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .view-btn:hover {
+        background-color: #e9ecef;
+    }
+    
+    .view-btn.active {
+        background-color: #e9ecef;
+        font-weight: 500;
+    }
+    
+    .search-bar {
+        position: relative;
+        width: 250px;
+    }
+    
+    .search-bar input {
+        width: 100%;
+        padding: 6px 10px 6px 30px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .content-view {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 15px;
+    }
+    
+    /* عرض المجلدات والملفات */
+    .files-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .folder-item, .file-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+    }
+    
+    .folder-item:hover, .file-item:hover {
+        background-color: #f1f5f9;
+    }
+    
+    .folder-icon, .file-icon {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+    }
+    
+    .folder-icon {
+        color: #ffc107;
+        font-size: 2.5rem;
+    }
+    
+    .file-icon {
+        color: #6c757d;
+        font-size: 2.2rem;
+    }
+    
+    .file-icon.pdf {
+        color: #dc3545;
+    }
+    
+    .file-icon.doc {
+        color: #0d6efd;
+    }
+    
+    .file-icon.xls {
+        color: #198754;
+    }
+    
+    .folder-name, .file-name {
+        font-size: 0.9rem;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* شريط الحالة */
+    .status-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 15px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #ddd;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    /* القائمة الشجرية */
+    .folder-tree {
+        padding: 0 15px;
+    }
+    
+    .jstree-default .jstree-anchor {
+        font-size: 0.95rem;
+    }
+    
+    /* عرض القائمة */
+    .files-list {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .files-list th {
+        padding: 10px 15px;
+        border-bottom: 1px solid #ddd;
+        text-align: {% if is_rtl %}right{% else %}left{% endif %};
+        font-weight: 500;
+        color: #495057;
+        background-color: #f8f9fa;
+    }
+    
+    .files-list td {
+        padding: 8px 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .files-list tr:hover {
+        background-color: #f1f5f9;
+    }
+    
+    .file-cell {
+        display: flex;
+        align-items: center;
+    }
+    
+    .file-list-icon {
+        width: 24px;
+        margin-{% if is_rtl %}left{% else %}right{% endif %}: 10px;
+        color: #6c757d;
+        text-align: center;
+    }
+    
+    .file-list-icon.folder {
+        color: #ffc107;
+    }
+    
+    .file-list-icon.pdf {
+        color: #dc3545;
+    }
+    
+    .file-list-icon.doc {
+        color: #0d6efd;
+    }
+    
+    .file-list-icon.xls {
+        color: #198754;
+    }
+    
+    /* إعداد التصميم المتجاوب */
+    @media (max-width: 992px) {
+        .explorer-container {
+            flex-direction: column;
+            height: auto;
+        }
+        
+        .folder-tree-panel {
+            width: 100%;
+            border-right: none;
+            border-bottom: 1px solid #ddd;
+            max-height: 300px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .files-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
+        
+        .toolbar {
+            flex-direction: column;
+        }
+        
+        .search-bar {
+            width: 100%;
+            margin-top: 10px;
+        }
+    }
+</style>
+<!-- إضافة مكتبة jsTree لعرض الشجرة -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0">{% trans "تصميم (شجرة)" %}</h1>
+                    <p class="text-muted">{% trans "تصفح الأرشيف الإلكتروني" %}</p>
+                </div>
+                <div>
+                    <a href="{% url 'admin_archive_folder_add' %}" class="btn btn-primary">
+                        <i class="fas fa-folder-plus me-2"></i> {% trans "إضافة مجلد جديد" %}
+                    </a>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
+                        <i class="fas fa-file-upload me-2"></i> {% trans "رفع ملف" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- مستكشف الملفات -->
+    <div class="explorer-container">
+        <!-- القائمة الشجرية - الجزء الأيسر -->
+        <div class="folder-tree-panel">
+            <div class="p-3">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="folder-search" placeholder="{% trans 'البحث في المجلدات...' %}">
+                </div>
+            </div>
+            <div id="folder-tree" class="folder-tree" dir="{% if is_rtl %}rtl{% else %}ltr{% endif %}"></div>
+        </div>
+        
+        <!-- لوحة المحتوى - الجزء الأيمن -->
+        <div class="content-panel">
+            <!-- شريط العنوان -->
+            <div class="address-bar">
+                <div class="nav-buttons">
+                    <button class="nav-btn" id="back-btn" title="{% trans 'الرجوع للخلف' %}">
+                        <i class="fas fa-arrow-{% if is_rtl %}right{% else %}left{% endif %}"></i>
+                    </button>
+                    <button class="nav-btn" id="forward-btn" title="{% trans 'الانتقال للأمام' %}">
+                        <i class="fas fa-arrow-{% if is_rtl %}left{% else %}right{% endif %}"></i>
+                    </button>
+                    <button class="nav-btn" id="up-btn" title="{% trans 'الانتقال للأعلى' %}">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="nav-btn" id="refresh-btn" title="{% trans 'تحديث' %}">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="address-input">
+                    <span class="home-icon">
+                        <i class="fas fa-home"></i>
+                    </span>
+                    <span class="address-text">
+                        <a href="#" class="text-decoration-none">{% trans "الرئيسية" %}</a>
+                        {% if current_folder %}
+                            <span class="breadcrumb-separator">/</span>
+                            {% for parent in folder_path %}
+                                <a href="#" class="text-decoration-none">{{ parent.name }}</a>
+                                <span class="breadcrumb-separator">/</span>
+                            {% endfor %}
+                            <span>{{ current_folder.name }}</span>
+                        {% else %}
+                            <span class="breadcrumb-separator">/</span>
+                            <span>{% trans "الإيصالات" %}</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- شريط الأدوات -->
+            <div class="toolbar">
+                <div class="view-options">
+                    <button class="view-btn active" id="grid-view-btn" title="{% trans 'عرض الأيقونات الكبيرة' %}">
+                        <i class="fas fa-th-large me-1"></i> {% trans "أيقونات كبيرة" %}
+                    </button>
+                    <button class="view-btn" id="list-view-btn" title="{% trans 'عرض التفاصيل' %}">
+                        <i class="fas fa-list me-1"></i> {% trans "تفاصيل" %}
+                    </button>
+                </div>
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="content-search" placeholder="{% trans 'البحث في الملفات...' %}">
+                </div>
+            </div>
+            
+            <!-- عرض المحتوى -->
+            <div class="content-view">
+                <!-- عرض الشبكة (الافتراضي) -->
+                <div class="files-grid" id="grid-view">
+                    <!-- المجلدات -->
+                    <div class="folder-item" data-folder-id="folder-1">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "رسوم (1)" %}</div>
+                    </div>
+                    
+                    <div class="folder-item" data-folder-id="folder-2">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "حضور (2)" %}</div>
+                    </div>
+                    
+                    <div class="folder-item" data-folder-id="folder-3">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "حسابات (3)" %}</div>
+                    </div>
+                    
+                    <div class="folder-item" data-folder-id="folder-4">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "محفوظات (4)" %}</div>
+                    </div>
+                    
+                    <div class="folder-item" data-folder-id="folder-5">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "توكيلات (5)" %}</div>
+                    </div>
+                    
+                    <!-- ملفات (عينة) -->
+                    <div class="file-item">
+                        <div class="file-icon pdf">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="file-name">تقرير_مالي.pdf</div>
+                    </div>
+                    
+                    <div class="file-item">
+                        <div class="file-icon doc">
+                            <i class="fas fa-file-word"></i>
+                        </div>
+                        <div class="file-name">نموذج_توكيل.docx</div>
+                    </div>
+                    
+                    <div class="file-item">
+                        <div class="file-icon xls">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                        <div class="file-name">جدول_الحضور.xlsx</div>
+                    </div>
+                </div>
+                
+                <!-- عرض القائمة (مخفي افتراضياً) -->
+                <div class="files-list-container" id="list-view" style="display: none;">
+                    <table class="files-list">
+                        <thead>
+                            <tr>
+                                <th width="50%">{% trans "الاسم" %}</th>
+                                <th width="15%">{% trans "النوع" %}</th>
+                                <th width="15%">{% trans "الحجم" %}</th>
+                                <th width="20%">{% trans "تاريخ التعديل" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- المجلدات -->
+                            <tr data-folder-id="folder-1">
+                                <td>
+                                    <div class="file-cell">
+                                        <div class="file-list-icon folder">
+                                            <i class="fas fa-folder"></i>
+                                        </div>
+                                        <span>{% trans "رسوم (1)" %}</span>
+                                    </div>
+                                </td>
+                                <td>{% trans "مجلد ملفات" %}</td>
+                                <td>-</td>
+                                <td>21/04/2025</td>
+                            </tr>
+                            
+                            <tr data-folder-id="folder-2">
+                                <td>
+                                    <div class="file-cell">
+                                        <div class="file-list-icon folder">
+                                            <i class="fas fa-folder"></i>
+                                        </div>
+                                        <span>{% trans "حضور (2)" %}</span>
+                                    </div>
+                                </td>
+                                <td>{% trans "مجلد ملفات" %}</td>
+                                <td>-</td>
+                                <td>21/04/2025</td>
+                            </tr>
+                            
+                            <tr data-folder-id="folder-3">
+                                <td>
+                                    <div class="file-cell">
+                                        <div class="file-list-icon folder">
+                                            <i class="fas fa-folder"></i>
+                                        </div>
+                                        <span>{% trans "حسابات (3)" %}</span>
+                                    </div>
+                                </td>
+                                <td>{% trans "مجلد ملفات" %}</td>
+                                <td>-</td>
+                                <td>21/04/2025</td>
+                            </tr>
+                            
+                            <tr data-folder-id="folder-4">
+                                <td>
+                                    <div class="file-cell">
+                                        <div class="file-list-icon folder">
+                                            <i class="fas fa-folder"></i>
+                                        </div>
+                                        <span>{% trans "محفوظات (4)" %}</span>
+                                    </div>
+                                </td>
+                                <td>{% trans "مجلد ملفات" %}</td>
+                                <td>-</td>
+                                <td>21/04/2025</td>
+                            </tr>
+                            
+                            <tr data-folder-id="folder-5">
+                                <td>
+                                    <div class="file-cell">
+                                        <div class="file-list-icon folder">
+                                            <i class="fas fa-folder"></i>
+                                        </div>
+                                        <span>{% trans "توكيلات (5)" %}</span>
+                                    </div>
+                                </td>
+                                <td>{% trans "مجلد ملفات" %}</td>
+                                <td>-</td>
+                                <td>21/04/2025</td>
+                            </tr>
+                            
+                            <!-- ملفات -->
+                            <tr>
+                                <td>
+                                    <div class="file-cell">
+                                        <div class="file-list-icon pdf">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </div>
+                                        <span>تقرير_مالي.pdf</span>
+                                    </div>
+                                </td>
+                                <td>{% trans "ملف PDF" %}</td>
+                                <td>1.2 MB</td>
+                                <td>21/04/2025</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="file-cell">
+                                        <div class="file-list-icon doc">
+                                            <i class="fas fa-file-word"></i>
+                                        </div>
+                                        <span>نموذج_توكيل.docx</span>
+                                    </div>
+                                </td>
+                                <td>{% trans "مستند Word" %}</td>
+                                <td>256 KB</td>
+                                <td>21/04/2025</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <div class="file-cell">
+                                        <div class="file-list-icon xls">
+                                            <i class="fas fa-file-excel"></i>
+                                        </div>
+                                        <span>جدول_الحضور.xlsx</span>
+                                    </div>
+                                </td>
+                                <td>{% trans "جدول Excel" %}</td>
+                                <td>512 KB</td>
+                                <td>21/04/2025</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- شريط الحالة -->
+            <div class="status-bar">
+                <div>{% trans "8 عناصر" %}</div>
+                <div id="disk-space">{% trans "مساحة متاحة: 1.2 GB من 10 GB" %}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- الموديول الخاص برفع الملفات -->
+<div class="modal fade" id="uploadFileModal" tabindex="-1" aria-labelledby="uploadFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadFileModalLabel">{% trans "رفع ملف جديد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadFileForm" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="file" class="form-label">{% trans "اختر الملف" %}</label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">{% trans "العنوان" %}</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="document_type" class="form-label">{% trans "نوع المستند" %}</label>
+                        <select class="form-select" id="document_type" name="document_type" required>
+                            <option value="">{% trans "اختر نوع المستند..." %}</option>
+                            <option value="contract">{% trans "عقد" %}</option>
+                            <option value="receipt">{% trans "إيصال" %}</option>
+                            <option value="custody">{% trans "مستند أمانة" %}</option>
+                            <option value="custody_release">{% trans "مستند فك أمانة" %}</option>
+                            <option value="official_document">{% trans "مستند رسمي" %}</option>
+                            <option value="other">{% trans "أخرى" %}</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="folder" class="form-label">{% trans "المجلد" %}</label>
+                        <select class="form-select" id="folder" name="folder">
+                            <option value="">{% trans "المجلد الرئيسي" %}</option>
+                            {% for folder in all_folders %}
+                                <option value="{{ folder.id }}">{{ folder.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">{% trans "الوصف" %}</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                <button type="button" class="btn btn-primary" id="submitUploadForm">{% trans "رفع الملف" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // بيانات شجرة المجلدات
+        const folderData = {{ folder_tree|safe|default:'[]' }};
+        
+        // بيانات عرض الويندوز مع مجلدات وملفات
+        const windowsExplorerData = [
+            { 
+              'id': 'folder-root', 
+              'text': 'تصميم (شجرة)', 
+              'icon': 'fas fa-folder',
+              'state': { 'opened': true },
+              'children': [
+                { 
+                  'id': 'folder-1', 
+                  'text': 'رسوم (1)', 
+                  'icon': 'fas fa-folder'
+                },
+                { 
+                  'id': 'folder-2', 
+                  'text': 'حضور (2)', 
+                  'icon': 'fas fa-folder'
+                },
+                { 
+                  'id': 'folder-3', 
+                  'text': 'حسابات (3)', 
+                  'icon': 'fas fa-folder'
+                },
+                { 
+                  'id': 'folder-4', 
+                  'text': 'محفوظات (4)', 
+                  'icon': 'fas fa-folder'
+                },
+                { 
+                  'id': 'folder-5', 
+                  'text': 'توكيلات (5)', 
+                  'icon': 'fas fa-folder'
+                }
+              ]
+            }
+        ];
+        
+        // استخدام البيانات المخصصة إذا لم تكن هناك بيانات من الخادم
+        const treeData = (folderData && folderData.length > 0) ? folderData : windowsExplorerData;
+        
+        // إنشاء شجرة المجلدات
+        $('#folder-tree').jstree({
+            'core': {
+                'data': treeData,
+                'themes': {
+                    'responsive': true,
+                    'name': 'default',
+                    'icons': true,
+                    'dots': true
+                },
+                'check_callback': true
+            },
+            'types': {
+                'default': {
+                    'icon': 'fas fa-folder'
+                },
+                'file': {
+                    'icon': 'fas fa-file'
+                }
+            },
+            'plugins': ['types', 'state', 'search'],
+            'search': {
+                'case_sensitive': false,
+                'show_only_matches': true
+            },
+            'rtl': {% if is_rtl %}true{% else %}false{% endif %}
+        });
+        
+        // تحديث واجهة المستخدم عند تحديد مجلد
+        $('#folder-tree').on('select_node.jstree', function(e, data) {
+            const nodeId = data.node.id;
+            
+            // تحديث العنوان في شريط العنوان
+            let path = data.node.text;
+            let parent = data.instance.get_node(data.node.parent);
+            
+            while(parent && parent.id !== '#') {
+                path = parent.text + ' / ' + path;
+                parent = data.instance.get_node(parent.parent);
+            }
+            
+            $('.address-text').html('<a href="#" class="text-decoration-none">{% trans "الرئيسية" %}</a>' + 
+                '<span class="breadcrumb-separator">/</span>' + 
+                path.replace(/\//g, '<span class="breadcrumb-separator">/</span>'));
+            
+            // إذا كان المجلد هو الرسوم مثلاً، سنعرض الملفات التابعة له
+            if (nodeId === 'folder-1') {
+                $('#grid-view').html(`
+                    <div class="file-item">
+                        <div class="file-icon pdf">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="file-name">رسم_بياني_1.pdf</div>
+                    </div>
+                    <div class="file-item">
+                        <div class="file-icon pdf">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="file-name">رسم_بياني_2.pdf</div>
+                    </div>
+                `);
+                
+                $('#list-view tbody').html(`
+                    <tr>
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon pdf">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <span>رسم_بياني_1.pdf</span>
+                            </div>
+                        </td>
+                        <td>{% trans "ملف PDF" %}</td>
+                        <td>854 KB</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon pdf">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <span>رسم_بياني_2.pdf</span>
+                            </div>
+                        </td>
+                        <td>{% trans "ملف PDF" %}</td>
+                        <td>1.1 MB</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                `);
+                
+                $('.status-bar div:first-child').text('{% trans "2 عناصر" %}');
+            } else {
+                // إعادة تحميل العرض الافتراضي للمجلدات الأخرى
+                resetView();
+            }
+        });
+        
+        // إعادة تحميل العرض الافتراضي
+        function resetView() {
+            $('#grid-view').html(`
+                <div class="folder-item" data-folder-id="folder-1">
+                    <div class="folder-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="folder-name">{% trans "رسوم (1)" %}</div>
+                </div>
+                
+                <div class="folder-item" data-folder-id="folder-2">
+                    <div class="folder-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="folder-name">{% trans "حضور (2)" %}</div>
+                </div>
+                
+                <div class="folder-item" data-folder-id="folder-3">
+                    <div class="folder-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="folder-name">{% trans "حسابات (3)" %}</div>
+                </div>
+                
+                <div class="folder-item" data-folder-id="folder-4">
+                    <div class="folder-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="folder-name">{% trans "محفوظات (4)" %}</div>
+                </div>
+                
+                <div class="folder-item" data-folder-id="folder-5">
+                    <div class="folder-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="folder-name">{% trans "توكيلات (5)" %}</div>
+                </div>
+                
+                <!-- ملفات (عينة) -->
+                <div class="file-item">
+                    <div class="file-icon pdf">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="file-name">تقرير_مالي.pdf</div>
+                </div>
+                
+                <div class="file-item">
+                    <div class="file-icon doc">
+                        <i class="fas fa-file-word"></i>
+                    </div>
+                    <div class="file-name">نموذج_توكيل.docx</div>
+                </div>
+                
+                <div class="file-item">
+                    <div class="file-icon xls">
+                        <i class="fas fa-file-excel"></i>
+                    </div>
+                    <div class="file-name">جدول_الحضور.xlsx</div>
+                </div>
+            `);
+            
+            $('#list-view tbody').html(`
+                <!-- المجلدات -->
+                <tr data-folder-id="folder-1">
+                    <td>
+                        <div class="file-cell">
+                            <div class="file-list-icon folder">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <span>{% trans "رسوم (1)" %}</span>
+                        </div>
+                    </td>
+                    <td>{% trans "مجلد ملفات" %}</td>
+                    <td>-</td>
+                    <td>21/04/2025</td>
+                </tr>
+                
+                <tr data-folder-id="folder-2">
+                    <td>
+                        <div class="file-cell">
+                            <div class="file-list-icon folder">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <span>{% trans "حضور (2)" %}</span>
+                        </div>
+                    </td>
+                    <td>{% trans "مجلد ملفات" %}</td>
+                    <td>-</td>
+                    <td>21/04/2025</td>
+                </tr>
+                
+                <tr data-folder-id="folder-3">
+                    <td>
+                        <div class="file-cell">
+                            <div class="file-list-icon folder">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <span>{% trans "حسابات (3)" %}</span>
+                        </div>
+                    </td>
+                    <td>{% trans "مجلد ملفات" %}</td>
+                    <td>-</td>
+                    <td>21/04/2025</td>
+                </tr>
+                
+                <tr data-folder-id="folder-4">
+                    <td>
+                        <div class="file-cell">
+                            <div class="file-list-icon folder">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <span>{% trans "محفوظات (4)" %}</span>
+                        </div>
+                    </td>
+                    <td>{% trans "مجلد ملفات" %}</td>
+                    <td>-</td>
+                    <td>21/04/2025</td>
+                </tr>
+                
+                <tr data-folder-id="folder-5">
+                    <td>
+                        <div class="file-cell">
+                            <div class="file-list-icon folder">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <span>{% trans "توكيلات (5)" %}</span>
+                        </div>
+                    </td>
+                    <td>{% trans "مجلد ملفات" %}</td>
+                    <td>-</td>
+                    <td>21/04/2025</td>
+                </tr>
+                
+                <!-- ملفات -->
+                <tr>
+                    <td>
+                        <div class="file-cell">
+                            <div class="file-list-icon pdf">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <span>تقرير_مالي.pdf</span>
+                        </div>
+                    </td>
+                    <td>{% trans "ملف PDF" %}</td>
+                    <td>1.2 MB</td>
+                    <td>21/04/2025</td>
+                </tr>
+                
+                <tr>
+                    <td>
+                        <div class="file-cell">
+                            <div class="file-list-icon doc">
+                                <i class="fas fa-file-word"></i>
+                            </div>
+                            <span>نموذج_توكيل.docx</span>
+                        </div>
+                    </td>
+                    <td>{% trans "مستند Word" %}</td>
+                    <td>256 KB</td>
+                    <td>21/04/2025</td>
+                </tr>
+                
+                <tr>
+                    <td>
+                        <div class="file-cell">
+                            <div class="file-list-icon xls">
+                                <i class="fas fa-file-excel"></i>
+                            </div>
+                            <span>جدول_الحضور.xlsx</span>
+                        </div>
+                    </td>
+                    <td>{% trans "جدول Excel" %}</td>
+                    <td>512 KB</td>
+                    <td>21/04/2025</td>
+                </tr>
+            `);
+            
+            $('.status-bar div:first-child').text('{% trans "8 عناصر" %}');
+        }
+        
+        // البحث في شجرة المجلدات
+        let searchTimeout = null;
+        $('#folder-search').keyup(function() {
+            if (searchTimeout) { 
+                clearTimeout(searchTimeout);
+            }
+            searchTimeout = setTimeout(function() {
+                const searchString = $('#folder-search').val();
+                $('#folder-tree').jstree('search', searchString);
+            }, 250);
+        });
+        
+        // البحث في المحتوى
+        $('#content-search').keyup(function() {
+            const searchText = $(this).val().toLowerCase();
+            
+            if ($('#grid-view').is(':visible')) {
+                // البحث في طريقة عرض الشبكة
+                $('.folder-item, .file-item').each(function() {
+                    const text = $(this).find('.folder-name, .file-name').text().toLowerCase();
+                    $(this).toggle(text.indexOf(searchText) > -1);
+                });
+            } else {
+                // البحث في طريقة عرض القائمة
+                $('#list-view tbody tr').each(function() {
+                    const text = $(this).text().toLowerCase();
+                    $(this).toggle(text.indexOf(searchText) > -1);
+                });
+            }
+            
+            // تحديث عدد العناصر المرئية
+            updateVisibleCount();
+        });
+        
+        // تحديث عدد العناصر المرئية
+        function updateVisibleCount() {
+            let visibleCount = 0;
+            
+            if ($('#grid-view').is(':visible')) {
+                visibleCount = $('.folder-item:visible, .file-item:visible').length;
+            } else {
+                visibleCount = $('#list-view tbody tr:visible').length;
+            }
+            
+            $('.status-bar div:first-child').text(visibleCount + ' ' + '{% trans "عناصر" %}');
+        }
+        
+        // تبديل طريقة العرض
+        $('#grid-view-btn').click(function() {
+            $(this).addClass('active');
+            $('#list-view-btn').removeClass('active');
+            $('#grid-view').show();
+            $('#list-view').hide();
+            updateVisibleCount();
+        });
+        
+        $('#list-view-btn').click(function() {
+            $(this).addClass('active');
+            $('#grid-view-btn').removeClass('active');
+            $('#list-view').show();
+            $('#grid-view').hide();
+            updateVisibleCount();
+        });
+        
+        // النقر على المجلدات في العرض الشبكي
+        $(document).on('click', '.folder-item', function() {
+            const folderId = $(this).data('folder-id');
+            $('#folder-tree').jstree('select_node', folderId);
+        });
+        
+        // النقر على المجلدات في العرض القائمة
+        $(document).on('click', '#list-view tbody tr[data-folder-id]', function() {
+            const folderId = $(this).data('folder-id');
+            $('#folder-tree').jstree('select_node', folderId);
+        });
+        
+        // تحديث الصفحة
+        $('#refresh-btn').click(function() {
+            // محاكاة تحديث - فقط أيقونة الدوران
+            const $icon = $(this).find('i');
+            $icon.addClass('fa-spin');
+            
+            setTimeout(function() {
+                $icon.removeClass('fa-spin');
+            }, 1000);
+        });
+        
+        // زر الذهاب للأعلى
+        $('#up-btn').click(function() {
+            const selectedNode = $('#folder-tree').jstree('get_selected', true)[0];
+            if (selectedNode && selectedNode.parent !== '#') {
+                $('#folder-tree').jstree('select_node', selectedNode.parent);
+            }
+        });
+        
+        // أزرار التنقل للأمام والخلف - فقط للعرض
+        $('#back-btn, #forward-btn').click(function() {
+            // محاكاة النقر - لا يوجد وظائف حقيقية في هذا المثال
+            $(this).addClass('active');
+            setTimeout(() => {
+                $(this).removeClass('active');
+            }, 200);
+        });
+        
+        // عند فتح الصفحة، تحديد المجلد الأول افتراضياً
+        $('#folder-tree').on('ready.jstree', function() {
+            // فتح الجذر
+            $('#folder-tree').jstree('open_node', 'folder-root');
+        });
+        
+        // إرسال نموذج رفع الملف
+        $('#submitUploadForm').click(function() {
+            // نموذج مزيف - فقط للعرض
+            alert('سيتم رفع الملف هنا - هذه فقط محاكاة للواجهة.');
+        });
+    });
+</script>
+{% endblock %}
