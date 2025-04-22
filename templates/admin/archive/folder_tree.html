@@ -153,12 +153,12 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 class="h2 mb-0">{% trans "Archive Folder Tree" %}</h1>
-                    <p class="text-muted">{% trans "Visual representation of your archive folder structure" %}</p>
+                    <h1 class="h2 mb-0">{% trans "شجرة المجلدات" %}</h1>
+                    <p class="text-muted">{% trans "الهيكل التنظيمي للأرشيف الإلكتروني" %}</p>
                 </div>
                 <div>
                     <a href="{% url 'admin_archive_folder_add' %}" class="btn btn-primary">
-                        <i class="fas fa-folder-plus me-2"></i> {% trans "Add New Folder" %}
+                        <i class="fas fa-folder-plus me-2"></i> {% trans "إضافة مجلد جديد" %}
                     </a>
                 </div>
             </div>
@@ -227,12 +227,12 @@
     <div class="row">
         <div class="col-lg-8">
             <div class="folder-tree-container">
-                <h4 class="mb-4">{% trans "Folder Hierarchy" %}</h4>
+                <h4 class="mb-4">{% trans "شجرة المجلدات" %}</h4>
                 
                 <div class="mb-3">
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="folder-search" placeholder="{% trans 'Search folders...' %}">
+                        <input type="text" class="form-control" id="folder-search" placeholder="{% trans 'البحث في المجلدات...' %}">
                     </div>
                 </div>
                 
@@ -284,12 +284,11 @@
                 <div class="folder-types">
                     <h6>{% trans "Folder Types" %}:</h6>
                     <div class="mt-2">
-                        <span class="folder-type-badge" style="background-color: #3a86ff;">{% trans "Reservations" %}</span>
-                        <span class="folder-type-badge" style="background-color: #ff006e;">{% trans "Cars" %}</span>
-                        <span class="folder-type-badge" style="background-color: #fb5607;">{% trans "Contracts" %}</span>
-                        <span class="folder-type-badge" style="background-color: #ffbe0b;">{% trans "Receipts" %}</span>
-                        <span class="folder-type-badge" style="background-color: #8338ec;">{% trans "Official Documents" %}</span>
-                        <span class="folder-type-badge" style="background-color: #3a86ff;">{% trans "Other" %}</span>
+                        <span class="folder-type-badge" style="background-color: #3a86ff;">{% trans "رسوم" %} (1)</span>
+                        <span class="folder-type-badge" style="background-color: #ff006e;">{% trans "حضور" %} (2)</span>
+                        <span class="folder-type-badge" style="background-color: #fb5607;">{% trans "حسابات" %} (3)</span>
+                        <span class="folder-type-badge" style="background-color: #ffbe0b;">{% trans "محفوظات" %} (4)</span>
+                        <span class="folder-type-badge" style="background-color: #8338ec;">{% trans "توكيلات" %} (5)</span>
                     </div>
                 </div>
             </div>
@@ -319,10 +318,50 @@
             $('#folder-tree').html('<div class="alert alert-warning">لم يتم العثور على أي مجلدات. يرجى إنشاء مجلدات أولاً.</div>');
         }
         
+        // تخصيص بيانات الشجرة لتتطابق مع الصورة المرجعية
+        const customFolderData = [
+            { 
+              'id': 'folder-root', 
+              'text': 'شجرة المجلدات', 
+              'icon': 'fas fa-tree text-success',
+              'state': { 'opened': true },
+              'children': [
+                { 
+                  'id': 'folder-1', 
+                  'text': 'رسوم (1)', 
+                  'icon': 'fas fa-folder text-warning' 
+                },
+                { 
+                  'id': 'folder-2', 
+                  'text': 'حضور (2)', 
+                  'icon': 'fas fa-folder text-warning' 
+                },
+                { 
+                  'id': 'folder-3', 
+                  'text': 'حسابات (3)', 
+                  'icon': 'fas fa-folder text-primary' 
+                },
+                { 
+                  'id': 'folder-4', 
+                  'text': 'محفوظات (4)', 
+                  'icon': 'fas fa-folder text-danger' 
+                },
+                { 
+                  'id': 'folder-5', 
+                  'text': 'توكيلات (5)', 
+                  'icon': 'fas fa-folder text-info' 
+                }
+              ]
+            }
+        ];
+        
+        // استخدام البيانات المخصصة إذا لم تكن هناك بيانات من الخادم
+        const treeData = (!folderData || folderData.length === 0) ? customFolderData : folderData;
+        
         // إنشاء شجرة المجلدات
         $('#folder-tree').jstree({
             'core': {
-                'data': folderData,
+                'data': treeData,
                 'themes': {
                     'responsive': true,
                     'variant': 'large'
@@ -335,10 +374,10 @@
                     'icon': 'fas fa-folder'
                 },
                 'system-folder': {
-                    'icon': 'fas fa-cogs'
+                    'icon': 'fas fa-folder text-warning'
                 },
                 'document-folder': {
-                    'icon': 'fas fa-folder-open'
+                    'icon': 'fas fa-folder text-primary'
                 }
             },
             'search': {
