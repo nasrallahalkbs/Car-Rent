@@ -2629,12 +2629,34 @@ def admin_archive_tree(request):
     
     # بناء هيكل البيانات الشجري للعرض في jsTree
     def build_tree(folder):
+        # حساب عدد المستندات في المجلد
+        document_count = folder.documents.count() if hasattr(folder, 'documents') else 0
+        
+        # تحديد ما إذا كان المجلد نظامي
+        is_system_folder = folder.is_system_folder if hasattr(folder, 'is_system_folder') else False
+        
+        # تحديد نص العقدة
+        folder_text = folder.name
+        
+        # إضافة عدد المستندات إذا كان هناك مستندات
+        if document_count > 0:
+            folder_text += f' <span class="badge bg-primary rounded-pill">{document_count}</span>'
+        
+        # إضافة شارة للمجلد النظامي
+        if is_system_folder:
+            folder_text += ' <span class="badge bg-secondary">نظامي</span>'
+        
         result = {
-            'id': folder.id,
-            'text': folder.name,
-            'icon': 'fas fa-folder',
+            'id': f'folder-{folder.id}',
+            'text': folder_text,
+            'icon': 'fas fa-folder' + ('-open' if document_count > 0 else ''),
+            'type': 'system-folder' if is_system_folder else ('document-folder' if document_count > 0 else 'default'),
             'state': {
                 'opened': False
+            },
+            'a_attr': {
+                'href': f'/dashboard/archive/folder/{folder.id}/',
+                'data-folder-id': folder.id
             },
             'children': []
         }
