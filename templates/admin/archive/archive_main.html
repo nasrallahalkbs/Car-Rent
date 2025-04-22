@@ -1051,7 +1051,14 @@
                 }
             },
             'plugins': ['types', 'wholerow', 'changed', 'state', 'checkbox', 'search']
-        }).on('select_node.jstree', function(e, data) {
+        }).on('select_node.jstree'
+        // عند اكتمال تحميل الشجرة
+        $('#folder-tree').on('ready.jstree', function() {
+            // فتح جميع العقد الجذرية
+            $(this).jstree('open_all');
+            console.log("تم تحميل شجرة المجلدات بنجاح");
+        });
+        , function(e, data) {
             const folderId = data.node.id;
             if (folderId !== '#') {
                 window.location.href = "{% url 'admin_archive_folder' 0 %}".replace('0', folderId);
