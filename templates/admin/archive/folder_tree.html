@@ -14,6 +14,7 @@
 
 {% block extra_css %}
 <style>
+    /* التنسيقات الأساسية */
     .folder-tree-container {
         background-color: #ffffff;
         border-radius: 0.75rem;
@@ -26,17 +27,156 @@
         font-size: 1rem;
         max-height: 600px;
         overflow-y: auto;
+        border: 1px solid #e6e6e6;
+        padding: 10px;
+        background-color: #ffffff;
     }
     
+    /* تنسيقات JSTree مشابهة بالضبط لشجرة ملفات ويندوز */
+    .jstree-default .jstree-icon {
+        color: #ffc107; /* لون أصفر ذهبي للمجلدات كما في ويندوز */
+    }
+    
+    /* التأكد من لون المجلدات الموحد كما في ويندوز */
+    .jstree-default .jstree-themeicon-custom,
+    .jstree-default .fa-folder {
+        color: #ffc107 !important; /* إجبار اللون الأصفر الذهبي */
+    }
+    
+    /* مظهر خطوط ويندوز للشجرة */
+    .jstree-default .jstree-node {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M22 11V3h-7v3H9V3H2v8h7v-3h6v3h7zM7 17H2v4h5v-4zm15 0h-5v4h5v-4z" fill="none" stroke="%23cccccc" stroke-width="1"/></svg>') !important;
+        background-position: 0 0 !important;
+    }
+    
+    /* قواعد تنسيق للتشابه مع ويندوز */
+    .jstree-default li {
+        background-image: none !important;
+    }
+    
+    /* خطوط الربط بين العناصر */
+    .jstree-default .jstree-children {
+        background-repeat: repeat-y !important;
+        background-position: 100% 0 !important;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="24"><path d="M0,0v24" stroke="%23dddddd" fill="none" /></svg>') !important;
+    }
+    
+    /* تنسيق خطوط الشجرة للغة العربية */
+    .jstree-rtl.jstree-default .jstree-children {
+        background-position: right !important;
+    }
+    
+    /* تنسيق شجرة المجلدات على طراز ويندوز */
     .jstree-default .jstree-anchor {
-        line-height: 32px;
-        height: 32px;
+        line-height: 24px; /* تصغير ارتفاع الخط ليطابق ويندوز */
+        height: 24px;
+        width: 95%;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        padding-right: 5px !important; /* تباعد أفضل للنص بالنسبة للواجهة العربية */
     }
     
     .jstree-default .jstree-icon {
-        width: 32px;
-        height: 32px;
-        line-height: 32px;
+        width: 20px;  /* تصغير حجم الأيقونة لتطابق ويندوز */
+        height: 20px;
+        line-height: 20px;
+        margin-top: 2px; /* محاذاة عمودية أفضل */
+    }
+    
+    /* تنسيق المسافات البادئة للعناصر */
+    .jstree-default .jstree-node {
+        min-height: 24px;
+        line-height: 24px;
+    }
+    
+    /* تنسيق خاص للأيقونات */
+    .jstree-default .jstree-themeicon {
+        margin-left: 2px;
+        margin-right: 2px;
+    }
+    
+    /* تنسيق خانات الاختيار */
+    .jstree-default .jstree-checkbox {
+        width: 16px !important;
+        height: 16px !important;
+        background-color: #fff;
+        border: 1px solid #aaa;
+        margin-right: 4px;
+        margin-left: 4px;
+        position: relative;
+    }
+    
+    /* تنسيق خطوط الشجرة (على طراز ويندوز) */
+    .jstree-default .jstree-node {
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAACAQMAAAB49I5GAAAABlBMVEUAAAAAAAClZ7nPAAAAAXRSTlMAQObYZgAAAAxJREFUCNdjIBGMzgAABS0BDikICQYAAAAASUVORK5CYII=');
+        background-position: -292px -4px;
+        background-repeat: repeat-y;
+    }
+    
+    /* تنسيق آخر سطر في الشجرة */
+    .jstree-default .jstree-last {
+        background: transparent;
+    }
+    
+    .jstree-default .jstree-icon.jstree-themeicon-custom {
+        background-size: contain !important;
+    }
+    
+    #folder-tree .jstree-node[aria-selected="true"] > .jstree-anchor {
+        background-color: var(--primary-light) !important;
+        color: var(--dark-color) !important;
+        font-weight: bold;
+    }
+    
+    /* مؤثرات التحويم على العناصر */
+    .jstree-default .jstree-hovered, 
+    .jstree-default .jstree-clicked {
+        background-color: #e8f0fe; /* لون أزرق فاتح جدًا للتحويم */
+        border-radius: 0; /* بدون تقريب الزوايا كما في ويندوز */
+    }
+    
+    /* العنصر المحدد */
+    .jstree-default .jstree-clicked {
+        background-color: #cce8ff; /* لون أزرق فاتح للتحديد */
+        color: #000;
+        font-weight: 500;
+    }
+    
+    /* عند تحديد الصف كاملاً */
+    .jstree-default .jstree-wholerow-clicked {
+        background-color: #cce8ff;
+    }
+    
+    /* عند التحويم على الصف كاملاً */
+    .jstree-default .jstree-wholerow-hovered {
+        background-color: #e8f0fe;
+    }
+    
+    /* تنسيق شكل الاتصال بين العناصر */
+    .jstree-default .jstree-children .jstree-children {
+        margin-right: 15px;
+    }
+    
+    /* تظليل الخطوط الرأسية */
+    .jstree-default .jstree-container-ul .jstree-node {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    /* تغيير اتجاه شجرة المجلدات للعربية */
+    .jstree-rtl .jstree-node {
+        direction: rtl;
+        text-align: right;
+    }
+    
+    .jstree-rtl .jstree-icon {
+        margin-left: 5px;
+        margin-right: 0;
+    }
+    
+    .jstree-rtl .jstree-anchor {
+        padding: 3px 5px 3px 0;
     }
     
     .folder-badge {
@@ -322,34 +462,34 @@
         const customFolderData = [
             { 
               'id': 'folder-root', 
-              'text': 'شجرة المجلدات', 
-              'icon': 'fas fa-tree text-success',
+              'text': 'تصميم (شجرة)', 
+              'icon': 'fas fa-folder text-warning',
               'state': { 'opened': true },
               'children': [
                 { 
                   'id': 'folder-1', 
                   'text': 'رسوم (1)', 
-                  'icon': 'fas fa-folder text-warning' 
+                  'icon': 'fas fa-folder text-warning'
                 },
                 { 
                   'id': 'folder-2', 
                   'text': 'حضور (2)', 
-                  'icon': 'fas fa-folder text-warning' 
+                  'icon': 'fas fa-folder text-warning'
                 },
                 { 
                   'id': 'folder-3', 
                   'text': 'حسابات (3)', 
-                  'icon': 'fas fa-folder text-primary' 
+                  'icon': 'fas fa-folder text-warning'
                 },
                 { 
                   'id': 'folder-4', 
                   'text': 'محفوظات (4)', 
-                  'icon': 'fas fa-folder text-danger' 
+                  'icon': 'fas fa-folder text-warning'
                 },
                 { 
                   'id': 'folder-5', 
                   'text': 'توكيلات (5)', 
-                  'icon': 'fas fa-folder text-info' 
+                  'icon': 'fas fa-folder text-warning'
                 }
               ]
             }
@@ -358,28 +498,47 @@
         // استخدام البيانات المخصصة إذا لم تكن هناك بيانات من الخادم
         const treeData = (!folderData || folderData.length === 0) ? customFolderData : folderData;
         
-        // إنشاء شجرة المجلدات
+        // إنشاء شجرة المجلدات بمظهر شبيه لويندوز
         $('#folder-tree').jstree({
             'core': {
                 'data': treeData,
                 'themes': {
                     'responsive': true,
-                    'variant': 'large'
+                    'name': 'default-rtl',
+                    'dots': true,  // إظهار نقاط الاتصال
+                    'icons': true, // إظهار الأيقونات
+                    'variant': 'large', // حجم أكبر للأيقونات
+                    'stripes': false // إزالة الخطوط البديلة للصفوف
                 },
-                'check_callback': true
-            },
-            'plugins': ['search', 'types', 'wholerow'],
-            'types': {
-                'default': {
-                    'icon': 'fas fa-folder'
-                },
-                'system-folder': {
-                    'icon': 'fas fa-folder text-warning'
-                },
-                'document-folder': {
-                    'icon': 'fas fa-folder text-primary'
+                'multiple': false,
+                'check_callback': true,
+                'strings': {
+                    'Loading...': 'جاري التحميل...',
+                    'New node': 'مجلد جديد'
                 }
             },
+            'checkbox': {
+                'keep_selected_style': false, // عدم تغيير نمط العناصر المحددة
+                'three_state': false, // عدم تفعيل خاصية الحالة الثلاثية
+                'whole_node': false, // تحديد الخلية فقط وليس العقدة كاملة
+                'tie_selection': false // فصل التحديد عن الاختيار
+            },
+            'rtl': true, // تفعيل دعم اللغة العربية (من اليمين إلى اليسار)
+            'types': {
+                'default': {
+                    'icon': 'fas fa-folder text-warning'
+                },
+                'root': {
+                    'icon': 'fas fa-folder text-warning'
+                },
+                'folder': {
+                    'icon': 'fas fa-folder text-warning'
+                },
+                'file': {
+                    'icon': 'fas fa-file text-primary'
+                }
+            },
+            'plugins': ['types', 'wholerow', 'changed', 'state', 'checkbox', 'search'],
             'search': {
                 'case_sensitive': false,
                 'show_only_matches': true
