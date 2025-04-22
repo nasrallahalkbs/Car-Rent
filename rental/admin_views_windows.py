@@ -3,18 +3,19 @@
 """
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.conf import settings
 from django.utils import timezone
 import json
 
-# استخدام المزخرف المساعد للتحقق من مستوى المستخدم
-def admin_required(function):
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_staff:
-            return redirect('admin_login')
-        return function(request, *args, **kwargs)
-    return wrapper
+from rental.models import ArchiveFolder, Document
+
+# تعريف الوظيفة المساعدة لفحص إذا كان المستخدم مشرف
+def is_staff(user):
+    return user.is_staff
+
+# استخدام مزخرف التحقق من المستخدم
+admin_required = user_passes_test(is_staff)
 
 @login_required
 @admin_required
