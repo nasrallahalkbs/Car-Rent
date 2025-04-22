@@ -2696,6 +2696,7 @@ def admin_archive_tree(request):
         'files': files,
         'total_folders': total_folders,
         'total_files': total_files,
+        'total_documents': total_files,  # لتوافق اسم المتغير في القالب
         'system_folders': system_folders,
         'custom_folders': custom_folders,
         'search': search,
