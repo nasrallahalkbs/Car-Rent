@@ -64,7 +64,7 @@
         padding: 1rem 1.5rem 0.5rem;
     }
     
-    /* تنسيقات JSTree مشابهة لشجرة ملفات ويندوز */
+    /* تنسيقات JSTree مشابهة بالضبط لشجرة ملفات ويندوز */
     .jstree-default .jstree-icon {
         color: #ffc107; /* لون أصفر ذهبي للمجلدات كما في ويندوز */
     }
@@ -73,6 +73,29 @@
     .jstree-default .jstree-themeicon-custom,
     .jstree-default .fa-folder {
         color: #ffc107 !important; /* إجبار اللون الأصفر الذهبي */
+    }
+    
+    /* مظهر خطوط ويندوز للشجرة */
+    .jstree-default .jstree-node {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M22 11V3h-7v3H9V3H2v8h7v-3h6v3h7zM7 17H2v4h5v-4zm15 0h-5v4h5v-4z" fill="none" stroke="%23cccccc" stroke-width="1"/></svg>') !important;
+        background-position: 0 0 !important;
+    }
+    
+    /* قواعد تنسيق للتشابه مع ويندوز */
+    .jstree-default li {
+        background-image: none !important;
+    }
+    
+    /* خطوط الربط بين العناصر */
+    .jstree-default .jstree-children {
+        background-repeat: repeat-y !important;
+        background-position: 100% 0 !important;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="24"><path d="M0,0v24" stroke="%23dddddd" fill="none" /></svg>') !important;
+    }
+    
+    /* تنسيق خطوط الشجرة للغة العربية */
+    .jstree-rtl.jstree-default .jstree-children {
+        background-position: right !important;
     }
     
     .jstree-default .jstree-anchor {
@@ -173,20 +196,57 @@
         background-color: #ffffff; /* خلفية بيضاء */
     }
     
-    /* تنسيق شجرة المجلدات */
+    /* تنسيق شجرة المجلدات على طراز ويندوز */
     .jstree-default .jstree-anchor {
-        line-height: 28px;
-        height: 28px;
+        line-height: 24px; /* تصغير ارتفاع الخط ليطابق ويندوز */
+        height: 24px;
         width: 95%;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
+        padding-right: 5px !important; /* تباعد أفضل للنص بالنسبة للواجهة العربية */
     }
     
     .jstree-default .jstree-icon {
-        width: 28px;
-        height: 28px;
-        line-height: 28px;
+        width: 20px;  /* تصغير حجم الأيقونة لتطابق ويندوز */
+        height: 20px;
+        line-height: 20px;
+        margin-top: 2px; /* محاذاة عمودية أفضل */
+    }
+    
+    /* تنسيق المسافات البادئة للعناصر */
+    .jstree-default .jstree-node {
+        min-height: 24px;
+        line-height: 24px;
+    }
+    
+    /* تنسيق خاص للأيقونات */
+    .jstree-default .jstree-themeicon {
+        margin-left: 2px;
+        margin-right: 2px;
+    }
+    
+    /* تنسيق خانات الاختيار */
+    .jstree-default .jstree-checkbox {
+        width: 16px !important;
+        height: 16px !important;
+        background-color: #fff;
+        border: 1px solid #aaa;
+        margin-right: 4px;
+        margin-left: 4px;
+        position: relative;
+    }
+    
+    /* تنسيق خطوط الشجرة (على طراز ويندوز) */
+    .jstree-default .jstree-node {
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAACAQMAAAB49I5GAAAABlBMVEUAAAAAAAClZ7nPAAAAAXRSTlMAQObYZgAAAAxJREFUCNdjIBGMzgAABS0BDikICQYAAAAASUVORK5CYII=');
+        background-position: -292px -4px;
+        background-repeat: repeat-y;
+    }
+    
+    /* تنسيق آخر سطر في الشجرة */
+    .jstree-default .jstree-last {
+        background: transparent;
     }
     
     .jstree-default .jstree-icon.jstree-themeicon-custom {
@@ -956,10 +1016,11 @@
                 'data' : treeData,
                 'themes': {
                     'responsive': true,
-                    'name': 'default',
+                    'name': 'default-rtl',
                     'dots': true,  // إظهار نقاط الاتصال
                     'icons': true, // إظهار الأيقونات
-                    'variant': 'large' // حجم أكبر للأيقونات
+                    'variant': 'large', // حجم أكبر للأيقونات
+                    'stripes': false // إزالة الخطوط البديلة للصفوف
                 },
                 'multiple': false,
                 'check_callback': true,
@@ -967,6 +1028,12 @@
                     'Loading...': 'جاري التحميل...',
                     'New node': 'مجلد جديد'
                 }
+            },
+            'checkbox': {
+                'keep_selected_style': false, // عدم تغيير نمط العناصر المحددة
+                'three_state': false, // عدم تفعيل خاصية الحالة الثلاثية
+                'whole_node': false, // تحديد الخلية فقط وليس العقدة كاملة
+                'tie_selection': false // فصل التحديد عن الاختيار
             },
             'rtl': true, // تفعيل دعم اللغة العربية (من اليمين إلى اليسار)
             'types': {
@@ -983,7 +1050,7 @@
                     'icon': 'fas fa-file text-primary'
                 }
             },
-            'plugins': ['types', 'wholerow', 'changed', 'state']
+            'plugins': ['types', 'wholerow', 'changed', 'state', 'checkbox']
         }).on('select_node.jstree', function(e, data) {
             const folderId = data.node.id;
             if (folderId !== '#') {
