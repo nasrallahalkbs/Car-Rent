@@ -7,8 +7,8 @@
 {% block page_title %}{% trans "الأرشيف الإلكتروني" %}{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'admin_archive' %}">{% trans "Archive" %}</a></li>
-<li class="breadcrumb-item active">{% trans "تصفح الأرشيف" %}</li>
+<li class="breadcrumb-item"><a href="{% url 'admin_archive' %}">{% trans "أرشيف" %}</a></li>
+<li class="breadcrumb-item active">{% trans "مستكشف الأرشيف" %}</li>
 {% endblock %}
 
 {% block extra_css %}
@@ -162,30 +162,53 @@
         padding: 15px;
     }
     
-    /* عرض المجلدات والملفات */
+    /* عرض المجلدات والملفات - نمط ويندوز */
     .files-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+        padding: 10px;
     }
     
     .folder-item, .file-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 10px;
-        border-radius: 5px;
+        padding: 10px 5px;
+        border-radius: 2px;
         cursor: pointer;
         text-align: center;
+        transition: background-color 0.15s ease;
+        position: relative;
     }
     
     .folder-item:hover, .file-item:hover {
-        background-color: #f1f5f9;
+        background-color: #f0f5ff;
+    }
+    
+    .folder-item:active, .file-item:active {
+        background-color: #e6efff;
+    }
+    
+    .folder-item.selected, .file-item.selected {
+        background-color: #e6efff;
+    }
+    
+    .folder-item.selected::after, .file-item.selected::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 1px solid #99c2ff;
+        border-radius: 2px;
+        pointer-events: none;
     }
     
     .folder-icon, .file-icon {
-        width: 64px;
-        height: 64px;
+        width: 48px;
+        height: 48px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -193,33 +216,48 @@
     }
     
     .folder-icon {
-        color: #ffc107;
-        font-size: 2.5rem;
+        color: #fcbf29;
+        font-size: 2.2rem;
+    }
+    
+    .folder-icon i {
+        filter: drop-shadow(1px 1px 0px rgba(0,0,0,0.1));
     }
     
     .file-icon {
         color: #6c757d;
-        font-size: 2.2rem;
+        font-size: 1.8rem;
+        filter: drop-shadow(1px 1px 0px rgba(0,0,0,0.05));
     }
     
     .file-icon.pdf {
-        color: #dc3545;
+        color: #e63946;
     }
     
     .file-icon.doc {
-        color: #0d6efd;
+        color: #2271b3;
     }
     
     .file-icon.xls {
-        color: #198754;
+        color: #27ae60;
     }
     
     .folder-name, .file-name {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        color: #333;
+        padding: 0 4px;
+    }
+    
+    /* محاكاة النمط الخاص بويندوز عند تحديد العنصر */
+    .folder-item.selected .folder-name, 
+    .file-item.selected .file-name {
+        background-color: #0078d7;
+        color: white;
+        border-radius: 2px;
     }
     
     /* شريط الحالة */
@@ -754,9 +792,51 @@
             'rtl': {% if is_rtl %}true{% else %}false{% endif %}
         });
         
+        // محاكاة تاريخ التصفح
+        const navigationHistory = {
+            back: [],
+            forward: [],
+            current: null
+        };
+        
+        // تسجيل التنقل الحالي
+        function recordNavigation(nodeId) {
+            if (navigationHistory.current) {
+                navigationHistory.back.push(navigationHistory.current);
+                navigationHistory.forward = [];
+            }
+            navigationHistory.current = nodeId;
+            
+            // تفعيل/تعطيل أزرار التنقل
+            updateNavigationButtons();
+        }
+        
+        // تحديث حالة أزرار التنقل
+        function updateNavigationButtons() {
+            $('#back-btn').prop('disabled', navigationHistory.back.length === 0);
+            $('#forward-btn').prop('disabled', navigationHistory.forward.length === 0);
+            $('#up-btn').prop('disabled', !navigationHistory.current || $('#folder-tree').jstree('get_node', navigationHistory.current).parent === '#');
+            
+            // التغيير البصري لحالة الأزرار
+            $('#back-btn, #forward-btn, #up-btn').each(function() {
+                if ($(this).prop('disabled')) {
+                    $(this).addClass('disabled').css('opacity', '0.5');
+                } else {
+                    $(this).removeClass('disabled').css('opacity', '1');
+                }
+            });
+        }
+        
         // تحديث واجهة المستخدم عند تحديد مجلد
         $('#folder-tree').on('select_node.jstree', function(e, data) {
             const nodeId = data.node.id;
+            
+            // تسجيل التنقل في التاريخ
+            recordNavigation(nodeId);
+            
+            // تحديد العنصر وإظهار التحديد المرئي
+            $('.folder-item, .file-item').removeClass('selected');
+            $(`.folder-item[data-folder-id="${nodeId}"]`).addClass('selected');
             
             // تحديث العنوان في شريط العنوان
             let path = data.node.text;
@@ -771,25 +851,35 @@
                 '<span class="breadcrumb-separator">/</span>' + 
                 path.replace(/\//g, '<span class="breadcrumb-separator">/</span>'));
             
-            // إذا كان المجلد هو الرسوم مثلاً، سنعرض الملفات التابعة له
-            if (nodeId === 'folder-1') {
-                $('#grid-view').html(`
-                    <div class="file-item">
+            // عرض محتوى المجلد المحدد
+            showFolderContents(nodeId);
+        });
+        
+        // عرض محتوى مجلد محدد
+        function showFolderContents(folderId) {
+            let filesHtml = '';
+            let listHtml = '';
+            let itemCount = 0;
+            
+            // إذا كان المجلد هو الرسوم، سنعرض ملفات PDF
+            if (folderId === 'folder-1') {
+                filesHtml = `
+                    <div class="file-item" data-file-id="file-1-1">
                         <div class="file-icon pdf">
                             <i class="fas fa-file-pdf"></i>
                         </div>
                         <div class="file-name">رسم_بياني_1.pdf</div>
                     </div>
-                    <div class="file-item">
+                    <div class="file-item" data-file-id="file-1-2">
                         <div class="file-icon pdf">
                             <i class="fas fa-file-pdf"></i>
                         </div>
                         <div class="file-name">رسم_بياني_2.pdf</div>
                     </div>
-                `);
+                `;
                 
-                $('#list-view tbody').html(`
-                    <tr>
+                listHtml = `
+                    <tr data-file-id="file-1-1">
                         <td>
                             <div class="file-cell">
                                 <div class="file-list-icon pdf">
@@ -802,7 +892,7 @@
                         <td>854 KB</td>
                         <td>21/04/2025</td>
                     </tr>
-                    <tr>
+                    <tr data-file-id="file-1-2">
                         <td>
                             <div class="file-cell">
                                 <div class="file-list-icon pdf">
@@ -815,193 +905,370 @@
                         <td>1.1 MB</td>
                         <td>21/04/2025</td>
                     </tr>
-                `);
+                `;
                 
-                $('.status-bar div:first-child').text('{% trans "2 عناصر" %}');
-            } else {
-                // إعادة تحميل العرض الافتراضي للمجلدات الأخرى
-                resetView();
+                itemCount = 2;
             }
-        });
+            // إذا كان المجلد هو الحضور، سنعرض ملفات Excel
+            else if (folderId === 'folder-2') {
+                filesHtml = `
+                    <div class="file-item" data-file-id="file-2-1">
+                        <div class="file-icon xls">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                        <div class="file-name">سجل_الحضور_ابريل.xlsx</div>
+                    </div>
+                    <div class="file-item" data-file-id="file-2-2">
+                        <div class="file-icon xls">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                        <div class="file-name">سجل_الحضور_مارس.xlsx</div>
+                    </div>
+                    <div class="file-item" data-file-id="file-2-3">
+                        <div class="file-icon doc">
+                            <i class="fas fa-file-word"></i>
+                        </div>
+                        <div class="file-name">تقرير_الحضور.docx</div>
+                    </div>
+                `;
+                
+                listHtml = `
+                    <tr data-file-id="file-2-1">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon xls">
+                                    <i class="fas fa-file-excel"></i>
+                                </div>
+                                <span>سجل_الحضور_ابريل.xlsx</span>
+                            </div>
+                        </td>
+                        <td>{% trans "جدول Excel" %}</td>
+                        <td>655 KB</td>
+                        <td>19/04/2025</td>
+                    </tr>
+                    <tr data-file-id="file-2-2">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon xls">
+                                    <i class="fas fa-file-excel"></i>
+                                </div>
+                                <span>سجل_الحضور_مارس.xlsx</span>
+                            </div>
+                        </td>
+                        <td>{% trans "جدول Excel" %}</td>
+                        <td>578 KB</td>
+                        <td>01/04/2025</td>
+                    </tr>
+                    <tr data-file-id="file-2-3">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon doc">
+                                    <i class="fas fa-file-word"></i>
+                                </div>
+                                <span>تقرير_الحضور.docx</span>
+                            </div>
+                        </td>
+                        <td>{% trans "مستند Word" %}</td>
+                        <td>325 KB</td>
+                        <td>20/04/2025</td>
+                    </tr>
+                `;
+                
+                itemCount = 3;
+            }
+            // أما بالنسبة لباقي المجلدات، سنظهر بعض الملفات الافتراضية
+            else if (folderId !== 'folder-root') {
+                // انشاء محتوى المجلدات الأخرى ببعض الملفات الإفتراضية
+                const fileTypes = ['pdf', 'doc', 'xls'];
+                const fileIcons = {
+                    'pdf': 'fas fa-file-pdf',
+                    'doc': 'fas fa-file-word',
+                    'xls': 'fas fa-file-excel'
+                };
+                const fileLabels = {
+                    'pdf': '{% trans "ملف PDF" %}',
+                    'doc': '{% trans "مستند Word" %}',
+                    'xls': '{% trans "جدول Excel" %}'
+                };
+                
+                // استخراج اسم المجلد من ال jsTree
+                const folderName = $('#folder-tree').jstree('get_node', folderId).text.split(' ')[0];
+                
+                // محاكاة وجود 3-4 ملفات في كل مجلد
+                const fileCount = 3 + Math.floor(Math.random() * 2);
+                
+                for (let i = 1; i <= fileCount; i++) {
+                    const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)];
+                    const fileSize = Math.floor(Math.random() * 900) + 100; // 100-999 KB
+                    const day = Math.floor(Math.random() * 20) + 1; // 1-21 of the month
+                    
+                    filesHtml += `
+                        <div class="file-item" data-file-id="file-${folderId.split('-')[1]}-${i}">
+                            <div class="file-icon ${fileType}">
+                                <i class="${fileIcons[fileType]}"></i>
+                            </div>
+                            <div class="file-name">${folderName}_${i}.${fileType}x</div>
+                        </div>
+                    `;
+                    
+                    listHtml += `
+                        <tr data-file-id="file-${folderId.split('-')[1]}-${i}">
+                            <td>
+                                <div class="file-cell">
+                                    <div class="file-list-icon ${fileType}">
+                                        <i class="${fileIcons[fileType]}"></i>
+                                    </div>
+                                    <span>${folderName}_${i}.${fileType}x</span>
+                                </div>
+                            </td>
+                            <td>${fileLabels[fileType]}</td>
+                            <td>${fileSize} KB</td>
+                            <td>${day < 10 ? '0' + day : day}/04/2025</td>
+                        </tr>
+                    `;
+                }
+                
+                itemCount = fileCount;
+            } 
+            // إذا كان المجلد الجذر، سنعرض جميع المجلدات الفرعية
+            else {
+                filesHtml = `
+                    <div class="folder-item" data-folder-id="folder-1">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "رسوم (1)" %}</div>
+                    </div>
+                    
+                    <div class="folder-item" data-folder-id="folder-2">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "حضور (2)" %}</div>
+                    </div>
+                    
+                    <div class="folder-item" data-folder-id="folder-3">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "حسابات (3)" %}</div>
+                    </div>
+                    
+                    <div class="folder-item" data-folder-id="folder-4">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "محفوظات (4)" %}</div>
+                    </div>
+                    
+                    <div class="folder-item" data-folder-id="folder-5">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-name">{% trans "توكيلات (5)" %}</div>
+                    </div>
+                    
+                    <!-- ملفات (عينة) -->
+                    <div class="file-item" data-file-id="file-root-1">
+                        <div class="file-icon pdf">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="file-name">تقرير_مالي.pdf</div>
+                    </div>
+                    
+                    <div class="file-item" data-file-id="file-root-2">
+                        <div class="file-icon doc">
+                            <i class="fas fa-file-word"></i>
+                        </div>
+                        <div class="file-name">نموذج_توكيل.docx</div>
+                    </div>
+                    
+                    <div class="file-item" data-file-id="file-root-3">
+                        <div class="file-icon xls">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                        <div class="file-name">جدول_الحضور.xlsx</div>
+                    </div>
+                `;
+                
+                listHtml = `
+                    <!-- المجلدات -->
+                    <tr data-folder-id="folder-1">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon folder">
+                                    <i class="fas fa-folder"></i>
+                                </div>
+                                <span>{% trans "رسوم (1)" %}</span>
+                            </div>
+                        </td>
+                        <td>{% trans "مجلد ملفات" %}</td>
+                        <td>-</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                    
+                    <tr data-folder-id="folder-2">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon folder">
+                                    <i class="fas fa-folder"></i>
+                                </div>
+                                <span>{% trans "حضور (2)" %}</span>
+                            </div>
+                        </td>
+                        <td>{% trans "مجلد ملفات" %}</td>
+                        <td>-</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                    
+                    <tr data-folder-id="folder-3">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon folder">
+                                    <i class="fas fa-folder"></i>
+                                </div>
+                                <span>{% trans "حسابات (3)" %}</span>
+                            </div>
+                        </td>
+                        <td>{% trans "مجلد ملفات" %}</td>
+                        <td>-</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                    
+                    <tr data-folder-id="folder-4">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon folder">
+                                    <i class="fas fa-folder"></i>
+                                </div>
+                                <span>{% trans "محفوظات (4)" %}</span>
+                            </div>
+                        </td>
+                        <td>{% trans "مجلد ملفات" %}</td>
+                        <td>-</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                    
+                    <tr data-folder-id="folder-5">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon folder">
+                                    <i class="fas fa-folder"></i>
+                                </div>
+                                <span>{% trans "توكيلات (5)" %}</span>
+                            </div>
+                        </td>
+                        <td>{% trans "مجلد ملفات" %}</td>
+                        <td>-</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                    
+                    <!-- ملفات -->
+                    <tr data-file-id="file-root-1">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon pdf">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <span>تقرير_مالي.pdf</span>
+                            </div>
+                        </td>
+                        <td>{% trans "ملف PDF" %}</td>
+                        <td>1.2 MB</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                    
+                    <tr data-file-id="file-root-2">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon doc">
+                                    <i class="fas fa-file-word"></i>
+                                </div>
+                                <span>نموذج_توكيل.docx</span>
+                            </div>
+                        </td>
+                        <td>{% trans "مستند Word" %}</td>
+                        <td>256 KB</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                    
+                    <tr data-file-id="file-root-3">
+                        <td>
+                            <div class="file-cell">
+                                <div class="file-list-icon xls">
+                                    <i class="fas fa-file-excel"></i>
+                                </div>
+                                <span>جدول_الحضور.xlsx</span>
+                            </div>
+                        </td>
+                        <td>{% trans "جدول Excel" %}</td>
+                        <td>512 KB</td>
+                        <td>21/04/2025</td>
+                    </tr>
+                `;
+                
+                itemCount = 8; // 5 مجلدات و 3 ملفات
+            }
+            
+            // تحديث العرض
+            $('#grid-view').html(filesHtml);
+            $('#list-view tbody').html(listHtml);
+            
+            // تحديث عدد العناصر في شريط الحالة
+            $('.status-bar div:first-child').text(itemCount + ' ' + '{% trans "عناصر" %}');
+            
+            // تحميل التفاعل مع العناصر الجديدة
+            initializeItemInteractions();
+        }
         
-        // إعادة تحميل العرض الافتراضي
-        function resetView() {
-            $('#grid-view').html(`
-                <div class="folder-item" data-folder-id="folder-1">
-                    <div class="folder-icon">
-                        <i class="fas fa-folder"></i>
-                    </div>
-                    <div class="folder-name">{% trans "رسوم (1)" %}</div>
-                </div>
-                
-                <div class="folder-item" data-folder-id="folder-2">
-                    <div class="folder-icon">
-                        <i class="fas fa-folder"></i>
-                    </div>
-                    <div class="folder-name">{% trans "حضور (2)" %}</div>
-                </div>
-                
-                <div class="folder-item" data-folder-id="folder-3">
-                    <div class="folder-icon">
-                        <i class="fas fa-folder"></i>
-                    </div>
-                    <div class="folder-name">{% trans "حسابات (3)" %}</div>
-                </div>
-                
-                <div class="folder-item" data-folder-id="folder-4">
-                    <div class="folder-icon">
-                        <i class="fas fa-folder"></i>
-                    </div>
-                    <div class="folder-name">{% trans "محفوظات (4)" %}</div>
-                </div>
-                
-                <div class="folder-item" data-folder-id="folder-5">
-                    <div class="folder-icon">
-                        <i class="fas fa-folder"></i>
-                    </div>
-                    <div class="folder-name">{% trans "توكيلات (5)" %}</div>
-                </div>
-                
-                <!-- ملفات (عينة) -->
-                <div class="file-item">
-                    <div class="file-icon pdf">
-                        <i class="fas fa-file-pdf"></i>
-                    </div>
-                    <div class="file-name">تقرير_مالي.pdf</div>
-                </div>
-                
-                <div class="file-item">
-                    <div class="file-icon doc">
-                        <i class="fas fa-file-word"></i>
-                    </div>
-                    <div class="file-name">نموذج_توكيل.docx</div>
-                </div>
-                
-                <div class="file-item">
-                    <div class="file-icon xls">
-                        <i class="fas fa-file-excel"></i>
-                    </div>
-                    <div class="file-name">جدول_الحضور.xlsx</div>
-                </div>
-            `);
+        // إعداد تفاعلات العناصر (المجلدات والملفات)
+        function initializeItemInteractions() {
+            // حذف الأحداث السابقة لتجنب تكرارها
+            $('.folder-item, .file-item').off('click').off('dblclick');
             
-            $('#list-view tbody').html(`
-                <!-- المجلدات -->
-                <tr data-folder-id="folder-1">
-                    <td>
-                        <div class="file-cell">
-                            <div class="file-list-icon folder">
-                                <i class="fas fa-folder"></i>
-                            </div>
-                            <span>{% trans "رسوم (1)" %}</span>
-                        </div>
-                    </td>
-                    <td>{% trans "مجلد ملفات" %}</td>
-                    <td>-</td>
-                    <td>21/04/2025</td>
-                </tr>
+            // التحديد بالنقر
+            $('.folder-item, .file-item').on('click', function(e) {
+                e.stopPropagation();
                 
-                <tr data-folder-id="folder-2">
-                    <td>
-                        <div class="file-cell">
-                            <div class="file-list-icon folder">
-                                <i class="fas fa-folder"></i>
-                            </div>
-                            <span>{% trans "حضور (2)" %}</span>
-                        </div>
-                    </td>
-                    <td>{% trans "مجلد ملفات" %}</td>
-                    <td>-</td>
-                    <td>21/04/2025</td>
-                </tr>
+                // إزالة التحديد من جميع العناصر الأخرى
+                $('.folder-item, .file-item').removeClass('selected');
                 
-                <tr data-folder-id="folder-3">
-                    <td>
-                        <div class="file-cell">
-                            <div class="file-list-icon folder">
-                                <i class="fas fa-folder"></i>
-                            </div>
-                            <span>{% trans "حسابات (3)" %}</span>
-                        </div>
-                    </td>
-                    <td>{% trans "مجلد ملفات" %}</td>
-                    <td>-</td>
-                    <td>21/04/2025</td>
-                </tr>
-                
-                <tr data-folder-id="folder-4">
-                    <td>
-                        <div class="file-cell">
-                            <div class="file-list-icon folder">
-                                <i class="fas fa-folder"></i>
-                            </div>
-                            <span>{% trans "محفوظات (4)" %}</span>
-                        </div>
-                    </td>
-                    <td>{% trans "مجلد ملفات" %}</td>
-                    <td>-</td>
-                    <td>21/04/2025</td>
-                </tr>
-                
-                <tr data-folder-id="folder-5">
-                    <td>
-                        <div class="file-cell">
-                            <div class="file-list-icon folder">
-                                <i class="fas fa-folder"></i>
-                            </div>
-                            <span>{% trans "توكيلات (5)" %}</span>
-                        </div>
-                    </td>
-                    <td>{% trans "مجلد ملفات" %}</td>
-                    <td>-</td>
-                    <td>21/04/2025</td>
-                </tr>
-                
-                <!-- ملفات -->
-                <tr>
-                    <td>
-                        <div class="file-cell">
-                            <div class="file-list-icon pdf">
-                                <i class="fas fa-file-pdf"></i>
-                            </div>
-                            <span>تقرير_مالي.pdf</span>
-                        </div>
-                    </td>
-                    <td>{% trans "ملف PDF" %}</td>
-                    <td>1.2 MB</td>
-                    <td>21/04/2025</td>
-                </tr>
-                
-                <tr>
-                    <td>
-                        <div class="file-cell">
-                            <div class="file-list-icon doc">
-                                <i class="fas fa-file-word"></i>
-                            </div>
-                            <span>نموذج_توكيل.docx</span>
-                        </div>
-                    </td>
-                    <td>{% trans "مستند Word" %}</td>
-                    <td>256 KB</td>
-                    <td>21/04/2025</td>
-                </tr>
-                
-                <tr>
-                    <td>
-                        <div class="file-cell">
-                            <div class="file-list-icon xls">
-                                <i class="fas fa-file-excel"></i>
-                            </div>
-                            <span>جدول_الحضور.xlsx</span>
-                        </div>
-                    </td>
-                    <td>{% trans "جدول Excel" %}</td>
-                    <td>512 KB</td>
-                    <td>21/04/2025</td>
-                </tr>
-            `);
+                // تحديد العنصر الحالي
+                $(this).addClass('selected');
+            });
             
-            $('.status-bar div:first-child').text('{% trans "8 عناصر" %}');
+            // فتح بالنقر المزدوج
+            $('.folder-item').on('dblclick', function() {
+                const folderId = $(this).data('folder-id');
+                $('#folder-tree').jstree('select_node', folderId);
+            });
+            
+            // محاكاة فتح الملفات عند النقر المزدوج
+            $('.file-item').on('dblclick', function() {
+                const fileName = $(this).find('.file-name').text();
+                const fileType = fileName.split('.').pop();
+                
+                let message = '';
+                if (fileType.includes('pdf')) {
+                    message = `{% trans "جاري فتح ملف PDF:" %} ${fileName}`;
+                } else if (fileType.includes('doc')) {
+                    message = `{% trans "جاري فتح مستند Word:" %} ${fileName}`;
+                } else if (fileType.includes('xls')) {
+                    message = `{% trans "جاري فتح جدول Excel:" %} ${fileName}`;
+                } else {
+                    message = `{% trans "جاري فتح الملف:" %} ${fileName}`;
+                }
+                
+                // عرض رسالة المستخدم
+                alert(message);
+            });
+            
+            // إزالة التحديد عند النقر في المساحة الفارغة
+            $('.content-view').on('click', function(e) {
+                if ($(e.target).hasClass('content-view') || $(e.target).attr('id') === 'grid-view') {
+                    $('.folder-item, .file-item').removeClass('selected');
+                }
+            });
         }
         
         // البحث في شجرة المجلدات
@@ -1051,7 +1318,7 @@
             $('.status-bar div:first-child').text(visibleCount + ' ' + '{% trans "عناصر" %}');
         }
         
-        // تبديل طريقة العرض
+        // تبديل طريقة العرض (شبكة/قائمة)
         $('#grid-view-btn').click(function() {
             $(this).addClass('active');
             $('#list-view-btn').removeClass('active');
@@ -1069,18 +1336,42 @@
         });
         
         // النقر على المجلدات في العرض الشبكي
-        $(document).on('click', '.folder-item', function() {
+        $(document).on('click', '.folder-item', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // إزالة التحديد من جميع العناصر
+            $('.folder-item, .file-item').removeClass('selected');
+            
+            // إضافة التحديد للعنصر الحالي
+            $(this).addClass('selected');
+        });
+        
+        // النقر المزدوج على المجلدات في العرض الشبكي
+        $(document).on('dblclick', '.folder-item', function() {
             const folderId = $(this).data('folder-id');
             $('#folder-tree').jstree('select_node', folderId);
         });
         
-        // النقر على المجلدات في العرض القائمة
-        $(document).on('click', '#list-view tbody tr[data-folder-id]', function() {
+        // النقر على المجلدات في عرض القائمة
+        $(document).on('click', '#list-view tbody tr[data-folder-id]', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // إزالة التحديد من جميع الصفوف
+            $('#list-view tbody tr').removeClass('selected');
+            
+            // إضافة التحديد للصف الحالي
+            $(this).addClass('selected');
+        });
+        
+        // النقر المزدوج على المجلدات في عرض القائمة
+        $(document).on('dblclick', '#list-view tbody tr[data-folder-id]', function() {
             const folderId = $(this).data('folder-id');
             $('#folder-tree').jstree('select_node', folderId);
         });
         
-        // تحديث الصفحة
+        // محاكاة النقر على زر تحديث
         $('#refresh-btn').click(function() {
             // محاكاة تحديث - فقط أيقونة الدوران
             const $icon = $(this).find('i');
@@ -1088,37 +1379,149 @@
             
             setTimeout(function() {
                 $icon.removeClass('fa-spin');
-            }, 1000);
+                
+                // إعادة تحميل المحتوى الحالي
+                if (navigationHistory.current) {
+                    showFolderContents(navigationHistory.current);
+                } else {
+                    showFolderContents('folder-root');
+                }
+                
+                // إعادة تطبيق التحديدات
+                initializeItemInteractions();
+            }, 800);
         });
         
         // زر الذهاب للأعلى
         $('#up-btn').click(function() {
+            if ($(this).hasClass('disabled')) return;
+            
             const selectedNode = $('#folder-tree').jstree('get_selected', true)[0];
             if (selectedNode && selectedNode.parent !== '#') {
                 $('#folder-tree').jstree('select_node', selectedNode.parent);
             }
         });
         
-        // أزرار التنقل للأمام والخلف - فقط للعرض
-        $('#back-btn, #forward-btn').click(function() {
-            // محاكاة النقر - لا يوجد وظائف حقيقية في هذا المثال
-            $(this).addClass('active');
-            setTimeout(() => {
-                $(this).removeClass('active');
-            }, 200);
+        // زر الرجوع للخلف
+        $('#back-btn').click(function() {
+            if (navigationHistory.back.length === 0) return;
+            
+            if (navigationHistory.current) {
+                navigationHistory.forward.push(navigationHistory.current);
+            }
+            
+            const previousNodeId = navigationHistory.back.pop();
+            navigationHistory.current = previousNodeId;
+            
+            // تحديث أزرار التنقل
+            updateNavigationButtons();
+            
+            // تحديد العقدة السابقة في شجرة المجلدات دون تسجيل التنقل مرة أخرى
+            $('#folder-tree').off('select_node.jstree');
+            $('#folder-tree').jstree('select_node', previousNodeId);
+            showFolderContents(previousNodeId);
+            $('#folder-tree').on('select_node.jstree', function(e, data) {
+                recordNavigation(data.node.id);
+                showFolderContents(data.node.id);
+            });
+        });
+        
+        // زر الانتقال للأمام
+        $('#forward-btn').click(function() {
+            if (navigationHistory.forward.length === 0) return;
+            
+            if (navigationHistory.current) {
+                navigationHistory.back.push(navigationHistory.current);
+            }
+            
+            const nextNodeId = navigationHistory.forward.pop();
+            navigationHistory.current = nextNodeId;
+            
+            // تحديث أزرار التنقل
+            updateNavigationButtons();
+            
+            // تحديد العقدة التالية في شجرة المجلدات دون تسجيل التنقل مرة أخرى
+            $('#folder-tree').off('select_node.jstree');
+            $('#folder-tree').jstree('select_node', nextNodeId);
+            showFolderContents(nextNodeId);
+            $('#folder-tree').on('select_node.jstree', function(e, data) {
+                recordNavigation(data.node.id);
+                showFolderContents(data.node.id);
+            });
         });
         
         // عند فتح الصفحة، تحديد المجلد الأول افتراضياً
         $('#folder-tree').on('ready.jstree', function() {
-            // فتح الجذر
+            // فتح الجذر وتحديده
             $('#folder-tree').jstree('open_node', 'folder-root');
+            setTimeout(() => {
+                $('#folder-tree').jstree('select_node', 'folder-root');
+                // في البداية، تعطيل زر الخلف والأمام
+                $('#back-btn, #forward-btn').addClass('disabled').css('opacity', '0.5');
+            }, 300);
         });
         
         // إرسال نموذج رفع الملف
         $('#submitUploadForm').click(function() {
-            // نموذج مزيف - فقط للعرض
-            alert('سيتم رفع الملف هنا - هذه فقط محاكاة للواجهة.');
+            const fileInput = $('#file')[0];
+            const titleInput = $('#title').val();
+            
+            if (!fileInput.files.length) {
+                alert('{% trans "يرجى اختيار ملف للرفع" %}');
+                return;
+            }
+            
+            if (!titleInput) {
+                alert('{% trans "يرجى إدخال عنوان للملف" %}');
+                return;
+            }
+            
+            // محاكاة رفع الملف
+            const fileName = fileInput.files[0].name;
+            alert(`{% trans "تم رفع الملف بنجاح:" %} ${fileName}`);
+            
+            // إغلاق النافذة المنبثقة
+            $('#uploadFileModal').modal('hide');
+            
+            // إظهار الملف الجديد في العرض
+            if (navigationHistory.current) {
+                const fileType = fileName.split('.').pop().toLowerCase();
+                let iconClass = 'file';
+                
+                if (fileType === 'pdf') {
+                    iconClass = 'pdf';
+                } else if (fileType === 'doc' || fileType === 'docx') {
+                    iconClass = 'doc';
+                } else if (fileType === 'xls' || fileType === 'xlsx') {
+                    iconClass = 'xls';
+                }
+                
+                // إضافة الملف الجديد إلى العرض
+                const newFileId = `file-new-${Date.now()}`;
+                
+                // إضافة الملف لعرض الشبكة
+                $('#grid-view').prepend(`
+                    <div class="file-item selected" data-file-id="${newFileId}">
+                        <div class="file-icon ${iconClass}">
+                            <i class="fas fa-file-${iconClass === 'file' ? 'alt' : iconClass}"></i>
+                        </div>
+                        <div class="file-name">${titleInput}</div>
+                    </div>
+                `);
+                
+                // تحديث عدد العناصر
+                updateVisibleCount();
+                
+                // إعادة تطبيق التفاعلات
+                initializeItemInteractions();
+            }
         });
+        
+        // تطبيق التفاعلات الأولية
+        initializeItemInteractions();
+        
+        // تعطيل أزرار التنقل في البداية
+        updateNavigationButtons();
     });
 </script>
 {% endblock %}

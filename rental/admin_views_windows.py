@@ -21,9 +21,15 @@ def admin_required(function):
 def admin_archive_windows_explorer(request, folder_id=None):
     """عرض صفحة تصفح الأرشيف بتصميم مشابه لويندوز إكسبلورر"""
     
-    # تحديد لغة العرض من إعدادات المستخدم 
-    is_english = request.LANGUAGE_CODE == 'en'
-    is_rtl = request.LANGUAGE_CODE == 'ar'
+    # تحديد لغة العرض من إعدادات المستخدم
+    from django.utils.translation import get_language
+    try:
+        current_language = get_language()
+    except:
+        current_language = getattr(request, 'LANGUAGE_CODE', 'ar')
+    
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
     
     # الحصول على المجلد الحالي إذا تم تحديده
     current_folder = None
