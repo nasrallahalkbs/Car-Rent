@@ -445,6 +445,13 @@ class Document(models.Model):
     def __str__(self):
         return self.title
     
+    def __init__(self, *args, **kwargs):
+        import traceback
+        print(f"DEBUG: تم إنشاء كائن مستند جديد: {kwargs.get('title', 'بدون عنوان')}")
+        print(f"DEBUG: سجل المكالمات عند إنشاء المستند:")
+        traceback.print_stack()
+        super().__init__(*args, **kwargs)
+    
     def save(self, *args, **kwargs):
         # حساب حجم الملف عند الحفظ
         if self.file:
@@ -521,41 +528,3 @@ class Document(models.Model):
         verbose_name = _('وثيقة مؤرشفة')
         verbose_name_plural = _('الوثائق المؤرشفة')
         ordering = ['-created_at']
-    enable_two_factor_auth = models.BooleanField(default=False, verbose_name=_('تفعيل المصادقة الثنائية'))
-    booking_confirmation_expiry_hours = models.PositiveIntegerField(default=24, verbose_name=_('ساعات انتهاء صلاحية تأكيد الحجز'))
-    session_timeout_minutes = models.PositiveIntegerField(default=60, verbose_name=_('مدة انتهاء الجلسة بالدقائق'))
-    
-    # إعدادات الحجز
-    enable_deposit = models.BooleanField(default=True, verbose_name=_('تفعيل نظام العربون'))
-    deposit_percentage = models.PositiveIntegerField(default=20, verbose_name=_('نسبة العربون من إجمالي الحجز (%)'))
-    enable_automatic_reservation_expiry = models.BooleanField(default=True, verbose_name=_('تفعيل انتهاء صلاحية الحجز التلقائي'))
-    
-    # إعدادات النظام
-    maintenance_mode = models.BooleanField(default=False, verbose_name=_('وضع الصيانة'))
-    enable_debug_mode = models.BooleanField(default=False, verbose_name=_('تفعيل وضع التصحيح'))
-    cache_timeout_minutes = models.PositiveIntegerField(default=60, verbose_name=_('مدة انتهاء ذاكرة التخزين المؤقت بالدقائق'))
-    
-    # إعدادات الإشعارات
-    enable_email_notifications = models.BooleanField(default=True, verbose_name=_('تفعيل الإشعارات بالبريد الإلكتروني'))
-    enable_sms_notifications = models.BooleanField(default=False, verbose_name=_('تفعيل الإشعارات بالرسائل النصية'))
-    admin_notification_email = models.EmailField(blank=True, null=True, verbose_name=_('البريد الإلكتروني لإشعارات المدير'))
-    
-    # ترجمة وتدويل
-    default_language = models.CharField(max_length=10, default='ar', choices=[('ar', 'العربية'), ('en', 'English')], verbose_name=_('اللغة الافتراضية'))
-    default_timezone = models.CharField(max_length=100, default='Asia/Kuwait', verbose_name=_('المنطقة الزمنية الافتراضية'))
-    
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاريخ التحديث'))
-    
-    def __str__(self):
-        return f"إعدادات الموقع - {self.site_name}"
-    
-    class Meta:
-        verbose_name = _('إعدادات الموقع')
-        verbose_name_plural = _('إعدادات الموقع')
-        
-    @classmethod
-    def get_settings(cls):
-        """الحصول على إعدادات الموقع، أو إنشاء إعدادات افتراضية إذا لم تكن موجودة"""
-        settings, created = cls.objects.get_or_create(pk=1)
-        return settings
