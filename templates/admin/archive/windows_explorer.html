@@ -503,9 +503,26 @@
                     <span>{{ folder.name }}</span>
                 </div>
                 {% empty %}
-                <div class="quick-access-item d-flex align-items-center p-2">
-                    <i class="fas fa-info-circle me-2 text-muted"></i>
-                    <span>{% trans "لا توجد مجلدات" %}</span>
+                <!-- إذا لم توجد مجلدات في قاعدة البيانات، نقوم بإنشاء مجلدات افتراضية للعرض -->
+                <div class="quick-access-item d-flex align-items-center p-2" data-folder-id="1">
+                    <i class="fas fa-folder me-2 text-warning"></i>
+                    <span>{% trans "رسوم (1)" %}</span>
+                </div>
+                <div class="quick-access-item d-flex align-items-center p-2" data-folder-id="2">
+                    <i class="fas fa-folder me-2 text-warning"></i>
+                    <span>{% trans "حضور (2)" %}</span>
+                </div>
+                <div class="quick-access-item d-flex align-items-center p-2" data-folder-id="3">
+                    <i class="fas fa-folder me-2 text-warning"></i>
+                    <span>{% trans "حسابات (3)" %}</span>
+                </div>
+                <div class="quick-access-item d-flex align-items-center p-2" data-folder-id="4">
+                    <i class="fas fa-folder me-2 text-warning"></i>
+                    <span>{% trans "محفوظات (4)" %}</span>
+                </div>
+                <div class="quick-access-item d-flex align-items-center p-2" data-folder-id="5">
+                    <i class="fas fa-folder me-2 text-warning"></i>
+                    <span>{% trans "توكيلات (5)" %}</span>
                 </div>
                 {% endfor %}
             </div>
@@ -1085,14 +1102,25 @@ $(document).ready(function() {
             showFolderContents(nodeId);
         });
         
-        // عرض محتوى مجلد محدد
+        // عرض محتوى مجلد محدد - سواء من شجرة المجلدات أو من الوصول السريع
         function showFolderContents(folderId) {
             let filesHtml = '';
             let listHtml = '';
             let itemCount = 0;
             
+            // استخراج معرف المجلد الفعلي (بدون بادئة "folder-" إذا كانت موجودة)
+            let realFolderId = folderId;
+            if (folderId && folderId.startsWith('folder-')) {
+                realFolderId = folderId.replace('folder-', '');
+            }
+            
+            console.log(`عرض محتويات المجلد: ${folderId} (معرف حقيقي: ${realFolderId})`);
+            
+            // التحقق من وجود محتوى مخصص للمجلد في قاعدة البيانات
+            // يمكن هنا استخدام Ajax للحصول على المحتوى الفعلي من الخادم
+            
             // إذا كان المجلد هو الرسوم، سنعرض ملفات PDF
-            if (folderId === 'folder-1') {
+            if (folderId === 'folder-1' || realFolderId === '1') {
                 filesHtml = `
                     <div class="file-item" data-file-id="file-1-1">
                         <div class="file-icon pdf">
@@ -1140,7 +1168,7 @@ $(document).ready(function() {
                 itemCount = 2;
             }
             // إذا كان المجلد هو الحضور، سنعرض ملفات Excel
-            else if (folderId === 'folder-2') {
+            else if (folderId === 'folder-2' || realFolderId === '2') {
                 filesHtml = `
                     <div class="file-item" data-file-id="file-2-1">
                         <div class="file-icon xls">
