@@ -348,18 +348,10 @@ class ArchiveFolder(models.Model):
         if is_new:
             print(f"DEBUG: تم حفظ المجلد الجديد: {self.name} بمعرف {self.pk}")
             
-            # إذا تم إنشاء مجلد جديد، نقوم بحذف أي مستندات تم إنشاؤها تلقائيًا مع هذا المجلد
-            from django.db import connection
-            
-            # استخدام استعلام SQL مباشر لحذف أي وثائق مرتبطة بهذا المجلد
-            # هذا هو الحل النهائي للمشكلة - نحذف أي مستندات أُنشئت تلقائيًا مع المجلد
-            cursor = connection.cursor()
-            cursor.execute(
-                "DELETE FROM rental_document WHERE folder_id = ?", 
-                [self.pk]
-            )
-            
-            print(f"DEBUG: تم حذف المستندات التلقائية المرتبطة بالمجلد الجديد")
+            # لتجنب مشاكل تنسيق SQL، سنحذف المستندات المرتبطة بالمجلد في 
+            # خطاف post_save (بعد الحفظ مباشرة) - تُضاف في models.py في الأسفل
+            # سيتم الحذف في delete_auto_created_documents
+            print(f"DEBUG: ستتم إزالة المستندات التلقائية في خطاف post_save")
     
     class Meta:
         verbose_name = _('مجلد أرشيف')
@@ -571,3 +563,17 @@ class Document(models.Model):
         verbose_name = _('وثيقة مؤرشفة')
         verbose_name_plural = _('الوثائق المؤرشفة')
         ordering = ['-created_at']
+
+
+# إضافة خطاف post_save لحذف المستندات التلقائية بعد إنشاء المجلدات
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=ArchiveFolder)
+def delete_auto_created_documents(sender, instance, created, **kwargs):
+    """حذف المستندات التي تم إنشاؤها تلقائيًا مع المجلد الجديد"""
+    if created:
+        print(f"DEBUG: تنفيذ خطاف post_save لحذف المستندات التلقائية للمجلد: {instance.name}")
+        # استخدام الوصول المباشر للمجموعة المرتبطة - هذه هي الطريقة الصحيحة للحذف
+        instance.documents.all().delete()
+        print(f"DEBUG: تم حذف المستندات التلقائية للمجلد {instance.name}")
