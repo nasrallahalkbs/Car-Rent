@@ -1744,6 +1744,7 @@ def admin_archive(request):
         'folder_path': folder_path,
         'folder_param': folder_param,
         'document_param': document_param,
+        'all_folders': all_folders,  # إضافة قائمة كاملة بجميع المجلدات
         'is_english': is_english,
         'is_rtl': is_rtl,
         'active_section': 'archive'

@@ -571,12 +571,19 @@
                         <input type="text" class="form-control" id="folderName" name="name" placeholder="{% trans 'أدخل اسم المجلد' %}" required>
                     </div>
                     <div class="mb-3">
+                        <label for="parentFolder" class="form-label">{% trans "المجلد الأب" %}</label>
+                        <select class="form-select" id="parentFolder" name="parent">
+                            <option value="">{% trans "-- مجلد رئيسي (بدون أب) --" %}</option>
+                            {% for folder in all_folders %}
+                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">{% trans "اترك فارغاً لإنشاء مجلد رئيسي، أو اختر المجلد الأب" %}</small>
+                    </div>
+                    <div class="mb-3">
                         <label for="folderDescription" class="form-label">{% trans "الوصف" %}</label>
                         <textarea class="form-control" id="folderDescription" name="description" rows="3" placeholder="{% trans 'وصف اختياري للمجلد' %}"></textarea>
                     </div>
-                    {% if current_folder %}
-                        <input type="hidden" name="parent" value="{{ current_folder.id }}">
-                    {% endif %}
                 </form>
             </div>
             <div class="modal-footer">
@@ -585,6 +592,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Modal لرفع ملف جديد -->
@@ -603,6 +611,16 @@
                         <input type="text" class="form-control" id="fileTitle" name="title" placeholder="{% trans 'أدخل عنوان الملف' %}" required>
                     </div>
                     <div class="mb-3">
+                        <label for="targetFolder" class="form-label">{% trans "المجلد المستهدف" %}</label>
+                        <select class="form-select" id="targetFolder" name="folder">
+                            <option value="">{% trans "-- الجذر (بدون مجلد) --" %}</option>
+                            {% for folder in all_folders %}
+                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">{% trans "اختر المجلد الذي تريد إضافة الملف إليه" %}</small>
+                    </div>
+                    <div class="mb-3">
                         <label for="fileUpload" class="form-label">{% trans "اختر الملف" %}</label>
                         <input type="file" class="form-control" id="fileUpload" name="file" required>
                     </div>
@@ -610,9 +628,6 @@
                         <label for="fileDescription" class="form-label">{% trans "الوصف" %}</label>
                         <textarea class="form-control" id="fileDescription" name="description" rows="3" placeholder="{% trans 'وصف اختياري للملف' %}"></textarea>
                     </div>
-                    {% if current_folder %}
-                        <input type="hidden" name="folder" value="{{ current_folder.id }}">
-                    {% endif %}
                 </form>
             </div>
             <div class="modal-footer">
@@ -621,5 +636,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}
