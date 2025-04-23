@@ -2297,6 +2297,12 @@ def admin_archive_folder_add(request):
         # حفظ المجلد
         try:
             folder.save()
+            
+            # حذف أي مستندات تم إنشاؤها تلقائيًا مع المجلد
+            if folder.pk:
+                Document.objects.filter(folder=folder).delete()
+                print(f"DEBUG: تم حذف المستندات التلقائية المرتبطة بالمجلد الجديد: {folder.name}")
+                
             messages.success(request, f"تم إنشاء المجلد '{folder_name}' بنجاح")
             return redirect('admin_archive')
         except Exception as e:
