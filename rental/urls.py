@@ -77,26 +77,10 @@ urlpatterns = [
     path('dashboard/analytics/', analytics_views.admin_dashboard_analytics, name='admin_dashboard_analytics'),
     path('dashboard/analytics/reports/', analytics_views.admin_payment_analytics, name='admin_payment_analytics'),
 
-    # مسارات نظام الأرشيف الإلكتروني
+    # مسار الأرشيف الإلكتروني - الصفحة الرئيسية فقط
     path('dashboard/archive/', admin_views.admin_archive, name='admin_archive'),
-    path('dashboard/archive/tree/', admin_views.admin_archive_tree, name='admin_archive_tree'),
-    path('dashboard/archive/explorer/', admin_archive_windows_explorer, name='admin_archive_explorer'),
-    path('dashboard/archive/explorer/<int:folder_id>/', admin_archive_windows_explorer, name='admin_archive_explorer_folder'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
-    path('dashboard/archive/<int:document_id>/', admin_views.admin_archive_detail, name='admin_archive_detail'),
-    path('dashboard/archive/<int:document_id>/edit/', admin_views.admin_archive_edit, name='admin_archive_edit'),
-    path('dashboard/archive/<int:document_id>/delete/', admin_views.admin_archive_delete, name='admin_archive_delete'),
-    path('dashboard/archive/<int:document_id>/download/', admin_views.admin_archive_download, name='admin_archive_download'),
-    path('dashboard/archive/<int:document_id>/view/', admin_views.admin_archive_view, name='admin_archive_view'),
-    
-    # مسارات نظام إدارة المجلدات في الأرشيف
-    path('dashboard/archive/folders/', admin_views.admin_archive_folders, name='admin_archive_folders'),
     path('dashboard/archive/folder/add/', admin_views.admin_archive_folder_add, name='admin_archive_folder_add'),
-    path('dashboard/archive/folder/<int:folder_id>/', admin_views.admin_archive_folder_view, name='admin_archive_folder'),
-    path('dashboard/archive/folder/<int:folder_id>/edit/', admin_views.admin_archive_folder_edit, name='admin_archive_folder_edit'),
-    path('dashboard/archive/folder/<int:folder_id>/delete/', admin_views.admin_archive_folder_delete, name='admin_archive_folder_delete'),
-    path('dashboard/archive/folder/<int:folder_id>/documents/', admin_views.admin_archive_folder_documents, name='admin_archive_folder_documents'),
-    path('dashboard/archive/folder/<int:folder_id>/add-document/', admin_views.admin_archive_folder_add_document, name='admin_archive_folder_add_document'),
 
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
