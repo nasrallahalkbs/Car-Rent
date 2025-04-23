@@ -201,10 +201,10 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h3 class="mb-0">{% trans "الأرشيف الإلكتروني" %}</h3>
                     <div>
-                        <a href="{% url 'admin_index' %}" class="btn btn-outline-secondary">
+                        <a href="#" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-2"></i> {% trans "العودة للوحة التحكم" %}
                         </a>
-                        <a href="{% url 'admin_archive_folders' %}" class="btn btn-secondary">
+                        <a href="#" class="btn btn-secondary">
                             <i class="fas fa-folder me-2"></i> {% trans "إدارة المجلدات" %}
                         </a>
                     </div>
@@ -216,12 +216,12 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="fas fa-folder-open me-2 text-warning"></i> {% trans "مستكشف الأرشيف" %}</h5>
                             <div>
-                                <a href="{% url 'admin_archive_add' %}" class="btn btn-sm btn-primary">
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
                                     <i class="fas fa-file-upload me-1"></i> {% trans "إضافة مستند" %}
-                                </a>
-                                <a href="{% url 'admin_archive_folder_add' %}" class="btn btn-sm btn-outline-secondary ms-2">
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#newFolderModal">
                                     <i class="fas fa-folder-plus me-1"></i> {% trans "إضافة مجلد" %}
-                                </a>
+                                </button>
                             </div>
                         </div>
                         <div class="card-body">
@@ -312,75 +312,71 @@
             </div>
         </div>
         
-        <!-- القائمة الجانبية للوحة التحكم -->
+        <!-- القائمة الجانبية للوحة التحكم - تم تبسيطها -->
         <div class="col-lg-2 admin-sidebar order-2 {% if is_rtl %}rtl{% endif %}">
             <div class="py-4 px-3">
                 <div class="admin-logo-container mb-4 text-center">
                     <img src="{% static 'images/car-rental-logo-white.svg' %}" alt="كاررنتال" height="40">
                 </div>
                 
+                <!-- القائمة الرئيسية المبسطة -->
                 <div class="sidebar-heading">{% trans "لوحة التحكم" %}</div>
                 <ul class="nav flex-column mb-0">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/dashboard/' or request.path == '/ar/dashboard/' %}active{% endif %}" 
-                           href="{% url 'admin_index' %}">
+                        <a class="nav-link" href="#">
                             <i class="fas fa-tachometer-alt"></i>
                             {% trans "الرئيسية" %}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if '/reservations' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_reservations' %}">
+                        <a class="nav-link" href="#">
                             <i class="fas fa-calendar-check"></i>
                             {% trans "الحجوزات" %}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if '/cars' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_cars' %}">
+                        <a class="nav-link" href="#">
                             <i class="fas fa-car"></i>
                             {% trans "السيارات" %}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if '/users' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_users' %}">
+                        <a class="nav-link" href="#">
                             <i class="fas fa-users"></i>
                             {% trans "المستخدمون" %}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if '/payments' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_payments' %}">
+                        <a class="nav-link" href="#">
                             <i class="fas fa-credit-card"></i>
                             {% trans "المدفوعات" %}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if '/archive' in request.path %}active{% endif %}" 
-                           href="{% url 'admin_archive' %}">
+                        <a class="nav-link active" href="#">
                             <i class="fas fa-archive"></i>
                             {% trans "الأرشيف" %}
                         </a>
                     </li>
                 </ul>
                 
+                <!-- قائمة الإعدادات المبسطة -->
                 <div class="sidebar-heading mt-4">{% trans "الإعدادات" %}</div>
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admin_settings' %}">
+                        <a class="nav-link" href="#">
                             <i class="fas fa-cog"></i>
                             {% trans "إعدادات النظام" %}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admin_profile' %}">
+                        <a class="nav-link" href="#">
                             <i class="fas fa-user-cog"></i>
                             {% trans "الملف الشخصي" %}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logout' %}">
+                        <a class="nav-link" href="#">
                             <i class="fas fa-sign-out-alt"></i>
                             {% trans "تسجيل الخروج" %}
                         </a>
@@ -400,12 +396,10 @@
                 <h5 class="modal-title" id="newFolderModalLabel">{% trans "إنشاء مجلد جديد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
             </div>
-            <form action="{% url 'admin_archive_folder_add' %}" method="post">
+            <form action="#" method="post">
                 {% csrf_token %}
                 <div class="modal-body">
-                    {% if current_folder %}
-                    <input type="hidden" name="parent_folder" value="{{ current_folder.id }}">
-                    {% endif %}
+                    <input type="hidden" name="parent_folder" value="1">
                     
                     <div class="mb-3">
                         <label for="folderName" class="form-label">{% trans "اسم المجلد" %}</label>
@@ -428,6 +422,51 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
                     <button type="submit" class="btn btn-primary">{% trans "إنشاء المجلد" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- مودال رفع ملف جديد -->
+<div class="modal fade" id="uploadFileModal" tabindex="-1" aria-labelledby="uploadFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadFileModalLabel">{% trans "رفع ملف جديد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <form action="#" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="folder_id" value="1">
+                    
+                    <div class="file-upload-zone mb-3">
+                        <div class="file-upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <p>{% trans "اسحب الملف هنا أو انقر للرفع" %}</p>
+                        <input type="file" id="fileUpload" name="file" class="d-none" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="fileDescription" class="form-label">{% trans "وصف الملف" %}</label>
+                        <textarea class="form-control" id="fileDescription" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fileType" class="form-label">{% trans "نوع الملف" %}</label>
+                        <select class="form-select" id="fileType" name="file_type">
+                            <option value="document">{% trans "مستند" %}</option>
+                            <option value="image">{% trans "صورة" %}</option>
+                            <option value="contract">{% trans "عقد" %}</option>
+                            <option value="invoice">{% trans "فاتورة" %}</option>
+                            <option value="other">{% trans "أخرى" %}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "رفع الملف" %}</button>
                 </div>
             </form>
         </div>
@@ -531,10 +570,11 @@
             'plugins': ['types', 'wholerow', 'search']
         }).on('select_node.jstree', function(e, data) {
             const folderId = data.node.id;
-            if (folderId !== 'root') {
-                window.location.href = "{% url 'admin_archive_folder' 0 %}".replace('0', folderId.replace('folder-', ''));
-            } else {
-                window.location.href = "{% url 'admin_archive' %}";
+            console.log('تم تحديد المجلد:', folderId);
+            // في هذه النسخة التجريبية، نظهر فقط رسالة توضيحية عن تحديد المجلد
+            const previewEl = document.querySelector('.folder-preview .text-center p');
+            if (previewEl) {
+                previewEl.textContent = '{% trans "تم تحديد المجلد: " %}' + data.node.text;
             }
         });
         
@@ -551,6 +591,23 @@
             searchInput.addEventListener('keyup', function() {
                 const searchString = this.value;
                 $('#folder-tree').jstree('search', searchString);
+            });
+        }
+        
+        // تفعيل منطقة رفع الملفات
+        const fileUploadZone = document.querySelector('.file-upload-zone');
+        const fileInput = document.getElementById('fileUpload');
+        
+        if (fileUploadZone && fileInput) {
+            fileUploadZone.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const fileName = this.files[0].name;
+                    fileUploadZone.querySelector('p').textContent = fileName;
+                }
             });
         }
     });
