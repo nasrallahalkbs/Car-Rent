@@ -1676,86 +1676,9 @@ def admin_archive(request):
         'state': { 'opened': False }
     })
     
-    # إضافة مجلدات تجريبية مشابهة للصورة المرجعية
-    folder_tree.append({
-        'id': 'folder-design', 
-        'text': 'CarRental-master', 
-        'icon': 'fas fa-folder',
-        'type': 'folder',
-        'state': { 'opened': True }
-    })
-    
-    folder_tree.append({
-        'id': 'folder-1', 
-        'text': 'CarRental-master', 
-        'icon': 'fas fa-folder',
-        'type': 'folder',
-        'state': { 'opened': False }
-    })
-    
-    folder_tree.append({
-        'id': 'folder-2', 
-        'text': 'venv', 
-        'icon': 'fas fa-folder',
-        'type': 'folder',
-        'state': { 'opened': False }
-    })
-    
-    folder_tree.append({
-        'id': 'folder-3', 
-        'text': 'developer', 
-        'icon': 'fas fa-folder',
-        'type': 'folder',
-        'state': { 'opened': False }
-    })
-    
-    folder_tree.append({
-        'id': 'folder-4', 
-        'text': 'Digital-Persona-SDK-master', 
-        'icon': 'fas fa-folder',
-        'type': 'folder',
-        'state': { 'opened': False }
-    })
-    
-    folder_tree.append({
-        'id': 'folder-5', 
-        'text': 'html', 
-        'icon': 'fas fa-folder',
-        'type': 'folder',
-        'state': { 'opened': False }
-    })
-    
-    # إضافة المجلدات الجديدة (New folder) كما في الصورة
-    folder_tree.append({
-        'id': 'folder-new', 
-        'text': 'New folder', 
-        'icon': 'fas fa-folder',
-        'type': 'folder',
-        'state': { 'opened': False, 'selected': True },
-        'li_attr': { 'class': 'highlight-new' }
-    })
-    
-    for i in range(2, 8):
-        folder_tree.append({
-            'id': f'folder-new-{i}', 
-            'text': f'New folder ({i})', 
-            'icon': 'fas fa-folder',
-            'type': 'folder',
-            'state': { 'opened': False }
-        })
-    
-    # إضافة مجلد nsr
-    folder_tree.append({
-        'id': 'folder-nsr', 
-        'text': 'nsr', 
-        'icon': 'fas fa-folder',
-        'type': 'folder',
-        'state': { 'opened': False }
-    })
-    
-    # إضافة المجلدات الرئيسية الحقيقية (معلقة حالياً)
-    # for folder in root_folders:
-    #    folder_tree.append(build_tree(folder))
+    # إضافة المجلدات الرئيسية الحقيقية من قاعدة البيانات
+    for folder in root_folders:
+        folder_tree.append(build_tree(folder))
     
     # إحصائيات النظام
     total_folders = ArchiveFolder.objects.count()
