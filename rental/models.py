@@ -332,6 +332,22 @@ class ArchiveFolder(models.Model):
     folder_type = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('نوع المجلد'),
                                  help_text=_('نوع المجلد (مثل حجوزات، سيارات، ...إلخ)'))
     
+    def __init__(self, *args, **kwargs):
+        import inspect
+        print(f"DEBUG: تم إنشاء كائن مجلد جديد: {kwargs.get('name', 'بدون اسم')}")
+        print(f"DEBUG: سجل المكالمات عند إنشاء المجلد:")
+        for frame in inspect.stack():
+            print(f"DEBUG: مجلد - في الملف: {frame.filename}, الدالة: {frame.function}, السطر: {frame.lineno}")
+        super().__init__(*args, **kwargs)
+        
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        if is_new:
+            print(f"DEBUG: حفظ مجلد جديد: {self.name}")
+        super().save(*args, **kwargs)
+        if is_new:
+            print(f"DEBUG: تم حفظ المجلد الجديد: {self.name} بمعرف {self.pk}")
+    
     class Meta:
         verbose_name = _('مجلد أرشيف')
         verbose_name_plural = _('مجلدات الأرشيف')
@@ -368,6 +384,12 @@ class ArchiveFolder(models.Model):
     @classmethod
     def get_or_create_system_folder(cls, folder_name, folder_type=None, parent=None):
         """الحصول على أو إنشاء مجلد نظام"""
+        import inspect
+        print(f"DEBUG: محاولة إنشاء مجلد نظام: {folder_name}, نوع: {folder_type}, الأب: {parent}")
+        print(f"DEBUG: سجل المكالمات عند محاولة إنشاء مجلد نظام:")
+        for frame in inspect.stack():
+            print(f"DEBUG: مجلد نظام - في الملف: {frame.filename}, الدالة: {frame.function}, السطر: {frame.lineno}")
+            
         folder, created = cls.objects.get_or_create(
             name=folder_name,
             parent=parent,
@@ -377,6 +399,12 @@ class ArchiveFolder(models.Model):
                 'description': f'مجلد نظام لـ {folder_name}'
             }
         )
+        
+        if created:
+            print(f"DEBUG: تم إنشاء مجلد نظام جديد: {folder.name} بمعرف {folder.pk}")
+        else:
+            print(f"DEBUG: تم العثور على مجلد نظام موجود: {folder.name} بمعرف {folder.pk}")
+            
         return folder
         
     @classmethod
@@ -447,9 +475,11 @@ class Document(models.Model):
     
     def __init__(self, *args, **kwargs):
         import traceback
+        import inspect
         print(f"DEBUG: تم إنشاء كائن مستند جديد: {kwargs.get('title', 'بدون عنوان')}")
         print(f"DEBUG: سجل المكالمات عند إنشاء المستند:")
-        traceback.print_stack()
+        for frame in inspect.stack():
+            print(f"DEBUG: في الملف: {frame.filename}, الدالة: {frame.function}, السطر: {frame.lineno}")
         super().__init__(*args, **kwargs)
     
     def save(self, *args, **kwargs):
