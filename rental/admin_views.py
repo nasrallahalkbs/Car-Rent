@@ -1627,17 +1627,16 @@ def admin_archive(request):
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
-    # للتأكد من تحميل المجلدات بشكل صحيح
-    print(f"DEBUG - تحميل المجلدات للأرشيف...")
+    print(f"DEBUG: تحميل صفحة الأرشيف الإلكتروني...")
     
     # الحصول على مجلدات الجذر
     root_folders = ArchiveFolder.objects.filter(parent=None).order_by('name')
-    print(f"DEBUG - عدد المجلدات الرئيسية: {root_folders.count()}")
+    print(f"DEBUG: عدد المجلدات الرئيسية: {root_folders.count()}")
     
-    # تعريف دالة بناء شجرة المجلدات بطريقة بسيطة (تنسيق بيانات ثابت)
+    # بناء شجرة المجلدات - طريقة بسيطة بدون تكرار
     folder_tree = []
     
-    # إضافة سلة المحذوفات
+    # إضافة سلة المحذوفات كمجلد خاص
     folder_tree.append({
         'id': 'recycle-bin',
         'text': _('سلة المحذوفات'),
@@ -1647,51 +1646,49 @@ def admin_archive(request):
         'children': []
     })
     
-    # مباشرة قم بإضافة المجلدات مع إضافة شجرة بسيطة
+    # إضافة المجلدات الرئيسية
     for folder in root_folders:
-        print(f"DEBUG - إضافة مجلد: {folder.name}")
+        print(f"DEBUG: إضافة مجلد رئيسي: {folder.name} (ID: {folder.id})")
+        
         folder_data = {
             'id': folder.id,
             'text': folder.name,
             'icon': 'fas fa-folder',
+            'type': 'folder',
             'state': {'opened': False},
             'children': []
         }
         
+        # الحصول على المجلدات الفرعية لهذا المجلد
+        child_folders = folder.children.all().order_by('name')
+        
         # إضافة المجلدات الفرعية
-        for child in folder.children.all().order_by('name'):
-            print(f"DEBUG -- إضافة مجلد فرعي: {child.name}")
+        for child in child_folders:
+            print(f"DEBUG: -- إضافة مجلد فرعي: {child.name} (ID: {child.id})")
+            
             folder_data['children'].append({
                 'id': child.id,
                 'text': child.name,
                 'icon': 'fas fa-folder',
-                'state': {'opened': False},
-                'children': []
+                'type': 'folder'
             })
         
-        # إضافة المجلد إلى شجرة المجلدات
+        # إضافة المجلد وأطفاله إلى شجرة المجلدات
         folder_tree.append(folder_data)
     
-    # تحويل شجرة المجلدات إلى تنسيق JSON
-    folder_tree_json = json.dumps(folder_tree, ensure_ascii=False)
-    print(f"DEBUG - تم إنشاء شجرة المجلدات بنجاح")
+    # عرض شجرة المجلدات في سجل التصحيح
+    print(f"DEBUG: شجرة المجلدات: {json.dumps(folder_tree, ensure_ascii=False)}")
     
-    # إنشاء قاموس بكافة المجلدات للوصول بسرعة
-    all_folders = {}
-    for folder in ArchiveFolder.objects.all():
-        all_folders[folder.id] = folder
-    
-    # إعداد سياق البيانات
+    # إعداد سياق القالب
     context = {
-        'folder_tree': folder_tree_json,
+        'folder_tree': json.dumps(folder_tree, ensure_ascii=False),
         'subfolders': root_folders,
-        'all_folders': all_folders,
         'is_english': is_english,
         'is_rtl': is_rtl,
         'active_section': 'archive'
     }
     
-    return render(request, 'admin/archive/archive_main.html', context)
+    return render(request, 'admin/archive/archive_main_fixed.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
