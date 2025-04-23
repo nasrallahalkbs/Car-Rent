@@ -183,7 +183,17 @@
     <!-- مسار المجلد -->
     <div class="folder-path">
         <i class="fas fa-home me-2"></i>
-        {% if folder_param %}
+        {% if current_folder %}
+            <a href="{% url 'admin_archive' %}">{% trans "الرئيسية" %}</a>
+            {% for parent in folder_path %}
+                <span class="mx-2">/</span>
+                {% if parent.id == current_folder.id %}
+                    <span class="fw-bold">{{ parent.name }}</span>
+                {% else %}
+                    <a href="{% url 'admin_archive' %}?folder={{ parent.id }}">{{ parent.name }}</a>
+                {% endif %}
+            {% endfor %}
+        {% elif folder_param %}
             <a href="{% url 'admin_archive' %}">{% trans "الرئيسية" %}</a>
             <span class="mx-2">/</span>
             <span class="fw-bold">{% if folder_param == "fees" %}{% trans "رسوم (1)" %}{% elif folder_param == "attendance" %}{% trans "حضور (2)" %}{% elif folder_param == "accounting" %}{% trans "حسابات (3)" %}{% elif folder_param == "records" %}{% trans "محفوظات (4)" %}{% elif folder_param == "pow" %}{% trans "توكيلات (5)" %}{% else %}{{ folder_param }}{% endif %}</span>
@@ -200,77 +210,118 @@
         </h4>
         
         <div class="folder-grid">
-            {% if root_folders %}
-                {% for folder in root_folders %}
-                <a href="{% url 'admin_archive' %}?folder={{ folder.id }}" class="text-decoration-none">
-                    <div class="folder-card">
-                        <div class="folder-icon">
-                            <i class="fas fa-folder"></i>
+            {% if current_folder %}
+                <!-- زر العودة للمجلد الأب -->
+                {% if current_folder.parent %}
+                    <a href="{% url 'admin_archive' %}?folder={{ current_folder.parent.id }}" class="text-decoration-none">
+                        <div class="folder-card">
+                            <div class="folder-icon">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div class="folder-name">{% trans "العودة للأعلى" %}</div>
                         </div>
-                        <div class="folder-name">{{ folder.name }}</div>
-                        <div class="folder-meta">
-                            {% trans "تم الإنشاء" %}: {{ folder.created_at|date:"d/m/Y" }}
+                    </a>
+                {% else %}
+                    <a href="{% url 'admin_archive' %}" class="text-decoration-none">
+                        <div class="folder-card">
+                            <div class="folder-icon">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="folder-name">{% trans "العودة للرئيسية" %}</div>
                         </div>
-                    </div>
-                </a>
-                {% endfor %}
+                    </a>
+                {% endif %}
+                
+                <!-- المجلدات الفرعية للمجلد الحالي -->
+                {% if subfolders %}
+                    {% for subfolder in subfolders %}
+                    <a href="{% url 'admin_archive' %}?folder={{ subfolder.id }}" class="text-decoration-none">
+                        <div class="folder-card">
+                            <div class="folder-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="folder-name">{{ subfolder.name }}</div>
+                            <div class="folder-meta">
+                                {% trans "تم الإنشاء" %}: {{ subfolder.created_at|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% endif %}
             {% else %}
-                <!-- إذا لم تكن هناك مجلدات في قاعدة البيانات، فسنعرض بعض المجلدات الافتراضية للعرض -->
-                <a href="{% url 'admin_archive' %}?folder=fees" class="text-decoration-none">
-                    <div class="folder-card">
-                        <div class="folder-icon">
-                            <i class="fas fa-folder"></i>
+                <!-- المجلدات الرئيسية -->
+                {% if root_folders %}
+                    {% for folder in root_folders %}
+                    <a href="{% url 'admin_archive' %}?folder={{ folder.id }}" class="text-decoration-none">
+                        <div class="folder-card">
+                            <div class="folder-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="folder-name">{{ folder.name }}</div>
+                            <div class="folder-meta">
+                                {% trans "تم الإنشاء" %}: {{ folder.created_at|date:"d/m/Y" }}
+                            </div>
                         </div>
-                        <div class="folder-name">{% trans "رسوم (1)" %}</div>
-                        <div class="folder-meta">
-                            {% trans "تم الإنشاء" %}: 21/04/2025
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <!-- إذا لم تكن هناك مجلدات في قاعدة البيانات، فسنعرض بعض المجلدات الافتراضية للعرض -->
+                    <a href="{% url 'admin_archive' %}?folder=fees" class="text-decoration-none">
+                        <div class="folder-card">
+                            <div class="folder-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="folder-name">{% trans "رسوم (1)" %}</div>
+                            <div class="folder-meta">
+                                {% trans "تم الإنشاء" %}: 21/04/2025
+                            </div>
                         </div>
-                    </div>
-                </a>
-                <a href="{% url 'admin_archive' %}?folder=attendance" class="text-decoration-none">
-                    <div class="folder-card">
-                        <div class="folder-icon">
-                            <i class="fas fa-folder"></i>
+                    </a>
+                    <a href="{% url 'admin_archive' %}?folder=attendance" class="text-decoration-none">
+                        <div class="folder-card">
+                            <div class="folder-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="folder-name">{% trans "حضور (2)" %}</div>
+                            <div class="folder-meta">
+                                {% trans "تم الإنشاء" %}: 21/04/2025
+                            </div>
                         </div>
-                        <div class="folder-name">{% trans "حضور (2)" %}</div>
-                        <div class="folder-meta">
-                            {% trans "تم الإنشاء" %}: 21/04/2025
+                    </a>
+                    <a href="{% url 'admin_archive' %}?folder=accounting" class="text-decoration-none">
+                        <div class="folder-card">
+                            <div class="folder-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="folder-name">{% trans "حسابات (3)" %}</div>
+                            <div class="folder-meta">
+                                {% trans "تم الإنشاء" %}: 21/04/2025
+                            </div>
                         </div>
-                    </div>
-                </a>
-                <a href="{% url 'admin_archive' %}?folder=accounting" class="text-decoration-none">
-                    <div class="folder-card">
-                        <div class="folder-icon">
-                            <i class="fas fa-folder"></i>
+                    </a>
+                    <a href="{% url 'admin_archive' %}?folder=records" class="text-decoration-none">
+                        <div class="folder-card">
+                            <div class="folder-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="folder-name">{% trans "محفوظات (4)" %}</div>
+                            <div class="folder-meta">
+                                {% trans "تم الإنشاء" %}: 21/04/2025
+                            </div>
                         </div>
-                        <div class="folder-name">{% trans "حسابات (3)" %}</div>
-                        <div class="folder-meta">
-                            {% trans "تم الإنشاء" %}: 21/04/2025
+                    </a>
+                    <a href="{% url 'admin_archive' %}?folder=pow" class="text-decoration-none">
+                        <div class="folder-card">
+                            <div class="folder-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="folder-name">{% trans "توكيلات (5)" %}</div>
+                            <div class="folder-meta">
+                                {% trans "تم الإنشاء" %}: 21/04/2025
+                            </div>
                         </div>
-                    </div>
-                </a>
-                <a href="{% url 'admin_archive' %}?folder=records" class="text-decoration-none">
-                    <div class="folder-card">
-                        <div class="folder-icon">
-                            <i class="fas fa-folder"></i>
-                        </div>
-                        <div class="folder-name">{% trans "محفوظات (4)" %}</div>
-                        <div class="folder-meta">
-                            {% trans "تم الإنشاء" %}: 21/04/2025
-                        </div>
-                    </div>
-                </a>
-                <a href="{% url 'admin_archive' %}?folder=pow" class="text-decoration-none">
-                    <div class="folder-card">
-                        <div class="folder-icon">
-                            <i class="fas fa-folder"></i>
-                        </div>
-                        <div class="folder-name">{% trans "توكيلات (5)" %}</div>
-                        <div class="folder-meta">
-                            {% trans "تم الإنشاء" %}: 21/04/2025
-                        </div>
-                    </div>
-                </a>
+                    </a>
+                {% endif %}
             {% endif %}
         </div>
     </div>

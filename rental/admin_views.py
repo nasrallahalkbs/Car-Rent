@@ -1699,24 +1699,49 @@ def admin_archive(request):
             else:
                 return redirect('admin_archive')
     
-    # الحصول على المستندات
+        # الحصول على المستندات والمجلدات الفرعية
     documents = []
+    subfolders = []
+    current_folder = None
+    folder_path = []
+    
     if folder_param:
         try:
-            folder_id = int(folder_param)
-            current_folder = ArchiveFolder.objects.get(id=folder_id)
-            documents = Document.objects.filter(folder=current_folder).order_by('-created_at')
-        except (ValueError, ArchiveFolder.DoesNotExist):
-            # استخدام وضع العرض المباشر للمجلدات الثابتة
-            pass
+            # تحقق إذا كان معرف المجلد عدداً صحيحاً
+            try:
+                folder_id = int(folder_param)
+                # محاولة العثور على المجلد
+                current_folder = ArchiveFolder.objects.get(id=folder_id)
+                # الحصول على المجلدات الفرعية والمستندات
+                subfolders = ArchiveFolder.objects.filter(parent=current_folder).order_by('name')
+                documents = Document.objects.filter(folder=current_folder).order_by('-created_at')
+                
+                # بناء مسار المجلد
+                folder_path = []
+                temp_folder = current_folder
+                while temp_folder:
+                    folder_path.insert(0, temp_folder)
+                    temp_folder = temp_folder.parent
+                
+                print(f"DEBUG - المجلد الحالي: {current_folder.name}")
+                print(f"DEBUG - عدد المجلدات الفرعية: {subfolders.count()}")
+                print(f"DEBUG - عدد المستندات: {documents.count()}")
+            except ValueError:
+                # إذا كان معرف المجلد ليس عدداً صحيحاً، نستخدم العرض الافتراضي
+                print(f"DEBUG - استخدام العرض الافتراضي للمجلد: {folder_param}")
+        except ArchiveFolder.DoesNotExist:
+            print(f"DEBUG - المجلد غير موجود: {folder_param}")
     else:
         # عرض المستندات في المجلد الرئيسي (بدون مجلد)
         documents = Document.objects.filter(folder__isnull=True).order_by('-created_at')
     
-    # إعداد سياق البيانات
+        # إعداد سياق البيانات
     context = {
         'root_folders': root_folders,
+        'subfolders': subfolders,
         'documents': documents,
+        'current_folder': current_folder,
+        'folder_path': folder_path,
         'folder_param': folder_param,
         'document_param': document_param,
         'is_english': is_english,
