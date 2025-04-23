@@ -575,9 +575,17 @@
                         <select class="form-select" id="parentFolder" name="parent">
                             <option value="">{% trans "-- مجلد رئيسي (بدون أب) --" %}</option>
                             {% for folder in all_folders %}
-                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
+                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.get_path }}</option>
                             {% endfor %}
                         </select>
+                        {% if current_folder %}
+                        <script>
+                            // تعيين المجلد الحالي كمجلد أب افتراضي
+                            document.addEventListener('DOMContentLoaded', function() {
+                                document.getElementById('parentFolder').value = "{{ current_folder.id }}";
+                            });
+                        </script>
+                        {% endif %}
                         <small class="form-text text-muted">{% trans "اترك فارغاً لإنشاء مجلد رئيسي، أو اختر المجلد الأب" %}</small>
                     </div>
                     <div class="mb-3">
@@ -615,7 +623,7 @@
                         <select class="form-select" id="targetFolder" name="folder">
                             <option value="">{% trans "-- الجذر (بدون مجلد) --" %}</option>
                             {% for folder in all_folders %}
-                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
+                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.get_path }}</option>
                             {% endfor %}
                         </select>
                         <small class="form-text text-muted">{% trans "اختر المجلد الذي تريد إضافة الملف إليه" %}</small>
