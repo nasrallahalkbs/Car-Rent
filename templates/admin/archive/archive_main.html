@@ -1,4 +1,3 @@
-
 {% extends "admin/admin_layout.html" %}
 {% load i18n %}
 
@@ -7,38 +6,35 @@
 <style>
     .archive-container {
         padding: 20px;
-        background-color: #f9fafb;
     }
     .folder-tree-container {
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        height: 550px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        height: 500px;
         overflow: hidden;
         display: flex;
         flex-direction: column;
         background-color: #fff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     .folder-tree-header, .folder-status-bar {
-        color: #4b5563;
+        color: #666;
         font-size: 14px;
-        padding: 10px 15px;
+        padding: 5px 10px;
         background-color: #f8f9fa;
-        border-bottom: 1px solid #e5e7eb;
-        font-weight: 500;
+        border-bottom: 1px solid #ddd;
     }
     .folder-status-bar {
-        border-top: 1px solid #e5e7eb;
+        border-top: 1px solid #ddd;
         border-bottom: none;
     }
     #folder-tree {
         font-size: 14px;
         overflow-y: auto;
         flex-grow: 1;
-        padding: 15px;
+        padding: 10px;
     }
     .jstree-default .jstree-icon.fa-folder {
-        color: #f59e0b !important;
+        color: #ffc107 !important;
     }
     .jstree-default .jstree-icon.fa-trash-alt {
         color: #0078d7 !important;
@@ -47,116 +43,32 @@
         background-color: #e5f0ff !important;
     }
     .jstree-default .jstree-wholerow-hovered {
-        background-color: #f9fafb !important;
+        background-color: #f0f0f0 !important;
     }
     .jstree-default .jstree-clicked {
         color: #0d6efd !important;
-        font-weight: 500;
     }
     .folder-toolbar {
         background-color: #f8f9fa;
-        padding: 12px 15px;
-        border-radius: 8px;
+        padding: 10px;
+        border-radius: 4px;
         margin-bottom: 15px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
     .folder-info {
         background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px;
     }
     .hide-content {
         display: none !important;
     }
-    
-    /* RTL Support for jsTree */
     .jstree-rtl.jstree-default .jstree-node {
         margin-right: 0;
     }
     .jstree-rtl.jstree-default .jstree-icon {
         margin-left: 5px;
         margin-right: 0;
-    }
-    .jstree-rtl.jstree-default .jstree-anchor {
-        padding: 0 4px 0 0 !important;
-    }
-    
-    /* Card Styles */
-    .folder-card {
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-    }
-    .folder-card:hover {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transform: translateY(-2px);
-    }
-    .folder-card .card-header {
-        background-color: #f8f9fa;
-        padding: 12px 15px;
-        border-bottom: 1px solid #e5e7eb;
-        font-weight: 500;
-    }
-    .search-input {
-        border-radius: 6px;
-        border: 1px solid #e5e7eb;
-        padding: 8px 12px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-    .search-input:focus {
-        border-color: #93c5fd;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-    }
-    
-    /* File Grid Styles */
-    .file-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 15px;
-        transition: all 0.2s ease;
-        height: 100%;
-    }
-    .file-card:hover {
-        border-color: #93c5fd;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .file-icon {
-        font-size: 2rem;
-        margin-bottom: 10px;
-    }
-    .file-name {
-        font-weight: 500;
-        font-size: 15px;
-        margin-bottom: 8px;
-        color: #374151;
-        word-break: break-word;
-    }
-    .file-meta {
-        font-size: 12px;
-        color: #6b7280;
-    }
-    
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 40px 20px;
-    }
-    .empty-state i {
-        font-size: 48px;
-        color: #d1d5db;
-        margin-bottom: 15px;
-    }
-    .empty-state p {
-        color: #6b7280;
-        margin-bottom: 0;
-    }
-    
-    /* Buttons */
-    .btn-sm {
-        padding: 0.25rem 0.75rem;
-        font-size: 0.875rem;
     }
 </style>
 {% endblock %}
@@ -185,7 +97,7 @@
             </div>
             
             <div class="input-group input-group-sm mb-3">
-                <input type="text" id="folder-search" class="form-control search-input" placeholder="{% trans 'بحث في المجلدات...' %}">
+                <input type="text" id="folder-search" class="form-control" placeholder="{% trans 'بحث في المجلدات...' %}">
                 <span class="input-group-text"><i class="fas fa-search"></i></span>
             </div>
             
@@ -264,7 +176,7 @@
                     </div>
                 </div>
                 
-                <div class="card folder-card">
+                <div class="card">
                     <div class="card-header d-flex justify-content-between">
                         <h5 class="mb-0">{% trans "محتويات المجلد" %}</h5>
                         <div>
@@ -277,9 +189,9 @@
                     <div class="card-body">
                         <div id="folder-files" class="row g-3">
                             <!-- يتم إضافة الملفات هنا ديناميكياً -->
-                            <div class="col-12 empty-state">
-                                <i class="fas fa-folder-open"></i>
-                                <p>{% trans "لا توجد ملفات في هذا المجلد" %}</p>
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="fas fa-folder-open" style="font-size: 48px;"></i>
+                                <p class="mt-3">{% trans "لا توجد ملفات في هذا المجلد" %}</p>
                             </div>
                         </div>
                     </div>
@@ -440,16 +352,13 @@
                 'folder': { 'icon': 'fas fa-folder' },
                 'file': { 'icon': 'fas fa-file' }
             },
-            'plugins': ['types', 'wholerow', 'search', 'changed', 'state']
+            'plugins': ['types', 'wholerow', 'search', 'changed']
         }).on('ready.jstree', function() {
             console.log("تم تهيئة شجرة المجلدات بنجاح");
             
             // تحديد عدد العناصر
             const itemsCount = $('#folder-tree').jstree('get_json').length;
             $('#items-count').text(itemsCount + ' {% trans "عنصر" %}');
-            
-            // فتح جميع المجلدات (افتراضي)
-            $('#folder-tree').jstree('open_all');
             
             // تحديد المجلد الافتراضي (المجلد الأول بعد سلة المحذوفات)
             if (treeData && treeData.length > 1) {
@@ -532,69 +441,6 @@
             
             // عدد الملفات (صفر حالياً)
             $('#file-count').text('0');
-            
-            // محاكاة عرض الملفات للاختبار
-            const demoFiles = [
-                { name: 'عقد إيجار.pdf', type: 'pdf', date: '٢٠٢٥/٠٤/١٥', size: '٤٥٠ كيلوبايت' },
-                { name: 'صورة السيارة.jpg', type: 'image', date: '٢٠٢٥/٠٤/١٠', size: '١.٢ ميجابايت' },
-                { name: 'وثيقة التأمين.docx', type: 'doc', date: '٢٠٢٥/٠٤/٠٥', size: '٣٢٠ كيلوبايت' }
-            ];
-            
-            // تنظيف محتوى المجلد وعرض الملفات (للعرض التوضيحي)
-            if (nodeId === 'folder-1' || nodeId === 'folder-2') {
-                const filesContainer = $('#folder-files');
-                filesContainer.empty();
-                
-                $('#file-count').text(demoFiles.length);
-                
-                // إنشاء بطاقات للملفات
-                demoFiles.forEach(function(file) {
-                    let fileIcon, fileClass;
-                    
-                    switch(file.type) {
-                        case 'pdf':
-                            fileIcon = 'fas fa-file-pdf';
-                            fileClass = 'text-danger';
-                            break;
-                        case 'image':
-                            fileIcon = 'fas fa-file-image';
-                            fileClass = 'text-success';
-                            break;
-                        case 'doc':
-                            fileIcon = 'fas fa-file-word';
-                            fileClass = 'text-primary';
-                            break;
-                        default:
-                            fileIcon = 'fas fa-file';
-                            fileClass = 'text-secondary';
-                    }
-                    
-                    const fileCard = `
-                        <div class="col-md-4 col-sm-6">
-                            <div class="file-card text-center">
-                                <div class="file-icon">
-                                    <i class="${fileIcon} ${fileClass}"></i>
-                                </div>
-                                <div class="file-name">${file.name}</div>
-                                <div class="file-meta d-flex justify-content-between">
-                                    <span>${file.date}</span>
-                                    <span>${file.size}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    filesContainer.append(fileCard);
-                });
-            } else {
-                // إظهار حالة الفراغ لباقي المجلدات
-                $('#folder-files').html(`
-                    <div class="col-12 empty-state">
-                        <i class="fas fa-folder-open"></i>
-                        <p>{% trans "لا توجد ملفات في هذا المجلد" %}</p>
-                    </div>
-                `);
-            }
         });
         
         // البحث في شجرة المجلدات
@@ -609,58 +455,6 @@
             searchTimeout = setTimeout(function() {
                 $('#folder-tree').jstree('search', searchText);
             }, 300);
-        });
-        
-        // تبديل طريقة عرض الملفات (شبكي/قائمة)
-        $('#view-type').on('change', function() {
-            const viewType = $(this).val();
-            
-            if (viewType === 'list') {
-                // تحويل العرض إلى قائمة
-                $('#folder-files').removeClass('row g-3').addClass('list-group');
-                
-                // إعادة تنسيق كل ملف
-                $('#folder-files .col-md-4').each(function() {
-                    const fileName = $(this).find('.file-name').text();
-                    const fileDate = $(this).find('.file-meta span:first').text();
-                    const fileSize = $(this).find('.file-meta span:last').text();
-                    const fileIcon = $(this).find('.file-icon i').attr('class');
-                    
-                    const listItem = `
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <i class="${fileIcon} me-3"></i>
-                                <span>${fileName}</span>
-                            </div>
-                            <div class="text-muted small">
-                                <span class="me-3">${fileDate}</span>
-                                <span>${fileSize}</span>
-                            </div>
-                        </div>
-                    `;
-                    
-                    $(this).replaceWith(listItem);
-                });
-                
-                // في حالة عدم وجود ملفات، تغيير طريقة العرض
-                if ($('#folder-files .empty-state').length) {
-                    const emptyState = $('#folder-files .empty-state');
-                    const emptyMessage = emptyState.find('p').text();
-                    
-                    $('#folder-files').html(`
-                        <div class="list-group-item text-center py-4">
-                            <i class="fas fa-folder-open d-block mb-3" style="font-size: 24px; color: #d1d5db;"></i>
-                            <p class="mb-0 text-muted">${emptyMessage}</p>
-                        </div>
-                    `);
-                }
-            } else {
-                // إعادة تحميل المجلد لإعادة العرض الشبكي
-                const nodeId = $('#folder-tree').jstree('get_selected')[0];
-                if (nodeId) {
-                    $('#folder-tree').jstree('select_node', nodeId);
-                }
-            }
         });
     });
 </script>
