@@ -1675,8 +1675,8 @@ def admin_archive(request):
         'active_section': 'archive'
     }
     
-    # استخدام قالب مستكشف ويندوز
-    return render(request, 'admin/archive/windows_explorer.html', context)
+    # استخدام قالب مستكشف ويندوز المحسن بجافاسكريبت مدمج
+    return render(request, 'admin/archive/explorer.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
