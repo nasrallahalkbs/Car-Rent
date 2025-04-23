@@ -1676,7 +1676,7 @@ def admin_archive(request):
     }
     
     # استخدام قالب مستكشف ويندوز البسيط المباشر
-    return render(request, 'admin/archive/archive_direct.html', context)
+    return render(request, 'admin/archive/simple_archive.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
