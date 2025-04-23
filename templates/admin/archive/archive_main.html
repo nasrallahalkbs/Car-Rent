@@ -249,10 +249,62 @@
                                 
                                 <!-- عرض تفاصيل المجلد المختار - كما في الصورة المرجعية -->
                                 <div class="col-md-8">
-                                    <div class="folder-preview d-flex justify-content-center align-items-center h-100">
-                                        <div class="text-center">
-                                            <i class="fas fa-folder-open text-warning" style="font-size: 72px;"></i>
-                                            <p class="mt-3">{% trans "اختر مجلد من الشجرة لعرض محتوياته" %}</p>
+                                    <div class="folder-preview h-100">
+                                        <!-- الحالة الأولية - لم يتم تحديد مجلد بعد -->
+                                        <div id="no-folder-selected" class="d-flex justify-content-center align-items-center h-100">
+                                            <div class="text-center">
+                                                <i class="fas fa-folder-open text-warning" style="font-size: 72px;"></i>
+                                                <p class="mt-3">{% trans "اختر مجلد من الشجرة لعرض محتوياته" %}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- عرض محتويات المجلد المحدد (يظهر عند تحديد مجلد) -->
+                                        <div id="folder-contents" class="d-none">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h5 class="folder-title mb-0">
+                                                    <i class="fas fa-folder-open text-warning me-2"></i>
+                                                    <span id="selected-folder-name"></span>
+                                                </h5>
+                                                
+                                                <div class="folder-actions">
+                                                    <a href="#" id="view-folder-btn" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i> {% trans "عرض المجلد" %}
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#newFolderModal">
+                                                        <i class="fas fa-folder-plus me-1"></i> {% trans "إضافة مجلد هنا" %}
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-success ms-2" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
+                                                        <i class="fas fa-file-upload me-1"></i> {% trans "إضافة ملف" %}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="folder-info bg-light p-3 rounded mb-3">
+                                                <div id="folder-path" class="mb-2">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-sitemap me-1"></i> {% trans "المسار:" %} 
+                                                        <span id="folder-full-path"></span>
+                                                    </small>
+                                                </div>
+                                                <div id="folder-stats" class="d-flex">
+                                                    <div class="me-3">
+                                                        <small>
+                                                            <i class="fas fa-folder me-1"></i> 
+                                                            <span id="subfolder-count">0</span> {% trans "مجلد فرعي" %}
+                                                        </small>
+                                                    </div>
+                                                    <div>
+                                                        <small>
+                                                            <i class="fas fa-file me-1"></i> 
+                                                            <span id="file-count">0</span> {% trans "ملف" %}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div id="folder-content-placeholder" class="text-center py-5">
+                                                <p class="text-muted">{% trans "سيتم عرض محتوى المجلد هنا عند التنفيذ الكامل للميزة" %}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -396,10 +448,10 @@
                 <h5 class="modal-title" id="newFolderModalLabel">{% trans "إنشاء مجلد جديد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
             </div>
-            <form action="#" method="post">
+            <form action="{% url 'admin_archive_folder_add' %}" method="post">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <input type="hidden" name="parent_folder" value="1">
+                    <input type="hidden" name="parent_id" id="parent_folder_id" value="">
                     
                     <div class="mb-3">
                         <label for="folderName" class="form-label">{% trans "اسم المجلد" %}</label>
@@ -436,10 +488,10 @@
                 <h5 class="modal-title" id="uploadFileModalLabel">{% trans "رفع ملف جديد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
             </div>
-            <form action="#" method="post" enctype="multipart/form-data">
+            <form action="{% url 'admin_archive_add' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <input type="hidden" name="folder_id" value="1">
+                    <input type="hidden" name="folder_id" id="upload_folder_id" value="">
                     
                     <div class="file-upload-zone mb-3">
                         <div class="file-upload-icon">
@@ -531,7 +583,30 @@
         ];
         
         // استخدام البيانات المخصصة إذا لم تكن هناك بيانات من الخادم
-        const treeData = (!{{ folder_tree|safe }} || {{ folder_tree|safe }}.length === 0) ? customFolderData : {{ folder_tree|safe }};
+        let treeData = (!{{ folder_tree|safe }} || {{ folder_tree|safe }}.length === 0) ? customFolderData : {{ folder_tree|safe }};
+        
+        // تحويل معرفات المجلدات لتكون متوافقة مع التطبيق
+        function processTreeData(data) {
+            if (Array.isArray(data)) {
+                return data.map(node => processTreeData(node));
+            } else if (typeof data === 'object') {
+                // التأكد من أن معرف المجلد يحتوي على بادئة "folder-" إذا كان ليس معرفًا خاصًا
+                if (data.id && typeof data.id === 'number') {
+                    data.id = 'folder-' + data.id;
+                }
+                
+                // معالجة المجلدات الفرعية بشكل متكرر
+                if (data.children && Array.isArray(data.children)) {
+                    data.children = data.children.map(child => processTreeData(child));
+                }
+                
+                return data;
+            }
+            return data;
+        }
+        
+        // معالجة بيانات الشجرة للتأكد من تنسيق المعرفات بشكل صحيح
+        treeData = processTreeData(treeData);
         
         // تهيئة شجرة المجلدات بمظهر شبيه لويندوز (شجرة بسيطة كما في الصورة)
         $('#folder-tree').jstree({
@@ -569,12 +644,84 @@
             },
             'plugins': ['types', 'wholerow', 'search']
         }).on('select_node.jstree', function(e, data) {
-            const folderId = data.node.id;
+            // التعامل مع معرف المجلد (إزالة البادئة 'folder-' إذا وجدت)
+            let folderId = data.node.id;
+            const originalId = folderId; // حفظ المعرف الأصلي
+            if (folderId.startsWith('folder-')) {
+                folderId = folderId.replace('folder-', '');
+            }
+            
             console.log('تم تحديد المجلد:', folderId);
-            // في هذه النسخة التجريبية، نظهر فقط رسالة توضيحية عن تحديد المجلد
-            const previewEl = document.querySelector('.folder-preview .text-center p');
-            if (previewEl) {
-                previewEl.textContent = '{% trans "تم تحديد المجلد: " %}' + data.node.text;
+            
+            // تحديث معرف المجلد الأب في نماذج إضافة مجلد جديد ورفع الملفات
+            const parentFolderInput = document.getElementById('parent_folder_id');
+            const uploadFolderInput = document.getElementById('upload_folder_id');
+            
+            // تعيين قيمة المجلد الأب في نموذج إضافة المجلد
+            if (parentFolderInput && folderId !== 'root') {
+                parentFolderInput.value = folderId;
+            }
+            
+            // تعيين قيمة المجلد المحدد في نموذج رفع الملفات
+            if (uploadFolderInput && folderId !== 'root') {
+                uploadFolderInput.value = folderId;
+            }
+            
+            // إخفاء الرسالة الافتراضية وإظهار محتوى المجلد
+            const noFolderMessage = document.getElementById('no-folder-selected');
+            const folderContents = document.getElementById('folder-contents');
+            
+            if (noFolderMessage && folderContents) {
+                noFolderMessage.classList.add('d-none');
+                folderContents.classList.remove('d-none');
+            }
+            
+            // تحديث معلومات المجلد
+            const folderName = document.getElementById('selected-folder-name');
+            const folderPath = document.getElementById('folder-full-path');
+            const viewFolderBtn = document.getElementById('view-folder-btn');
+            
+            if (folderName) {
+                folderName.textContent = data.node.text;
+            }
+            
+            if (folderPath) {
+                // بناء مسار المجلد
+                let nodePath = [];
+                let currentNode = data.node;
+                
+                // جمع المسار من المجلد الحالي إلى الجذر
+                while (currentNode && currentNode.id !== '#') {
+                    nodePath.unshift(currentNode.text);
+                    currentNode = data.instance.get_node(currentNode.parent);
+                }
+                
+                // عرض المسار كسلسلة نصية (تخطي الجذر إذا لزم الأمر)
+                folderPath.textContent = nodePath.join(' / ');
+            }
+            
+            // تحديث زر عرض المجلد
+            if (viewFolderBtn && folderId !== 'root') {
+                // تعيين الرابط المناسب للمجلد
+                viewFolderBtn.href = `{% url 'admin_archive_folder' 0 %}`.replace(/0/, folderId);
+            } else if (viewFolderBtn) {
+                viewFolderBtn.href = `{% url 'admin_archive' %}`;
+            }
+            
+            // تحديث إحصائيات المجلد (عدد المجلدات الفرعية والملفات)
+            // هنا يمكن إضافة طلب Ajax للحصول على هذه المعلومات من الخادم
+            const subfolderCount = document.getElementById('subfolder-count');
+            const fileCount = document.getElementById('file-count');
+            
+            if (subfolderCount) {
+                // في هذه النسخة نعرض عدد المجلدات الفرعية المباشرة فقط
+                const childCount = data.node.children ? data.node.children.length : 0;
+                subfolderCount.textContent = childCount;
+            }
+            
+            // يمكن استخدام Ajax لجلب عدد الملفات الفعلي من الخادم
+            if (fileCount) {
+                fileCount.textContent = "0"; // قيمة افتراضية
             }
         });
         
