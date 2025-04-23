@@ -119,7 +119,7 @@
         color: #0078d7 !important; /* لون أزرق لأيقونة الكمبيوتر */
     }
     
-    /* تنسيق عناصر الشجرة */
+    /* تنسيق عناصر الشجرة - مشابه لتصميم ويندوز */
     .jstree-default .jstree-anchor {
         white-space: normal;
         height: auto;
@@ -132,7 +132,12 @@
     
     /* تنسيق عند تحديد عنصر في الشجرة */
     .jstree-default .jstree-wholerow-clicked {
-        background-color: #e7f4ff !important; /* لون أزرق فاتح عند التحديد */
+        background-color: #cce8ff !important; /* لون أزرق فاتح مشابه للصورة عند التحديد */
+    }
+    
+    /* تنسيق لتمرير المؤشر فوق عنصر */
+    .jstree-default .jstree-wholerow-hovered {
+        background-color: #f0f0f0 !important; /* لون رمادي فاتح عند تمرير المؤشر */
     }
     
     /* تنسيق العنصر المحدد في الشجرة */
@@ -142,10 +147,25 @@
         font-weight: 500;
     }
     
-    /* تباعد العناصر في الشجرة */
+    /* تباعد العناصر في الشجرة ونمط مشابه لويندوز */
     .jstree-default .jstree-node {
-        min-height: 24px;
-        line-height: 24px;
+        min-height: 28px;
+        line-height: 28px;
+        margin-left: 0;
+        background-image: none;
+    }
+    
+    /* تعديل حجم أيقونة المجلد */
+    .jstree-default .jstree-icon.fa-folder {
+        font-size: 16px;
+        color: #ffd04c !important; /* لون المجلد الذهبي مشابه للصورة */
+    }
+    
+    /* تصميم أيقونات التوسيع/الانكماش بشكل مشابه لويندوز */
+    .jstree-default .jstree-ocl {
+        background-size: 16px auto;
+        background-position: center;
+        width: 20px;
     }
     
     /* تنسيق محاذاة شجرة المجلدات للغة العربية */
@@ -243,8 +263,13 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- عرض المجلدات في شكل شجري بسيط -->
-                                    <div id="folder-tree" class="simple-tree-view" dir="{% if is_rtl %}rtl{% else %}ltr{% endif %}"></div>
+                                    <!-- عرض المجلدات في شكل شجري بسيط مشابه لمستكشف ويندوز -->
+                                    <div class="windows-explorer-container border bg-white" style="height: 480px; overflow: hidden; display: flex; flex-direction: column;">
+                                        <div id="folder-tree" class="simple-tree-view flex-grow-1" dir="{% if is_rtl %}rtl{% else %}ltr{% endif %}" style="overflow-y: auto; padding: 5px;"></div>
+                                        <div class="folder-status-bar d-flex justify-content-start align-items-center p-2 border-top bg-light" style="font-size: 12px; height: 24px;">
+                                            <span id="items-count">4 items</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <!-- عرض تفاصيل المجلد المختار - كما في الصورة المرجعية -->
@@ -530,55 +555,113 @@
 <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // بيانات تخصيص الشجرة لتتطابق مع الصورة المرجعية
+        // بيانات تخصيص الشجرة لتتطابق تماماً مع الصورة المرجعية (مستكشف ويندوز)
         const customFolderData = [
             { 
-              'id': 'root', 
-              'text': '{% trans "الكمبيوتر" %}', 
-              'icon': 'fas fa-hdd',
-              'type': 'root',
-              'state': { 'opened': true },
-              'children': [
-                { 
-                  'id': 'folder-design', 
-                  'text': '{% trans "تصميم (شجرة)" %}', 
-                  'icon': 'fas fa-folder',
-                  'type': 'folder',
-                  'state': { 'opened': true },
-                  'children': [
-                    { 
-                      'id': 'folder-1', 
-                      'text': '{% trans "رسوم (1)" %}', 
-                      'icon': 'fas fa-folder',
-                      'type': 'folder'
-                    },
-                    { 
-                      'id': 'folder-2', 
-                      'text': '{% trans "حضور (2)" %}', 
-                      'icon': 'fas fa-folder',
-                      'type': 'folder' 
-                    },
-                    { 
-                      'id': 'folder-3', 
-                      'text': '{% trans "حسابات (3)" %}', 
-                      'icon': 'fas fa-folder',
-                      'type': 'folder'
-                    },
-                    { 
-                      'id': 'folder-4', 
-                      'text': '{% trans "محفوظات (4)" %}', 
-                      'icon': 'fas fa-folder',
-                      'type': 'folder' 
-                    },
-                    { 
-                      'id': 'folder-5', 
-                      'text': '{% trans "توكيلات (5)" %}', 
-                      'icon': 'fas fa-folder',
-                      'type': 'folder'
-                    }
-                  ]
-                }
-              ]
+              'id': 'recycle-bin', 
+              'text': '{% trans "سلة المحذوفات" %}', 
+              'icon': 'fas fa-trash-alt',
+              'type': 'system',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-design', 
+              'text': '{% trans "CarRental-master" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': true }
+            },
+            { 
+              'id': 'folder-6', 
+              'text': '{% trans "CarRental-master" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-7', 
+              'text': '{% trans "venv" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-8', 
+              'text': '{% trans "developer" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-9', 
+              'text': '{% trans "Digital-Persona-SDK-master" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-10', 
+              'text': '{% trans "html" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-1', 
+              'text': '{% trans "New folder" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false },
+              'li_attr': { 'class': 'highlight-new' }
+            },
+            { 
+              'id': 'folder-2', 
+              'text': '{% trans "New folder (2)" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-3', 
+              'text': '{% trans "New folder (3)" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-4', 
+              'text': '{% trans "New folder (4)" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-5', 
+              'text': '{% trans "New folder (5)" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-11', 
+              'text': '{% trans "New folder (6)" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-12', 
+              'text': '{% trans "New folder (7)" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
+            },
+            { 
+              'id': 'folder-13', 
+              'text': '{% trans "nsr" %}', 
+              'icon': 'fas fa-folder',
+              'type': 'folder',
+              'state': { 'opened': false }
             }
         ];
         
@@ -608,17 +691,53 @@
         // معالجة بيانات الشجرة للتأكد من تنسيق المعرفات بشكل صحيح
         treeData = processTreeData(treeData);
         
-        // تهيئة شجرة المجلدات بمظهر شبيه لويندوز (شجرة بسيطة كما في الصورة)
+        // إضافة تنسيق CSS إضافي للمجلد المظلل (مشابه لانتقاء ملف في ويندوز)
+        const style = document.createElement('style');
+        style.textContent = `
+            .highlight-new > .jstree-anchor {
+                background-color: #cce8ff !important;
+            }
+            .jstree-default .jstree-hovered {
+                background-color: #f5f5f5 !important;
+                box-shadow: none;
+            }
+            .jstree-default .jstree-icon.fa-folder {
+                color: #ffd04c !important;
+            }
+            .jstree-default .jstree-icon.fa-trash-alt {
+                color: #0078d7 !important;
+            }
+            .jstree-default .jstree-wholerow-clicked {
+                background-color: #cce8ff !important;
+            }
+            .jstree-default .jstree-wholerow-hovered {
+                background-color: #f0f0f0 !important;
+            }
+            .jstree-default .jstree-anchor {
+                line-height: 28px;
+                height: 28px;
+            }
+            .jstree-default .jstree-node {
+                margin-left: 0;
+                background-image: none;
+            }
+            .jstree-default .jstree-last {
+                background-image: none;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // تهيئة شجرة المجلدات بمظهر شبيه تماماً لويندوز (كما في الصورة المرجعية)
         $('#folder-tree').jstree({
             'core' : {
                 'data' : treeData,
                 'themes': {
                     'responsive': true,
                     'name': 'default',
-                    'dots': true,  // إظهار نقاط الاتصال بين الفروع
-                    'icons': true, // إظهار الأيقونات
-                    'variant': 'small', // حجم مناسب للأيقونات
-                    'stripes': false // إزالة الخطوط البديلة للصفوف
+                    'dots': false,  // إخفاء نقاط الاتصال كما في الصورة
+                    'icons': true, 
+                    'variant': 'large', // حجم مناسب للأيقونات
+                    'stripes': false 
                 },
                 'multiple': false,
                 'check_callback': true,
@@ -627,13 +746,13 @@
                     'New node': '{% trans "مجلد جديد" %}'
                 }
             },
-            'rtl': {% if is_rtl %}true{% else %}false{% endif %}, // تفعيل دعم اللغة العربية عند الحاجة
+            'rtl': {% if is_rtl %}true{% else %}false{% endif %},
             'types': {
                 'default': {
                     'icon': 'fas fa-folder'
                 },
-                'root': {
-                    'icon': 'fas fa-hdd'
+                'system': {
+                    'icon': 'fas fa-trash-alt'
                 },
                 'folder': {
                     'icon': 'fas fa-folder'
@@ -642,7 +761,7 @@
                     'icon': 'fas fa-file'
                 }
             },
-            'plugins': ['types', 'wholerow', 'search']
+            'plugins': ['types', 'wholerow', 'search', 'changed']
         }).on('select_node.jstree', function(e, data) {
             // التعامل مع معرف المجلد (إزالة البادئة 'folder-' إذا وجدت)
             let folderId = data.node.id;
@@ -727,8 +846,19 @@
         
         // عند اكتمال تحميل الشجرة
         $('#folder-tree').on('ready.jstree', function() {
-            // فتح جميع العقد الجذرية
-            $(this).jstree('open_all');
+            // تحديث عداد العناصر في شريط الحالة (عدد المجلدات الظاهرة)
+            const itemsCount = $('#folder-tree').jstree('get_json').length;
+            $('#items-count').text(itemsCount + ' items');
+            
+            // فتح مجلد مميز (مثل New folder كما في الصورة)
+            const highlightedNode = $('#folder-tree').find('.highlight-new').first();
+            if (highlightedNode.length) {
+                const nodeId = highlightedNode.attr('id');
+                if (nodeId) {
+                    $('#folder-tree').jstree('select_node', nodeId);
+                }
+            }
+            
             console.log("تم تحميل شجرة المجلدات بنجاح");
         });
         
