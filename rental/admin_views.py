@@ -1621,7 +1621,6 @@ def get_user_reservations(request, user_id):
 @admin_required
 def admin_archive(request):
     """عرض الأرشيف الإلكتروني مع شجرة المجلدات"""
-    # تحديد لغة العرض
     from django.utils.translation import get_language
     current_language = get_language()
     is_english = current_language == 'en'
@@ -1684,7 +1683,8 @@ def admin_archive(request):
         'active_section': 'archive'
     }
     
-    return render(request, 'admin/archive/archive_main.html', context)
+    # استخدام القالب الجديد البسيط الذي تم إنشاؤه
+    return render(request, 'admin/archive/simple_archive.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
