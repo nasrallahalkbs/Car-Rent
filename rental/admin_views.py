@@ -1675,8 +1675,8 @@ def admin_archive(request):
         'active_section': 'archive'
     }
     
-    # استخدام قالب مستكشف ويندوز الأصلي مع إصلاح مشكلة النقر
-    return render(request, 'admin/archive/windows_explorer.html', context)
+    # استخدام قالب مستكشف ويندوز البسيط المباشر
+    return render(request, 'admin/archive/archive_direct.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
