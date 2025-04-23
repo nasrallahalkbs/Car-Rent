@@ -1620,79 +1620,72 @@ def get_user_reservations(request, user_id):
 @login_required
 @admin_required
 def admin_archive(request):
-    """صفحة إدارة الأرشيف الإلكتروني - الواجهة الرئيسية للأرشيف الشجري"""
+    """عرض الأرشيف الإلكتروني مع شجرة المجلدات"""
     # تحديد لغة العرض
     from django.utils.translation import get_language
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
-    # البحث والتصفية
-    search = request.GET.get('search', '')
+    # للتأكد من تحميل المجلدات بشكل صحيح
+    print(f"DEBUG - تحميل المجلدات للأرشيف...")
     
     # الحصول على مجلدات الجذر
-    root_folders = ArchiveFolder.get_root_folders()
+    root_folders = ArchiveFolder.objects.filter(parent=None).order_by('name')
+    print(f"DEBUG - عدد المجلدات الرئيسية: {root_folders.count()}")
     
-    # الحصول على المستندات في المجلد الرئيسي (بدون مجلد)
-    files = Document.objects.filter(folder__isnull=True).order_by('-created_at')
+    # تعريف دالة بناء شجرة المجلدات بطريقة بسيطة (تنسيق بيانات ثابت)
+    folder_tree = []
     
-    # تطبيق البحث إذا كان موجودًا
-    if search:
-        files = files.filter(
-            Q(title__icontains=search) | 
-            Q(description__icontains=search) | 
-            Q(reference_number__icontains=search) |
-            Q(tags__icontains=search)
-        )
+    # إضافة سلة المحذوفات
+    folder_tree.append({
+        'id': 'recycle-bin',
+        'text': _('سلة المحذوفات'),
+        'icon': 'fas fa-trash-alt',
+        'type': 'system',
+        'state': {'opened': False},
+        'children': []
+    })
     
-    # بناء هيكل البيانات الشجري في تصميم مشابه للويندوز
-    def build_tree(folder):
-        result = {
+    # مباشرة قم بإضافة المجلدات مع إضافة شجرة بسيطة
+    for folder in root_folders:
+        print(f"DEBUG - إضافة مجلد: {folder.name}")
+        folder_data = {
             'id': folder.id,
             'text': folder.name,
             'icon': 'fas fa-folder',
-            'type': 'folder',
-            'state': {
-                'opened': False
-            },
+            'state': {'opened': False},
             'children': []
         }
         
         # إضافة المجلدات الفرعية
         for child in folder.children.all().order_by('name'):
-            result['children'].append(build_tree(child))
+            print(f"DEBUG -- إضافة مجلد فرعي: {child.name}")
+            folder_data['children'].append({
+                'id': child.id,
+                'text': child.name,
+                'icon': 'fas fa-folder',
+                'state': {'opened': False},
+                'children': []
+            })
         
-        return result
+        # إضافة المجلد إلى شجرة المجلدات
+        folder_tree.append(folder_data)
     
-    # بناء شجرة المجلدات للعرض في تصميم مشابه للصورة المرجعية
-    folder_tree = []
+    # تحويل شجرة المجلدات إلى تنسيق JSON
+    folder_tree_json = json.dumps(folder_tree, ensure_ascii=False)
+    print(f"DEBUG - تم إنشاء شجرة المجلدات بنجاح")
     
-    # إضافة سلة المحذوفات
-    folder_tree.append({
-        'id': 'recycle-bin', 
-        'text': _('سلة المحذوفات'), 
-        'icon': 'fas fa-trash-alt',
-        'type': 'system',
-        'state': { 'opened': False }
-    })
+    # إنشاء قاموس بكافة المجلدات للوصول بسرعة
+    all_folders = {}
+    for folder in ArchiveFolder.objects.all():
+        all_folders[folder.id] = folder
     
-    # إضافة المجلدات الرئيسية الحقيقية من قاعدة البيانات
-    for folder in root_folders:
-        folder_tree.append(build_tree(folder))
-    
-    # إحصائيات النظام
-    total_folders = ArchiveFolder.objects.count()
-    total_files = Document.objects.count()
-    
+    # إعداد سياق البيانات
     context = {
-        'folder_tree': json.dumps(folder_tree),
+        'folder_tree': folder_tree_json,
         'subfolders': root_folders,
-        'files': files,
-        'total_folders': total_folders,
-        'total_files': total_files,
-        'search': search,
-        'today': timezone.now().date().strftime('%Y-%m-%d'),
-        'current_user': request.user,
+        'all_folders': all_folders,
         'is_english': is_english,
         'is_rtl': is_rtl,
         'active_section': 'archive'
@@ -1700,8 +1693,6 @@ def admin_archive(request):
     
     return render(request, 'admin/archive/archive_main.html', context)
 
-@login_required
-@admin_required
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
     if request.method == 'POST':

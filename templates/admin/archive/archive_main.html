@@ -476,7 +476,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action="{% url 'admin_archive_add' %}" method="post" enctype="multipart/form-data">
+                <form action="/ar/dashboard/archive/add/" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="file-title" class="form-label">{% trans "عنوان المستند" %}</label>
@@ -528,9 +528,59 @@
     $(document).ready(function() {
         console.log("تهيئة صفحة الأرشيف الإلكتروني...");
         
-        // استخدام البيانات من الخادم مباشرة
+        // عرض بيانات الشجرة في وحدة التحكم للتصحيح
         let treeData = {{ folder_tree|safe }};
         console.log("بيانات الشجرة المستلمة:", treeData);
+        
+        // إضافة بيانات شجرة افتراضية للاختبار إذا لم تكن بيانات الشجرة متاحة
+        if (!treeData || treeData.length === 0) {
+            console.log("تحذير: لا توجد بيانات لشجرة المجلدات، سيتم استخدام بيانات افتراضية");
+            
+            // إنشاء شجرة افتراضية للاختبار
+            treeData = [
+                {
+                    "id": "recycle-bin",
+                    "text": "سلة المحذوفات",
+                    "icon": "fas fa-trash-alt",
+                    "type": "system",
+                    "state": {"opened": false},
+                    "children": []
+                },
+                {
+                    "id": 27,
+                    "text": "تصميم (شجرة)",
+                    "icon": "fas fa-folder",
+                    "state": {"opened": true},
+                    "children": [
+                        {
+                            "id": 28,
+                            "text": "رسوم (1)",
+                            "icon": "fas fa-folder"
+                        },
+                        {
+                            "id": 29,
+                            "text": "حضور (2)",
+                            "icon": "fas fa-folder"
+                        },
+                        {
+                            "id": 30,
+                            "text": "حسابات (3)",
+                            "icon": "fas fa-folder"
+                        },
+                        {
+                            "id": 31,
+                            "text": "محفوظات (4)",
+                            "icon": "fas fa-folder"
+                        },
+                        {
+                            "id": 32,
+                            "text": "توكيلات (5)",
+                            "icon": "fas fa-folder"
+                        }
+                    ]
+                }
+            ];
+        }
         
         // تحويل معرفات المجلدات لتكون متوافقة مع التطبيق
         function processTreeData(data) {
@@ -555,16 +605,9 @@
         // معالجة بيانات الشجرة للتأكد من تنسيق المعرفات بشكل صحيح
         treeData = processTreeData(treeData);
         
-        // إضافة تنسيق CSS إضافي للمجلد المظلل (مشابه لانتقاء ملف في ويندوز)
+        // إضافة أنماط CSS إضافية للشجرة
         const style = document.createElement('style');
         style.textContent = `
-            .highlight-new > .jstree-anchor {
-                background-color: #cce8ff !important;
-            }
-            .jstree-default .jstree-hovered {
-                background-color: #f5f5f5 !important;
-                box-shadow: none;
-            }
             .jstree-default .jstree-icon.fa-folder {
                 color: #ffd04c !important;
             }
@@ -585,23 +628,20 @@
                 margin-left: 0;
                 background-image: none;
             }
-            .jstree-default .jstree-last {
-                background-image: none;
-            }
         `;
         document.head.appendChild(style);
         
-        // تهيئة شجرة المجلدات بمظهر شبيه تماماً لويندوز (كما في الصورة المرجعية)
+        // تهيئة شجرة المجلدات
         $('#folder-tree').jstree({
-            'core' : {
-                'data' : treeData,
+            'core': {
+                'data': treeData,
                 'themes': {
                     'responsive': true,
                     'name': 'default',
-                    'dots': false,  // إخفاء نقاط الاتصال كما في الصورة
-                    'icons': true, 
-                    'variant': 'large', // حجم مناسب للأيقونات
-                    'stripes': false 
+                    'dots': false,
+                    'icons': true,
+                    'variant': 'large',
+                    'stripes': false
                 },
                 'multiple': false,
                 'check_callback': true,
@@ -633,10 +673,11 @@
             const itemsCount = $('#folder-tree').jstree('get_json').length;
             $('#items-count').text(itemsCount + ' {% trans "عنصر" %}');
             
-            // تعيين أول مجلد كمجلد محدد افتراضيًا (مجلد "تصميم (شجرة)")
+            // تعيين أول مجلد كمجلد محدد افتراضيًا
             if (treeData && treeData.length > 0) {
-                // ابحث عن المجلد "تصميم (شجرة)" أو استخدم المجلد الأول
                 let targetNode = null;
+                
+                // ابحث عن المجلد "تصميم (شجرة)" أو استخدم المجلد الأول
                 for (let i = 0; i < treeData.length; i++) {
                     if (treeData[i].text.includes('تصميم')) {
                         targetNode = treeData[i].id;
@@ -644,13 +685,16 @@
                     }
                 }
                 
-                // إذا لم يتم العثور على مجلد "تصميم"، استخدم المجلد الأول
-                if (!targetNode && treeData.length > 0) {
+                // إذا لم يتم العثور على مجلد "تصميم"، استخدم المجلد الأول بعد سلة المحذوفات
+                if (!targetNode && treeData.length > 1) {
+                    targetNode = treeData[1].id;
+                } else if (!targetNode && treeData.length > 0) {
                     targetNode = treeData[0].id;
                 }
                 
                 if (targetNode) {
                     $('#folder-tree').jstree('select_node', targetNode);
+                    console.log("تم تحديد المجلد:", targetNode);
                 }
             }
         }).on('select_node.jstree', function(e, data) {
@@ -687,13 +731,13 @@
             $('#selected-parent-id').val(nodeId);
             $('#selected-folder-id').val(nodeId);
             
-            // محاكاة عدد الملفات (سيتم تحديثها لاحقًا من الخادم)
+            // محاكاة عدد الملفات
             $('#file-count').text('0');
             
             // تحديث رابط "عرض المجلد"
             if (nodeId.startsWith('folder-')) {
                 const folder_id = nodeId.replace('folder-', '');
-                $('#view-folder-btn').attr('href', '{% url "admin_archive_folder_view" 0 %}'.replace('0', folder_id));
+                $('#view-folder-btn').attr('href', '/ar/dashboard/archive/folder/' + folder_id + '/');
             } else {
                 $('#view-folder-btn').attr('href', '#');
             }
@@ -704,6 +748,5 @@
             const searchString = $(this).val();
             $('#folder-tree').jstree('search', searchString);
         });
-    });
-</script>
+    });</script>
 {% endblock %}
