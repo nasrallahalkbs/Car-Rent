@@ -6,16 +6,27 @@
 <style>
     .folder-tree-container {
         border-radius: 4px;
+        height: 500px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #ddd;
+        background-color: #fff;
     }
     .folder-tree-header, .folder-status-bar {
         color: #666;
         font-size: 14px;
+        padding: 5px 10px;
+        background-color: #f8f9fa;
     }
     .folder-status-bar {
         border-top: 1px solid #ddd;
     }
     #folder-tree {
         font-size: 14px;
+        overflow-y: auto;
+        flex-grow: 1;
+        padding: 10px;
     }
     .jstree-default .jstree-icon.fa-folder {
         color: #ffc107 !important;
@@ -32,6 +43,23 @@
     .folder-info {
         background-color: #f8f9fa;
         border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .archive-toolbar {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+    }
+    .archive-main-content {
+        min-height: 550px;
+    }
+    .jstree-default .jstree-anchor {
+        height: 28px;
+        line-height: 28px;
     }
 </style>
 {% endblock %}
@@ -73,15 +101,17 @@
                             <!-- هيكل بسيط للعرض كما في الصورة المرجعية -->
                             <div class="row">
                                 <div class="col-md-4">
-                                    <!-- قائمة الشريط العلوي للمجلدات (مشابهة للصورة المرجعية) -->
-                                    <div class="folder-toolbar d-flex justify-content-between align-items-center mb-2">
-                                        <a href="/ar/dashboard/archive/" class="btn btn-sm btn-light mb-2">
-                                            <i class="fas fa-sync-alt"></i> {% trans "تحديث" %}
-                                        </a>
+                                    <!-- قائمة الشريط العلوي للمجلدات -->
+                                    <div class="archive-toolbar d-flex justify-content-between align-items-center">
                                         <div>
-                                            <a href="/ar/dashboard/archive/folder/add/" id="add-folder-btn" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-folder-plus"></i> {% trans "مجلد جديد" %}
+                                            <a href="/ar/dashboard/archive/" class="btn btn-sm btn-light">
+                                                <i class="fas fa-sync-alt"></i> {% trans "تحديث" %}
                                             </a>
+                                        </div>
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newFolderModal">
+                                                <i class="fas fa-folder-plus"></i> {% trans "إضافة مجلد" %}
+                                            </button>
                                         </div>
                                     </div>
                                     
@@ -292,6 +322,12 @@
         let folderData = {{ folder_tree|safe }};
         console.log("بيانات المجلدات:", folderData);
         
+        // إذا كانت البيانات فارغة أو غير محددة، عرض رسالة وإيقاف التنفيذ
+        if (!folderData || folderData.length === 0) {
+            $('#folder-tree').html('<div class="alert alert-info m-3">لا توجد مجلدات متاحة. يرجى إنشاء مجلد جديد.</div>');
+            return;
+        }
+        
         // تحويل معرفات المجلدات لتوافق jsTree
         function processTreeData(data) {
             if (Array.isArray(data)) {
@@ -310,6 +346,46 @@
         
         // معالجة بيانات الشجرة
         let treeData = processTreeData(folderData);
+        
+        // تحسين العرض البصري لأيقونات المجلدات
+        const customIconStyle = document.createElement('style');
+        customIconStyle.textContent = `
+            .jstree-default .jstree-icon {
+                font-size: 16px;
+                margin-right: 6px;
+                margin-top: 2px;
+            }
+            .jstree-default .jstree-anchor {
+                padding: 2px 5px;
+                margin: 1px 0;
+                font-size: 14px;
+            }
+            .jstree-default .jstree-node {
+                margin-left: 0;
+                min-height: 28px;
+            }
+            .jstree-default .jstree-icon.fa-folder {
+                color: #ffc107 !important;
+            }
+            .jstree-rtl.jstree-default .jstree-node {
+                margin-right: 0;
+            }
+            .jstree-rtl.jstree-default .jstree-anchor {
+                padding: 2px 5px 2px 0;
+                margin: 1px 0;
+            }
+            .jstree-rtl.jstree-default .jstree-icon {
+                margin-left: 6px;
+                margin-right: 0;
+            }
+            .jstree-default .jstree-wholerow-clicked {
+                background-color: #0d6efd1a !important;
+            }
+            .jstree-default .jstree-clicked {
+                color: #0d6efd !important;
+            }
+        `;
+        document.head.appendChild(customIconStyle);
         
         // تهيئة jsTree
         $('#folder-tree').jstree({
@@ -343,7 +419,24 @@
             
             // تحديد المجلد الافتراضي (المجلد الأول بعد سلة المحذوفات)
             if (treeData && treeData.length > 1) {
-                $('#folder-tree').jstree('select_node', treeData[1].id);
+                // البحث عن مجلد تصميم (شجرة) أو استخدام أول مجلد عادي
+                let defaultNode = null;
+                for (let i = 0; i < treeData.length; i++) {
+                    if (treeData[i].id !== 'recycle-bin') {
+                        if (treeData[i].text.includes('تصميم')) {
+                            defaultNode = treeData[i].id;
+                            break;
+                        } else if (!defaultNode) {
+                            defaultNode = treeData[i].id;
+                        }
+                    }
+                }
+                
+                if (defaultNode) {
+                    $('#folder-tree').jstree('select_node', defaultNode);
+                    // فتح المجلد تلقائياً
+                    $('#folder-tree').jstree('open_node', defaultNode);
+                }
             }
         }).on('select_node.jstree', function(e, data) {
             // عرض محتويات المجلد المحدد
@@ -356,8 +449,33 @@
             $('#folder-contents').removeClass('d-none');
             $('#selected-folder-name').text(nodeName);
             
-            // تحديث مسار المجلد
-            const path = '/' + nodeName;
+            // بناء مسار المجلد
+            let pathParts = [];
+            let currentNode = data.node;
+            
+            if (nodeId === 'recycle-bin') {
+                pathParts.push('سلة المحذوفات');
+            } else {
+                // إضافة اسم المجلد الحالي
+                pathParts.push(nodeName);
+                
+                // إضافة أسماء المجلدات الأب بالترتيب العكسي
+                let parentIds = data.node.parents;
+                parentIds.forEach(function(pid) {
+                    if (pid !== '#' && pid !== 'recycle-bin') {
+                        let parentNode = $('#folder-tree').jstree(true).get_node(pid);
+                        if (parentNode) {
+                            pathParts.push(parentNode.text);
+                        }
+                    }
+                });
+                
+                // عكس المصفوفة لعرض المسار بترتيب صحيح (من الأب إلى الابن)
+                pathParts.reverse();
+            }
+            
+            // بناء المسار المجمع
+            const path = '/' + pathParts.join('/');
             $('#folder-full-path').text(path);
             
             // تحديث عدد المجلدات الفرعية
@@ -381,10 +499,19 @@
             $('#file-count').text('0');
         });
         
-        // تفعيل البحث في شجرة المجلدات
+        // تحسين البحث في شجرة المجلدات
+        let searchTimeout = null;
         $('#folder-search').on('keyup', function() {
             const searchText = $(this).val();
-            $('#folder-tree').jstree('search', searchText);
+            
+            // استخدام timeout للبحث لتجنب البحث المستمر مع كل ضغطة مفتاح
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            searchTimeout = setTimeout(function() {
+                $('#folder-tree').jstree('search', searchText);
+            }, 300);
         });
     });
 </script>
