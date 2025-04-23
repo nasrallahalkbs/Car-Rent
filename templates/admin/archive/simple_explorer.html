@@ -1,0 +1,476 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "تصفح الأرشيف" %}{% endblock %}
+
+{% block page_title %}{% trans "الأرشيف الإلكتروني" %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'admin_archive' %}">{% trans "أرشيف" %}</a></li>
+<li class="breadcrumb-item active">{% trans "تصفح الأرشيف" %}</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* أنماط مبسطة للمستكشف */
+    .explorer-container {
+        display: flex;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+        min-height: 500px;
+    }
+    
+    .folder-sidebar {
+        width: 270px;
+        border-right: 1px solid #ddd;
+        padding: 15px;
+        background-color: #f8f9fa;
+    }
+    
+    .content-area {
+        flex: 1;
+        padding: 15px;
+        background-color: white;
+    }
+    
+    .folder-nav-header {
+        font-weight: bold;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .folder-list {
+        margin-bottom: 20px;
+    }
+    
+    .folder-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 10px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .folder-item:hover {
+        background-color: #e9ecef;
+    }
+    
+    .folder-item i {
+        margin-right: 10px;
+        color: #fcb92c;
+    }
+    
+    .folder-item.selected {
+        background-color: #e9ecef;
+    }
+    
+    .file-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .file-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .file-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .file-icon {
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+    
+    .file-pdf .file-icon {
+        color: #e74c3c;
+    }
+    
+    .file-doc .file-icon {
+        color: #3498db;
+    }
+    
+    .file-xls .file-icon {
+        color: #2ecc71;
+    }
+    
+    .file-name {
+        font-size: 12px;
+        text-align: center;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .path-bar {
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+    }
+    
+    /* التوافق RTL */
+    [dir="rtl"] .folder-item i {
+        margin-right: 0;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{% trans "استعراض ملفات الأرشيف" %}</h5>
+                        <div class="btn-group">
+                            <a href="{% url 'admin_archive_add' %}" class="btn btn-primary">
+                                <i class="fas fa-folder-plus me-2"></i> {% trans "إضافة مجلد" %}
+                            </a>
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
+                                <i class="fas fa-file-upload me-2"></i> {% trans "رفع ملف" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- مسار التصفح الحالي -->
+    <div class="path-bar">
+        <a href="#" class="text-decoration-none" onclick="showHomeContent()">{% trans "الرئيسية" %}</a>
+        <span id="current-path"></span>
+    </div>
+    
+    <!-- مستكشف الملفات المبسط -->
+    <div class="explorer-container">
+        <!-- الشريط الجانبي للمجلدات -->
+        <div class="folder-sidebar">
+            <div class="folder-nav-header">{% trans "الوصول السريع" %}</div>
+            <div class="folder-list">
+                {% for folder in root_folders %}
+                <div class="folder-item" onclick="showFolder({{ folder.id }}, '{{ folder.name }}')">
+                    <i class="fas fa-folder"></i>
+                    <span>{{ folder.name }}</span>
+                </div>
+                {% empty %}
+                <div class="folder-item" onclick="showFolder(1, '{% trans "رسوم (1)" %}')">
+                    <i class="fas fa-folder"></i>
+                    <span>{% trans "رسوم (1)" %}</span>
+                </div>
+                <div class="folder-item" onclick="showFolder(2, '{% trans "حضور (2)" %}')">
+                    <i class="fas fa-folder"></i>
+                    <span>{% trans "حضور (2)" %}</span>
+                </div>
+                <div class="folder-item" onclick="showFolder(3, '{% trans "حسابات (3)" %}')">
+                    <i class="fas fa-folder"></i>
+                    <span>{% trans "حسابات (3)" %}</span>
+                </div>
+                <div class="folder-item" onclick="showFolder(4, '{% trans "محفوظات (4)" %}')">
+                    <i class="fas fa-folder"></i>
+                    <span>{% trans "محفوظات (4)" %}</span>
+                </div>
+                <div class="folder-item" onclick="showFolder(5, '{% trans "توكيلات (5)" %}')">
+                    <i class="fas fa-folder"></i>
+                    <span>{% trans "توكيلات (5)" %}</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="folder-nav-header">{% trans "بحث" %}</div>
+            <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control" id="searchInput" placeholder="{% trans 'البحث في الملفات...' %}">
+            </div>
+        </div>
+        
+        <!-- منطقة المحتوى -->
+        <div class="content-area">
+            <div id="folder-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة رفع ملف -->
+<div class="modal fade" id="uploadFileModal" tabindex="-1" aria-labelledby="uploadFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadFileModalLabel">{% trans "رفع ملف" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadFileForm" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="file" class="form-label">{% trans "اختر الملف" %}</label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="folder" class="form-label">{% trans "المجلد" %}</label>
+                        <select class="form-select" id="folder" name="folder">
+                            <option value="">{% trans "المجلد الرئيسي" %}</option>
+                            {% for folder in root_folders %}
+                            <option value="{{ folder.id }}">{{ folder.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="title" class="form-label">{% trans "عنوان الملف (اختياري)" %}</label>
+                        <input type="text" class="form-control" id="title" name="title">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">{% trans "وصف (اختياري)" %}</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                <button type="button" class="btn btn-primary" id="submitUploadForm">{% trans "رفع الملف" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة معاينة الملف -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filePreviewModalLabel">{% trans "معاينة الملف" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="filePreviewContent">
+                <!-- سيتم إضافة محتوى المعاينة بشكل ديناميكي -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إغلاق" %}</button>
+                <button type="button" class="btn btn-primary">{% trans "فتح" %}</button>
+                <button type="button" class="btn btn-success">{% trans "تنزيل" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ====== بيانات المحتوى (لأغراض العرض التوضيحي) ======
+const folderContents = {
+    'home': [
+        { type: 'folder', id: 1, name: '{% trans "رسوم (1)" %}' },
+        { type: 'folder', id: 2, name: '{% trans "حضور (2)" %}' },
+        { type: 'folder', id: 3, name: '{% trans "حسابات (3)" %}' },
+        { type: 'folder', id: 4, name: '{% trans "محفوظات (4)" %}' },
+        { type: 'folder', id: 5, name: '{% trans "توكيلات (5)" %}' },
+        { type: 'file', id: 101, name: 'تقرير_شامل.pdf', fileType: 'pdf' },
+        { type: 'file', id: 102, name: 'دليل_المستخدم.docx', fileType: 'doc' },
+        { type: 'file', id: 103, name: 'جدول_البيانات.xlsx', fileType: 'xls' }
+    ],
+    '1': [
+        { type: 'file', id: 111, name: 'رسم_بياني_1.pdf', fileType: 'pdf' },
+        { type: 'file', id: 112, name: 'رسم_بياني_2.pdf', fileType: 'pdf' }
+    ],
+    '2': [
+        { type: 'file', id: 221, name: 'سجل_الحضور_ابريل.xlsx', fileType: 'xls' },
+        { type: 'file', id: 222, name: 'سجل_الحضور_مارس.xlsx', fileType: 'xls' },
+        { type: 'file', id: 223, name: 'تقرير_الحضور.docx', fileType: 'doc' }
+    ],
+    '3': [
+        { type: 'file', id: 331, name: 'ميزانية_2025.xlsx', fileType: 'xls' },
+        { type: 'file', id: 332, name: 'تقرير_مالي_سنوي.pdf', fileType: 'pdf' },
+        { type: 'file', id: 333, name: 'فواتير_مارس.pdf', fileType: 'pdf' }
+    ],
+    '4': [
+        { type: 'file', id: 441, name: 'أرشيف_2024.zip', fileType: 'zip' },
+        { type: 'file', id: 442, name: 'سجلات_قديمة.pdf', fileType: 'pdf' }
+    ],
+    '5': [
+        { type: 'file', id: 551, name: 'نموذج_توكيل_رسمي.docx', fileType: 'doc' },
+        { type: 'file', id: 552, name: 'توكيل_محمد_احمد.pdf', fileType: 'pdf' },
+        { type: 'file', id: 553, name: 'توكيل_خالد_محمود.pdf', fileType: 'pdf' },
+        { type: 'file', id: 554, name: 'توكيل_عمر_سعيد.pdf', fileType: 'pdf' }
+    ]
+};
+
+// ====== الوظائف الرئيسية ======
+
+// عرض محتوى المجلد
+function showFolder(folderId, folderName) {
+    // تحديث المسار الحالي
+    document.getElementById('current-path').innerHTML = ` / ${folderName}`;
+    
+    // الحصول على محتوى المجلد
+    const contents = folderContents[folderId] || folderContents['home'];
+    
+    // تحديث واجهة المستخدم
+    renderFolderContents(contents);
+    
+    // تظليل المجلد المحدد
+    document.querySelectorAll('.folder-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    const items = document.querySelectorAll('.folder-item');
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].textContent.includes(folderName)) {
+            items[i].classList.add('selected');
+            break;
+        }
+    }
+}
+
+// عرض محتوى الصفحة الرئيسية
+function showHomeContent() {
+    document.getElementById('current-path').innerHTML = '';
+    renderFolderContents(folderContents['home']);
+    
+    // إزالة التظليل من جميع المجلدات
+    document.querySelectorAll('.folder-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+}
+
+// عرض محتويات المجلد في الواجهة
+function renderFolderContents(contents) {
+    const contentArea = document.getElementById('folder-content');
+    let html = '<div class="file-grid">';
+    
+    for (const item of contents) {
+        if (item.type === 'folder') {
+            html += `
+                <div class="file-item" onclick="showFolder(${item.id}, '${item.name}')">
+                    <div class="file-icon">
+                        <i class="fas fa-folder text-warning"></i>
+                    </div>
+                    <div class="file-name">${item.name}</div>
+                </div>
+            `;
+        } else {
+            let iconClass = 'fa-file';
+            let colorClass = '';
+            
+            if (item.fileType === 'pdf') {
+                iconClass = 'fa-file-pdf';
+                colorClass = 'text-danger';
+            } else if (item.fileType === 'doc') {
+                iconClass = 'fa-file-word';
+                colorClass = 'text-primary';
+            } else if (item.fileType === 'xls') {
+                iconClass = 'fa-file-excel';
+                colorClass = 'text-success';
+            } else if (item.fileType === 'zip') {
+                iconClass = 'fa-file-archive';
+                colorClass = 'text-warning';
+            }
+            
+            html += `
+                <div class="file-item file-${item.fileType}" onclick="previewFile(${item.id}, '${item.name}', '${item.fileType}')">
+                    <div class="file-icon">
+                        <i class="fas ${iconClass} ${colorClass}"></i>
+                    </div>
+                    <div class="file-name">${item.name}</div>
+                </div>
+            `;
+        }
+    }
+    
+    html += '</div>';
+    contentArea.innerHTML = html;
+}
+
+// معاينة ملف
+function previewFile(fileId, fileName, fileType) {
+    const previewModal = new bootstrap.Modal(document.getElementById('filePreviewModal'));
+    document.getElementById('filePreviewModalLabel').textContent = fileName;
+    
+    let iconClass = 'fa-file';
+    let fileTypeName = 'مستند';
+    
+    if (fileType === 'pdf') {
+        iconClass = 'fa-file-pdf';
+        fileTypeName = 'PDF';
+    } else if (fileType === 'doc') {
+        iconClass = 'fa-file-word';
+        fileTypeName = 'Word';
+    } else if (fileType === 'xls') {
+        iconClass = 'fa-file-excel';
+        fileTypeName = 'Excel';
+    } else if (fileType === 'zip') {
+        iconClass = 'fa-file-archive';
+        fileTypeName = 'أرشيف مضغوط';
+    }
+    
+    const previewHtml = `
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas ${iconClass} fa-4x"></i>
+            </div>
+            <h5>معاينة ${fileName}</h5>
+            <p class="text-muted">جاري تحميل ملف ${fileTypeName}...</p>
+            <div class="progress mb-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 75%"></div>
+            </div>
+            <p class="small">سيتم فتح الملف في التطبيق المناسب عند اكتمال التحميل.</p>
+        </div>
+    `;
+    
+    document.getElementById('filePreviewContent').innerHTML = previewHtml;
+    previewModal.show();
+}
+
+// وظيفة البحث في الملفات
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchText = this.value.toLowerCase();
+    
+    // تجميع جميع الملفات من كل المجلدات للبحث
+    let allFiles = [];
+    for (const key in folderContents) {
+        allFiles = allFiles.concat(folderContents[key].filter(item => item.type === 'file'));
+    }
+    
+    // تصفية الملفات التي تطابق البحث
+    const filteredFiles = allFiles.filter(file => 
+        file.name.toLowerCase().includes(searchText)
+    );
+    
+    // عرض نتائج البحث
+    if (searchText.length > 0) {
+        document.getElementById('current-path').innerHTML = ' / نتائج البحث';
+        renderFolderContents(filteredFiles);
+    } else {
+        showHomeContent();
+    }
+});
+
+// تنفيذ عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // عرض محتوى الصفحة الرئيسية افتراضياً
+    showHomeContent();
+    
+    // التعامل مع نموذج رفع الملفات
+    document.getElementById('submitUploadForm').addEventListener('click', function() {
+        alert('تم النقر على زر رفع الملف - سيتم تنفيذ هذه الوظيفة لاحقاً');
+    });
+});
+</script>
+{% endblock %}
