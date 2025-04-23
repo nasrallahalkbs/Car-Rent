@@ -1620,7 +1620,7 @@ def get_user_reservations(request, user_id):
 @login_required
 @admin_required
 def admin_archive(request):
-    """عرض الأرشيف الإلكتروني بأسلوب بسيط"""
+    """عرض الأرشيف الإلكتروني بتصميم مشابه لمستكشف ويندوز"""
     from django.utils.translation import get_language
     current_language = get_language()
     is_english = current_language == 'en'
@@ -1633,17 +1633,50 @@ def admin_archive(request):
     # الحصول على إجمالي عدد المجلدات الفرعية
     subfolder_count = ArchiveFolder.objects.exclude(parent=None).count()
     
+    # الحصول على جميع المجلدات
+    all_folders = ArchiveFolder.objects.all().order_by('name')
+    
+    # بناء هيكل البيانات الشجري للعرض في jsTree
+    def build_tree(folder):
+        result = {
+            'id': f'folder-{folder.id}',
+            'text': folder.name,
+            'icon': 'fas fa-folder',
+            'state': {
+                'opened': False
+            },
+            'children': []
+        }
+        
+        # إضافة المجلدات الفرعية
+        for child in folder.children.all().order_by('name'):
+            result['children'].append(build_tree(child))
+        
+        return result
+    
+    # بناء شجرة المجلدات للعرض في جافاسكريبت
+    folder_tree = []
+    
+    # إضافة المجلدات الرئيسية
+    for folder in root_folders:
+        folder_tree.append(build_tree(folder))
+    
+    # تحويل بيانات الشجرة إلى JSON
+    folder_tree_json = json.dumps(folder_tree)
+    
     # إعداد سياق البيانات
     context = {
         'root_folders': root_folders,
         'subfolder_count': subfolder_count,
+        'all_folders': all_folders,
+        'folder_tree': folder_tree_json,
         'is_english': is_english,
         'is_rtl': is_rtl,
         'active_section': 'archive'
     }
     
-    # استخدام القالب البسيط الجديد
-    return render(request, 'admin/archive/basic_folders.html', context)
+    # استخدام قالب مستكشف ويندوز
+    return render(request, 'admin/archive/windows_explorer.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
