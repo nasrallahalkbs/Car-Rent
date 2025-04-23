@@ -1683,32 +1683,19 @@ def admin_archive(request):
                 except:
                     pass
             
-            # حساب حجم الملف بطريقة مناسبة
-            file_size = f"{uploaded_file.size / 1024:.1f} KB" if uploaded_file.size < 1024 * 1024 else f"{uploaded_file.size / (1024 * 1024):.1f} MB"
-            
-            # تحديد نوع الملف بناءً على الامتداد
-            file_name = uploaded_file.name.lower()
-            file_type = 'other'
-            if file_name.endswith('.pdf'):
-                file_type = 'pdf'
-            elif file_name.endswith(('.doc', '.docx')):
-                file_type = 'doc'
-            elif file_name.endswith(('.xls', '.xlsx')):
-                file_type = 'xls'
-            elif file_name.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                file_type = 'img'
-            elif file_name.endswith(('.zip', '.rar')):
-                file_type = 'zip'
+            # حساب حجم الملف بوحدة البايت
+            file_size = uploaded_file.size
             
             # إنشاء مستند جديد (ملف)
             document = Document.objects.create(
                 title=title,
                 description=description,
-                folder=folder,
+                document_type='other',  # استخدام القيمة الافتراضية 'other'
                 file=uploaded_file,
-                file_type=file_type,
                 file_size=file_size,
-                created_by=request.user if request.user.is_authenticated else None
+                document_date=timezone.now().date(),
+                related_to='other',  # استخدام القيمة الافتراضية 'other'
+                added_by=request.user if request.user.is_authenticated else None
             )
             
             print(f"DEBUG - تم إنشاء مستند جديد: {document.title}")
