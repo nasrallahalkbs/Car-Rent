@@ -2228,7 +2228,7 @@ def admin_archive_folder_add(request):
         try:
             folder.save()
             messages.success(request, f"تم إنشاء المجلد '{folder_name}' بنجاح")
-            return redirect('admin_archive_folders')
+            return redirect('admin_archive')
         except Exception as e:
             messages.error(request, f"حدث خطأ أثناء إنشاء المجلد: {str(e)}")
     
