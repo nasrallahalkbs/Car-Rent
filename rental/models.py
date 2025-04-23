@@ -347,6 +347,19 @@ class ArchiveFolder(models.Model):
         super().save(*args, **kwargs)
         if is_new:
             print(f"DEBUG: تم حفظ المجلد الجديد: {self.name} بمعرف {self.pk}")
+            
+            # إذا تم إنشاء مجلد جديد، نقوم بحذف أي مستندات تم إنشاؤها تلقائيًا مع هذا المجلد
+            from django.db import connection
+            
+            # استخدام استعلام SQL مباشر لحذف أي وثائق مرتبطة بهذا المجلد
+            # هذا هو الحل النهائي للمشكلة - نحذف أي مستندات أُنشئت تلقائيًا مع المجلد
+            cursor = connection.cursor()
+            cursor.execute(
+                "DELETE FROM rental_document WHERE folder_id = ?", 
+                [self.pk]
+            )
+            
+            print(f"DEBUG: تم حذف المستندات التلقائية المرتبطة بالمجلد الجديد")
     
     class Meta:
         verbose_name = _('مجلد أرشيف')
