@@ -800,17 +800,29 @@ function showDefaultContent() {
 function showFolderContent(folderId, folderName) {
     console.log('عرض محتوى المجلد: ' + folderId + ' - ' + folderName);
     
-    // تحديث العنوان
-    updateAddressBar(folderName);
-    
-    // الحصول على محتوى المجلد
-    const folderContent = FOLDER_CONTENTS[folderId] || [];
-    
-    // عرض محتوى المجلد
-    renderFolderContents(folderContent);
-    
-    // تسجيل هذا التنقل
-    recordNavigation(folderId, folderName);
+    try {
+        // تحديث العنوان
+        updateAddressBar(folderName);
+        
+        // الحصول على محتوى المجلد
+        const folderContent = FOLDER_CONTENTS[folderId] || [];
+        console.log('محتوى المجلد:', folderContent);
+        
+        // عرض محتوى المجلد
+        renderFolderContents(folderContent);
+        
+        // تسجيل هذا التنقل
+        recordNavigation(folderId, folderName);
+        
+        // تحديث حالة واجهة المستخدم
+        updateUIState(folderId);
+        
+        return true;
+    } catch (error) {
+        console.error('خطأ في عرض محتوى المجلد:', error);
+        alert('حدث خطأ أثناء محاولة فتح المجلد. يرجى المحاولة مرة أخرى.');
+        return false;
+    }
 }
 
 // تحديث شريط العنوان
@@ -832,16 +844,23 @@ function updateAddressBar(folderName) {
 
 // عرض محتويات المجلد
 function renderFolderContents(items) {
+    console.log('عرض محتويات المجلد:', items);
+    
     // الحصول على عناصر العرض
     const gridView = document.getElementById('grid-view');
     const listViewBody = document.querySelector('#list-view tbody');
+    
+    if (!gridView || !listViewBody) {
+        console.error('لم يتم العثور على عناصر العرض المطلوبة!');
+        return;
+    }
     
     // تنظيف العروض الحالية
     gridView.innerHTML = '';
     listViewBody.innerHTML = '';
     
     // إذا كانت القائمة فارغة، أظهر رسالة
-    if (items.length === 0) {
+    if (!items || items.length === 0) {
         gridView.innerHTML = `
             <div class="text-center p-5">
                 <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
@@ -850,7 +869,10 @@ function renderFolderContents(items) {
         `;
         
         // تحديث عدد العناصر
-        document.querySelector('.item-count').textContent = '0 عنصر';
+        const itemCountElement = document.querySelector('.item-count');
+        if (itemCountElement) {
+            itemCountElement.textContent = '0 عنصر';
+        }
         return;
     }
     
@@ -867,8 +889,23 @@ function renderFolderContents(items) {
                 </div>
                 <div class="folder-name">${item.name}</div>
             `;
-            folderElement.addEventListener('click', function() {
+            folderElement.addEventListener('click', function(event) {
+                event.preventDefault();
+                console.log('تم النقر على المجلد:', item.id, item.name);
                 showFolderContent(item.id, item.name);
+            });
+            
+            // إضافة تأثير عند النقر لتحسين تجربة المستخدم
+            folderElement.addEventListener('mousedown', function() {
+                this.style.transform = 'scale(0.95)';
+            });
+            
+            folderElement.addEventListener('mouseup', function() {
+                this.style.transform = '';
+            });
+            
+            folderElement.addEventListener('mouseleave', function() {
+                this.style.transform = '';
             });
             gridView.appendChild(folderElement);
             
