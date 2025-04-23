@@ -1,58 +1,86 @@
+"""
+إنشاء المجلدات النظامية للأرشيف الإلكتروني
+"""
 import os
+import sys
 import django
+from django.utils import timezone
 
-# إعداد بيئة Django
+# إعداد البيئة لاستخدام نماذج Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'car_rental_project.settings')
 django.setup()
 
 from rental.models import ArchiveFolder
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 def create_system_folders():
     """إنشاء المجلدات النظامية للأرشيف الإلكتروني"""
-    print("بدء إنشاء المجلدات النظامية للأرشيف...")
     
-    # المجلدات الرئيسية
-    contracts_folder = ArchiveFolder.get_or_create_system_folder('العقود', 'عقود')
-    print(f"- تم إنشاء مجلد {contracts_folder.name}")
+    print("بدء إنشاء مجلدات الأرشيف الإلكتروني...")
     
-    receipts_folder = ArchiveFolder.get_or_create_system_folder('الإيصالات', 'إيصالات')
-    print(f"- تم إنشاء مجلد {receipts_folder.name}")
+    # الحصول على أول مستخدم مشرف لإضافته كمنشئ للمجلدات
+    admin_user = User.objects.filter(is_superuser=True).first()
+    if not admin_user:
+        admin_user = User.objects.filter(is_admin=True).first()
     
-    official_docs_folder = ArchiveFolder.get_or_create_system_folder('المستندات الرسمية', 'مستندات رسمية')
-    print(f"- تم إنشاء مجلد {official_docs_folder.name}")
+    if not admin_user:
+        print("تحذير: لم يتم العثور على مستخدم مشرف. سيتم إنشاء المجلدات بدون ربطها بمستخدم.")
     
-    custody_folder = ArchiveFolder.get_or_create_system_folder('مستندات العهد', 'عهد')
-    print(f"- تم إنشاء مجلد {custody_folder.name}")
+    # المجلد الرئيسي
+    root_folder, created = ArchiveFolder.objects.get_or_create(
+        name="تصميم (شجرة)",
+        parent=None,
+        defaults={
+            "folder_type": "root",
+            "is_system_folder": True,
+            "description": "المجلد الرئيسي للأرشيف الإلكتروني",
+            "created_by": admin_user
+        }
+    )
     
-    # المجلدات الفرعية للعقود
-    rental_contracts = ArchiveFolder.get_or_create_system_folder('عقود الإيجار', 'عقود', contracts_folder)
-    print(f"  - تم إنشاء مجلد {rental_contracts.name}")
+    status = "تم إنشاؤه" if created else "موجود بالفعل"
+    print(f"المجلد الرئيسي: {root_folder.name} ({status})")
     
-    employee_contracts = ArchiveFolder.get_or_create_system_folder('عقود الموظفين', 'عقود', contracts_folder)
-    print(f"  - تم إنشاء مجلد {employee_contracts.name}")
+    # المجلدات الفرعية
+    subfolders = [
+        {"name": "رسوم (1)", "type": "department"},
+        {"name": "حضور (2)", "type": "department"},
+        {"name": "حسابات (3)", "type": "department"},
+        {"name": "محفوظات (4)", "type": "department"},
+        {"name": "توكيلات (5)", "type": "department"},
+    ]
     
-    # المجلدات الفرعية للإيصالات
-    payment_receipts = ArchiveFolder.get_or_create_system_folder('إيصالات الدفع', 'إيصالات', receipts_folder)
-    print(f"  - تم إنشاء مجلد {payment_receipts.name}")
+    for folder_data in subfolders:
+        subfolder, created = ArchiveFolder.objects.get_or_create(
+            name=folder_data["name"],
+            parent=root_folder,
+            defaults={
+                "folder_type": folder_data["type"],
+                "is_system_folder": True,
+                "description": f"مجلد {folder_data['name']}",
+                "created_by": admin_user
+            }
+        )
+        
+        status = "تم إنشاؤه" if created else "موجود بالفعل"
+        print(f"- المجلد الفرعي: {subfolder.name} ({status})")
     
-    delivery_receipts = ArchiveFolder.get_or_create_system_folder('إيصالات التسليم', 'إيصالات', receipts_folder)
-    print(f"  - تم إنشاء مجلد {delivery_receipts.name}")
+    # عرض إحصائيات النظام
+    total_folders = ArchiveFolder.objects.count()
+    root_folders_count = ArchiveFolder.objects.filter(parent=None).count()
     
-    # المجلدات الفرعية للمستندات الرسمية
-    car_docs = ArchiveFolder.get_or_create_system_folder('مستندات السيارات', 'مستندات رسمية', official_docs_folder)
-    print(f"  - تم إنشاء مجلد {car_docs.name}")
+    print(f"\nتم الانتهاء من إنشاء المجلدات.")
+    print(f"إجمالي المجلدات في النظام: {total_folders}")
+    print(f"عدد المجلدات الرئيسية: {root_folders_count}")
     
-    licenses = ArchiveFolder.get_or_create_system_folder('التراخيص', 'مستندات رسمية', official_docs_folder)
-    print(f"  - تم إنشاء مجلد {licenses.name}")
-    
-    # المجلدات الفرعية للعهد
-    car_custody = ArchiveFolder.get_or_create_system_folder('عهد السيارات', 'عهد', custody_folder)
-    print(f"  - تم إنشاء مجلد {car_custody.name}")
-    
-    equipment_custody = ArchiveFolder.get_or_create_system_folder('عهد المعدات', 'عهد', custody_folder)
-    print(f"  - تم إنشاء مجلد {equipment_custody.name}")
-    
-    print("تم إنشاء المجلدات النظامية بنجاح!")
+    # عرض هيكل المجلدات
+    print("\nهيكل المجلدات:")
+    for root in ArchiveFolder.objects.filter(parent=None):
+        print(f"● {root.name}")
+        for child in root.children.all():
+            print(f"  ├─ {child.name}")
 
 if __name__ == "__main__":
     create_system_folders()

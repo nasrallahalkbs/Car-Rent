@@ -72,6 +72,71 @@
         padding: 1rem 1.5rem 0.5rem;
     }
     
+    /* تنسيقات نظام الأرشيف */
+    .archive-container {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 20px;
+        height: calc(100vh - 200px);
+        min-height: 500px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        background-color: #fff;
+    }
+    
+    /* لوحة شجرة المجلدات */
+    .tree-panel {
+        padding: 20px;
+        border-right: 1px solid #e0e0e0;
+        background-color: #f8f9fa;
+        overflow-y: auto;
+    }
+    
+    /* لوحة محتوى المجلد */
+    .content-panel {
+        padding: 20px;
+        overflow-y: auto;
+    }
+    
+    /* مسار المجلد الحالي */
+    .breadcrumb-wrapper {
+        margin-bottom: 15px;
+        padding: 8px 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .folder-path {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .folder-path-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .folder-path-item:not(:last-child)::after {
+        content: '/';
+        margin-left: 5px;
+        margin-right: 5px;
+        color: #888;
+    }
+    
+    .path-link {
+        color: #007bff;
+        text-decoration: none;
+    }
+    
+    .current-path {
+        font-weight: bold;
+        color: #333;
+    }
+    
     /* تنسيقات صفحة الأرشيف الإلكتروني - مطابقة للصورة المرجعية */
     .archive-main-section {
         margin-top: 20px;
@@ -221,10 +286,10 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h3 class="mb-0">{% trans "الأرشيف الإلكتروني" %}</h3>
                     <div>
-                        <a href="#" class="btn btn-outline-secondary">
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-2"></i> {% trans "العودة للوحة التحكم" %}
                         </a>
-                        <a href="#" class="btn btn-secondary">
+                        <a href="{% url 'admin_archive_folders' %}" class="btn btn-secondary">
                             <i class="fas fa-folder me-2"></i> {% trans "إدارة المجلدات" %}
                         </a>
                     </div>
@@ -283,7 +348,7 @@
                                         
                                         <!-- شريط الحالة في الأسفل -->
                                         <div class="folder-status-bar d-flex justify-content-start align-items-center p-2 border-top bg-light" style="font-size: 12px; height: 24px;">
-                                            <span id="items-count">15 items</span>
+                                            <span id="items-count">0 عنصر</span>
                                         </div>
                                     </div>
                                 </div>
@@ -353,215 +418,105 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- إحصائيات الأرشيف -->
-                <div class="row mt-4">
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-0">{% trans "إجمالي المجلدات" %}</h6>
-                                        <h3 class="mt-2 mb-0">{{ total_folders }}</h3>
-                                    </div>
-                                    <div class="rounded-circle bg-primary bg-opacity-10 p-3">
-                                        <i class="fas fa-folder fs-4 text-primary"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-0">{% trans "إجمالي الملفات" %}</h6>
-                                        <h3 class="mt-2 mb-0">{{ total_files }}</h3>
-                                    </div>
-                                    <div class="rounded-circle bg-success bg-opacity-10 p-3">
-                                        <i class="fas fa-file fs-4 text-success"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-0">{% trans "تاريخ اليوم" %}</h6>
-                                        <h3 class="mt-2 mb-0">{{ today }}</h3>
-                                    </div>
-                                    <div class="rounded-circle bg-info bg-opacity-10 p-3">
-                                        <i class="fas fa-calendar-day fs-4 text-info"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
         
-        <!-- القائمة الجانبية للوحة التحكم - تم تبسيطها -->
-        <div class="col-lg-2 admin-sidebar order-2 {% if is_rtl %}rtl{% endif %}">
-            <div class="py-4 px-3">
-                <div class="admin-logo-container mb-4 text-center">
-                    <img src="{% static 'images/car-rental-logo-white.svg' %}" alt="كاررنتال" height="40">
-                </div>
-                
-                <!-- القائمة الرئيسية المبسطة -->
-                <div class="sidebar-heading">{% trans "لوحة التحكم" %}</div>
-                <ul class="nav flex-column mb-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-tachometer-alt"></i>
-                            {% trans "الرئيسية" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-calendar-check"></i>
-                            {% trans "الحجوزات" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-car"></i>
-                            {% trans "السيارات" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-users"></i>
-                            {% trans "المستخدمون" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-credit-card"></i>
-                            {% trans "المدفوعات" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#">
-                            <i class="fas fa-archive"></i>
-                            {% trans "الأرشيف" %}
-                        </a>
-                    </li>
-                </ul>
-                
-                <!-- قائمة الإعدادات المبسطة -->
-                <div class="sidebar-heading mt-4">{% trans "الإعدادات" %}</div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-cog"></i>
-                            {% trans "إعدادات النظام" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-user-cog"></i>
-                            {% trans "الملف الشخصي" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-sign-out-alt"></i>
-                            {% trans "تسجيل الخروج" %}
-                        </a>
-                    </li>
-                </ul>
-            </div>
+        <!-- المحتوى الرئيسي على اليسار في العربية -->
+        <div class="col-lg-2 order-0 p-0 admin-sidebar {% if is_rtl %}rtl{% endif %}">
+            {% include "admin/includes/admin_sidebar_menu.html" %}
         </div>
     </div>
 </div>
 
-<!-- المودالز -->
-<!-- مودال إنشاء مجلد جديد -->
+<!-- Modal - إضافة مجلد جديد -->
 <div class="modal fade" id="newFolderModal" tabindex="-1" aria-labelledby="newFolderModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="newFolderModalLabel">{% trans "إنشاء مجلد جديد" %}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                <h5 class="modal-title" id="newFolderModalLabel">{% trans "إضافة مجلد جديد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'admin_archive_folder_add' %}" method="post">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" name="parent_id" id="parent_folder_id" value="">
-                    
+            <div class="modal-body">
+                <form action="{% url 'admin_archive_folder_add' %}" method="post">
+                    {% csrf_token %}
                     <div class="mb-3">
-                        <label for="folderName" class="form-label">{% trans "اسم المجلد" %}</label>
-                        <input type="text" class="form-control" id="folderName" name="name" required>
+                        <label for="folder-name" class="form-label">{% trans "اسم المجلد" %}</label>
+                        <input type="text" class="form-control" id="folder-name" name="name" required>
                     </div>
                     <div class="mb-3">
-                        <label for="folderDescription" class="form-label">{% trans "وصف المجلد" %}</label>
-                        <textarea class="form-control" id="folderDescription" name="description" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="folderType" class="form-label">{% trans "نوع المجلد" %}</label>
-                        <select class="form-select" id="folderType" name="folder_type">
-                            <option value="general">{% trans "عام" %}</option>
-                            <option value="reservations">{% trans "حجوزات" %}</option>
-                            <option value="cars">{% trans "سيارات" %}</option>
-                            <option value="customers">{% trans "عملاء" %}</option>
+                        <label for="parent-folder" class="form-label">{% trans "المجلد الرئيسي" %}</label>
+                        <select class="form-select" id="parent-folder" name="parent_id">
+                            <option value="">{% trans "بدون مجلد رئيسي (مجلد جذر)" %}</option>
+                            {% for folder in subfolders %}
+                                <option value="{{ folder.id }}">{{ folder.name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
-                    <button type="submit" class="btn btn-primary">{% trans "إنشاء المجلد" %}</button>
-                </div>
-            </form>
+                    <div class="mb-3">
+                        <label for="folder-description" class="form-label">{% trans "وصف المجلد" %}</label>
+                        <textarea class="form-control" id="folder-description" name="description" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="selected-parent-id" name="selected_parent_id" value="">
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                        <button type="submit" class="btn btn-primary">{% trans "إضافة المجلد" %}</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- مودال رفع ملف جديد -->
+<!-- Modal - رفع مستند جديد -->
 <div class="modal fade" id="uploadFileModal" tabindex="-1" aria-labelledby="uploadFileModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="uploadFileModalLabel">{% trans "رفع ملف جديد" %}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                <h5 class="modal-title" id="uploadFileModalLabel">{% trans "رفع مستند جديد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'admin_archive_add' %}" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" name="folder_id" id="upload_folder_id" value="">
-                    
-                    <div class="file-upload-zone mb-3">
-                        <div class="file-upload-icon">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                        </div>
-                        <p>{% trans "اسحب الملف هنا أو انقر للرفع" %}</p>
-                        <input type="file" id="fileUpload" name="file" class="d-none" required>
-                    </div>
-                    
+            <div class="modal-body">
+                <form action="{% url 'admin_archive_add' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
                     <div class="mb-3">
-                        <label for="fileDescription" class="form-label">{% trans "وصف الملف" %}</label>
-                        <textarea class="form-control" id="fileDescription" name="description" rows="2"></textarea>
+                        <label for="file-title" class="form-label">{% trans "عنوان المستند" %}</label>
+                        <input type="text" class="form-control" id="file-title" name="title" required>
                     </div>
                     <div class="mb-3">
-                        <label for="fileType" class="form-label">{% trans "نوع الملف" %}</label>
-                        <select class="form-select" id="fileType" name="file_type">
-                            <option value="document">{% trans "مستند" %}</option>
-                            <option value="image">{% trans "صورة" %}</option>
+                        <label for="document-type" class="form-label">{% trans "نوع المستند" %}</label>
+                        <select class="form-select" id="document-type" name="document_type">
                             <option value="contract">{% trans "عقد" %}</option>
-                            <option value="invoice">{% trans "فاتورة" %}</option>
+                            <option value="receipt">{% trans "إيصال" %}</option>
+                            <option value="custody">{% trans "عهدة" %}</option>
+                            <option value="custody_release">{% trans "إخلاء عهدة" %}</option>
+                            <option value="official_document">{% trans "وثيقة رسمية" %}</option>
                             <option value="other">{% trans "أخرى" %}</option>
                         </select>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
-                    <button type="submit" class="btn btn-primary">{% trans "رفع الملف" %}</button>
-                </div>
-            </form>
+                    <div class="mb-3">
+                        <label for="file-upload" class="form-label">{% trans "الملف" %}</label>
+                        <input type="file" class="form-control" id="file-upload" name="file" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="file-folder" class="form-label">{% trans "المجلد" %}</label>
+                        <select class="form-select" id="file-folder" name="folder">
+                            <option value="">{% trans "بدون مجلد (الجذر)" %}</option>
+                            {% for folder in subfolders %}
+                                <option value="{{ folder.id }}">{{ folder.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="file-description" class="form-label">{% trans "وصف المستند" %}</label>
+                        <textarea class="form-control" id="file-description" name="description" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="selected-folder-id" name="selected_folder_id" value="">
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                        <button type="submit" class="btn btn-primary">{% trans "رفع المستند" %}</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -570,119 +525,12 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // بيانات تخصيص الشجرة لتتطابق تماماً مع الصورة المرجعية (مستكشف ويندوز)
-        const customFolderData = [
-            { 
-              'id': 'recycle-bin', 
-              'text': '{% trans "سلة المحذوفات" %}', 
-              'icon': 'fas fa-trash-alt',
-              'type': 'system',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-design', 
-              'text': '{% trans "CarRental-master" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': true }
-            },
-            { 
-              'id': 'folder-6', 
-              'text': '{% trans "CarRental-master" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-7', 
-              'text': '{% trans "venv" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-8', 
-              'text': '{% trans "developer" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-9', 
-              'text': '{% trans "Digital-Persona-SDK-master" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-10', 
-              'text': '{% trans "html" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-1', 
-              'text': '{% trans "New folder" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false },
-              'li_attr': { 'class': 'highlight-new' }
-            },
-            { 
-              'id': 'folder-2', 
-              'text': '{% trans "New folder (2)" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-3', 
-              'text': '{% trans "New folder (3)" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-4', 
-              'text': '{% trans "New folder (4)" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-5', 
-              'text': '{% trans "New folder (5)" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-11', 
-              'text': '{% trans "New folder (6)" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-12', 
-              'text': '{% trans "New folder (7)" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            },
-            { 
-              'id': 'folder-13', 
-              'text': '{% trans "nsr" %}', 
-              'icon': 'fas fa-folder',
-              'type': 'folder',
-              'state': { 'opened': false }
-            }
-        ];
+    $(document).ready(function() {
+        console.log("تهيئة صفحة الأرشيف الإلكتروني...");
         
         // استخدام البيانات من الخادم مباشرة
         let treeData = {{ folder_tree|safe }};
+        console.log("بيانات الشجرة المستلمة:", treeData);
         
         // تحويل معرفات المجلدات لتكون متوافقة مع التطبيق
         function processTreeData(data) {
@@ -778,131 +626,84 @@
                 }
             },
             'plugins': ['types', 'wholerow', 'search', 'changed']
-        }).on('select_node.jstree', function(e, data) {
-            // التعامل مع معرف المجلد (إزالة البادئة 'folder-' إذا وجدت)
-            let folderId = data.node.id;
-            const originalId = folderId; // حفظ المعرف الأصلي
-            if (folderId.startsWith('folder-')) {
-                folderId = folderId.replace('folder-', '');
-            }
+        }).on('ready.jstree', function() {
+            console.log("تم تهيئة شجرة المجلدات بنجاح");
             
-            console.log('تم تحديد المجلد:', folderId);
-            
-            // تحديث معرف المجلد الأب في نماذج إضافة مجلد جديد ورفع الملفات
-            const parentFolderInput = document.getElementById('parent_folder_id');
-            const uploadFolderInput = document.getElementById('upload_folder_id');
-            
-            // تعيين قيمة المجلد الأب في نموذج إضافة المجلد
-            if (parentFolderInput && folderId !== 'root') {
-                parentFolderInput.value = folderId;
-            }
-            
-            // تعيين قيمة المجلد المحدد في نموذج رفع الملفات
-            if (uploadFolderInput && folderId !== 'root') {
-                uploadFolderInput.value = folderId;
-            }
-            
-            // إخفاء الرسالة الافتراضية وإظهار محتوى المجلد
-            const noFolderMessage = document.getElementById('no-folder-selected');
-            const folderContents = document.getElementById('folder-contents');
-            
-            if (noFolderMessage && folderContents) {
-                noFolderMessage.classList.add('d-none');
-                folderContents.classList.remove('d-none');
-            }
-            
-            // تحديث معلومات المجلد
-            const folderName = document.getElementById('selected-folder-name');
-            const folderPath = document.getElementById('folder-full-path');
-            const viewFolderBtn = document.getElementById('view-folder-btn');
-            
-            if (folderName) {
-                folderName.textContent = data.node.text;
-            }
-            
-            if (folderPath) {
-                // بناء مسار المجلد
-                let nodePath = [];
-                let currentNode = data.node;
-                
-                // جمع المسار من المجلد الحالي إلى الجذر
-                while (currentNode && currentNode.id !== '#') {
-                    nodePath.unshift(currentNode.text);
-                    currentNode = data.instance.get_node(currentNode.parent);
-                }
-                
-                // عرض المسار كسلسلة نصية (تخطي الجذر إذا لزم الأمر)
-                folderPath.textContent = nodePath.join(' / ');
-            }
-            
-            // تحديث زر عرض المجلد
-            if (viewFolderBtn && folderId !== 'root') {
-                // تعيين الرابط المناسب للمجلد
-                viewFolderBtn.href = `{% url 'admin_archive_folder' 0 %}`.replace(/0/, folderId);
-            } else if (viewFolderBtn) {
-                viewFolderBtn.href = `{% url 'admin_archive' %}`;
-            }
-            
-            // تحديث إحصائيات المجلد (عدد المجلدات الفرعية والملفات)
-            // هنا يمكن إضافة طلب Ajax للحصول على هذه المعلومات من الخادم
-            const subfolderCount = document.getElementById('subfolder-count');
-            const fileCount = document.getElementById('file-count');
-            
-            if (subfolderCount) {
-                // في هذه النسخة نعرض عدد المجلدات الفرعية المباشرة فقط
-                const childCount = data.node.children ? data.node.children.length : 0;
-                subfolderCount.textContent = childCount;
-            }
-            
-            // يمكن استخدام Ajax لجلب عدد الملفات الفعلي من الخادم
-            if (fileCount) {
-                fileCount.textContent = "0"; // قيمة افتراضية
-            }
-        });
-        
-        // عند اكتمال تحميل الشجرة
-        $('#folder-tree').on('ready.jstree', function() {
-            // تحديث عداد العناصر في شريط الحالة (عدد المجلدات الظاهرة)
+            // تحديد إجمالي العناصر
             const itemsCount = $('#folder-tree').jstree('get_json').length;
-            $('#items-count').text(itemsCount + ' items');
+            $('#items-count').text(itemsCount + ' {% trans "عنصر" %}');
             
-            // فتح مجلد مميز (مثل New folder كما في الصورة)
-            const highlightedNode = $('#folder-tree').find('.highlight-new').first();
-            if (highlightedNode.length) {
-                const nodeId = highlightedNode.attr('id');
-                if (nodeId) {
-                    $('#folder-tree').jstree('select_node', nodeId);
+            // تعيين أول مجلد كمجلد محدد افتراضيًا (مجلد "تصميم (شجرة)")
+            if (treeData && treeData.length > 0) {
+                // ابحث عن المجلد "تصميم (شجرة)" أو استخدم المجلد الأول
+                let targetNode = null;
+                for (let i = 0; i < treeData.length; i++) {
+                    if (treeData[i].text.includes('تصميم')) {
+                        targetNode = treeData[i].id;
+                        break;
+                    }
+                }
+                
+                // إذا لم يتم العثور على مجلد "تصميم"، استخدم المجلد الأول
+                if (!targetNode && treeData.length > 0) {
+                    targetNode = treeData[0].id;
+                }
+                
+                if (targetNode) {
+                    $('#folder-tree').jstree('select_node', targetNode);
                 }
             }
+        }).on('select_node.jstree', function(e, data) {
+            console.log("تم تحديد مجلد:", data.node.id, data.node.text);
             
-            console.log("تم تحميل شجرة المجلدات بنجاح");
+            // معالجة حدث تحديد مجلد
+            const nodeId = data.node.id;
+            const nodeName = data.node.text;
+            
+            // عرض محتويات المجلد المحدد
+            $('#no-folder-selected').addClass('d-none');
+            $('#folder-contents').removeClass('d-none');
+            $('#selected-folder-name').text(nodeName);
+            
+            // تحديد المسار الكامل للمجلد
+            let path = '';
+            if (data.node.id === 'recycle-bin') {
+                path = '/{% trans "سلة المحذوفات" %}';
+            } else if (data.node.parents.length > 0) {
+                path = '/' + nodeName;
+            } else {
+                path = '/' + nodeName;
+            }
+            $('#folder-full-path').text(path);
+            
+            // تحديث عداد المجلدات الفرعية والملفات
+            if (data.node.children && data.node.children.length > 0) {
+                $('#subfolder-count').text(data.node.children.length);
+            } else {
+                $('#subfolder-count').text('0');
+            }
+            
+            // تحديث معرف المجلد المحدد للنماذج
+            $('#selected-parent-id').val(nodeId);
+            $('#selected-folder-id').val(nodeId);
+            
+            // محاكاة عدد الملفات (سيتم تحديثها لاحقًا من الخادم)
+            $('#file-count').text('0');
+            
+            // تحديث رابط "عرض المجلد"
+            if (nodeId.startsWith('folder-')) {
+                const folder_id = nodeId.replace('folder-', '');
+                $('#view-folder-btn').attr('href', '{% url "admin_archive_folder_view" 0 %}'.replace('0', folder_id));
+            } else {
+                $('#view-folder-btn').attr('href', '#');
+            }
         });
         
-        // البحث في شجرة المجلدات
-        const searchInput = document.getElementById('folder-search');
-        if (searchInput) {
-            searchInput.addEventListener('keyup', function() {
-                const searchString = this.value;
-                $('#folder-tree').jstree('search', searchString);
-            });
-        }
-        
-        // تفعيل منطقة رفع الملفات
-        const fileUploadZone = document.querySelector('.file-upload-zone');
-        const fileInput = document.getElementById('fileUpload');
-        
-        if (fileUploadZone && fileInput) {
-            fileUploadZone.addEventListener('click', function() {
-                fileInput.click();
-            });
-            
-            fileInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    const fileName = this.files[0].name;
-                    fileUploadZone.querySelector('p').textContent = fileName;
-                }
-            });
-        }
+        // تفعيل خاصية البحث في الشجرة
+        $('#folder-search').on('keyup', function() {
+            const searchString = $(this).val();
+            $('#folder-tree').jstree('search', searchString);
+        });
     });
 </script>
 {% endblock %}
