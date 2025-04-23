@@ -865,21 +865,39 @@
 <script>
 // تفعيل النقر على عناصر الوصول السريع
 $(document).ready(function() {
+    // إضافة مستمع مباشر للنقر على عناصر الوصول السريع
     $('.quick-access-item').on('click', function() {
         const folderId = $(this).data('folder-id');
         if (folderId) {
             console.log(`تم النقر على عنصر الوصول السريع: ${folderId}`);
             
-            // انتظار تحميل jsTree
-            if ($('#folder-tree').jstree(true)) {
-                $('#folder-tree').jstree('deselect_all', true);
-                $('#folder-tree').jstree('select_node', 'folder-' + folderId);
-            } else {
-                console.log('jsTree غير جاهز بعد');
-                // انتظار jsTree ثم تحديد المجلد
-                $('#folder-tree').on('ready.jstree', function() {
+            // عرض محتويات المجلد مباشرة بدون الحاجة للمرور بشجرة المجلدات
+            showFolderContents(folderId);
+            
+            // تحديث العنوان في شريط العنوان
+            const folderName = $(this).find('span').text();
+            $('.address-text').html('<a href="#" class="text-decoration-none">{% trans "الرئيسية" %}</a>' + 
+                '<span class="breadcrumb-separator">/</span>' + folderName);
+            
+            // تسجيل التنقل في التاريخ (إذا كان مطلوبًا)
+            if (typeof recordNavigation === 'function') {
+                recordNavigation('folder-' + folderId);
+            }
+            
+            // محاولة تحديد المجلد في شجرة المجلدات أيضًا (إذا كانت متاحة)
+            try {
+                if ($('#folder-tree').jstree(true)) {
+                    $('#folder-tree').jstree('deselect_all', true);
                     $('#folder-tree').jstree('select_node', 'folder-' + folderId);
-                });
+                } else {
+                    console.log('jsTree غير جاهز بعد - إضافة مستمع للتحميل');
+                    // انتظار jsTree ثم تحديد المجلد
+                    $('#folder-tree').on('ready.jstree', function() {
+                        $('#folder-tree').jstree('select_node', 'folder-' + folderId);
+                    });
+                }
+            } catch (error) {
+                console.error('خطأ في محاولة تحديد المجلد في شجرة المجلدات:', error);
             }
         }
     });
@@ -1772,6 +1790,58 @@ $(document).ready(function() {
                 
                 // إعادة تطبيق التفاعلات
                 initializeItemInteractions();
+            }
+        });
+        
+        // تفعيل النقر على المجلدات في عرض الشبكة
+        $(document).on('click', '.folder-item', function() {
+            const folderId = $(this).data('folder-id');
+            if (folderId) {
+                console.log(`تم النقر على مجلد في عرض الشبكة: ${folderId}`);
+                
+                // عرض محتويات المجلد مباشرة
+                showFolderContents(folderId);
+                
+                // تحديث العنوان في شريط العنوان
+                const folderName = $(this).find('.folder-name').text();
+                $('.address-text').html('<a href="#" class="text-decoration-none">{% trans "الرئيسية" %}</a>' + 
+                    '<span class="breadcrumb-separator">/</span>' + folderName);
+                
+                // محاولة تحديد المجلد في شجرة المجلدات أيضًا
+                try {
+                    if ($('#folder-tree').jstree(true)) {
+                        $('#folder-tree').jstree('deselect_all', true);
+                        $('#folder-tree').jstree('select_node', folderId);
+                    }
+                } catch (error) {
+                    console.error('خطأ في محاولة تحديد المجلد في شجرة المجلدات:', error);
+                }
+            }
+        });
+        
+        // تفعيل النقر على المجلدات في عرض القائمة
+        $(document).on('click', 'tr[data-folder-id]', function() {
+            const folderId = $(this).data('folder-id');
+            if (folderId) {
+                console.log(`تم النقر على مجلد في عرض القائمة: ${folderId}`);
+                
+                // عرض محتويات المجلد مباشرة
+                showFolderContents(folderId);
+                
+                // تحديث العنوان في شريط العنوان
+                const folderName = $(this).find('span').text();
+                $('.address-text').html('<a href="#" class="text-decoration-none">{% trans "الرئيسية" %}</a>' + 
+                    '<span class="breadcrumb-separator">/</span>' + folderName);
+                
+                // محاولة تحديد المجلد في شجرة المجلدات أيضًا
+                try {
+                    if ($('#folder-tree').jstree(true)) {
+                        $('#folder-tree').jstree('deselect_all', true);
+                        $('#folder-tree').jstree('select_node', folderId);
+                    }
+                } catch (error) {
+                    console.error('خطأ في محاولة تحديد المجلد في شجرة المجلدات:', error);
+                }
             }
         });
         
