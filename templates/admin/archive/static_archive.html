@@ -4,6 +4,34 @@
 
 {% block title %}{% trans "الأرشيف الإلكتروني" %}{% endblock %}
 
+{% block extra_head %}
+<script>
+// إجبار المتصفح على تحميل النسخة الجديدة وعدم استخدام التخزين المؤقت
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("تم تحميل صفحة الأرشيف المحسنة - v1.2 - {{ current_date_time }}");
+    
+    // إعداد معالجات الأحداث للنوافذ المنبثقة
+    document.getElementById('newFolderModal').addEventListener('show.bs.modal', function (event) {
+        console.log("تم فتح نافذة إنشاء مجلد جديد");
+        {% if current_folder %}
+        // تعيين المجلد الحالي كمجلد أب افتراضي
+        document.getElementById('parentFolder').value = "{{ current_folder.id }}";
+        console.log("تم تعيين المجلد الحالي كمجلد أب تلقائياً: {{ current_folder.id }}");
+        {% endif %}
+    });
+    
+    document.getElementById('uploadFileModal').addEventListener('show.bs.modal', function (event) {
+        console.log("تم فتح نافذة رفع ملف جديد");
+        {% if current_folder %}
+        // تعيين المجلد الحالي كمجلد مستهدف افتراضي
+        document.getElementById('targetFolder').value = "{{ current_folder.id }}";
+        console.log("تم تعيين المجلد الحالي كمجلد مستهدف تلقائياً: {{ current_folder.id }}");
+        {% endif %}
+    });
+});
+</script>
+{% endblock %}
+
 {% block page_title %}{% trans "الأرشيف الإلكتروني" %}{% endblock %}
 
 {% block breadcrumb %}

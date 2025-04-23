@@ -1814,6 +1814,10 @@ def admin_archive(request):
         documents = Document.objects.filter(folder__isnull=True).order_by('-created_at')
     
     # إعداد سياق البيانات
+    # إضافة وقت حالي لمنع التخزين المؤقت
+    from datetime import datetime
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+    
     context = {
         'root_folders': root_folders,
         'subfolders': subfolders,
@@ -1825,7 +1829,8 @@ def admin_archive(request):
         'all_folders': all_folders,  # إضافة قائمة كاملة بجميع المجلدات
         'is_english': is_english,
         'is_rtl': is_rtl,
-        'active_section': 'archive'
+        'active_section': 'archive',
+        'current_date_time': current_time  # إضافة وقت حالي لمنع التخزين المؤقت
     }
     
     # استخدام قالب الأرشيف الثابت البسيط
