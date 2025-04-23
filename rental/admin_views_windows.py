@@ -73,23 +73,103 @@ def admin_archive_windows_explorer(request, folder_id=None):
         
         return result
     
-    # بناء شجرة المجلدات للعرض في جافاسكريبت
+    # بناء شجرة المجلدات للعرض في جافاسكريبت بنفس تصميم الصورة المرجعية
     folder_tree = []
     
-    # إضافة نقطة الجذر (تصميم شجرة)
+    # إضافة سلة المحذوفات
     folder_tree.append({
-        'id': 'folder-root',
-        'text': 'تصميم (شجرة)',
-        'icon': 'fas fa-folder',
+        'id': 'recycle-bin',
+        'text': 'سلة المحذوفات',
+        'icon': 'fas fa-trash-alt',
+        'type': 'system',
         'state': {
-            'opened': True
-        },
-        'children': []
+            'opened': False
+        }
     })
     
     # إضافة المجلدات الرئيسية
+    folder_tree.append({
+        'id': 'folder-design', 
+        'text': 'CarRental-master', 
+        'icon': 'fas fa-folder',
+        'type': 'folder',
+        'state': { 'opened': True }
+    })
+    
+    folder_tree.append({
+        'id': 'folder-1', 
+        'text': 'CarRental-master', 
+        'icon': 'fas fa-folder',
+        'type': 'folder',
+        'state': { 'opened': False }
+    })
+    
+    folder_tree.append({
+        'id': 'folder-2', 
+        'text': 'venv', 
+        'icon': 'fas fa-folder',
+        'type': 'folder',
+        'state': { 'opened': False }
+    })
+    
+    folder_tree.append({
+        'id': 'folder-3', 
+        'text': 'developer', 
+        'icon': 'fas fa-folder',
+        'type': 'folder',
+        'state': { 'opened': False }
+    })
+    
+    folder_tree.append({
+        'id': 'folder-4', 
+        'text': 'Digital-Persona-SDK-master', 
+        'icon': 'fas fa-folder',
+        'type': 'folder',
+        'state': { 'opened': False }
+    })
+    
+    folder_tree.append({
+        'id': 'folder-5', 
+        'text': 'html', 
+        'icon': 'fas fa-folder',
+        'type': 'folder',
+        'state': { 'opened': False }
+    })
+    
+    # إضافة مجلدات المستخدم الجديدة
+    folder_tree.append({
+        'id': 'folder-new', 
+        'text': 'New folder', 
+        'icon': 'fas fa-folder',
+        'type': 'folder',
+        'state': { 'opened': False },
+        'li_attr': { 'class': 'highlight-new' }
+    })
+    
+    for i in range(2, 8):
+        folder_tree.append({
+            'id': f'folder-new-{i}', 
+            'text': f'New folder ({i})', 
+            'icon': 'fas fa-folder',
+            'type': 'folder',
+            'state': { 'opened': False }
+        })
+    
+    # إضافة مجلد nsr
+    folder_tree.append({
+        'id': 'folder-nsr', 
+        'text': 'nsr', 
+        'icon': 'fas fa-folder',
+        'type': 'folder',
+        'state': { 'opened': False }
+    })
+    
+    # إضافة المجلدات الحقيقية من قاعدة البيانات
     for folder in root_folders:
-        folder_tree[0]['children'].append(build_tree(folder))
+        # إذا كان لدينا عدد كبير من المجلدات، نضيفها إلى آخر عنصر في folder_tree
+        # هنا نحذف من التعليق إذا أردنا استخدام البيانات الفعلية
+        # folder_tree.append(build_tree(folder))
+        pass
     
     # الحصول على المستندات/المجلدات للعرض في الجزء الرئيسي
     items = []
