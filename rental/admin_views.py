@@ -1651,13 +1651,21 @@ def admin_archive(request):
                 except:
                     pass
             
-            # إنشاء المجلد الجديد
-            folder = ArchiveFolder.objects.create(
+            # إنشاء المجلد الجديد بطريقة منفصلة
+            # لتجنب إنشاء مستندات تلقائية مع المجلد
+            folder = ArchiveFolder(
                 name=name,
                 description=description,
                 parent=parent,
                 created_by=request.user if request.user.is_authenticated else None
             )
+            # حفظ المجلد أولاً دون أي إنشاء تلقائي
+            folder.save()
+            
+            # إزالة المستندات التلقائية المنشأة (للأمان)
+            # حذف أي مستندات تم إنشاؤها تلقائيًا مع المجلد
+            if folder.pk:
+                Document.objects.filter(folder=folder).delete()
             
             print(f"DEBUG - تم إنشاء مجلد جديد: {folder.name}")
             messages.success(request, f"تم إنشاء المجلد '{name}' بنجاح")
@@ -1732,12 +1740,17 @@ def admin_archive(request):
                 except ArchiveFolder.DoesNotExist:
                     pass
             
-            folder = ArchiveFolder.objects.create(
+            folder = ArchiveFolder(
                 name=name,
                 description=description,
                 parent=parent,
                 created_by=request.user if hasattr(request, 'user') else None
             )
+            folder.save()
+            
+            # حذف المستندات التلقائية المرتبطة
+            if folder.pk:
+                Document.objects.filter(folder=folder).delete()
             print(f"DEBUG - تم إنشاء مجلد جديد: {folder.name}")
             
             # إعادة توجيه
