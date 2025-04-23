@@ -183,16 +183,10 @@
     <!-- مسار المجلد -->
     <div class="folder-path">
         <i class="fas fa-home me-2"></i>
-        {% if current_folder %}
+        {% if folder_param %}
             <a href="{% url 'admin_archive' %}">{% trans "الرئيسية" %}</a>
-            {% for parent in folder_path %}
-                <span class="mx-2">/</span>
-                {% if parent.id == current_folder.id %}
-                    <span class="fw-bold">{{ parent.name }}</span>
-                {% else %}
-                    <a href="{% url 'admin_archive_folder' folder_id=parent.id %}">{{ parent.name }}</a>
-                {% endif %}
-            {% endfor %}
+            <span class="mx-2">/</span>
+            <span class="fw-bold">{% if folder_param == "fees" %}{% trans "رسوم (1)" %}{% elif folder_param == "attendance" %}{% trans "حضور (2)" %}{% elif folder_param == "accounting" %}{% trans "حسابات (3)" %}{% elif folder_param == "records" %}{% trans "محفوظات (4)" %}{% elif folder_param == "pow" %}{% trans "توكيلات (5)" %}{% else %}{{ folder_param }}{% endif %}</span>
         {% else %}
             <span class="fw-bold">{% trans "الرئيسية" %}</span>
         {% endif %}
@@ -208,7 +202,7 @@
         <div class="folder-grid">
             {% if root_folders %}
                 {% for folder in root_folders %}
-                <a href="{% url 'admin_archive_folder' folder_id=folder.id %}" class="text-decoration-none">
+                <a href="{% url 'admin_archive' %}?folder={{ folder.id }}" class="text-decoration-none">
                     <div class="folder-card">
                         <div class="folder-icon">
                             <i class="fas fa-folder"></i>
@@ -291,7 +285,7 @@
         {% if documents %}
             <div class="file-grid">
                 {% for doc in documents %}
-                <a href="{% url 'admin_archive_detail' document_id=doc.id %}" class="text-decoration-none">
+                <a href="{% url 'admin_archive' %}?document={{ doc.id }}" class="text-decoration-none">
                     <div class="file-card">
                         <div class="file-icon {% if doc.file_type == 'pdf' %}pdf{% elif doc.file_type == 'doc' %}doc{% elif doc.file_type == 'xls' %}xls{% elif doc.file_type == 'img' %}img{% elif doc.file_type == 'zip' %}zip{% endif %}">
                             <i class="fas {% if doc.file_type == 'pdf' %}fa-file-pdf{% elif doc.file_type == 'doc' %}fa-file-word{% elif doc.file_type == 'xls' %}fa-file-excel{% elif doc.file_type == 'img' %}fa-file-image{% elif doc.file_type == 'zip' %}fa-file-archive{% else %}fa-file{% endif %}"></i>
@@ -519,7 +513,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="newFolderForm" method="post" action="{% url 'admin_archive_folder_add' %}">
+                <form id="newFolderForm" method="post" action="{% url 'admin_archive' %}?action=add_folder">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="folderName" class="form-label">{% trans "اسم المجلد" %}</label>
@@ -551,7 +545,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="uploadFileForm" method="post" action="{% url 'admin_archive_add' %}" enctype="multipart/form-data">
+                <form id="uploadFileForm" method="post" action="{% url 'admin_archive' %}?action=add_file" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="fileTitle" class="form-label">{% trans "عنوان الملف" %}</label>
