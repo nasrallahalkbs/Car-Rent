@@ -1620,71 +1620,30 @@ def get_user_reservations(request, user_id):
 @login_required
 @admin_required
 def admin_archive(request):
-    """عرض الأرشيف الإلكتروني مع شجرة المجلدات"""
+    """عرض الأرشيف الإلكتروني بأسلوب بسيط"""
     from django.utils.translation import get_language
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
-    # للتأكد من تحميل المجلدات بشكل صحيح
-    print(f"DEBUG - تحميل المجلدات للأرشيف...")
-    
     # الحصول على مجلدات الجذر
     root_folders = ArchiveFolder.objects.filter(parent=None).order_by('name')
     print(f"DEBUG - عدد المجلدات الرئيسية: {root_folders.count()}")
     
-    # تعريف دالة بناء شجرة المجلدات
-    def build_tree(folder):
-        children = []
-        for child in folder.children.all().order_by('name'):
-            children.append(build_tree(child))
-        
-        return {
-            'id': folder.id,
-            'text': folder.name,
-            'icon': 'fas fa-folder',
-            'type': 'folder',
-            'state': {'opened': False},
-            'children': children
-        }
-    
-    # بناء شجرة المجلدات
-    folder_tree = []
-    
-    # إضافة سلة المحذوفات
-    folder_tree.append({
-        'id': 'recycle-bin',
-        'text': _('سلة المحذوفات'),
-        'icon': 'fas fa-trash-alt',
-        'type': 'system',
-        'state': {'opened': False},
-        'children': []
-    })
-    
-    # إضافة المجلدات الرئيسية مع المجلدات الفرعية
-    for folder in root_folders:
-        try:
-            folder_tree.append(build_tree(folder))
-            print(f"DEBUG - تمت إضافة المجلد: {folder.name} (ID: {folder.id})")
-        except Exception as e:
-            print(f"DEBUG - خطأ في إضافة المجلد {folder.name}: {str(e)}")
-    
-    # تحويل شجرة المجلدات إلى تنسيق JSON
-    import json
-    folder_tree_json = json.dumps(folder_tree, ensure_ascii=False)
-    print(f"DEBUG - تم إنشاء شجرة المجلدات بنجاح")
+    # الحصول على إجمالي عدد المجلدات الفرعية
+    subfolder_count = ArchiveFolder.objects.exclude(parent=None).count()
     
     # إعداد سياق البيانات
     context = {
-        'folder_tree': folder_tree_json,
-        'subfolders': root_folders,
+        'root_folders': root_folders,
+        'subfolder_count': subfolder_count,
         'is_english': is_english,
         'is_rtl': is_rtl,
         'active_section': 'archive'
     }
     
-    # استخدام القالب الجديد البسيط الذي تم إنشاؤه
-    return render(request, 'admin/archive/simple_archive.html', context)
+    # استخدام القالب البسيط الجديد
+    return render(request, 'admin/archive/basic_folders.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
