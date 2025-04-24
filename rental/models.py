@@ -348,6 +348,11 @@ class ArchiveFolder(models.Model):
         is_new = self.pk is None
         if is_new:
             print(f"DEBUG: حفظ مجلد جديد: {self.name}")
+            # إضافة المجلد إلى قائمة المجلدات الجديدة للتتبع بواسطة إشارة المستند
+            global _new_folders_created
+            if hasattr(self, 'name') and self.name:
+                _new_folders_created[self.name] = True
+                print(f"DEBUG: تمت إضافة المجلد '{self.name}' إلى قائمة المجلدات الجديدة")
             
         # لا يمكننا تمرير معاملات إضافية إلى طريقة save الأساسية
         # لذا سنقوم بتخزين العلامة كخاصية للكائن نفسه
@@ -578,6 +583,17 @@ class Document(models.Model):
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
+# نستخدم إشارة pre_save بدلاً من post_save لتخزين معلومة أن هذا مجلد جديد
+# وذلك لاستخدامها في خطاف المجلد-المستند
+_new_folders_created = {}
+
+@receiver(pre_save, sender=ArchiveFolder)
+def mark_new_folder(sender, instance, **kwargs):
+    """تمييز المجلدات الجديدة التي يتم إنشاؤها"""
+    if not instance.pk:  # إذا كان المجلد جديدًا (لم يُحفظ بعد)
+        _new_folders_created[instance.name] = True
+        print(f"DEBUG: تم تمييز المجلد الجديد: {instance.name}")
+
 @receiver(post_save, sender=ArchiveFolder)
 def delete_auto_created_documents(sender, instance, created, **kwargs):
     """حذف المستندات التي تم إنشاؤها تلقائيًا مع المجلد الجديد"""
@@ -589,5 +605,31 @@ def delete_auto_created_documents(sender, instance, created, **kwargs):
             # استخدام method.filter.delete() مباشرة
             Document.objects.filter(folder=instance).delete()
             print(f"DEBUG: تم حذف أي مستندات تلقائية مرتبطة بالمجلد {instance.name}")
+            
+            # إزالة المجلد من قائمة المجلدات الجديدة بعد الانتهاء
+            if instance.name in _new_folders_created:
+                del _new_folders_created[instance.name]
         except Exception as e:
             print(f"DEBUG: خطأ أثناء محاولة حذف المستندات التلقائية: {str(e)}")
+
+# إضافة خطاف pre_save للمستندات لمنع إنشاء المستندات التلقائية
+@receiver(pre_save, sender=Document)
+def prevent_auto_document_creation(sender, instance, **kwargs):
+    """منع إنشاء المستندات التلقائية عند إنشاء مجلد جديد"""
+    # تحقق مما إذا كان هذا المستند مرتبطًا بمجلد
+    if instance.folder:
+        # طريقة 1: التحقق من علامة _new_folders_created التي أضفناها
+        if hasattr(instance.folder, 'name') and instance.folder.name in _new_folders_created:
+            # إذا كان المستند قيد الإنشاء وليس له معرف بعد (جديد) ولا يحتوي على عنوان
+            if not instance.pk and not instance.title:
+                print(f"DEBUG: تم منع إنشاء المستند التلقائي للمجلد (طريقة 1): {instance.folder.name}")
+                # إلغاء الحفظ بإثارة استثناء (لن يتم حفظ المستند)
+                raise Exception("تم إلغاء إنشاء المستند التلقائي")
+                
+        # طريقة 2: التحقق من العلامة على المجلد نفسه
+        if hasattr(instance.folder, '_skip_auto_document_creation') and instance.folder._skip_auto_document_creation:
+            # إذا كان المستند قيد الإنشاء وليس له معرف بعد (جديد) ولا يحتوي على عنوان
+            if not instance.pk and not instance.title:
+                print(f"DEBUG: تم منع إنشاء المستند التلقائي للمجلد (طريقة 2): {instance.folder.name}")
+                # إلغاء الحفظ بإثارة استثناء (لن يتم حفظ المستند)
+                raise Exception("تم إلغاء إنشاء المستند التلقائي")
