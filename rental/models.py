@@ -338,19 +338,28 @@ class ArchiveFolder(models.Model):
         print(f"DEBUG: سجل المكالمات عند إنشاء المجلد:")
         for frame in inspect.stack():
             print(f"DEBUG: مجلد - في الملف: {frame.filename}, الدالة: {frame.function}, السطر: {frame.lineno}")
+        
+        # هذه العلامة تستخدم لمنع إنشاء مستندات تلقائية
+        self._skip_auto_document_creation = True
+        
         super().__init__(*args, **kwargs)
         
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         if is_new:
             print(f"DEBUG: حفظ مجلد جديد: {self.name}")
+            
+        # سنضيف _skip_auto_document_creation إلى kwargs لمنع إنشاء المستندات التلقائية
+        # هذا يسمح للدوال الأخرى بمعرفة أن هذا المجلد لا ينبغي إنشاء مستندات له تلقائيًا
+        kwargs['_skip_auto_document_creation'] = True
+            
         super().save(*args, **kwargs)
+        
         if is_new:
             print(f"DEBUG: تم حفظ المجلد الجديد: {self.name} بمعرف {self.pk}")
             
             # لتجنب مشاكل تنسيق SQL، سنحذف المستندات المرتبطة بالمجلد في 
-            # خطاف post_save (بعد الحفظ مباشرة) - تُضاف في models.py في الأسفل
-            # سيتم الحذف في delete_auto_created_documents
+            # خطاف post_save (بعد الحفظ مباشرة)
             print(f"DEBUG: ستتم إزالة المستندات التلقائية في خطاف post_save")
     
     class Meta:
@@ -574,6 +583,13 @@ def delete_auto_created_documents(sender, instance, created, **kwargs):
     """حذف المستندات التي تم إنشاؤها تلقائيًا مع المجلد الجديد"""
     if created:
         print(f"DEBUG: تنفيذ خطاف post_save لحذف المستندات التلقائية للمجلد: {instance.name}")
-        # استخدام الوصول المباشر للمجموعة المرتبطة - هذه هي الطريقة الصحيحة للحذف
-        instance.documents.all().delete()
-        print(f"DEBUG: تم حذف المستندات التلقائية للمجلد {instance.name}")
+        
+        # التحقق من وجود مستندات للحذف
+        document_count = instance.documents.count()
+        if document_count > 0:
+            print(f"DEBUG: وجدنا {document_count} مستند تلقائي ليتم حذفه")
+            # استخدام الوصول المباشر للمجموعة المرتبطة - هذه هي الطريقة الصحيحة للحذف
+            instance.documents.all().delete()
+            print(f"DEBUG: تم حذف المستندات التلقائية للمجلد {instance.name}")
+        else:
+            print(f"DEBUG: لا توجد مستندات تلقائية للمجلد {instance.name} - لا حاجة للحذف")
