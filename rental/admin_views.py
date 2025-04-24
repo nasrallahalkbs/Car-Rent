@@ -25,6 +25,14 @@ from django.utils.text import slugify
 
 logger = logging.getLogger(__name__)
 
+
+# دالة تنظيف المستندات الوهمية من قائمة المستندات
+def clean_document_list(documents):
+    """تنظيف المستندات الوهمية من قائمة المستندات المعروضة"""
+    if documents:
+        return documents.filter(title__isnull=False).exclude(title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف"])
+    return documents
+
 def admin_required(function):
     """
     Decorator for views that checks if the user is an admin.
@@ -1840,7 +1848,7 @@ def admin_archive(request):
                 current_folder = ArchiveFolder.objects.get(id=folder_id)
                 # الحصول على المجلدات الفرعية والمستندات
                 subfolders = ArchiveFolder.objects.filter(parent=current_folder).order_by('name')
-                documents = Document.objects.filter(folder=current_folder).exclude(title__in=['بدون عنوان', '', None]).order_by('-created_at')
+                documents = Document.objects.filter(title__isnull=False).exclude(title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف"]).filter(folder=current_folder).exclude(title__in=['بدون عنوان', '', None]).order_by('-created_at')
                 
                 # بناء مسار المجلد
                 folder_path = []
@@ -1882,7 +1890,7 @@ def admin_archive(request):
     }
     
     # استخدام قالب الأرشيف الثابت البسيط
-    return render(request, 'admin/archive/static_archive.html', context)
+    return render(request, 'admin/archive/enhanced_archive.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
@@ -2475,7 +2483,7 @@ def admin_archive_folder_view(request, folder_id):
     subfolders = folder.children.all().order_by('name')
     
     # الحصول على المستندات في هذا المجلد مع تطبيق البحث إذا وجد
-    files = folder.documents.all().order_by('-created_at')
+    files = folder.documents.filter(title__isnull=False).exclude(title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف"]).order_by('-created_at')
     if search:
         files = files.filter(
             Q(title__icontains=search) | 
@@ -2720,7 +2728,7 @@ def admin_archive_folder_documents(request, folder_id):
     search = request.GET.get('search', '')
     
     # تصفية المستندات
-    documents = folder.documents.all().order_by('-created_at')
+    documents = folder.documents.filter(title__isnull=False).exclude(title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف"]).order_by('-created_at')
     
     # تطبيق التصفية حسب نوع المستند
     if document_type:
