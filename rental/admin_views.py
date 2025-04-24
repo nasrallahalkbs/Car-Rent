@@ -1704,7 +1704,8 @@ def admin_archive(request):
                 file_size=file_size,
                 document_date=timezone.now().date(),
                 related_to='other',  # استخدام القيمة الافتراضية 'other'
-                added_by=request.user if request.user.is_authenticated else None
+                added_by=request.user if request.user.is_authenticated else None,
+                folder=folder
             )
             
             print(f"DEBUG - تم إنشاء مستند جديد: {document.title}")
@@ -1730,38 +1731,9 @@ def admin_archive(request):
     # معالجة إضافة مجلد جديد (ملحوظة: تم استبدال هذا بالتعليمات أعلاه)
     # لا حاجة لهذا الكود، تم تعريفه بالفعل في السطور الأولى من الدالة
     
-    # معالجة إضافة ملف جديد
-    if action_param == 'add_file' and request.method == 'POST':
-        title = request.POST.get('title', '')
-        description = request.POST.get('description', '')
-        folder_id = request.POST.get('folder', None)
-        uploaded_file = request.FILES.get('file', None)
-        
-        if title and uploaded_file:
-            folder = None
-            if folder_id:
-                try:
-                    folder = ArchiveFolder.objects.get(id=folder_id)
-                except ArchiveFolder.DoesNotExist:
-                    pass
-            
-            # إنشاء مستند جديد
-            document = Document.objects.create(
-                title=title,
-                description=description,
-                folder=folder,
-                created_by=request.user if hasattr(request, 'user') else None,
-                file=uploaded_file
-            )
-            print(f"DEBUG - تم إنشاء مستند جديد: {document.title}")
-            
-            # إعادة توجيه
-            if folder_id:
-                return redirect('admin_archive')
-            else:
-                return redirect('admin_archive')
+    # ملاحظة: تم حذف كود إضافة الملف المكرر هنا لأنه تم تعريفه بالفعل في الأعلى
     
-        # الحصول على المستندات والمجلدات الفرعية
+    # الحصول على المستندات والمجلدات الفرعية
     documents = []
     subfolders = []
     current_folder = None
