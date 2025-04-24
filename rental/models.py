@@ -567,13 +567,23 @@ class Document(models.Model):
         print(f"🚨 [DOCUMENT INIT] تم الاستدعاء من: {calling_file}:{calling_function}")
         
         # فحص إضافي للعلامات التي تشير إلى مستند تلقائي
-        if not kwargs.get('file') and title == 'بدون عنوان' or title == '':
-            print(f"🚨 [DOCUMENT INIT] هذا مستند تلقائي - تعيين العلامة")
+        is_auto_doc = False
+        # تحقق إذا كان بدون عنوان أو عنوان فارغ
+        if not title or title == 'بدون عنوان' or title == '':
+            is_auto_doc = True
+        
+        # تحقق إذا كان بدون ملف
+        if not kwargs.get('file'):
+            is_auto_doc = True
+            
+        if is_auto_doc:
+            print(f"🚨 [DOCUMENT INIT] تم اكتشاف مستند تلقائي - تعيين العلامة")
             # تجنب تعيين is_auto_created مباشرة لمنع تضارب الوسيطات
             # سنعتمد على العلامة المؤقتة _auto_document بدلاً من ذلك
+            self._auto_document = True
         
         # منع إنشاء المستندات التلقائية (بدون عنوان أو ملف) من الأساس
-        if (not kwargs.get('file') and (not title or title == 'بدون عنوان')):
+        if is_auto_doc:
             # وضع أثر للتصحيح
             print(f"🚨 [DOCUMENT INIT] رفض إنشاء مستند تلقائي")
             # سجل مكان الاستدعاء
@@ -603,7 +613,23 @@ class Document(models.Model):
         
         # منع حفظ المستندات التلقائية
         if hasattr(self, '_auto_document') and self._auto_document:
-            print(f"🚨 [DOCUMENT SAVE] تم منع حفظ مستند تلقائي")
+            print(f"🚨 [DOCUMENT SAVE] تم منع حفظ مستند تلقائي '{self.title}'")
+            
+            # تسجيل معلومات إضافية للتصحيح
+            if self.folder:
+                print(f"🚨 [DOCUMENT SAVE] هذا المستند التلقائي مرتبط بالمجلد: {self.folder.name}")
+                
+                # محاولة حذف المستند من قاعدة البيانات إذا كان له معرف
+                if self.pk:
+                    try:
+                        from django.db import transaction
+                        with transaction.atomic():
+                            # احذف نفسك
+                            Document.objects.filter(pk=self.pk).delete()
+                            print(f"🚨 [DOCUMENT SAVE] تم حذف المستند التلقائي من قاعدة البيانات")
+                    except Exception as e:
+                        print(f"🚨 [DOCUMENT SAVE] فشل حذف المستند التلقائي: {str(e)}")
+            
             # تسجيل مكان الاستدعاء للتصحيح
             for i, frame in enumerate(inspect.stack()[1:3]):
                 print(f"🚨 [DOCUMENT SAVE TRACE {i+1}] {frame.filename}:{frame.lineno} - {frame.function}")

@@ -95,32 +95,38 @@ def cleanup_after_folder_creation(sender, instance, created, **kwargs):
     if created:
         print(f"🔷 [signals]: تم إنشاء مجلد جديد: {instance.name} بمعرف {instance.pk}")
         
-        # استخدام transaction للتأكد من حذف المستندات التلقائية بشكل آمن
+        # حذف المستندات التلقائية فوراً بعد إنشاء المجلد
         try:
             from django.db import transaction
             with transaction.atomic():
-                # الطباعة قبل عملية الحذف
-                doc_count = Document.objects.filter(folder=instance).count()
-                print(f"🔷 [signals]: وجدنا {doc_count} مستند تلقائي للمجلد '{instance.name}'")
+                # حذف أي مستندات بدون عنوان أو بعنوان "بدون عنوان"
+                deleted_count = Document.objects.filter(
+                    folder=instance, 
+                    title__in=['', 'بدون عنوان', None]
+                ).delete()
+                print(f"🔷 [signals]: تم حذف {deleted_count} مستند تلقائي للمجلد '{instance.name}'")
                 
-                if doc_count > 0:
-                    # حذف أي مستندات تلقائية بشكل آمن
-                    deleted_count = Document.objects.filter(folder=instance).delete()
-                    print(f"🔷 [signals]: تم حذف {deleted_count} مستند تلقائي للمجلد '{instance.name}'")
+                # حذف أي مستندات بدون ملف
+                deleted_count = Document.objects.filter(
+                    folder=instance, 
+                    file=''
+                ).delete()
+                print(f"🔷 [signals]: تم حذف {deleted_count} مستند بدون ملف للمجلد '{instance.name}'")
+                
+                # التحقق من المستندات المتبقية
+                remaining_docs = Document.objects.filter(folder=instance)
+                if remaining_docs.exists():
+                    print(f"🔷 [signals]: المستندات المتبقية للمجلد '{instance.name}':")
+                    for doc in remaining_docs:
+                        if not doc.title or doc.title == 'بدون عنوان' or not doc.file:
+                            print(f"🔷 [signals]: حذف مستند تلقائي: {doc.id} - {doc.title}")
+                            doc.delete()
+                        else:
+                            print(f"🔷 [signals]: مستند يدوي تم الاحتفاظ به: {doc.id} - {doc.title}")
                 else:
-                    print(f"🔷 [signals]: لا توجد مستندات تلقائية للمجلد '{instance.name}'")
+                    print(f"🔷 [signals]: لا توجد مستندات متبقية للمجلد '{instance.name}'")
         except Exception as e:
             print(f"🔷 [signals]: خطأ أثناء تنظيف المستندات التلقائية: {str(e)}")
-        
-        # تأكد من عدم وجود مستندات مرة أخرى
-        doc_count = Document.objects.filter(folder=instance).count()
-        if doc_count > 0:
-            print(f"🔷 [signals]: لا تزال هناك {doc_count} مستندات تلقائية! محاولة الحذف مرة أخرى...")
-            try:
-                Document.objects.filter(folder=instance).delete()
-                print(f"🔷 [signals]: تم حذف المستندات المتبقية في المحاولة الثانية")
-            except Exception as e:
-                print(f"🔷 [signals]: فشل في حذف المستندات المتبقية: {str(e)}")
         
         # إزالة المجلد من قائمة المجلدات المميزة
         if hasattr(instance, 'name') and instance.name in _new_folders:
