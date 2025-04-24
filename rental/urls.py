@@ -2,6 +2,7 @@ from django.urls import path
 from django.shortcuts import render
 from . import views, admin_views, payment_views, analytics_views
 from .admin_views_windows import admin_archive_windows_explorer
+from .windows_explorer_view import admin_archive_windows
 from .csrf_debug import csrf_debug_view, csrf_debug_page
 
 urlpatterns = [
@@ -78,9 +79,10 @@ urlpatterns = [
     path('dashboard/analytics/reports/', analytics_views.admin_payment_analytics, name='admin_payment_analytics'),
 
     # مسار الأرشيف الإلكتروني - الصفحة الرئيسية فقط
-    path('dashboard/archive/', admin_views.admin_archive, name='admin_archive'),
+    path('dashboard/archive/', admin_archive_windows, name='admin_archive'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
     path('dashboard/archive/folder/add/', admin_views.admin_archive_folder_add, name='admin_archive_folder_add'),
+    path('dashboard/archive/windows/', admin_archive_windows_explorer, name='admin_archive_windows'),
 
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
