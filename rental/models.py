@@ -536,44 +536,96 @@ class Document(models.Model):
     folder = models.ForeignKey(ArchiveFolder, on_delete=models.SET_NULL, null=True, blank=True, 
                               related_name='documents', verbose_name=_('المجلد'))
     
+    # إضافة علامة لحماية المستندات التلقائية
+    is_auto_created = models.BooleanField(default=False, editable=False)
+    
     def __str__(self):
         return self.title
     
     def __init__(self, *args, **kwargs):
-        import traceback
-        import inspect
+        import inspect, sys, os
         
-        print(f"⚠️ [DEBUG] إنشاء كائن مستند جديد: {kwargs.get('title', 'بدون عنوان')}")
-        print(f"⚠️ [DEBUG] مسار الاستدعاء عند إنشاء المستند:")
-        
-        # تسجيل أكمل لمسار الاستدعاء لتحديد مصدر إنشاء المستندات التلقائية
-        for i, frame in enumerate(inspect.stack()[1:10]):  # أول 10 إطارات فقط
-            module_name = frame.frame.f_globals.get('__name__', 'غير معروف')
-            print(f"⚠️ [STACK {i+1}] {module_name}.{frame.function} في {frame.filename}:{frame.lineno}")
+        # العنوان الأصلي للتسجيل
+        title = kwargs.get('title', 'بدون عنوان')
+        folder_id = None
+        if 'folder' in kwargs and kwargs['folder'] is not None:
+            if hasattr(kwargs['folder'], 'id'):
+                folder_id = kwargs['folder'].id
+            elif hasattr(kwargs['folder'], 'pk'): 
+                folder_id = kwargs['folder'].pk
             
-            # طباعة المتغيرات المحلية لإطارات محددة
-            if any(keyword in frame.filename for keyword in ['admin_views.py', 'archive', 'folder']):
-                print(f"⚠️ [LOCALS] محلية {frame.function}: {frame.frame.f_locals}")
-            
-            # طباعة قطعة من الكود حول هذا السطر
-            if i < 3:  # أول 3 إطارات فقط
-                context = 2  # عدد الأسطر قبل وبعد السطر الحالي
-                try:
-                    start = max(1, frame.lineno - context)
-                    end = frame.lineno + context
-                    lines = inspect.getsourcelines(frame.frame)[0][frame.lineno - start:frame.lineno - start + 2*context + 1]
-                    
-                    print(f"⚠️ [CODE] الكود في {frame.filename}:{frame.lineno}")
-                    for j, line in enumerate(lines):
-                        indicator = "➤ " if j == context else "  "
-                        print(f"⚠️ [CODE] {indicator}{start + j}: {line.rstrip()}")
-                    print()
-                except Exception as e:
-                    print(f"⚠️ [CODE] خطأ في استخراج الكود: {e}")
+        print(f"🚨 [DOCUMENT INIT] إنشاء مستند: '{title}' للمجلد: {folder_id}")
         
+        # كشف إذا كان المستند منشأ تلقائيا
+        is_auto = title == '' or title == 'بدون عنوان' or not title
+        # البحث في مسار الاستدعاء
+        stack_trace = inspect.stack()
+        calling_frame = stack_trace[1]
+        calling_function = calling_frame.function
+        calling_file = os.path.basename(calling_frame.filename)
+        
+        print(f"🚨 [DOCUMENT INIT] تم الاستدعاء من: {calling_file}:{calling_function}")
+        
+        # فحص إضافي للعلامات التي تشير إلى مستند تلقائي
+        if not kwargs.get('file') and title == 'بدون عنوان' or title == '':
+            print(f"🚨 [DOCUMENT INIT] هذا مستند تلقائي - تعيين العلامة")
+            kwargs['is_auto_created'] = True
+        
+        # منع إنشاء المستندات التلقائية (بدون عنوان أو ملف) من الأساس
+        if kwargs.get('is_auto_created', False) or (not kwargs.get('file') and (not title or title == 'بدون عنوان')):
+            # وضع أثر للتصحيح
+            print(f"🚨 [DOCUMENT INIT] رفض إنشاء مستند تلقائي")
+            # سجل مكان الاستدعاء
+            for i, frame in enumerate(stack_trace[1:4]):
+                print(f"🚨 [DOCUMENT TRACE {i+1}] {frame.filename}:{frame.lineno} - {frame.function}")
+            
+            # تعيين علامة الإنشاء التلقائي
+            self._auto_document = True
+            
+            # مسح أي علاقة مع المجلدات التي تم إنشاؤها مؤخرًا
+            if 'folder' in kwargs and kwargs['folder'] is not None:
+                if hasattr(kwargs['folder'], 'created_at'):
+                    from django.utils import timezone
+                    time_diff = timezone.now() - kwargs['folder'].created_at
+                    if time_diff.total_seconds() < 60:  # إذا تم إنشاء المجلد خلال الدقيقة الماضية
+                        print(f"🚨 [DOCUMENT INIT] مسح علاقة المجلد لمستند تلقائي - المجلد حديث")
+                        kwargs['folder'] = None
+        
+        # تسجيل الاستدعاء للتصحيح
+        if folder_id is not None:
+            print(f"🚨 [DOCUMENT INIT] الانتقال إلى super().__init__ للمستند '{title}' المرتبط بالمجلد {folder_id}")
+            
         super().__init__(*args, **kwargs)
     
     def save(self, *args, **kwargs):
+        import traceback, inspect
+        
+        # منع حفظ المستندات التلقائية
+        if hasattr(self, '_auto_document') and self._auto_document:
+            print(f"🚨 [DOCUMENT SAVE] تم منع حفظ مستند تلقائي")
+            # تسجيل مكان الاستدعاء للتصحيح
+            for i, frame in enumerate(inspect.stack()[1:3]):
+                print(f"🚨 [DOCUMENT SAVE TRACE {i+1}] {frame.filename}:{frame.lineno} - {frame.function}")
+            # إيقاف الحفظ هنا
+            return
+            
+        # منع ربط المستندات بالمجلدات التي لم يتم الإنشاء اليدوي لها
+        if self.folder and not self.pk:  # مستند جديد
+            if hasattr(self.folder, 'created_at'):
+                from django.utils import timezone
+                time_diff = timezone.now() - self.folder.created_at
+                if time_diff.total_seconds() < 60:  # إذا تم إنشاء المجلد خلال الدقيقة الماضية
+                    # اختبار إذا كان هذا حفظًا يدويًا أم تلقائيًا
+                    is_manual = False
+                    for frame in inspect.stack()[1:]:
+                        if 'admin_archive_folder_add_document' in frame.function:
+                            is_manual = True
+                            break
+                    
+                    if not is_manual:
+                        print(f"🚨 [DOCUMENT SAVE] منع ربط مستند تلقائي بمجلد حديث الإنشاء {self.folder.name}")
+                        self.folder = None
+        
         # حساب حجم الملف عند الحفظ
         if self.file:
             try:
@@ -600,10 +652,10 @@ class Document(models.Model):
                 doc_code = 'CRL'
             
             # إنشاء رقم مرجعي فريد
-            # نحصل على عدد المستندات الموجودة من نفس النوع
             doc_count = Document.objects.filter(document_type=self.document_type).count() + 1
             self.reference_number = f"{doc_code}-{year}{month}{day}-{doc_count:04d}"
         
+        print(f"🚨 [DOCUMENT SAVE] حفظ المستند: {self.title}")
         super().save(*args, **kwargs)
     
     @property
