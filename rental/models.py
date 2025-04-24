@@ -333,7 +333,13 @@ class ArchiveFolder(models.Model):
                                  help_text=_('نوع المجلد (مثل حجوزات، سيارات، ...إلخ)'))
     
     def __init__(self, *args, **kwargs):
-        print(f"DEBUG [models]: تم إنشاء كائن مجلد جديد: {kwargs.get('name', 'بدون اسم')}")
+        # تحقق من وجود اسم صالح للمجلد (منع المجلدات "بدون اسم")
+        folder_name = kwargs.get('name', None)
+        if not folder_name or folder_name.strip() == '' or folder_name == 'بدون اسم':
+            # لا نطبع هنا لتفادي الكثير من الرسائل المكررة
+            pass
+        else:
+            print(f"DEBUG [models]: تم إنشاء كائن مجلد جديد: {folder_name}")
         
         # هذه العلامة تستخدم لمنع إنشاء مستندات تلقائية - مهم جدًا
         self._skip_auto_document_creation = True
