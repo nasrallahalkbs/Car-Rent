@@ -50,24 +50,42 @@ def prevent_auto_document_creation(sender, instance, **kwargs):
     if not instance.pk:
         # تحقق مما إذا كان هذا المستند مرتبط بمجلد
         if instance.folder:
-            # تحقق مما إذا كان المجلد مميزًا كمجلد جديد
-            if hasattr(instance.folder, 'name') and instance.folder.name in _new_folders:
-                print(f"DEBUG [signals]: تم اكتشاف محاولة إنشاء مستند تلقائي للمجلد '{instance.folder.name}'")
+            print(f"🔶 [signals]: محاولة إنشاء مستند جديد مرتبط بالمجلد '{instance.folder.name}'")
+            print(f"🔶 [signals]: عنوان المستند: '{instance.title}'")
+            
+            # #1: تحقق من خاصية skip_auto_document_creation على المجلد
+            if hasattr(instance.folder, '_skip_auto_document_creation') and instance.folder._skip_auto_document_creation:
+                # المستندات التلقائية عادة لا تحتوي على عنوان أو لها عنوان فارغ
+                if not instance.title or not instance.title.strip():
+                    print(f"🔶 [signals]: منع مستند تلقائي - العلامة _skip_auto_document_creation موجودة")
+                    # إلغاء الحفظ بإثارة استثناء
+                    raise Exception("تم منع إنشاء المستند التلقائي - طريقة 1")
+                else:
+                    print(f"🔶 [signals]: السماح بمستند يدوي رغم علامة المنع - له عنوان: {instance.title}")
+            
+            # #2: تحقق من وجود المجلد في قائمة المجلدات الجديدة
+            elif hasattr(instance.folder, 'name') and instance.folder.name in _new_folders:
+                print(f"🔶 [signals]: تم اكتشاف محاولة إنشاء مستند تلقائي للمجلد '{instance.folder.name}'")
                 
                 # التحقق من أن هذا مستند تلقائي (بدون عنوان عادة)
                 if not instance.title or not instance.title.strip():
-                    print(f"DEBUG [signals]: تم منع إنشاء مستند تلقائي للمجلد '{instance.folder.name}'")
+                    print(f"🔶 [signals]: منع مستند تلقائي للمجلد '{instance.folder.name}' - في قائمة المجلدات الجديدة")
                     # إلغاء الحفظ عن طريق رفع استثناء
-                    raise Exception("تم منع إنشاء المستند التلقائي")
+                    raise Exception("تم منع إنشاء المستند التلقائي - طريقة 2")
                 else:
-                    print(f"DEBUG [signals]: السماح بإنشاء مستند يدوي للمجلد '{instance.folder.name}'")
+                    print(f"🔶 [signals]: السماح بإنشاء مستند يدوي للمجلد '{instance.folder.name}'")
             
-            # تحقق من العلامة الخاصة على المجلد (طريقة بديلة)
-            elif hasattr(instance.folder, '_skip_auto_document_creation') and instance.folder._skip_auto_document_creation:
-                if not instance.title or not instance.title.strip():
-                    print(f"DEBUG [signals]: تم منع إنشاء مستند تلقائي باستخدام العلامة الخاصة")
-                    # إلغاء الحفظ عن طريق رفع استثناء
-                    raise Exception("تم منع إنشاء المستند التلقائي")
+            # #3: طريقة إضافية للتأكد - للمستندات بدون عناوين
+            elif not instance.title or not instance.title.strip():
+                print(f"🔶 [signals]: الاشتباه بمستند تلقائي بدون عنوان حتى بدون علامات")
+                if 'djangotest' in str(instance.file) or not instance.file:
+                    print(f"🔶 [signals]: منع مستند تلقائي بدون عنوان وبدون ملف حقيقي")
+                    raise Exception("تم منع إنشاء المستند التلقائي - طريقة 3")
+                else:
+                    print(f"🔶 [signals]: السماح بمستند بدون عنوان لكن له ملف: {instance.file}")
+            
+            else:
+                print(f"🔶 [signals]: السماح بمستند جديد طبيعي للمجلد '{instance.folder.name}'")
 
 @receiver(post_save, sender=ArchiveFolder)
 def cleanup_after_folder_creation(sender, instance, created, **kwargs):
@@ -75,23 +93,39 @@ def cleanup_after_folder_creation(sender, instance, created, **kwargs):
     global _new_folders
     
     if created:
-        # محاولة حذف المستندات التلقائية
+        print(f"🔷 [signals]: تم إنشاء مجلد جديد: {instance.name} بمعرف {instance.pk}")
+        
+        # استخدام transaction للتأكد من حذف المستندات التلقائية بشكل آمن
         try:
-            # الطباعة قبل عملية الحذف
-            doc_count = Document.objects.filter(folder=instance).count()
-            print(f"DEBUG [signals]: تم العثور على {doc_count} مستند تلقائي للمجلد '{instance.name}'")
-            
-            # حذف أي مستندات تلقائية
-            Document.objects.filter(folder=instance).delete()
-            
-            print(f"DEBUG [signals]: تم تنظيف المستندات التلقائية بعد إنشاء المجلد '{instance.name}'")
+            from django.db import transaction
+            with transaction.atomic():
+                # الطباعة قبل عملية الحذف
+                doc_count = Document.objects.filter(folder=instance).count()
+                print(f"🔷 [signals]: وجدنا {doc_count} مستند تلقائي للمجلد '{instance.name}'")
+                
+                if doc_count > 0:
+                    # حذف أي مستندات تلقائية بشكل آمن
+                    deleted_count = Document.objects.filter(folder=instance).delete()
+                    print(f"🔷 [signals]: تم حذف {deleted_count} مستند تلقائي للمجلد '{instance.name}'")
+                else:
+                    print(f"🔷 [signals]: لا توجد مستندات تلقائية للمجلد '{instance.name}'")
         except Exception as e:
-            print(f"DEBUG [signals]: خطأ أثناء تنظيف المستندات التلقائية: {str(e)}")
+            print(f"🔷 [signals]: خطأ أثناء تنظيف المستندات التلقائية: {str(e)}")
+        
+        # تأكد من عدم وجود مستندات مرة أخرى
+        doc_count = Document.objects.filter(folder=instance).count()
+        if doc_count > 0:
+            print(f"🔷 [signals]: لا تزال هناك {doc_count} مستندات تلقائية! محاولة الحذف مرة أخرى...")
+            try:
+                Document.objects.filter(folder=instance).delete()
+                print(f"🔷 [signals]: تم حذف المستندات المتبقية في المحاولة الثانية")
+            except Exception as e:
+                print(f"🔷 [signals]: فشل في حذف المستندات المتبقية: {str(e)}")
         
         # إزالة المجلد من قائمة المجلدات المميزة
         if hasattr(instance, 'name') and instance.name in _new_folders:
             _new_folders.remove(instance.name)
-            print(f"DEBUG [signals]: تمت إزالة المجلد '{instance.name}' من قائمة المجلدات المميزة")
+            print(f"🔷 [signals]: تمت إزالة المجلد '{instance.name}' من قائمة المجلدات المميزة")
 
 # للتأكد من تسجيل الإشارات
 print("DEBUG [signals]: تم تسجيل إشارات منع المستندات التلقائية")

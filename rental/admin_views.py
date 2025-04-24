@@ -2250,8 +2250,8 @@ def admin_archive_folder_add(request):
             return redirect('admin_archive_folder_add')
         
         # إنشاء مجلد جديد باستخدام نموذج قاعدة البيانات مباشرة
-        # هذا يتجاوز أي سلوك تلقائي قد يحدث عند استخدام ArchiveFolder()
         try:
+            print("🔴 بدء عملية إنشاء مجلد جديد...")
             # البحث عن المجلد الأب إذا كان موجودًا
             parent_folder = None
             if parent_id:
@@ -2260,22 +2260,42 @@ def admin_archive_folder_add(request):
                 except ArchiveFolder.DoesNotExist:
                     messages.warning(request, "لم يتم العثور على المجلد الأب المحدد")
             
-            # إنشاء المجلد مباشرة
-            folder = ArchiveFolder.objects.create(
-                name=folder_name,
-                description=description,
-                folder_type=folder_type,
-                parent=parent_folder,
-                created_by=request.user
-            )
-            
-            # حذف أي مستندات تم إنشاؤها تلقائيًا مع المجلد فورًا
-            Document.objects.filter(folder=folder).delete()
+            # الحل: استخدام django transaction لضمان عدم إنشاء مستندات تلقائية
+            from django.db import transaction
+            with transaction.atomic():
+                # تعيين خاصية skip_auto_document_creation قبل إنشاء المجلد
+                # هذه الخاصية ستُستخدم في signals.py لمنع إنشاء المستندات التلقائية
+                folder = ArchiveFolder(
+                    name=folder_name,
+                    description=description,
+                    folder_type=folder_type,
+                    parent=parent_folder,
+                    created_by=request.user
+                )
                 
-            print(f"DEBUG: تم إنشاء المجلد الجديد: {folder.name} بمعرف {folder.pk} بدون مستندات تلقائية")
+                # تعيين خاصية للتحكم في إشارات ما بعد الحفظ - تجنب إنشاء مستندات تلقائية
+                folder._skip_auto_document_creation = True
+                print("🔴 تم تعيين _skip_auto_document_creation = True على المجلد")
+                
+                # حفظ المجلد في قاعدة البيانات
+                folder.save()
+                print(f"🔴 تم حفظ المجلد: {folder.name} بمعرف {folder.id}")
+                
+                # تأكد من عدم وجود مستندات تلقائية بعد الحفظ مباشرة
+                doc_count = Document.objects.filter(folder=folder).count()
+                if doc_count > 0:
+                    print(f"🔴 وجدنا {doc_count} مستند تلقائي - سنقوم بحذفها")
+                    Document.objects.filter(folder=folder).delete()
+                    print("🔴 تم حذف المستندات التلقائية")
+                else:
+                    print("🔴 لا توجد مستندات تلقائية")
+            
+            # رسالة تأكيد وتوجيه المستخدم
+            print(f"🔴 اكتملت عملية إنشاء المجلد {folder.name} بمعرف {folder.pk} بنجاح")
             messages.success(request, f"تم إنشاء المجلد '{folder_name}' بنجاح")
             return redirect('admin_archive')
         except Exception as e:
+            print(f"🔴 حدث خطأ أثناء إنشاء المجلد: {str(e)}")
             messages.error(request, f"حدث خطأ أثناء إنشاء المجلد: {str(e)}")
     
     # الحصول على قائمة المجلدات الموجودة للاختيار من بينها
