@@ -135,3 +135,11 @@ def cleanup_after_folder_creation(sender, instance, created, **kwargs):
 
 # للتأكد من تسجيل الإشارات
 print("DEBUG [signals]: تم تسجيل إشارات منع المستندات التلقائية")
+
+# تطبيق الحماية الدائمة
+try:
+    from rental.guard import start
+    start()
+    print('✅ تم تفعيل الحماية الدائمة ضد المستندات التلقائية')
+except Exception as e:
+    print(f'⚠️ لم يمكن تفعيل الحماية الدائمة: {str(e)}')
