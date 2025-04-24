@@ -574,8 +574,8 @@ class Document(models.Model):
         ordering = ['-created_at']
 
 
-# إضافة خطاف post_save لحذف المستندات التلقائية بعد إنشاء المجلدات
-from django.db.models.signals import post_save
+# إضافة خطاف post_save لمنع إنشاء المستندات تلقائيًا مع المجلدات
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 @receiver(post_save, sender=ArchiveFolder)
@@ -584,12 +584,15 @@ def delete_auto_created_documents(sender, instance, created, **kwargs):
     if created:
         print(f"DEBUG: تنفيذ خطاف post_save لحذف المستندات التلقائية للمجلد: {instance.name}")
         
-        # التحقق من وجود مستندات للحذف
-        document_count = instance.documents.count()
-        if document_count > 0:
-            print(f"DEBUG: وجدنا {document_count} مستند تلقائي ليتم حذفه")
-            # استخدام الوصول المباشر للمجموعة المرتبطة - هذه هي الطريقة الصحيحة للحذف
-            instance.documents.all().delete()
-            print(f"DEBUG: تم حذف المستندات التلقائية للمجلد {instance.name}")
-        else:
-            print(f"DEBUG: لا توجد مستندات تلقائية للمجلد {instance.name} - لا حاجة للحذف")
+        # التحقق من وجود مستندات للحذف - هنا نحذف أي مستندات قد تكون أنشئت تلقائيًا
+        from django.db import connection
+        
+        # إغلاق الاتصال الحالي لإنهاء أي معاملات معلقة
+        connection.close()
+        
+        # استخدام method.filter.delete() مباشرة بدلاً من الوصول إلى المجموعة المرتبطة
+        Document.objects.filter(folder=instance).delete()
+        print(f"DEBUG: تم حذف أي مستندات تلقائية مرتبطة بالمجلد {instance.name}")
+        
+        # إعادة فتح الاتصال
+        connection.connect()

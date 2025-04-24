@@ -1643,35 +1643,40 @@ def admin_archive(request):
         parent_id = request.POST.get('parent', None)
         
         if name:
-            # البحث عن المجلد الأب إذا تم تحديده
-            parent = None
-            if parent_id:
-                try:
-                    parent = ArchiveFolder.objects.get(id=parent_id)
-                except:
-                    pass
-            
-            # إنشاء المجلد الجديد بطريقة منفصلة
-            # لتجنب إنشاء مستندات تلقائية مع المجلد
-            folder = ArchiveFolder(
-                name=name,
-                description=description,
-                parent=parent,
-                created_by=request.user if request.user.is_authenticated else None
-            )
-            # حفظ المجلد أولاً دون أي إنشاء تلقائي
-            folder.save()
-            
-            # إزالة المستندات التلقائية المنشأة (للأمان)
-            # حذف أي مستندات تم إنشاؤها تلقائيًا مع المجلد
-            if folder.pk:
-                Document.objects.filter(folder=folder).delete()
-            
-            print(f"DEBUG - تم إنشاء مجلد جديد: {folder.name}")
-            messages.success(request, f"تم إنشاء المجلد '{name}' بنجاح")
-            
-            # إعادة توجيه إلى المجلد الجديد
-            return redirect(f"{request.path}?folder={folder.id}")
+            try:
+                # استخدام المعاملات الذرية والطريقة المثالية لإنشاء المجلدات
+                from django.db import transaction
+                
+                # البحث عن المجلد الأب إذا تم تحديده
+                parent = None
+                if parent_id:
+                    try:
+                        parent = ArchiveFolder.objects.get(id=parent_id)
+                    except ArchiveFolder.DoesNotExist:
+                        pass
+                
+                # إنشاء المجلد وحذف أي مستندات تلقائية في معاملة واحدة
+                with transaction.atomic():
+                    # إنشاء المجلد الجديد باستخدام أسلوب create الذي هو أكثر أماناً
+                    folder = ArchiveFolder.objects.create(
+                        name=name,
+                        description=description,
+                        parent=parent,
+                        created_by=request.user if request.user.is_authenticated else None
+                    )
+                    
+                    # حذف أي مستندات تم إنشاؤها تلقائيًا في نفس المعاملة
+                    Document.objects.filter(folder=folder).delete()
+                
+                print(f"DEBUG - تم إنشاء مجلد جديد: {folder.name} بأسلوب آمن")
+                messages.success(request, f"تم إنشاء المجلد '{name}' بنجاح")
+                
+                # إعادة توجيه إلى المجلد الجديد
+                return redirect(f"{request.path}?folder={folder.id}")
+            except Exception as e:
+                # لوج أي استثناءات للمساعدة في عملية التصحيح
+                print(f"ERROR - فشل في إنشاء المجلد: {str(e)}")
+                messages.error(request, f"حدث خطأ أثناء إنشاء المجلد: {str(e)}")
         else:
             messages.error(request, "يرجى إدخال اسم المجلد")
     
@@ -1726,38 +1731,8 @@ def admin_archive(request):
     all_folders = ArchiveFolder.objects.all().order_by('name')
     print(f"DEBUG - عدد المجلدات الرئيسية: {root_folders.count()}")
     
-    # معالجة إضافة مجلد جديد
-    if action_param == 'add_folder' and request.method == 'POST':
-        name = request.POST.get('name', '')
-        description = request.POST.get('description', '')
-        parent_id = request.POST.get('parent', None)
-        
-        if name:
-            parent = None
-            if parent_id:
-                try:
-                    parent = ArchiveFolder.objects.get(id=parent_id)
-                except ArchiveFolder.DoesNotExist:
-                    pass
-            
-            folder = ArchiveFolder(
-                name=name,
-                description=description,
-                parent=parent,
-                created_by=request.user if hasattr(request, 'user') else None
-            )
-            folder.save()
-            
-            # حذف المستندات التلقائية المرتبطة
-            if folder.pk:
-                Document.objects.filter(folder=folder).delete()
-            print(f"DEBUG - تم إنشاء مجلد جديد: {folder.name}")
-            
-            # إعادة توجيه
-            if parent_id:
-                return redirect('admin_archive')
-            else:
-                return redirect('admin_archive')
+    # معالجة إضافة مجلد جديد (ملحوظة: تم استبدال هذا بالتعليمات أعلاه)
+    # لا حاجة لهذا الكود، تم تعريفه بالفعل في السطور الأولى من الدالة
     
     # معالجة إضافة ملف جديد
     if action_param == 'add_file' and request.method == 'POST':
@@ -2278,31 +2253,34 @@ def admin_archive_folder_add(request):
             messages.error(request, "يرجى إدخال اسم المجلد")
             return redirect('admin_archive_folder_add')
         
-        # إنشاء مجلد جديد
-        folder = ArchiveFolder(
-            name=folder_name,
-            description=description,
-            folder_type=folder_type,
-            created_by=request.user
-        )
-        
-        # تعيين المجلد الأب إذا كان موجودًا
-        if parent_id:
-            try:
-                parent_folder = ArchiveFolder.objects.get(id=parent_id)
-                folder.parent = parent_folder
-            except ArchiveFolder.DoesNotExist:
-                messages.warning(request, "لم يتم العثور على المجلد الأب المحدد")
-        
-        # حفظ المجلد
+        # إنشاء مجلد جديد باستخدام نموذج قاعدة البيانات مباشرة
+        # هذا يتجاوز أي سلوك تلقائي قد يحدث عند استخدام ArchiveFolder()
         try:
-            folder.save()
+            # البحث عن المجلد الأب إذا كان موجودًا
+            parent_folder = None
+            if parent_id:
+                try:
+                    parent_folder = ArchiveFolder.objects.get(id=parent_id)
+                except ArchiveFolder.DoesNotExist:
+                    messages.warning(request, "لم يتم العثور على المجلد الأب المحدد")
             
-            # حذف أي مستندات تم إنشاؤها تلقائيًا مع المجلد
-            if folder.pk:
-                Document.objects.filter(folder=folder).delete()
-                print(f"DEBUG: تم حذف المستندات التلقائية المرتبطة بالمجلد الجديد: {folder.name}")
+            # استخدام ArchiveFolder.objects.create بدلاً من إنشاء كائن ثم حفظه
+            from django.db import transaction
+            
+            # استخدام المعاملة للتأكد من أن عمليات الإنشاء والحذف تحدث معًا
+            with transaction.atomic():
+                folder = ArchiveFolder.objects.create(
+                    name=folder_name,
+                    description=description,
+                    folder_type=folder_type,
+                    parent=parent_folder,
+                    created_by=request.user
+                )
                 
+                # حذف أي مستندات تم إنشاؤها تلقائيًا مع المجلد فورًا
+                Document.objects.filter(folder=folder).delete()
+                
+            print(f"DEBUG: تم إنشاء المجلد الجديد: {folder.name} بمعرف {folder.pk} بدون مستندات تلقائية")
             messages.success(request, f"تم إنشاء المجلد '{folder_name}' بنجاح")
             return redirect('admin_archive')
         except Exception as e:
