@@ -1707,7 +1707,14 @@ def admin_archive(request):
                     # في حالة حدوث خطأ، ننشئ المجلد بالطريقة العادية المحسنة
                     folder = ArchiveFolder(name=name, description=description, parent=parent)
                     folder._skip_auto_document_creation = True  # منع المستندات التلقائية
+                    # تعطيل المستندات التلقائية تماماً
+                    folder.disable_auto_documents = True
+                    folder._skip_auto_document_creation = True
+                    folder._prevent_auto_docs = True
                     folder.save()
+                    
+                    # التنظيف الفوري بعد الحفظ
+                    Document.objects.filter(folder=folder, title__in=['', 'بدون عنوان', None]).delete()
                     print(f"DEBUG - تم إنشاء المجلد باستخدام الطريقة البديلة: {folder.name}")
                 messages.success(request, f"تم إنشاء المجلد '{name}' بنجاح")
                 
@@ -1833,7 +1840,7 @@ def admin_archive(request):
                 current_folder = ArchiveFolder.objects.get(id=folder_id)
                 # الحصول على المجلدات الفرعية والمستندات
                 subfolders = ArchiveFolder.objects.filter(parent=current_folder).order_by('name')
-                documents = Document.objects.filter(folder=current_folder).order_by('-created_at')
+                documents = Document.objects.filter(folder=current_folder).exclude(title__in=['بدون عنوان', '', None]).order_by('-created_at')
                 
                 # بناء مسار المجلد
                 folder_path = []
@@ -1852,7 +1859,7 @@ def admin_archive(request):
             print(f"DEBUG - المجلد غير موجود: {folder_param}")
     else:
         # عرض المستندات في المجلد الرئيسي (بدون مجلد)
-        documents = Document.objects.filter(folder__isnull=True).order_by('-created_at')
+        documents = Document.objects.filter(folder__isnull=True).exclude(title__in=['بدون عنوان', '', None]).order_by('-created_at')
     
     # إعداد سياق البيانات
     # إضافة وقت حالي لمنع التخزين المؤقت
@@ -2395,7 +2402,14 @@ def admin_archive_folder_add(request):
                     print("🔴 تم تعيين _skip_auto_document_creation = True على المجلد")
                     
                     # حفظ المجلد
+                    # تعطيل المستندات التلقائية تماماً
+                    folder.disable_auto_documents = True
+                    folder._skip_auto_document_creation = True
+                    folder._prevent_auto_docs = True
                     folder.save()
+                    
+                    # التنظيف الفوري بعد الحفظ
+                    Document.objects.filter(folder=folder, title__in=['', 'بدون عنوان', None]).delete()
                     print(f"🔴 تم حفظ المجلد باستخدام ORM: {folder.name} (ID: {folder.id})")
                 
                 # تنظيف أي مستندات تم إنشاؤها
@@ -2578,7 +2592,15 @@ def admin_archive_folder_edit(request, folder_id):
         
         # حفظ التغييرات
         try:
+            # تعطيل المستندات التلقائية تماماً
+            folder.disable_auto_documents = True
+            folder._skip_auto_document_creation = True
+            folder._prevent_auto_docs = True
             folder.save()
+            
+            # التنظيف الفوري بعد الحفظ
+            Document.objects.filter(folder=folder, title__in=['', 'بدون عنوان', None]).delete()
+            
             messages.success(request, f"تم تحديث المجلد '{folder_name}' بنجاح")
             return redirect('admin_archive_folder', folder_id=folder.id)
         except Exception as e:

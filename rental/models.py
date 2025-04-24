@@ -811,3 +811,28 @@ class Document(models.Model):
 
 # تم نقل الإشارات إلى ملف signals.py المنفصل
 # لتجنب تداخلات في Django signals ولتنظيم الكود بشكل أفضل
+# منع المستندات التلقائية مباشرة في النماذج
+from django.db.models.signals import pre_save, post_save
+from django.dispatch import receiver
+
+@receiver(pre_save, sender=Document)
+def absolute_prevent_auto_documents(sender, instance, **kwargs):
+    """منع إنشاء المستندات التلقائية بشكل قاطع"""
+    if not instance.pk and (not instance.title or instance.title.strip() == '' or instance.title == 'بدون عنوان'):
+        print("[BLOCKED DOCUMENT] تم منع محاولة إنشاء مستند تلقائي")
+        raise ValueError("تم منع إنشاء مستند تلقائي بشكل قاطع")
+        
+# التأكد من تعطيل المستندات التلقائية في كل مجلد
+@receiver(pre_save, sender=ArchiveFolder)
+def ensure_disable_auto_documents(sender, instance, **kwargs):
+    """التأكد من تعطيل المستندات التلقائية في كل مجلد"""
+    instance.disable_auto_documents = True
+    instance._skip_auto_document_creation = True
+    instance._prevent_auto_docs = True
+    
+# تنظيف فوري بعد إنشاء أي مجلد
+@receiver(post_save, sender=ArchiveFolder)
+def cleanup_after_folder_save(sender, instance, created, **kwargs):
+    """تنظيف فوري بعد إنشاء أي مجلد"""
+    if instance:
+        Document.objects.filter(folder=instance, title__in=['', 'بدون عنوان', None]).delete()
