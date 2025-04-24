@@ -1652,19 +1652,63 @@ def admin_archive(request):
                     except ArchiveFolder.DoesNotExist:
                         pass
                 
-                # إنشاء المجلد بالطريقة المباشرة
-                # إنشاء المجلد الجديد باستخدام أسلوب create الذي هو أكثر أماناً
-                folder = ArchiveFolder.objects.create(
-                    name=name,
-                    description=description,
-                    parent=parent,
-                    created_by=request.user if request.user.is_authenticated else None
-                )
+                # إنشاء المجلد بطريقة آمنة تماماً تمنع إنشاء المستندات التلقائية
+                # استخدام SQL المباشر لتجاوز آليات النظام
+                from django.db import connection, transaction
                 
-                # حذف أي مستندات تم إنشاؤها تلقائيًا
-                Document.objects.filter(folder=folder).delete()
-                
-                print(f"DEBUG - تم إنشاء مجلد جديد: {folder.name} بأسلوب آمن")
+                try:
+                    with transaction.atomic():
+                        cursor = connection.cursor()
+                        
+                        # تعطيل المحفزات (triggers) أثناء عملية الإنشاء
+                        cursor.execute("SET session_replication_role = 'replica';")
+                        
+                        # الحصول على معرف المستخدم المنشئ إذا وجد
+                        created_by_id = None
+                        if request.user.is_authenticated:
+                            created_by_id = request.user.id
+                        
+                        # تحضير قيمة parent_id
+                        parent_id = None
+                        if parent:
+                            parent_id = parent.id
+                        
+                        # إنشاء المجلد مباشرة في قاعدة البيانات
+                        sql = """
+                        INSERT INTO rental_archivefolder 
+                        (name, parent_id, created_at, updated_at, description, created_by_id, is_system_folder, folder_type) 
+                        VALUES (%s, %s, NOW(), NOW(), %s, %s, %s, %s)
+                        RETURNING id;
+                        """
+                        
+                        cursor.execute(sql, [
+                            name, 
+                            parent_id, 
+                            description, 
+                            created_by_id,
+                            False,  # is_system_folder
+                            None    # folder_type
+                        ])
+                        
+                        folder_id = cursor.fetchone()[0]
+                        
+                        # إعادة تفعيل المحفزات
+                        cursor.execute("SET session_replication_role = 'origin';")
+                        
+                        # الحصول على كائن المجلد من قاعدة البيانات
+                        folder = ArchiveFolder.objects.get(id=folder_id)
+                        
+                        # للتأكد - حذف أي مستندات قد تكون أنشئت بعد استعادة المحفزات
+                        Document.objects.filter(folder=folder, title__in=['', 'بدون عنوان', None]).delete()
+                        
+                        print(f"DEBUG - تم إنشاء مجلد جديد: {folder.name} بأسلوب SQL المباشر الآمن ومنع أي مستندات تلقائية")
+                except Exception as e:
+                    print(f"ERROR - حدث خطأ أثناء إنشاء المجلد باستخدام SQL المباشر: {str(e)}")
+                    # في حالة حدوث خطأ، ننشئ المجلد بالطريقة العادية المحسنة
+                    folder = ArchiveFolder(name=name, description=description, parent=parent)
+                    folder._skip_auto_document_creation = True  # منع المستندات التلقائية
+                    folder.save()
+                    print(f"DEBUG - تم إنشاء المجلد باستخدام الطريقة البديلة: {folder.name}")
                 messages.success(request, f"تم إنشاء المجلد '{name}' بنجاح")
                 
                 # إعادة توجيه إلى المجلد الجديد
@@ -1695,20 +1739,35 @@ def admin_archive(request):
             # حساب حجم الملف بوحدة البايت
             file_size = uploaded_file.size
             
-            # إنشاء مستند جديد (ملف)
-            document = Document.objects.create(
-                title=title,
-                description=description,
-                document_type='other',  # استخدام القيمة الافتراضية 'other'
-                file=uploaded_file,
-                file_size=file_size,
-                document_date=timezone.now().date(),
-                related_to='other',  # استخدام القيمة الافتراضية 'other'
-                added_by=request.user if request.user.is_authenticated else None,
-                folder=folder
-            )
+            # تأكد من أن المستند ليس تلقائياً
+            if not title or title.strip() == '' or title == 'بدون عنوان':
+                print(f"DEBUG - محاولة إنشاء مستند تلقائي مرفوضة!")
+                messages.error(request, "لا يمكن إنشاء مستند بدون عنوان")
+                return redirect(request.path)
             
-            print(f"DEBUG - تم إنشاء مستند جديد: {document.title}")
+            # إنشاء مستند جديد (ملف) بطريقة آمنة
+            try:
+                # إضافة علامة واضحة لمنع إنشاء مستندات بشكل تلقائي
+                if not hasattr(folder, '_skip_auto_document_creation'):
+                    setattr(folder, '_skip_auto_document_creation', True)
+                    
+                document = Document.objects.create(
+                    title=title,
+                    description=description,
+                    document_type='other',  # استخدام القيمة الافتراضية 'other'
+                    file=uploaded_file,
+                    file_size=file_size,
+                    document_date=timezone.now().date(),
+                    related_to='other',  # استخدام القيمة الافتراضية 'other'
+                    added_by=request.user if request.user.is_authenticated else None,
+                    folder=folder
+                )
+                
+                print(f"DEBUG - تم إنشاء مستند جديد: {document.title}")
+            except Exception as e:
+                print(f"ERROR - فشل في إنشاء المستند: {str(e)}")
+                messages.error(request, f"حدث خطأ أثناء إنشاء المستند: {str(e)}")
+                return redirect(request.path)
             messages.success(request, f"تم إضافة الملف '{title}' بنجاح")
             
             # إعادة توجيه
