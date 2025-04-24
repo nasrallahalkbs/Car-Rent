@@ -349,9 +349,9 @@ class ArchiveFolder(models.Model):
         if is_new:
             print(f"DEBUG: حفظ مجلد جديد: {self.name}")
             
-        # سنضيف _skip_auto_document_creation إلى kwargs لمنع إنشاء المستندات التلقائية
-        # هذا يسمح للدوال الأخرى بمعرفة أن هذا المجلد لا ينبغي إنشاء مستندات له تلقائيًا
-        kwargs['_skip_auto_document_creation'] = True
+        # لا يمكننا تمرير معاملات إضافية إلى طريقة save الأساسية
+        # لذا سنقوم بتخزين العلامة كخاصية للكائن نفسه
+        self._skip_auto_document_creation = True
             
         super().save(*args, **kwargs)
         
