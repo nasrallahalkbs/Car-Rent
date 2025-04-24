@@ -44,11 +44,13 @@ def test_folder_creation():
                 print(f"🔍 تم استخدام المجلد الجذر: {root_folder.name} (ID: {root_folder.id})")
             else:
                 # إنشاء مجلد جذر جديد إذا لم يكن هناك مجلدات جذر
-                root_folder = ArchiveFolder.objects.create(
+                root_folder = ArchiveFolder(
                     name="مجلد اختبار جذر",
-                    disable_auto_documents=True,
                     is_system_folder=False
                 )
+                root_folder._skip_auto_document_creation = True
+                root_folder._prevent_auto_docs = True
+                root_folder.save()
                 print(f"🔍 تم إنشاء مجلد جذر جديد: {root_folder.name} (ID: {root_folder.id})")
         
         # 1. إنشاء مجلد اختبار جديد
@@ -58,7 +60,6 @@ def test_folder_creation():
         new_folder = ArchiveFolder(
             name=test_folder_name,
             parent=root_folder,
-            disable_auto_documents=True,
             is_system_folder=False,
             description="مجلد اختبار أنشئ بواسطة سكريبت التحقق من منع المستندات التلقائية"
         )
