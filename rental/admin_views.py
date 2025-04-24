@@ -2343,13 +2343,14 @@ def admin_archive_folder_add(request):
                 doc_count = Document.objects.filter(folder=folder).count()
                 if doc_count > 0:
                     print(f"🔴 تم العثور على {doc_count} مستند تلقائي رغم المحاولات - حذف نهائي")
-                    Document.objects.filter(folder=folder).delete()
+                    # فقط حذف المستندات التلقائية (التي بدون عنوان) - الحل النهائي
+                    Document.objects.filter(folder=folder, title__in=['', 'بدون عنوان', None]).delete()
             
             # تأكد من عدم وجود مستندات تلقائية خارج نطاق المعاملة
-            doc_count = Document.objects.filter(folder=folder).count()
+            doc_count = Document.objects.filter(folder=folder, title__in=['', 'بدون عنوان', None]).count()
             if doc_count > 0:
                 print(f"🔴 مازال هناك {doc_count} مستند! محاولة حذف أخيرة")
-                Document.objects.filter(folder=folder).delete()
+                Document.objects.filter(folder=folder, title__in=['', 'بدون عنوان', None]).delete()
             
             # رسالة تأكيد وتوجيه المستخدم
             print(f"🔴 اكتملت عملية إنشاء المجلد {folder.name} بمعرف {folder.id} بنجاح")
