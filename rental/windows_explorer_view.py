@@ -1,22 +1,21 @@
 """
 تحديث عرض الأرشيف الإلكتروني ليكون مشابه لمستكشف ويندوز
 """
-from django.shortcuts import render
+import json
+import functools
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils.translation import gettext as _, get_language
 from django.utils import timezone
+from django.contrib import messages
 from .views import get_template_by_language
 from .models import ArchiveFolder, Document
-import json
-from functools import wraps
-from django.contrib import messages
-from django.shortcuts import redirect
 
 def admin_required(view_func):
     """
     Decorator for views that checks if the user is an admin.
     """
-    @wraps(view_func)
+    @functools.wraps(view_func)
     def wrapper(request, *args, **kwargs):
         # Debug output for admin_required
         print(f"Admin check for {request.user}, authenticated: {request.user.is_authenticated}")
