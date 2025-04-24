@@ -6,76 +6,41 @@ class RentalConfig(AppConfig):
     verbose_name = 'نظام الإيجار'
 
     def ready(self):
-        """
-        تنفيذ مهام بدء التشغيل عند بدء التطبيق
-        """
-        # استيراد إشارات التطبيق
-        import rental.signals
-        
-        # تطبيق إصلاح منع المستندات التلقائية
-        from rental.models import Document, ArchiveFolder
-        
-        # تعديل طريقة save في نموذج Document
-        original_document_save = getattr(Document, '_original_save', Document.save)
-        
-        def custom_document_save(self, *args, **kwargs):
-            """طريقة حفظ مخصصة للمستندات تمنع إنشاء المستندات التلقائية"""
-            is_new = self.pk is None
+        """تشغيل التنظيف والحماية عند بدء تشغيل التطبيق"""
+        try:
+            # تشغيل الحماية والتنظيف عند بدء التشغيل
+            import rental.signals  # لتسجيل الإشارات
+            try:
+                from rental.guard import start
+                start()  # تشغيل الحماية
+                print("✅ تم تفعيل الحماية عند بدء التشغيل")
+            except Exception as e:
+                print(f"⚠️ لم يتم تفعيل نظام الحماية: {str(e)}")
             
-            # التحقق من إذا كان هذا مستند تلقائي يجب تجاهله
-            if is_new and hasattr(self, 'folder') and self.folder:
-                # المستندات التلقائية غالباً لا تحتوي على عنوان أو لها عنوان فارغ
-                if not self.title or self.title.strip() == '' or self.title == 'بدون عنوان':
-                    print(f"⛔ منع إنشاء مستند تلقائي لمجلد: {self.folder.name}")
-                    # إيقاف عملية الحفظ عن طريق العودة دون تنفيذ الحفظ الأصلي
-                    return None
+            # تحسين الحماية مباشرة
+            from django.db.models import Q
+            from rental.models import Document, ArchiveFolder
             
-            # استمرار بعملية الحفظ العادية للمستندات غير التلقائية
-            return original_document_save(self, *args, **kwargs)
-        
-        # تخزين نسخة من الدالة الأصلية إذا لم تكن موجودة بالفعل
-        if not hasattr(Document, '_original_save'):
-            Document._original_save = Document.save
-        
-        # استبدال دالة save
-        Document.save = custom_document_save
-        
-        # تعديل طريقة save في نموذج ArchiveFolder
-        original_folder_save = getattr(ArchiveFolder, '_original_save', ArchiveFolder.save)
-        
-        def custom_folder_save(self, *args, **kwargs):
-            """طريقة حفظ مخصصة للمجلدات تمنع إنشاء المستندات التلقائية"""
-            is_new = self.pk is None
+            # تنظيف مبدئي للمستندات التلقائية
+            auto_docs = Document.objects.filter(
+                Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
+            )
+            if auto_docs.exists():
+                count = auto_docs.count()
+                auto_docs.delete()
+                print(f"🧹 تنظيف {count} مستند تلقائي عند بدء التشغيل")
             
-            # تعيين علامة تجاوز إنشاء المستندات التلقائية
-            self._skip_auto_document_creation = True
+            # تشغيل التنظيف التلقائي
+            try:
+                from rental.auto_cleaner import start_auto_cleaner
+                start_auto_cleaner()
+                print("✅ تم تشغيل التنظيف التلقائي")
+            except Exception as e:
+                print(f"⚠️ لم يتم تشغيل التنظيف التلقائي: {str(e)}")
             
-            # استخدام الطريقة الأصلية للحفظ
-            result = original_folder_save(self, *args, **kwargs)
+            print("✅ تم تفعيل نظام منع المستندات التلقائية")
             
-            # بعد الحفظ، حذف أي مستندات تلقائية قد تكون أنشئت
-            if is_new:
-                try:
-                    # حذف المستندات التلقائية
-                    auto_docs = Document.objects.filter(
-                        folder=self, 
-                        title__in=['', 'بدون عنوان', None]
-                    )
-                    
-                    if auto_docs.exists():
-                        count = auto_docs.count()
-                        auto_docs.delete()
-                        print(f"🗑️ تم حذف {count} مستند تلقائي بعد إنشاء المجلد")
-                except Exception as e:
-                    print(f"❌ حدث خطأ أثناء حذف المستندات التلقائية: {str(e)}")
-            
-            return result
-        
-        # تخزين نسخة من الدالة الأصلية إذا لم تكن موجودة بالفعل
-        if not hasattr(ArchiveFolder, '_original_save'):
-            ArchiveFolder._original_save = ArchiveFolder.save
-        
-        # استبدال دالة save
-        ArchiveFolder.save = custom_folder_save
-        
-        print("✅ تم تطبيق إصلاح منع المستندات التلقائية عند بدء تشغيل التطبيق")
+        except Exception as e:
+            print(f"⚠️ حدث خطأ أثناء تهيئة التطبيق: {str(e)}")
+            import traceback
+            traceback.print_exc()

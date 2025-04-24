@@ -7,6 +7,7 @@
 def start():
     """تطبيق حماية المستندات التلقائية"""
     from rental.models import Document, ArchiveFolder
+    from django.db.models import Q
     
     # حفظ طرق الحفظ الأصلية
     if not hasattr(Document, '_guarded_save'):
@@ -17,10 +18,15 @@ def start():
     
     # تعريف طرق الحفظ الآمنة
     def safe_document_save(self, *args, **kwargs):
-        """منع إنشاء المستندات التلقائية"""
-        if not self.pk and (not self.title or self.title.strip() == '' or self.title == 'بدون عنوان'):
-            print(f"🛡️ منع إنشاء مستند تلقائي: '{self.title}'")
-            return None
+        """منع إنشاء المستندات التلقائية بشكل قاطع"""
+        # فحص ما إذا كان هذا مستند جديد
+        if not self.pk:
+            # فحص ما إذا كان عنوان المستند فارغ أو "بدون عنوان"
+            if not self.title or self.title.strip() == '' or self.title == 'بدون عنوان':
+                print(f"🛑 [GUARD] منع إنشاء مستند تلقائي: '{self.title}'")
+                return None
+        
+        # استخدام الطريقة الأصلية للمستندات العادية
         return self._guarded_save(*args, **kwargs)
     
     def safe_folder_save(self, *args, **kwargs):

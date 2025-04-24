@@ -2453,6 +2453,14 @@ def admin_archive_folder_add(request):
 def admin_archive_folder_view(request, folder_id):
     """عرض محتويات مجلد معين - النظام الشجري الجديد"""
     folder = get_object_or_404(ArchiveFolder, id=folder_id)
+    # تنظيف تلقائي للمستندات التلقائية عند فتح المجلد
+    title_conditions = Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
+    auto_docs = Document.objects.filter(folder=folder).filter(title_conditions)
+    if auto_docs.exists():
+        deleted_count = auto_docs.count()
+        print(f"🧹 تم حذف {deleted_count} مستند تلقائي من المجلد {folder.name} (ID: {folder.id})")
+        auto_docs.delete()
+    
     
     # تحديد لغة العرض
     from django.utils.translation import get_language

@@ -143,3 +143,12 @@ try:
     print('✅ تم تفعيل الحماية الدائمة ضد المستندات التلقائية')
 except Exception as e:
     print(f'⚠️ لم يمكن تفعيل الحماية الدائمة: {str(e)}')
+
+
+# تشغيل التنظيف التلقائي
+try:
+    from rental.auto_cleaner import start_auto_cleaner
+    start_auto_cleaner()
+    print('✅ تم تشغيل خدمة التنظيف التلقائي')
+except Exception as e:
+    print(f'⚠️ لم يمكن تشغيل التنظيف التلقائي: {str(e)}')
