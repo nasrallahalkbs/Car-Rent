@@ -354,7 +354,22 @@ class ArchiveFolder(models.Model):
         if is_new:
             print(f"DEBUG [models]: تم حفظ المجلد الجديد: {self.name} بمعرف {self.pk}")
             
-            # سيتم تنظيف المستندات التلقائية في خطاف post_save
+            # حذف أي مستندات تلقائية تم إنشاؤها
+            try:
+                # استيراد نموذج Document هنا لتجنب استيراد دائري
+                from django.db import transaction
+                with transaction.atomic():
+                    # نحذف أي مستندات بدون عنوان أو بعنوان "بدون عنوان"
+                    from rental.models import Document
+                    deleted_count = Document.objects.filter(
+                        folder=self, 
+                        title__in=['', 'بدون عنوان', None]
+                    ).delete()
+                    print(f"DEBUG [models]: تم حذف {deleted_count} مستند تلقائي بعد إنشاء المجلد {self.name}")
+            except Exception as e:
+                print(f"DEBUG [models]: حدث خطأ أثناء حذف المستندات التلقائية: {str(e)}")
+            
+            # سيتم تنظيف المستندات التلقائية أيضاً في خطاف post_save
             print(f"DEBUG [models]: ستتم إزالة المستندات التلقائية في خطاف post_save")
     
     class Meta:

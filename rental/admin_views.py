@@ -1722,11 +1722,37 @@ def admin_archive(request):
             if not uploaded_file:
                 messages.error(request, "يرجى اختيار ملف للرفع")
     
-    # الحصول على مجلدات الجذر
-    root_folders = ArchiveFolder.objects.filter(parent=None).order_by('name')
-    # الحصول على جميع المجلدات للاستخدام في القوائم المنسدلة
-    all_folders = ArchiveFolder.objects.all().order_by('name')
-    print(f"DEBUG - عدد المجلدات الرئيسية: {root_folders.count()}")
+    # الحصول على مجلدات الجذر وتجاهل المجلدات بدون اسم
+    try:
+        # استبعاد المجلدات بدون اسم أو باسم "بدون اسم"
+        root_folders = ArchiveFolder.objects.filter(
+            parent=None,
+            name__isnull=False
+        ).exclude(
+            name__in=['بدون اسم', '', ' ']
+        ).order_by('name')
+        
+        # الحصول على جميع المجلدات مع استبعاد المجلدات التلقائية
+        all_folders = ArchiveFolder.objects.filter(
+            name__isnull=False
+        ).exclude(
+            name__in=['بدون اسم', '', ' ']
+        ).order_by('name')
+        
+        print(f"DEBUG - عدد المجلدات الرئيسية المفلترة: {root_folders.count()}")
+        
+        # حذف أي مجلدات غير صالحة تلقائيًا
+        invalid_folders = ArchiveFolder.objects.filter(
+            name__in=['بدون اسم', '', ' ']
+        )
+        if invalid_folders.exists():
+            print(f"DEBUG - حذف {invalid_folders.count()} مجلد غير صالح تلقائيًا")
+            invalid_folders.delete()
+    except Exception as e:
+        print(f"ERROR - حدثت مشكلة في استرجاع المجلدات: {str(e)}")
+        # تعيين قوائم فارغة في حالة حدوث خطأ
+        root_folders = ArchiveFolder.objects.none()
+        all_folders = ArchiveFolder.objects.none()
     
     # معالجة إضافة مجلد جديد (ملحوظة: تم استبدال هذا بالتعليمات أعلاه)
     # لا حاجة لهذا الكود، تم تعريفه بالفعل في السطور الأولى من الدالة
