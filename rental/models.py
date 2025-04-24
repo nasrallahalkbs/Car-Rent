@@ -331,6 +331,8 @@ class ArchiveFolder(models.Model):
                                           help_text=_('إذا كان هذا مجلد نظام (يتم إنشاؤه تلقائيًا)'))
     folder_type = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('نوع المجلد'),
                                  help_text=_('نوع المجلد (مثل حجوزات، سيارات، ...إلخ)'))
+    is_auto_document_disabled = models.BooleanField(default=True, verbose_name=_('تعطيل المستندات التلقائية'),
+                                                  help_text=_('عند التفعيل، لن يتم إنشاء مستندات تلقائية مع هذا المجلد'))
     
     def __init__(self, *args, **kwargs):
         print(f"DEBUG [models]: تم إنشاء كائن مجلد جديد: {kwargs.get('name', 'بدون اسم')}")
@@ -347,8 +349,67 @@ class ArchiveFolder(models.Model):
             
         # لا يمكننا تمرير معاملات إضافية إلى طريقة save الأساسية
         # لذا سنقوم بتخزين العلامة كخاصية للكائن نفسه
+        
+        # تأكد من أن المستندات التلقائية معطلة
+        self.is_auto_document_disabled = True
         self._skip_auto_document_creation = True
-            
+        
+        # استخدام تقنية raw SQL إذا كان هذا مجلد جديد
+        if is_new:
+            try:
+                # استخدام منهج SQL المباشر لمنع تفعيل الإشارات والمحفزات
+                from django.db import connection, transaction
+                with transaction.atomic():
+                    cursor = connection.cursor()
+                    # تعطيل المحفزات
+                    cursor.execute("SET session_replication_role = 'replica';")
+                    
+                    # إنشاء المجلد مباشرة في قاعدة البيانات
+                    table_name = self.__class__._meta.db_table
+                    parent_id = self.parent.id if self.parent else None
+                    description = self.description or ''
+                    is_system = self.is_system_folder
+                    folder_type = self.folder_type or ''
+                    
+                    # الاستعلام SQL مع تضمين العمود الجديد is_auto_document_disabled
+                    sql = f"""
+                    INSERT INTO {table_name} 
+                    (name, parent_id, created_at, updated_at, description, is_system_folder, 
+                     folder_type, is_auto_document_disabled)
+                    VALUES (%s, %s, NOW(), NOW(), %s, %s, %s, %s)
+                    RETURNING id;
+                    """
+                    
+                    cursor.execute(sql, [self.name, parent_id, description, is_system, folder_type, True])
+                    folder_id = cursor.fetchone()[0]
+                    
+                    # إعادة تفعيل المحفزات
+                    cursor.execute("SET session_replication_role = 'origin';")
+                    
+                    # تحديث معرف الكائن الحالي
+                    self.pk = folder_id
+                    print(f"DEBUG [models]: تم حفظ المجلد باستخدام SQL المباشر: {self.name} بمعرف {self.pk}")
+                    
+                    # حذف أي مستندات تلقائية قد تكون أنشئت
+                    from rental.models import Document
+                    deleted_count = Document.objects.filter(
+                        folder_id=folder_id, 
+                        title__in=['', 'بدون عنوان', None]
+                    ).delete()
+                    print(f"DEBUG [models]: تم حذف {deleted_count} مستند تلقائي بعد إنشاء المجلد")
+                    
+                    # تحديث الكائن من قاعدة البيانات
+                    for field in self._meta.fields:
+                        if field.name not in ['name', 'parent', 'description', 'is_system_folder', 'folder_type', 'is_auto_document_disabled']:
+                            setattr(self, field.attname, None)
+                    
+                    # لا حاجة للاستمرار في الدالة
+                    return
+            except Exception as e:
+                print(f"DEBUG [models]: حدث خطأ أثناء إنشاء المجلد باستخدام SQL المباشر: {str(e)}")
+                print("DEBUG [models]: الانتقال إلى الطريقة العادية...")
+        
+        # الطريقة المعتادة كخطة بديلة
         super().save(*args, **kwargs)
         
         if is_new:

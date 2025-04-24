@@ -2273,9 +2273,24 @@ def admin_archive_folder_add(request):
                     parent_id_value = parent_folder.id if parent_folder else None
                     is_system_folder = False
                     
+                    # استخدم اسم جدول المجلد + المستند من قاعدة البيانات الفعلية
+                    folder_table_name = ArchiveFolder._meta.db_table
+                    document_table_name = Document._meta.db_table
+                    
+                    # طباعة تشخيصية
+                    print(f"🔴 اسم جدول المجلد الفعلي في قاعدة البيانات: {folder_table_name}")
+                    print(f"🔴 اسم جدول المستند الفعلي في قاعدة البيانات: {document_table_name}")
+                    
+                    # إيقاف المحفز (trigger) المسؤول عن إنشاء المستندات التلقائية
+                    try:
+                        cursor.execute("SET session_replication_role = 'replica';")
+                        print("🔴 تم تعطيل المحفزات مؤقتًا")
+                    except Exception as e:
+                        print(f"🔴 عدم القدرة على تعطيل المحفزات: {str(e)}")
+                    
                     # الاستعلام SQL
-                    sql = """
-                    INSERT INTO rental_archivefolder 
+                    sql = f"""
+                    INSERT INTO {folder_table_name} 
                     (name, parent_id, created_at, updated_at, description, created_by_id, is_system_folder, folder_type) 
                     VALUES (%s, %s, NOW(), NOW(), %s, %s, %s, %s)
                     RETURNING id;
@@ -2283,6 +2298,13 @@ def admin_archive_folder_add(request):
                     
                     cursor.execute(sql, [folder_name, parent_id_value, description, created_by_id, is_system_folder, folder_type])
                     folder_id = cursor.fetchone()[0]
+                    
+                    # إعادة تفعيل المحفزات
+                    try:
+                        cursor.execute("SET session_replication_role = 'origin';")
+                        print("🔴 تم إعادة تفعيل المحفزات")
+                    except Exception as e:
+                        print(f"🔴 عدم القدرة على إعادة تفعيل المحفزات: {str(e)}")
                     
                     # الحصول على كائن المجلد المنشأ حديثاً
                     folder = ArchiveFolder.objects.get(id=folder_id)
