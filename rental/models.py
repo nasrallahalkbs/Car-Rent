@@ -394,27 +394,84 @@ class ArchiveFolder(models.Model):
     def get_or_create_system_folder(cls, folder_name, folder_type=None, parent=None):
         """الحصول على أو إنشاء مجلد نظام"""
         import inspect
-        print(f"DEBUG: محاولة إنشاء مجلد نظام: {folder_name}, نوع: {folder_type}, الأب: {parent}")
-        print(f"DEBUG: سجل المكالمات عند محاولة إنشاء مجلد نظام:")
-        for frame in inspect.stack():
-            print(f"DEBUG: مجلد نظام - في الملف: {frame.filename}, الدالة: {frame.function}, السطر: {frame.lineno}")
-            
-        folder, created = cls.objects.get_or_create(
-            name=folder_name,
-            parent=parent,
-            defaults={
-                'is_system_folder': True,
-                'folder_type': folder_type,
-                'description': f'مجلد نظام لـ {folder_name}'
-            }
-        )
+        from django.db import transaction
         
-        if created:
-            print(f"DEBUG: تم إنشاء مجلد نظام جديد: {folder.name} بمعرف {folder.pk}")
-        else:
-            print(f"DEBUG: تم العثور على مجلد نظام موجود: {folder.name} بمعرف {folder.pk}")
+        print(f"📁 [System Folder] محاولة إنشاء مجلد نظام: {folder_name}, نوع: {folder_type}, الأب: {parent}")
+        
+        # البحث اولا عن مجلد موجود بنفس الاسم والأب
+        try:
+            if parent:
+                existing_folder = cls.objects.get(name=folder_name, parent=parent)
+            else:
+                existing_folder = cls.objects.get(name=folder_name, parent__isnull=True)
+                
+            print(f"📁 [System Folder] تم العثور على مجلد موجود: {existing_folder.name} بمعرف {existing_folder.pk}")
+            return existing_folder
+        except cls.DoesNotExist:
+            # المجلد غير موجود، سنقوم بإنشائه في عملية منفصلة
+            pass
+        
+        # تطبيق نهج منع المستندات التلقائية بشكل صارم
+        with transaction.atomic():
+            # إنشاء المجلد بطريقة منفصلة عن save المعتادة
+            from django.db import connection
+            cursor = connection.cursor()
             
-        return folder
+            # إنشاء العناصر المطلوبة فقط بدون أي جانبية
+            try:
+                # تحضير البيانات
+                description = f'مجلد نظام لـ {folder_name}'
+                is_system_folder = True
+                
+                # تحضير قيمة parent_id
+                parent_id = None
+                if parent:
+                    parent_id = parent.id
+                
+                # استخدام SQL مباشرة لإنشاء المجلد بدون تفعيل signals أو triggers
+                sql = """
+                INSERT INTO rental_archivefolder 
+                (name, parent_id, created_at, updated_at, description, created_by_id, is_system_folder, folder_type) 
+                VALUES (%s, %s, NOW(), NOW(), %s, NULL, %s, %s)
+                RETURNING id;
+                """
+                
+                cursor.execute(sql, [folder_name, parent_id, description, is_system_folder, folder_type])
+                folder_id = cursor.fetchone()[0]
+                
+                # الحصول على كائن المجلد من قاعدة البيانات
+                folder = cls.objects.get(id=folder_id)
+                print(f"📁 [System Folder] تم إنشاء مجلد نظام جديد: {folder.name} بمعرف {folder.pk}")
+                
+                # حذف أي مستندات تلقائية قد تكون أنشئت
+                from rental.models import Document
+                docs = Document.objects.filter(folder=folder)
+                if docs.exists():
+                    doc_count = docs.count()
+                    docs.delete()
+                    print(f"📁 [System Folder] تم حذف {doc_count} مستند تلقائي من المجلد الجديد")
+                
+                return folder
+            except Exception as e:
+                print(f"📁 [System Folder] حدث خطأ أثناء إنشاء المجلد: {str(e)}")
+                # في حالة الخطأ، نستخدم الطريقة التقليدية كخطة بديلة
+                folder = cls(
+                    name=folder_name,
+                    parent=parent,
+                    is_system_folder=True,
+                    folder_type=folder_type,
+                    description=f'مجلد نظام لـ {folder_name}'
+                )
+                # وضع علامة تجاوز السلوك التلقائي
+                folder._skip_auto_document_creation = True
+                folder.save()
+                print(f"📁 [System Folder] تم إنشاء المجلد بالطريقة البديلة: {folder.name} بمعرف {folder.pk}")
+                
+                # حذف أي مستندات قد تكون أنشئت
+                from rental.models import Document
+                Document.objects.filter(folder=folder).delete()
+                
+                return folder
         
     @classmethod
     def get_root_folders(cls):

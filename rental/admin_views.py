@@ -2249,9 +2249,10 @@ def admin_archive_folder_add(request):
             messages.error(request, "يرجى إدخال اسم المجلد")
             return redirect('admin_archive_folder_add')
         
-        # إنشاء مجلد جديد باستخدام نموذج قاعدة البيانات مباشرة
+        # إنشاء مجلد جديد - منع إنشاء المستندات التلقائية تماماً
         try:
             print("🔴 بدء عملية إنشاء مجلد جديد...")
+            
             # البحث عن المجلد الأب إذا كان موجودًا
             parent_folder = None
             if parent_id:
@@ -2260,42 +2261,82 @@ def admin_archive_folder_add(request):
                 except ArchiveFolder.DoesNotExist:
                     messages.warning(request, "لم يتم العثور على المجلد الأب المحدد")
             
-            # الحل: استخدام django transaction لضمان عدم إنشاء مستندات تلقائية
-            from django.db import transaction
+            # الحل: استخدام إنشاء SQL مباشر لتجاوز signals و triggers
+            from django.db import transaction, connection
+            
+            # إنشاء المجلد مباشرة للتأكد من تجاوز أي سلوك تلقائي
             with transaction.atomic():
-                # تعيين خاصية skip_auto_document_creation قبل إنشاء المجلد
-                # هذه الخاصية ستُستخدم في signals.py لمنع إنشاء المستندات التلقائية
-                folder = ArchiveFolder(
-                    name=folder_name,
-                    description=description,
-                    folder_type=folder_type,
-                    parent=parent_folder,
-                    created_by=request.user
-                )
+                try:
+                    # محاولة تنفيذ استعلام SQL مباشر أولاً
+                    cursor = connection.cursor()
+                    
+                    # تحضير البيانات
+                    created_by_id = request.user.id if request.user.is_authenticated else None
+                    parent_id_value = parent_folder.id if parent_folder else None
+                    is_system_folder = False
+                    
+                    # الاستعلام SQL
+                    sql = """
+                    INSERT INTO rental_archivefolder 
+                    (name, parent_id, created_at, updated_at, description, created_by_id, is_system_folder, folder_type) 
+                    VALUES (%s, %s, NOW(), NOW(), %s, %s, %s, %s)
+                    RETURNING id;
+                    """
+                    
+                    cursor.execute(sql, [folder_name, parent_id_value, description, created_by_id, is_system_folder, folder_type])
+                    folder_id = cursor.fetchone()[0]
+                    
+                    # الحصول على كائن المجلد المنشأ حديثاً
+                    folder = ArchiveFolder.objects.get(id=folder_id)
+                    print(f"🔴 تم إنشاء المجلد مباشرة عبر SQL: {folder.name} (ID: {folder.id})")
+                    
+                    # حذف أي مستندات تلقائية قد تكون أنشئت
+                    docs = Document.objects.filter(folder=folder)
+                    if docs.exists():
+                        doc_count = docs.count()
+                        docs.delete()
+                        print(f"🔴 تم حذف {doc_count} مستند تلقائي")
+                    
+                except Exception as e:
+                    print(f"🔴 حدث خطأ في إنشاء المجلد عبر SQL: {str(e)}")
+                    print("🔴 الانتقال إلى الخطة البديلة باستخدام ORM...")
+                    
+                    # خطة بديلة: استخدام داله ORM مع منع المستندات
+                    folder = ArchiveFolder(
+                        name=folder_name,
+                        description=description,
+                        folder_type=folder_type,
+                        parent=parent_folder,
+                        created_by=request.user,
+                        is_system_folder=False
+                    )
+                    
+                    # وضع علامة على المجلد لمنع إنشاء المستندات
+                    folder._skip_auto_document_creation = True
+                    print("🔴 تم تعيين _skip_auto_document_creation = True على المجلد")
+                    
+                    # حفظ المجلد
+                    folder.save()
+                    print(f"🔴 تم حفظ المجلد باستخدام ORM: {folder.name} (ID: {folder.id})")
                 
-                # تعيين خاصية للتحكم في إشارات ما بعد الحفظ - تجنب إنشاء مستندات تلقائية
-                folder._skip_auto_document_creation = True
-                print("🔴 تم تعيين _skip_auto_document_creation = True على المجلد")
-                
-                # حفظ المجلد في قاعدة البيانات
-                folder.save()
-                print(f"🔴 تم حفظ المجلد: {folder.name} بمعرف {folder.id}")
-                
-                # تأكد من عدم وجود مستندات تلقائية بعد الحفظ مباشرة
+                # تنظيف أي مستندات تم إنشاؤها
                 doc_count = Document.objects.filter(folder=folder).count()
                 if doc_count > 0:
-                    print(f"🔴 وجدنا {doc_count} مستند تلقائي - سنقوم بحذفها")
+                    print(f"🔴 تم العثور على {doc_count} مستند تلقائي رغم المحاولات - حذف نهائي")
                     Document.objects.filter(folder=folder).delete()
-                    print("🔴 تم حذف المستندات التلقائية")
-                else:
-                    print("🔴 لا توجد مستندات تلقائية")
+            
+            # تأكد من عدم وجود مستندات تلقائية خارج نطاق المعاملة
+            doc_count = Document.objects.filter(folder=folder).count()
+            if doc_count > 0:
+                print(f"🔴 مازال هناك {doc_count} مستند! محاولة حذف أخيرة")
+                Document.objects.filter(folder=folder).delete()
             
             # رسالة تأكيد وتوجيه المستخدم
-            print(f"🔴 اكتملت عملية إنشاء المجلد {folder.name} بمعرف {folder.pk} بنجاح")
+            print(f"🔴 اكتملت عملية إنشاء المجلد {folder.name} بمعرف {folder.id} بنجاح")
             messages.success(request, f"تم إنشاء المجلد '{folder_name}' بنجاح")
             return redirect('admin_archive')
         except Exception as e:
-            print(f"🔴 حدث خطأ أثناء إنشاء المجلد: {str(e)}")
+            print(f"🔴 حدث خطأ غير متوقع أثناء إنشاء المجلد: {str(e)}")
             messages.error(request, f"حدث خطأ أثناء إنشاء المجلد: {str(e)}")
     
     # الحصول على قائمة المجلدات الموجودة للاختيار من بينها
