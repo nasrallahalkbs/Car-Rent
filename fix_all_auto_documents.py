@@ -107,10 +107,8 @@ def comprehensive_fix():
             
             # تنظيف المستندات التلقائية بعد الحفظ
             if self.pk:  # إذا تم حفظ المجلد بنجاح
-                auto_docs = Document.objects.filter(
-                    folder=self,
-                    Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
-                )
+                title_conditions = Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
+                auto_docs = Document.objects.filter(folder=self).filter(title_conditions)
                 if auto_docs.exists():
                     count = auto_docs.count()
                     auto_docs.delete()
@@ -128,9 +126,8 @@ def comprehensive_fix():
         print("\n4. التحقق النهائي من المستندات التلقائية...")
         
         # فحص إذا كان لا يزال هناك مستندات تلقائية
-        auto_docs = Document.objects.filter(
-            Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
-        )
+        title_conditions = Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
+        auto_docs = Document.objects.filter(title_conditions)
         
         if auto_docs.exists():
             count = auto_docs.count()
@@ -146,9 +143,8 @@ def comprehensive_fix():
             auto_docs.delete()
             
             # التحقق مرة أخرى
-            remaining = Document.objects.filter(
-                Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
-            ).count()
+            title_conditions = Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
+            remaining = Document.objects.filter(title_conditions).count()
             
             if remaining > 0:
                 print(f"⚠️ لا يزال هناك {remaining} مستند. يرجى الاتصال بالمطور.")
@@ -166,9 +162,8 @@ def comprehensive_fix():
             while True:
                 try:
                     # تنظيف المستندات التلقائية
-                    auto_docs = Document.objects.filter(
-                        Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
-                    )
+                    title_conditions = Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
+                    auto_docs = Document.objects.filter(title_conditions)
                     if auto_docs.exists():
                         count = auto_docs.count()
                         auto_docs.delete()
