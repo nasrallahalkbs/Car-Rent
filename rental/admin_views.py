@@ -1644,9 +1644,6 @@ def admin_archive(request):
         
         if name:
             try:
-                # استخدام المعاملات الذرية والطريقة المثالية لإنشاء المجلدات
-                from django.db import transaction
-                
                 # البحث عن المجلد الأب إذا تم تحديده
                 parent = None
                 if parent_id:
@@ -1655,18 +1652,17 @@ def admin_archive(request):
                     except ArchiveFolder.DoesNotExist:
                         pass
                 
-                # إنشاء المجلد وحذف أي مستندات تلقائية في معاملة واحدة
-                with transaction.atomic():
-                    # إنشاء المجلد الجديد باستخدام أسلوب create الذي هو أكثر أماناً
-                    folder = ArchiveFolder.objects.create(
-                        name=name,
-                        description=description,
-                        parent=parent,
-                        created_by=request.user if request.user.is_authenticated else None
-                    )
-                    
-                    # حذف أي مستندات تم إنشاؤها تلقائيًا في نفس المعاملة
-                    Document.objects.filter(folder=folder).delete()
+                # إنشاء المجلد بالطريقة المباشرة
+                # إنشاء المجلد الجديد باستخدام أسلوب create الذي هو أكثر أماناً
+                folder = ArchiveFolder.objects.create(
+                    name=name,
+                    description=description,
+                    parent=parent,
+                    created_by=request.user if request.user.is_authenticated else None
+                )
+                
+                # حذف أي مستندات تم إنشاؤها تلقائيًا
+                Document.objects.filter(folder=folder).delete()
                 
                 print(f"DEBUG - تم إنشاء مجلد جديد: {folder.name} بأسلوب آمن")
                 messages.success(request, f"تم إنشاء المجلد '{name}' بنجاح")
@@ -2264,21 +2260,17 @@ def admin_archive_folder_add(request):
                 except ArchiveFolder.DoesNotExist:
                     messages.warning(request, "لم يتم العثور على المجلد الأب المحدد")
             
-            # استخدام ArchiveFolder.objects.create بدلاً من إنشاء كائن ثم حفظه
-            from django.db import transaction
+            # إنشاء المجلد مباشرة
+            folder = ArchiveFolder.objects.create(
+                name=folder_name,
+                description=description,
+                folder_type=folder_type,
+                parent=parent_folder,
+                created_by=request.user
+            )
             
-            # استخدام المعاملة للتأكد من أن عمليات الإنشاء والحذف تحدث معًا
-            with transaction.atomic():
-                folder = ArchiveFolder.objects.create(
-                    name=folder_name,
-                    description=description,
-                    folder_type=folder_type,
-                    parent=parent_folder,
-                    created_by=request.user
-                )
-                
-                # حذف أي مستندات تم إنشاؤها تلقائيًا مع المجلد فورًا
-                Document.objects.filter(folder=folder).delete()
+            # حذف أي مستندات تم إنشاؤها تلقائيًا مع المجلد فورًا
+            Document.objects.filter(folder=folder).delete()
                 
             print(f"DEBUG: تم إنشاء المجلد الجديد: {folder.name} بمعرف {folder.pk} بدون مستندات تلقائية")
             messages.success(request, f"تم إنشاء المجلد '{folder_name}' بنجاح")

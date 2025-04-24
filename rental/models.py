@@ -584,15 +584,10 @@ def delete_auto_created_documents(sender, instance, created, **kwargs):
     if created:
         print(f"DEBUG: تنفيذ خطاف post_save لحذف المستندات التلقائية للمجلد: {instance.name}")
         
-        # التحقق من وجود مستندات للحذف - هنا نحذف أي مستندات قد تكون أنشئت تلقائيًا
-        from django.db import connection
-        
-        # إغلاق الاتصال الحالي لإنهاء أي معاملات معلقة
-        connection.close()
-        
-        # استخدام method.filter.delete() مباشرة بدلاً من الوصول إلى المجموعة المرتبطة
-        Document.objects.filter(folder=instance).delete()
-        print(f"DEBUG: تم حذف أي مستندات تلقائية مرتبطة بالمجلد {instance.name}")
-        
-        # إعادة فتح الاتصال
-        connection.connect()
+        # استخدام الطريقة الآمنة لحذف المستندات المرتبطة
+        try:
+            # استخدام method.filter.delete() مباشرة
+            Document.objects.filter(folder=instance).delete()
+            print(f"DEBUG: تم حذف أي مستندات تلقائية مرتبطة بالمجلد {instance.name}")
+        except Exception as e:
+            print(f"DEBUG: خطأ أثناء محاولة حذف المستندات التلقائية: {str(e)}")
