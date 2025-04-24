@@ -57,15 +57,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // تفعيل وظائف أزرار التنقل
-    $('#back-btn').on('click', function() {
+    $(document).on('click', '#back-btn', function() {
+        console.log("العودة للخلف");
         window.history.back();
     });
     
-    $('#forward-btn').on('click', function() {
+    $(document).on('click', '#forward-btn', function() {
+        console.log("الانتقال للأمام");
         window.history.forward();
     });
     
-    $('#up-btn').on('click', function() {
+    $(document).on('click', '#up-btn', function() {
+        console.log("الانتقال للأعلى");
         {% if current_folder and current_folder.parent %}
         window.location.href = "{% url 'admin_archive' %}?folder={{ current_folder.parent.id }}";
         {% else %}
@@ -73,26 +76,30 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endif %}
     });
     
-    $('#refresh-btn').on('click', function() {
+    $(document).on('click', '#refresh-btn', function() {
+        console.log("تحديث الصفحة");
         window.location.reload();
     });
     
-    $('#home-btn').on('click', function() {
+    $(document).on('click', '#home-btn', function() {
+        console.log("العودة للرئيسية");
         window.location.href = "{% url 'admin_archive' %}";
     });
     
     // تفعيل البحث في المجلدات
-    $('#folder-search').on('keyup', function() {
+    $(document).on('keyup', '#folder-search', function() {
         const searchText = $(this).val();
+        console.log("البحث عن: " + searchText);
         $('#folder-tree').jstree('search', searchText);
     });
     
     // تفعيل تبديل نمط العرض
-    $('.view-btn').on('click', function() {
+    $(document).on('click', '.view-btn', function() {
         $('.view-btn').removeClass('active');
         $(this).addClass('active');
         
         const viewMode = $(this).data('view');
+        console.log("تم تغيير نمط العرض إلى: " + viewMode);
         
         // تبديل بين أنماط العرض المختلفة
         if (viewMode === 'grid') {
@@ -107,27 +114,31 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // تفعيل اختيار الملفات والمجلدات
-    $('.folder-item, .file-item').on('click', function(e) {
+    $(document).on('click', '.folder-item, .file-item', function(e) {
         e.preventDefault();
         $('.folder-item, .file-item').removeClass('selected');
         $(this).addClass('selected');
+        console.log("تم تحديد العنصر: " + $(this).data('folder-id') || $(this).data('file-url'));
     });
     
     // تفعيل النقر المزدوج على المجلدات
-    $('.folder-item').on('dblclick', function() {
+    $(document).on('dblclick', '.folder-item', function() {
         const folderId = $(this).data('folder-id');
+        console.log("تم النقر المزدوج على المجلد: " + folderId);
         window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
     });
     
     // تفعيل النقر المزدوج على الملفات
-    $('.file-item').on('dblclick', function() {
+    $(document).on('dblclick', '.file-item', function() {
         const fileUrl = $(this).data('file-url');
+        console.log("تم النقر المزدوج على الملف: " + fileUrl);
         window.open(fileUrl, '_blank');
     });
     
     // تفعيل العناصر في قائمة الوصول السريع
-    $('.quick-access-item').on('click', function() {
+    $(document).on('click', '.quick-access-item', function() {
         const folderId = $(this).data('folder-id');
+        console.log("تم النقر على عنصر الوصول السريع: " + folderId);
         window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
     });
 });
