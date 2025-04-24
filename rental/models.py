@@ -485,10 +485,35 @@ class Document(models.Model):
     def __init__(self, *args, **kwargs):
         import traceback
         import inspect
-        print(f"DEBUG: تم إنشاء كائن مستند جديد: {kwargs.get('title', 'بدون عنوان')}")
-        print(f"DEBUG: سجل المكالمات عند إنشاء المستند:")
-        for frame in inspect.stack():
-            print(f"DEBUG: في الملف: {frame.filename}, الدالة: {frame.function}, السطر: {frame.lineno}")
+        
+        print(f"⚠️ [DEBUG] إنشاء كائن مستند جديد: {kwargs.get('title', 'بدون عنوان')}")
+        print(f"⚠️ [DEBUG] مسار الاستدعاء عند إنشاء المستند:")
+        
+        # تسجيل أكمل لمسار الاستدعاء لتحديد مصدر إنشاء المستندات التلقائية
+        for i, frame in enumerate(inspect.stack()[1:10]):  # أول 10 إطارات فقط
+            module_name = frame.frame.f_globals.get('__name__', 'غير معروف')
+            print(f"⚠️ [STACK {i+1}] {module_name}.{frame.function} في {frame.filename}:{frame.lineno}")
+            
+            # طباعة المتغيرات المحلية لإطارات محددة
+            if any(keyword in frame.filename for keyword in ['admin_views.py', 'archive', 'folder']):
+                print(f"⚠️ [LOCALS] محلية {frame.function}: {frame.frame.f_locals}")
+            
+            # طباعة قطعة من الكود حول هذا السطر
+            if i < 3:  # أول 3 إطارات فقط
+                context = 2  # عدد الأسطر قبل وبعد السطر الحالي
+                try:
+                    start = max(1, frame.lineno - context)
+                    end = frame.lineno + context
+                    lines = inspect.getsourcelines(frame.frame)[0][frame.lineno - start:frame.lineno - start + 2*context + 1]
+                    
+                    print(f"⚠️ [CODE] الكود في {frame.filename}:{frame.lineno}")
+                    for j, line in enumerate(lines):
+                        indicator = "➤ " if j == context else "  "
+                        print(f"⚠️ [CODE] {indicator}{start + j}: {line.rstrip()}")
+                    print()
+                except Exception as e:
+                    print(f"⚠️ [CODE] خطأ في استخراج الكود: {e}")
+        
         super().__init__(*args, **kwargs)
     
     def save(self, *args, **kwargs):

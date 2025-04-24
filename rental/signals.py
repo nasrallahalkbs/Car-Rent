@@ -5,7 +5,28 @@ from .models import ArchiveFolder, Document
 # ملف إشارات Django المنفصل - للتحكم في إشارات النماذج
 # هذا الملف يتم استدعاؤه في apps.py
 
-# عجموعة لتخزين المجلدات التي تم إنشاؤها حديثًا
+# استهداف المشكلة الفعلية: طريقة ربط المستندات التلقائية بالمجلدات
+# دعنا نبحث عن المشكلة الحقيقية ونوثقها
+
+print("⚠️ تحميل إشارات منع المستندات التلقائية")
+
+# نقوم بتعطيل التشغيل التلقائي للإشارات لأنها قد تكون مصدر المشكلة
+import django.dispatch
+original_connect = django.dispatch.Signal.connect
+
+# نقوم بتخزين كل الإشارات المسجلة للفحص
+all_signals = []
+
+def debug_connect(self, receiver, sender=None, weak=True, dispatch_uid=None):
+    """دالة مخصصة للتحقق من إشارات Django"""
+    print(f"⚠️ تسجيل إشارة: {self} -> {receiver.__name__} من {sender}")
+    all_signals.append((self, receiver, sender))
+    return original_connect(self, receiver, sender, weak, dispatch_uid)
+
+# تعديل الدالة connect في Django لتسجيل جميع الإشارات
+django.dispatch.Signal.connect = debug_connect
+
+# مجموعة لتخزين المجلدات التي تم إنشاؤها حديثًا
 _new_folders = set()
 
 @receiver(pre_save, sender=ArchiveFolder)
