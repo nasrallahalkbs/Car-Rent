@@ -331,8 +331,6 @@ class ArchiveFolder(models.Model):
                                           help_text=_('إذا كان هذا مجلد نظام (يتم إنشاؤه تلقائيًا)'))
     folder_type = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('نوع المجلد'),
                                  help_text=_('نوع المجلد (مثل حجوزات، سيارات، ...إلخ)'))
-    is_auto_document_disabled = models.BooleanField(default=True, verbose_name=_('تعطيل المستندات التلقائية'),
-                                                  help_text=_('عند التفعيل، لن يتم إنشاء مستندات تلقائية مع هذا المجلد'))
     
     def __init__(self, *args, **kwargs):
         print(f"DEBUG [models]: تم إنشاء كائن مجلد جديد: {kwargs.get('name', 'بدون اسم')}")
@@ -351,7 +349,6 @@ class ArchiveFolder(models.Model):
         # لذا سنقوم بتخزين العلامة كخاصية للكائن نفسه
         
         # تأكد من أن المستندات التلقائية معطلة
-        self.is_auto_document_disabled = True
         self._skip_auto_document_creation = True
         
         # استخدام تقنية raw SQL إذا كان هذا مجلد جديد
@@ -371,16 +368,16 @@ class ArchiveFolder(models.Model):
                     is_system = self.is_system_folder
                     folder_type = self.folder_type or ''
                     
-                    # الاستعلام SQL مع تضمين العمود الجديد is_auto_document_disabled
+                    # الاستعلام SQL
                     sql = f"""
                     INSERT INTO {table_name} 
                     (name, parent_id, created_at, updated_at, description, is_system_folder, 
-                     folder_type, is_auto_document_disabled)
-                    VALUES (%s, %s, NOW(), NOW(), %s, %s, %s, %s)
+                     folder_type)
+                    VALUES (%s, %s, NOW(), NOW(), %s, %s, %s)
                     RETURNING id;
                     """
                     
-                    cursor.execute(sql, [self.name, parent_id, description, is_system, folder_type, True])
+                    cursor.execute(sql, [self.name, parent_id, description, is_system, folder_type])
                     folder_id = cursor.fetchone()[0]
                     
                     # إعادة تفعيل المحفزات
@@ -400,7 +397,7 @@ class ArchiveFolder(models.Model):
                     
                     # تحديث الكائن من قاعدة البيانات
                     for field in self._meta.fields:
-                        if field.name not in ['name', 'parent', 'description', 'is_system_folder', 'folder_type', 'is_auto_document_disabled']:
+                        if field.name not in ['name', 'parent', 'description', 'is_system_folder', 'folder_type']:
                             setattr(self, field.attname, None)
                     
                     # لا حاجة للاستمرار في الدالة
