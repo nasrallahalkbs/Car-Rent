@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
     console.log("تم تحميل صفحة الأرشيف بتصميم ويندوز");
     
     // تحديد العنصر النشط حالياً في شجرة المجلدات
@@ -40,8 +40,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 'icon': 'fas fa-cogs text-secondary'
             }
         },
-        'plugins': ['types', 'wholerow']
-    }).on('ready.jstree', function() {
+        'plugins': ['types', 'wholerow', 'search']
+    });
+    
+    // معالجة أحداث jsTree بعد تهيئة الشجرة
+    $('#folder-tree').on('ready.jstree', function() {
+        console.log("اكتملت تهيئة شجرة المجلدات");
         // فتح العقدة الحالية بعد تحميل الشجرة
         {% if current_folder %}
         $('#folder-tree').jstree('select_node', 'folder-{{ current_folder.id }}');
@@ -127,7 +131,20 @@ document.addEventListener('DOMContentLoaded', function() {
     $(document).on('dblclick', '.folder-item', function() {
         const folderId = $(this).data('folder-id');
         console.log("تم النقر المزدوج على المجلد: " + folderId);
-        window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
+        
+        if (!folderId) {
+            console.log("لم يتم العثور على معرف للمجلد - التحقق من المجلد الأب");
+            {% if current_folder and current_folder.parent %}
+            // التوجه للمجلد الأب إذا كان زر العودة للأعلى
+            window.location.href = "{% url 'admin_archive' %}?folder={{ current_folder.parent.id }}";
+            {% else %}
+            // العودة للرئيسية إذا كنا في المجلد الرئيسي
+            window.location.href = "{% url 'admin_archive' %}";
+            {% endif %}
+        } else {
+            // الانتقال للمجلد المحدد
+            window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
+        }
     });
     
     // تفعيل النقر المزدوج على الملفات
@@ -996,12 +1013,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h5 class="modal-title" id="newFolderModalLabel">{% trans "إنشاء مجلد جديد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'admin_archive' %}?action=add_folder" method="post">
+            <form action="{% url 'admin_archive' %}?action=add_folder" method="post" id="newFolderForm">
                 <div class="modal-body">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="name" class="form-label">{% trans "اسم المجلد" %}</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
+                        <input type="text" class="form-control" id="name" name="name" required autocomplete="off" autofocus>
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label">{% trans "وصف المجلد (اختياري)" %}</label>
@@ -1018,15 +1035,42 @@ document.addEventListener('DOMContentLoaded', function() {
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle"></i> {% trans "سيتم إنشاء المجلد في المكان المحدد دون إنشاء أي مستندات تلقائية." %}
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
-                    <button type="submit" class="btn btn-primary">{% trans "إنشاء المجلد" %}</button>
+                    <button type="submit" class="btn btn-primary" id="createFolderBtn">
+                        <i class="fas fa-folder-plus me-1"></i> {% trans "إنشاء المجلد" %}
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+// تحسين تجربة المستخدم لنموذج إنشاء المجلدات
+$(document).ready(function() {
+    // تأكيد عملية إنشاء المجلد
+    $('#newFolderForm').on('submit', function() {
+        if (!$('#name').val().trim()) {
+            alert("{% trans 'يرجى إدخال اسم المجلد' %}");
+            $('#name').focus();
+            return false;
+        }
+        
+        $('#createFolderBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> {% trans "جاري الإنشاء..." %}');
+        return true;
+    });
+    
+    // تنشيط حقل الاسم عند فتح النافذة
+    $('#newFolderModal').on('shown.bs.modal', function() {
+        $('#name').focus();
+    });
+});
+</script>
 
 <!-- نافذة رفع ملف -->
 <div class="modal fade" id="uploadFileModal" tabindex="-1" aria-labelledby="uploadFileModalLabel" aria-hidden="true">
@@ -1036,7 +1080,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h5 class="modal-title" id="uploadFileModalLabel">{% trans "رفع ملف" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'admin_archive' %}?action=add_file" method="post" enctype="multipart/form-data">
+            <form action="{% url 'admin_archive' %}?action=add_file" method="post" enctype="multipart/form-data" id="uploadFileForm">
                 <div class="modal-body">
                     {% csrf_token %}
                     <div class="mb-3">
@@ -1061,16 +1105,42 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="mb-3">
                         <label for="file" class="form-label">{% trans "اختر الملف" %}</label>
                         <input type="file" class="form-control" id="file" name="file" required>
+                        <small class="text-muted mt-2">{% trans "يمكنك رفع ملفات PDF، Word، Excel، الصور وملفات أخرى" %}</small>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> {% trans "سيتم تخزين الملف في المجلد المحدد. يمكنك الوصول إليه من خلال نظام الأرشيف الإلكتروني." %}
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
-                    <button type="submit" class="btn btn-primary">{% trans "رفع الملف" %}</button>
+                    <button type="submit" class="btn btn-primary" id="uploadFileBtn">
+                        <i class="fas fa-upload me-1"></i> {% trans "رفع الملف" %}
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+// إضافة سلوك تحسين تجربة المستخدم لنموذج رفع الملفات
+$(document).ready(function() {
+    // عند اختيار ملف، ملء حقل العنوان تلقائياً بإسم الملف
+    $('#file').on('change', function() {
+        const fileName = $(this).val().split('\\').pop();
+        if (fileName && !$('#title').val()) {
+            // استخراج اسم الملف بدون الامتداد
+            const fileNameWithoutExt = fileName.split('.').slice(0, -1).join('.');
+            $('#title').val(fileNameWithoutExt || fileName);
+        }
+    });
+    
+    // تأكيد عملية الرفع
+    $('#uploadFileForm').on('submit', function() {
+        $('#uploadFileBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> {% trans "جاري الرفع..." %}');
+    });
+});
+</script>
 
 <script>
 // تفعيل زر الإضافة العائم
