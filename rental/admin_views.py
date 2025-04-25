@@ -1788,9 +1788,10 @@ def admin_archive(request):
             
             # إنشاء مستند جديد (ملف) بطريقة آمنة
             try:
-                # إضافة علامة واضحة لمنع إنشاء مستندات بشكل تلقائي
-                if not hasattr(folder, '_skip_auto_document_creation'):
-                    setattr(folder, '_skip_auto_document_creation', True)
+                # إضافة علامة واضحة لمنع إنشاء مستندات بشكل تلقائي فقط إذا كان هناك مجلد
+                if folder is not None:
+                    if not hasattr(folder, '_skip_auto_document_creation'):
+                        setattr(folder, '_skip_auto_document_creation', True)
                     
                 # قراءة معلومات الملف لتخزينه في قاعدة البيانات
                 file_name = uploaded_file.name
