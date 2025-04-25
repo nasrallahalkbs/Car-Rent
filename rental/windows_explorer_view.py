@@ -78,8 +78,22 @@ def get_folder_tree(request):
 def clean_document_list(documents):
     """تنظيف المستندات الوهمية من قائمة المستندات المعروضة"""
     if documents:
-        # فقط استبعاد المستندات التي ليس لها عنوان أو عناوين فارغة تمامًا
-        return documents.filter(title__isnull=False).exclude(title="").exclude(title=" ")
+        # طباعة معلومات المستندات الخام للتشخيص
+        print(f"DEBUG - إجمالي المستندات الخام: {documents.count()}")
+        for doc in documents[:5]:  # نطبع أول 5 مستندات فقط للاختصار
+            print(f"DEBUG - مستند خام: ID={doc.id}, العنوان={doc.title}, النوع={doc.file_type}, الحجم={doc.file_size}")
+        
+        # استبعاد المستندات التي ليس لها عنوان فقط - لا نستبعد أي شيء آخر
+        # فقد يكون لبعض المستندات قيم فارغة في حقول أخرى
+        filtered_docs = documents.filter(title__isnull=False).exclude(title="")
+        
+        # طباعة عدد المستندات المتبقية بعد التنقية
+        print(f"DEBUG - المستندات بعد التنقية: {filtered_docs.count()}")
+        
+        return filtered_docs
+    
+    # إذا لم تكن هناك مستندات أصلاً
+    print("DEBUG - لا توجد مستندات في القائمة الأصلية")
     return documents
 
 @login_required
