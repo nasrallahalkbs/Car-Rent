@@ -3254,8 +3254,14 @@ def download_document(request, document_id):
     # الحصول على المستند من قاعدة البيانات
     document = get_object_or_404(Document, id=document_id)
     
+    # معلومات تشخيصية للمستند
+    print(f"DEBUG - طلب تنزيل المستند: ID={document.id}, العنوان={document.title}")
+    print(f"DEBUG - معلومات الملف: اسم={document.file_name}, نوع={document.file_type}, حجم={document.file_size} بايت")
+    print(f"DEBUG - حجم محتوى الملف: {len(document.file_content) if document.file_content else 0} بايت")
+    
     # إذا كان المستند غير موجود، نعرض رسالة خطأ
     if not document.file_content:
+        print(f"ERROR - محتوى الملف غير موجود للمستند ID={document.id}, العنوان={document.title}")
         messages.error(request, _("هذا المستند غير متوفر للتحميل."))
         return redirect('admin_archive')
     
@@ -3269,6 +3275,7 @@ def download_document(request, document_id):
     filename = document.file_name or f"{document.title}.{document.file_type.split('/')[-1] if document.file_type else 'pdf'}"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
+    print(f"DEBUG - تم إرسال الملف بنجاح: {filename}, الحجم={len(document.file_content)} بايت")
     return response
 @login_required
 @admin_required
@@ -3306,7 +3313,16 @@ def admin_archive_upload(request):
             file_name = uploaded_file.name
             file_type = uploaded_file.content_type
             file_size = uploaded_file.size
+            
+            # نسخ محتوى الملف للاستخدام في قاعدة البيانات
             file_content = uploaded_file.read()
+            
+            # طباعة معلومات تشخيصية
+            print(f"DEBUG - معلومات الملف المرفوع: اسم={file_name}, نوع={file_type}, حجم={file_size} بايت")
+            print(f"DEBUG - حجم محتوى الملف المقروء: {len(file_content)} بايت")
+            
+            # إعادة تعيين مؤشر الملف للبداية
+            uploaded_file.seek(0)
             
             # إنشاء المستند مع تخزين الملف في قاعدة البيانات
             document = Document(
@@ -3318,7 +3334,8 @@ def admin_archive_upload(request):
                 file_name=file_name,
                 file_type=file_type,
                 file_size=file_size,
-                file_content=file_content,
+                file_content=file_content,  # استخدام محتوى الملف المقروء
+                file=uploaded_file,  # تعيين الملف بعد إعادة تعيين المؤشر
                 is_auto_created=False  # تأكيد أن المستند ليس تلقائي
             )
             
