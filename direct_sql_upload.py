@@ -6,7 +6,6 @@ import sys
 import django
 import datetime
 import psycopg2
-from psycopg2.binary import Binary
 
 # إعداد بيئة Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'car_rental_project.settings')
@@ -51,7 +50,8 @@ def direct_upload():
         
         # 2. إنشاء محتوى ملف اختباري
         file_content = "هذا ملف اختبار تم رفعه باستخدام SQL المباشر".encode('utf-8')
-        binary_content = Binary(file_content)
+        # استخدام محتوى الملف مباشرة بدلاً من تحويله إلى Binary
+        binary_content = file_content
         
         # 3. التحقق من وجود حقل is_auto_created في جدول المستندات
         cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'rental_document' AND column_name = 'is_auto_created';")
