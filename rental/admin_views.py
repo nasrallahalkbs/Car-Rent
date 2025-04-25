@@ -2912,7 +2912,15 @@ def admin_archive_folder_add_document(request, folder_id):
                 messages.error(request, "تنسيق تاريخ انتهاء الصلاحية غير صحيح")
                 return redirect('admin_archive_folder_add_document', folder_id=folder_id)
         
-        # إنشاء المستند
+        # إنشاء المستند مع تخزين الملف في قاعدة البيانات
+        uploaded_file = request.FILES['file']
+        file_name = uploaded_file.name
+        file_type = uploaded_file.content_type
+        file_size = uploaded_file.size
+        
+        # قراءة محتوى الملف
+        file_content = uploaded_file.read()
+        
         document = Document(
             title=title,
             document_type=document_type,
@@ -2920,7 +2928,11 @@ def admin_archive_folder_add_document(request, folder_id):
             document_date=document_date,
             expiry_date=expiry_date,
             related_to=related_to,
-            file=request.FILES['file'],
+            # تخزين معلومات الملف في قاعدة البيانات
+            file_name=file_name,
+            file_type=file_type,
+            file_size=file_size,
+            file_content=file_content,
             tags=tags,
             added_by=request.user,
             folder=folder
