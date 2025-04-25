@@ -218,15 +218,25 @@ def admin_archive_windows(request):
             # إنشاء مستند جديد (ملف) بطريقة آمنة
             try:
                 # إضافة علامة واضحة لمنع إنشاء مستندات بشكل تلقائي
-                if not hasattr(folder, '_skip_auto_document_creation'):
-                    setattr(folder, '_skip_auto_document_creation', True)
+                if folder is not None:
+                    if not hasattr(folder, '_skip_auto_document_creation'):
+                        setattr(folder, '_skip_auto_document_creation', True)
                     
+                # قراءة معلومات الملف لتخزينه في قاعدة البيانات
+                file_name = uploaded_file.name
+                file_type = uploaded_file.content_type
+                file_content = uploaded_file.read()
+                
+                # إنشاء المستند مع تخزين الملف في قاعدة البيانات
                 document = Document.objects.create(
                     title=title,
                     description=description,
                     document_type='other',  # استخدام القيمة الافتراضية 'other'
-                    file=uploaded_file,
+                    # تخزين معلومات الملف في قاعدة البيانات
+                    file_name=file_name,
+                    file_type=file_type,
                     file_size=file_size,
+                    file_content=file_content,
                     document_date=timezone.now().date(),
                     related_to='other',  # استخدام القيمة الافتراضية 'other'
                     added_by=request.user if request.user.is_authenticated else None,
