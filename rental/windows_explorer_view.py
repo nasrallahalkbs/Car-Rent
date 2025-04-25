@@ -374,6 +374,7 @@ def admin_archive_windows(request):
         'root_folders': root_folders,
         'subfolders': subfolders,
         'documents': documents,
+        'files': documents,  # إضافة متغير 'files' ليكون متوافقًا مع قالب fixed_archive_main.html
         'current_folder': current_folder,
         'folder_path': folder_path,
         'folder_param': folder_param,
@@ -387,5 +388,5 @@ def admin_archive_windows(request):
         'show_documents': True  # إضافة متغير للتأكد من عرض المستندات دائمًا
     }
     
-    # استخدام قالب مشابه لمستكشف ويندوز
-    return render(request, 'admin/archive/windows_explorer_enhanced.html', context)
+    # استخدام قالب fixed_archive_main.html المعدل
+    return render(request, 'admin/archive/fixed_archive_main.html', context)
