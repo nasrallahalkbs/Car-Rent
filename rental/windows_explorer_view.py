@@ -78,7 +78,8 @@ def get_folder_tree(request):
 def clean_document_list(documents):
     """تنظيف المستندات الوهمية من قائمة المستندات المعروضة"""
     if documents:
-        return documents.filter(title__isnull=False).exclude(title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف"])
+        # فقط استبعاد المستندات التي ليس لها عنوان أو عناوين فارغة تمامًا
+        return documents.filter(title__isnull=False).exclude(title="").exclude(title=" ")
     return documents
 
 @login_required
@@ -308,10 +309,13 @@ def admin_archive_windows(request):
                 current_folder = ArchiveFolder.objects.get(id=folder_id)
                 # الحصول على المجلدات الفرعية والمستندات
                 subfolders = ArchiveFolder.objects.filter(parent=current_folder).order_by('name')
-                documents = Document.objects.filter(folder=current_folder).exclude(title__in=['بدون عنوان', '', None]).order_by('-created_at')
+                documents = Document.objects.filter(folder=current_folder).order_by('-created_at')
                 
+                # طباعة عدد المستندات قبل التنظيف للتشخيص
+                print(f"DEBUG - عدد المستندات قبل التنظيف: {documents.count()}")
                 # تنظيف المستندات
                 documents = clean_document_list(documents)
+                print(f"DEBUG - عدد المستندات بعد التنظيف: {documents.count()}")
                 
                 # بناء مسار المجلد
                 folder_path = []
@@ -330,9 +334,13 @@ def admin_archive_windows(request):
             print(f"DEBUG - المجلد غير موجود: {folder_param}")
     else:
         # عرض المستندات في المجلد الرئيسي (بدون مجلد)
-        documents = Document.objects.filter(folder__isnull=True).exclude(title__in=['بدون عنوان', '', None]).order_by('-created_at')
+        documents = Document.objects.filter(folder__isnull=True).order_by('-created_at')
+        
+        # طباعة عدد المستندات قبل التنظيف للتشخيص
+        print(f"DEBUG - المجلد الرئيسي - عدد المستندات قبل التنظيف: {documents.count()}")
         # تنظيف المستندات
         documents = clean_document_list(documents)
+        print(f"DEBUG - المجلد الرئيسي - عدد المستندات بعد التنظيف: {documents.count()}")
     
     # بناء شجرة المجلدات للعرض في jsTree
     folder_tree = get_folder_tree(request)
