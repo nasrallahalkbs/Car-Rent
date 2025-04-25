@@ -2197,68 +2197,110 @@ def admin_archive_delete(request, document_id):
 @login_required
 @admin_required
 def admin_archive_download(request, document_id):
-    """تنزيل ملف مستند من الأرشيف"""
+    """تنزيل ملف مستند من الأرشيف - يدعم الملفات المخزنة في قاعدة البيانات"""
     document = get_object_or_404(Document, id=document_id)
     
-    if not document.file:
-        messages.error(request, "الملف غير موجود")
-        return redirect('admin_archive_detail', document_id=document_id)
-    
-    try:
-        file_path = document.file.path
-        
-        # التحقق من وجود الملف
-        if not os.path.exists(file_path):
-            messages.error(request, "الملف غير موجود على الخادم")
+    # فحص إذا كان الملف مخزن في قاعدة البيانات
+    if document.file_content:
+        try:
+            # تحديد نوع MIME للملف
+            content_type = document.file_type or 'application/octet-stream'
+            
+            # تحديد اسم الملف
+            filename = document.file_name or f"document_{document.id}.bin"
+            
+            # إنشاء استجابة HttpResponse مع المحتوى الثنائي
+            response = HttpResponse(document.file_content, content_type=content_type)
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+            
+        except Exception as e:
+            print(f"خطأ في تنزيل المستند من قاعدة البيانات: {str(e)}")
+            messages.error(request, f"حدث خطأ أثناء تنزيل الملف: {str(e)}")
             return redirect('admin_archive_detail', document_id=document_id)
-        
-        # تحديد نوع MIME للملف
-        content_type, encoding = mimetypes.guess_type(file_path)
-        if content_type is None:
-            content_type = 'application/octet-stream'
-        
-        # إنشاء اسم الملف للتنزيل
-        filename = os.path.basename(file_path)
-        
-        # إرجاع استجابة FileResponse
-        response = FileResponse(open(file_path, 'rb'), content_type=content_type)
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
     
-    except Exception as e:
-        messages.error(request, f"حدث خطأ أثناء تنزيل الملف: {str(e)}")
+    # إذا كان الملف غير مخزن في قاعدة البيانات، استخدم الطريقة القديمة
+    elif document.file:
+        try:
+            file_path = document.file.path
+            
+            # التحقق من وجود الملف
+            if not os.path.exists(file_path):
+                messages.error(request, "الملف غير موجود على الخادم")
+                return redirect('admin_archive_detail', document_id=document_id)
+            
+            # تحديد نوع MIME للملف
+            content_type, encoding = mimetypes.guess_type(file_path)
+            if content_type is None:
+                content_type = 'application/octet-stream'
+            
+            # إنشاء اسم الملف للتنزيل
+            filename = os.path.basename(file_path)
+            
+            # إرجاع استجابة FileResponse
+            response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+            
+        except Exception as e:
+            messages.error(request, f"حدث خطأ أثناء تنزيل الملف: {str(e)}")
+            return redirect('admin_archive_detail', document_id=document_id)
+    else:
+        messages.error(request, "الملف غير موجود")
         return redirect('admin_archive_detail', document_id=document_id)
 
 @login_required
 @admin_required
 def admin_archive_view(request, document_id):
-    """عرض ملف مستند مباشرة في المتصفح"""
+    """عرض ملف مستند مباشرة في المتصفح - يدعم الملفات المخزنة في قاعدة البيانات"""
     document = get_object_or_404(Document, id=document_id)
     
-    if not document.file:
-        messages.error(request, "الملف غير موجود")
-        return redirect('admin_archive_detail', document_id=document_id)
-    
-    try:
-        file_path = document.file.path
-        
-        # التحقق من وجود الملف
-        if not os.path.exists(file_path):
-            messages.error(request, "الملف غير موجود على الخادم")
+    # فحص إذا كان الملف مخزن في قاعدة البيانات
+    if document.file_content:
+        try:
+            # تحديد نوع MIME للملف
+            content_type = document.file_type or 'application/octet-stream'
+            
+            # إنشاء استجابة HttpResponse بدلاً من FileResponse
+            response = HttpResponse(document.file_content, content_type=content_type)
+            
+            # تعيين اسم الملف إذا كان متوفرًا
+            if document.file_name:
+                response['Content-Disposition'] = f'inline; filename="{document.file_name}"'
+            else:
+                response['Content-Disposition'] = 'inline'
+            
+            return response
+        except Exception as e:
+            print(f"خطأ في عرض المستند من قاعدة البيانات: {str(e)}")
+            messages.error(request, f"حدث خطأ أثناء عرض الملف: {str(e)}")
             return redirect('admin_archive_detail', document_id=document_id)
-        
-        # تحديد نوع MIME للملف
-        content_type, encoding = mimetypes.guess_type(file_path)
-        if content_type is None:
-            content_type = 'application/octet-stream'
-        
-        # إرجاع استجابة FileResponse
-        response = FileResponse(open(file_path, 'rb'), content_type=content_type)
-        response['Content-Disposition'] = 'inline'
-        return response
     
-    except Exception as e:
-        messages.error(request, f"حدث خطأ أثناء عرض الملف: {str(e)}")
+    # إذا كان الملف غير مخزن في قاعدة البيانات، استخدم الطريقة القديمة
+    elif document.file:
+        try:
+            file_path = document.file.path
+            
+            # التحقق من وجود الملف
+            if not os.path.exists(file_path):
+                messages.error(request, "الملف غير موجود على الخادم")
+                return redirect('admin_archive_detail', document_id=document_id)
+            
+            # تحديد نوع MIME للملف
+            content_type, encoding = mimetypes.guess_type(file_path)
+            if content_type is None:
+                content_type = 'application/octet-stream'
+            
+            # إرجاع استجابة FileResponse
+            response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+            response['Content-Disposition'] = 'inline'
+            return response
+        
+        except Exception as e:
+            messages.error(request, f"حدث خطأ أثناء عرض الملف: {str(e)}")
+            return redirect('admin_archive_detail', document_id=document_id)
+    else:
+        messages.error(request, "الملف غير موجود")
         return redirect('admin_archive_detail', document_id=document_id)
 
 # دوال إدارة المجلدات في نظام الأرشيف
