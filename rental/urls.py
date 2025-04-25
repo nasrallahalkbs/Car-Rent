@@ -83,6 +83,7 @@ urlpatterns = [
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
     path('dashboard/archive/folder/add/', admin_views.admin_archive_folder_add, name='admin_archive_folder_add'),
     path('dashboard/archive/windows/', admin_archive_windows_explorer, name='admin_archive_windows'),
+    path('dashboard/archive/document/<int:document_id>/download/', admin_views.download_document, name='download_document'),
 
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
