@@ -736,9 +736,22 @@ def add_document(request):
         if user_id:
             document.user_id = user_id
         
-        # حفظ ملف الوثيقة
+        # حفظ ملف الوثيقة في قاعدة البيانات
         if 'file' in request.FILES:
-            document.file = request.FILES['file']
+            uploaded_file = request.FILES['file']
+            file_name = uploaded_file.name
+            file_type = uploaded_file.content_type
+            file_size = uploaded_file.size
+            file_content = uploaded_file.read()
+            
+            # تخزين معلومات الملف في قاعدة البيانات
+            document.file_name = file_name
+            document.file_type = file_type
+            document.file_size = file_size
+            document.file_content = file_content
+            
+            # إلغاء الملف في نظام الملفات
+            document.file = None
         
         # حفظ الوثيقة
         document.save()
@@ -830,7 +843,20 @@ def edit_document(request, document_id):
         
         # تحديث ملف الوثيقة إذا تم تحميل ملف جديد
         if 'file' in request.FILES:
-            document.file = request.FILES['file']
+            uploaded_file = request.FILES['file']
+            file_name = uploaded_file.name
+            file_type = uploaded_file.content_type
+            file_size = uploaded_file.size
+            file_content = uploaded_file.read()
+            
+            # تخزين معلومات الملف في قاعدة البيانات
+            document.file_name = file_name
+            document.file_type = file_type
+            document.file_size = file_size
+            document.file_content = file_content
+            
+            # إلغاء الملف السابق
+            document.file = None
         
         # حفظ التعديلات
         document.save()
@@ -1766,12 +1792,21 @@ def admin_archive(request):
                 if not hasattr(folder, '_skip_auto_document_creation'):
                     setattr(folder, '_skip_auto_document_creation', True)
                     
+                # قراءة معلومات الملف لتخزينه في قاعدة البيانات
+                file_name = uploaded_file.name
+                file_type = uploaded_file.content_type
+                file_content = uploaded_file.read()
+                
+                # إنشاء المستند مع تخزين الملف في قاعدة البيانات
                 document = Document.objects.create(
                     title=title,
                     description=description,
                     document_type='other',  # استخدام القيمة الافتراضية 'other'
-                    file=uploaded_file,
+                    # تخزين معلومات الملف في قاعدة البيانات
+                    file_name=file_name,
+                    file_type=file_type,
                     file_size=file_size,
+                    file_content=file_content,
                     document_date=timezone.now().date(),
                     related_to='other',  # استخدام القيمة الافتراضية 'other'
                     added_by=request.user if request.user.is_authenticated else None,
