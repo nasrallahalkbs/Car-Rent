@@ -2360,11 +2360,21 @@ def admin_archive_view(request, document_id):
     """عرض ملف مستند مباشرة في المتصفح - يدعم الملفات المخزنة في قاعدة البيانات"""
     document = get_object_or_404(Document, id=document_id)
     
+    print(f"🔍 محاولة عرض المستند: {document.id} | {document.title}")
+    print(f"🔍 معلومات المستند: file_content: {'موجود' if document.file_content else 'غير موجود'}, file: {'موجود' if hasattr(document, 'file') and document.file else 'غير موجود'}")
+    
+    # التحقق من حجم ملف المستند
+    if hasattr(document, 'file_size'):
+        print(f"🔍 حجم الملف المسجل: {document.file_size} بايت")
+    
     # فحص إذا كان الملف مخزن في قاعدة البيانات
     if document.file_content:
         try:
+            print(f"📄 استخدام file_content للمستند {document.id} - حجم البيانات: {len(document.file_content)} بايت")
+            
             # تحديد نوع MIME للملف
             content_type = document.file_type or 'application/octet-stream'
+            print(f"📄 نوع المحتوى: {content_type}")
             
             # إنشاء استجابة HttpResponse بدلاً من FileResponse
             response = HttpResponse(document.file_content, content_type=content_type)
@@ -2375,36 +2385,49 @@ def admin_archive_view(request, document_id):
             else:
                 response['Content-Disposition'] = 'inline'
             
+            print(f"✅ تم إنشاء استجابة صحيحة للمستند {document.id}")
             return response
         except Exception as e:
-            print(f"خطأ في عرض المستند من قاعدة البيانات: {str(e)}")
+            print(f"❌ خطأ في عرض المستند من قاعدة البيانات: {str(e)}")
             messages.error(request, f"حدث خطأ أثناء عرض الملف: {str(e)}")
             return redirect('admin_archive_detail', document_id=document_id)
     
     # إذا كان الملف غير مخزن في قاعدة البيانات، استخدم الطريقة القديمة
     elif document.file:
         try:
+            print(f"📄 استخدام file.url للمستند {document.id}: {document.file.url}")
             file_path = document.file.path
             
             # التحقق من وجود الملف
             if not os.path.exists(file_path):
+                print(f"❌ الملف غير موجود على المسار: {file_path}")
                 messages.error(request, "الملف غير موجود على الخادم")
                 return redirect('admin_archive_detail', document_id=document_id)
+            
+            # تسجيل معلومات إضافية
+            file_size = os.path.getsize(file_path)
+            print(f"📄 جاري فتح الملف: {file_path} | الحجم: {file_size} بايت")
             
             # تحديد نوع MIME للملف
             content_type, encoding = mimetypes.guess_type(file_path)
             if content_type is None:
                 content_type = 'application/octet-stream'
             
+            print(f"📄 نوع المحتوى: {content_type}")
+            
             # إرجاع استجابة FileResponse
             response = FileResponse(open(file_path, 'rb'), content_type=content_type)
-            response['Content-Disposition'] = 'inline'
+            response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
+            
+            print(f"✅ تم إنشاء استجابة FileResponse للمستند {document.id}")
             return response
         
         except Exception as e:
+            print(f"❌ خطأ في عرض المستند من الملف: {str(e)}")
             messages.error(request, f"حدث خطأ أثناء عرض الملف: {str(e)}")
             return redirect('admin_archive_detail', document_id=document_id)
     else:
+        print(f"❌ لا يوجد ملف مرتبط بالمستند {document.id}")
         messages.error(request, "الملف غير موجود")
         return redirect('admin_archive_detail', document_id=document_id)
 
