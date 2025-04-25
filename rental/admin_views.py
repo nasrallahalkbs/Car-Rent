@@ -3128,3 +3128,28 @@ def admin_archive_tree(request):
     }
     
     return render(request, 'admin/archive/folder_tree.html', context)
+
+@login_required
+def download_document(request, document_id):
+    """
+    تنزيل المستند من قاعدة البيانات
+    """
+    # الحصول على المستند من قاعدة البيانات
+    document = get_object_or_404(Document, id=document_id)
+    
+    # إذا كان المستند غير موجود، نعرض رسالة خطأ
+    if not document.file_content:
+        messages.error(request, _("هذا المستند غير متوفر للتحميل."))
+        return redirect('admin_archive')
+    
+    # تكوين استجابة الملف
+    response = HttpResponse(
+        document.file_content,
+        content_type=document.file_type or 'application/octet-stream'
+    )
+    
+    # تحديد اسم الملف للتنزيل
+    filename = document.file_name or f"{document.title}.{document.file_type.split('/')[-1] if document.file_type else 'pdf'}"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
