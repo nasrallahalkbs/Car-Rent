@@ -3270,3 +3270,75 @@ def download_document(request, document_id):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
+@login_required
+@admin_required
+def admin_archive_upload(request):
+    """وظيفة مخصصة لرفع المستندات إلى الأرشيف"""
+    if request.method == 'POST':
+        title = request.POST.get('title', '')
+        description = request.POST.get('description', '')
+        folder_id = request.POST.get('folder', None)
+        document_type = request.POST.get('document_type', 'other')
+        
+        # التحقق من وجود عنوان وملف
+        if not title:
+            messages.error(request, "يرجى إدخال عنوان للمستند")
+            return redirect('admin_archive')
+        
+        if 'file' not in request.FILES:
+            messages.error(request, "يرجى اختيار ملف للرفع")
+            return redirect('admin_archive')
+        
+        uploaded_file = request.FILES['file']
+        
+        # البحث عن المجلد إذا تم تحديده
+        folder = None
+        if folder_id:
+            try:
+                folder = ArchiveFolder.objects.get(id=folder_id)
+                print(f"DEBUG - تم العثور على المجلد: {folder.name} (ID: {folder.id})")
+            except ArchiveFolder.DoesNotExist:
+                messages.error(request, "المجلد المحدد غير موجود")
+                return redirect('admin_archive')
+        
+        try:
+            # قراءة معلومات الملف لتخزينه في قاعدة البيانات
+            file_name = uploaded_file.name
+            file_type = uploaded_file.content_type
+            file_size = uploaded_file.size
+            file_content = uploaded_file.read()
+            
+            # إنشاء المستند مع تخزين الملف في قاعدة البيانات
+            document = Document(
+                title=title,
+                description=description,
+                document_type=document_type,
+                folder=folder,
+                created_by=request.user if hasattr(request, 'user') else None,
+                file_name=file_name,
+                file_type=file_type,
+                file_size=file_size,
+                file_content=file_content,
+                is_auto_created=False  # تأكيد أن المستند ليس تلقائي
+            )
+            
+            # حفظ المستند
+            document.save()
+            
+            print(f"DEBUG - تم إنشاء مستند جديد: {document.title} (ID: {document.id}) في المجلد: {folder.name if folder else 'لا يوجد'}")
+            
+            messages.success(request, f"تم رفع المستند '{title}' بنجاح")
+            
+            # إعادة التوجيه إلى صفحة الأرشيف مع تحديد المجلد الحالي
+            if folder:
+                return redirect(f"/ar/dashboard/archive/?folder={folder.id}")
+            else:
+                return redirect('admin_archive')
+            
+        except Exception as e:
+            print(f"ERROR - حدث خطأ أثناء رفع المستند: {str(e)}")
+            messages.error(request, f"حدث خطأ أثناء رفع المستند: {str(e)}")
+            return redirect('admin_archive')
+    
+    # إذا كانت الطريقة غير POST، إعادة التوجيه إلى صفحة الأرشيف
+    return redirect('admin_archive')
