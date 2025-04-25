@@ -50,8 +50,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }).on('select_node.jstree', function(e, data) {
         // التعامل مع اختيار عقدة
         const nodeId = data.node.id;
+        console.log("تم اختيار العقدة في شجرة المجلدات: " + nodeId);
         if (nodeId.startsWith('folder-')) {
             const folderId = nodeId.replace('folder-', '');
+            console.log("جاري الانتقال إلى المجلد رقم: " + folderId);
             window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
         }
     });
@@ -1088,11 +1090,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // تفعيل النقر في جدول الملفات
-    document.querySelectorAll('.folder-row').forEach(row => {
-        row.addEventListener('click', function() {
-            const folderId = this.dataset.folderId;
-            window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
-        });
+    $(document).on('click', '.folder-row', function() {
+        const folderId = $(this).data('folder-id');
+        console.log("تم النقر على صف المجلد: " + folderId);
+        window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
     });
 });
 </script>
