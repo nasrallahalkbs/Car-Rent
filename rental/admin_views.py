@@ -1814,7 +1814,13 @@ def admin_archive(request):
                     folder=folder
                 )
                 
-                print(f"DEBUG - تم إنشاء مستند جديد: {document.title}")
+                print(f"🟢 تم إنشاء مستند جديد بنجاح: {document.title}")
+                print(f"🟢 معرف المستند: {document.id}, في المجلد: {folder.name if folder else 'المجلد الرئيسي'}")
+                print(f"🟢 حجم المستند: {file_size}, نوع الملف: {file_type}")
+                # التحقق من أن المستند موجود في قاعدة البيانات
+                verify_doc = Document.objects.filter(id=document.id).first()
+                if verify_doc:
+                    print(f"🟢 تم التحقق من وجود المستند في قاعدة البيانات، معرف: {verify_doc.id}, العنوان: {verify_doc.title}")
             except Exception as e:
                 print(f"ERROR - فشل في إنشاء المستند: {str(e)}")
                 messages.error(request, f"حدث خطأ أثناء إنشاء المستند: {str(e)}")
@@ -1884,7 +1890,20 @@ def admin_archive(request):
                 current_folder = ArchiveFolder.objects.get(id=folder_id)
                 # الحصول على المجلدات الفرعية والمستندات
                 subfolders = ArchiveFolder.objects.filter(parent=current_folder).order_by('name')
-                documents = Document.objects.filter(title__isnull=False).exclude(title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف"]).filter(folder=current_folder).exclude(title__in=['بدون عنوان', '', None]).order_by('-created_at')
+                
+                # استعلام محسّن للمستندات: يجلب المستندات بعنوان صحيح واستبعاد المستندات التلقائية
+                documents = Document.objects.filter(
+                    folder=current_folder,
+                    title__isnull=False
+                ).exclude(
+                    title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف", None]
+                ).order_by('-created_at')
+                
+                # التحقق من المستندات وطباعة معلومات تصحيح
+                print(f"🔍 المستندات في المجلد {current_folder.name} (ID: {current_folder.id}):")
+                for doc in documents:
+                    print(f"📄 مستند: {doc.id} | {doc.title} | {doc.file_name if hasattr(doc, 'file_name') else 'لا يوجد اسم ملف'}")
+                    print(f"   - نوع التخزين: {'file_content' if doc.file_content else 'file' if doc.file else 'غير معروف'}")
                 
                 # بناء مسار المجلد
                 folder_path = []
@@ -1902,8 +1921,19 @@ def admin_archive(request):
         except ArchiveFolder.DoesNotExist:
             print(f"DEBUG - المجلد غير موجود: {folder_param}")
     else:
-        # عرض المستندات في المجلد الرئيسي (بدون مجلد)
-        documents = Document.objects.filter(folder__isnull=True).exclude(title__in=['بدون عنوان', '', None]).order_by('-created_at')
+        # عرض المستندات في المجلد الرئيسي (بدون مجلد) مع استبعاد المستندات التلقائية
+        documents = Document.objects.filter(
+            folder__isnull=True,
+            title__isnull=False
+        ).exclude(
+            title__in=['بدون عنوان', '', ' ', 'نموذج_استعلام_الارشيف', None]
+        ).order_by('-created_at')
+        
+        # طباعة معلومات المستندات في المجلد الرئيسي للتصحيح
+        print(f"🔍 المستندات في المجلد الرئيسي:")
+        for doc in documents:
+            print(f"📄 مستند: {doc.id} | {doc.title} | {doc.file_name if hasattr(doc, 'file_name') else 'لا يوجد اسم ملف'}")
+            print(f"   - نوع التخزين: {'file_content' if doc.file_content else 'file' if doc.file else 'غير معروف'}")
     
     # إعداد سياق البيانات
     # إضافة وقت حالي لمنع التخزين المؤقت
@@ -1925,6 +1955,17 @@ def admin_archive(request):
         'current_date_time': current_time  # إضافة وقت حالي لمنع التخزين المؤقت
     }
     
+    # طباعة معلومات تصحيح إضافية عن كل مستند يتم تمريره للقالب
+    print(f"🔄 تمرير {len(documents)} مستند للقالب:")
+    for idx, doc in enumerate(documents):
+        has_file_content = hasattr(doc, 'file_content') and doc.file_content is not None
+        has_file = hasattr(doc, 'file') and doc.file is not None
+        print(f"   {idx+1}. معرف: {doc.id}, العنوان: {doc.title}")
+        print(f"      - file_content: {'موجود' if has_file_content else 'غير موجود'}")
+        print(f"      - file: {'موجود' if has_file else 'غير موجود'}")
+        print(f"      - file_name: {doc.file_name if hasattr(doc, 'file_name') else 'غير موجود'}")
+        print(f"      - file_type: {doc.file_type if hasattr(doc, 'file_type') else 'غير موجود'}")
+        
     # استخدام قالب الأرشيف الثابت البسيط
     return render(request, 'admin/archive/enhanced_archive.html', context)
 

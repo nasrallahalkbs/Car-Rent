@@ -291,31 +291,55 @@ document.addEventListener('DOMContentLoaded', function() {
         {% if documents %}
             <div class="file-grid">
                 {% for doc in documents %}
-                {% if doc.file_content %}
-                <a href="{% url 'admin_archive_view' doc.id %}" class="text-decoration-none" target="_blank">
+                <!-- عرض المستند - يدعم كل من file_content و file -->
+                <a href="{% url 'admin_archive_view' doc.id %}" class="text-decoration-none document-card" target="_blank">
                     <div class="file-card">
-                        <div class="file-icon {% if 'pdf' in doc.file_name %}pdf{% elif 'doc' in doc.file_name %}doc{% elif 'xls' in doc.file_name %}xls{% elif 'jpg' in doc.file_name or 'png' in doc.file_name or 'jpeg' in doc.file_name %}img{% elif 'zip' in doc.file_name %}zip{% endif %}">
-                            <i class="fas {% if 'pdf' in doc.file_name %}fa-file-pdf{% elif 'doc' in doc.file_name %}fa-file-word{% elif 'xls' in doc.file_name %}fa-file-excel{% elif 'jpg' in doc.file_name or 'png' in doc.file_name or 'jpeg' in doc.file_name %}fa-file-image{% elif 'zip' in doc.file_name %}fa-file-archive{% else %}fa-file{% endif %}"></i>
+                        {% if doc.file_name %}
+                        <!-- مستند file_content -->
+                        <div class="file-icon 
+                            {% if doc.file_name|lower|endswith:'.pdf' %}pdf
+                            {% elif doc.file_name|lower|endswith:'.doc' or doc.file_name|lower|endswith:'.docx' %}doc
+                            {% elif doc.file_name|lower|endswith:'.xls' or doc.file_name|lower|endswith:'.xlsx' %}xls
+                            {% elif doc.file_name|lower|endswith:'.jpg' or doc.file_name|lower|endswith:'.jpeg' or doc.file_name|lower|endswith:'.png' %}img
+                            {% elif doc.file_name|lower|endswith:'.zip' %}zip
+                            {% else %}file{% endif %}">
+                            <i class="fas 
+                            {% if doc.file_name|lower|endswith:'.pdf' %}fa-file-pdf
+                            {% elif doc.file_name|lower|endswith:'.doc' or doc.file_name|lower|endswith:'.docx' %}fa-file-word
+                            {% elif doc.file_name|lower|endswith:'.xls' or doc.file_name|lower|endswith:'.xlsx' %}fa-file-excel
+                            {% elif doc.file_name|lower|endswith:'.jpg' or doc.file_name|lower|endswith:'.jpeg' or doc.file_name|lower|endswith:'.png' %}fa-file-image
+                            {% elif doc.file_name|lower|endswith:'.zip' %}fa-file-archive
+                            {% else %}fa-file{% endif %}"></i>
                         </div>
+                        {% elif doc.file %}
+                        <!-- مستند file -->
+                        <div class="file-icon 
+                            {% if doc.file.url|lower|endswith:'.pdf' %}pdf
+                            {% elif doc.file.url|lower|endswith:'.doc' or doc.file.url|lower|endswith:'.docx' %}doc
+                            {% elif doc.file.url|lower|endswith:'.xls' or doc.file.url|lower|endswith:'.xlsx' %}xls
+                            {% elif doc.file.url|lower|endswith:'.jpg' or doc.file.url|lower|endswith:'.jpeg' or doc.file.url|lower|endswith:'.png' %}img
+                            {% elif doc.file.url|lower|endswith:'.zip' %}zip
+                            {% else %}file{% endif %}">
+                            <i class="fas 
+                            {% if doc.file.url|lower|endswith:'.pdf' %}fa-file-pdf
+                            {% elif doc.file.url|lower|endswith:'.doc' or doc.file.url|lower|endswith:'.docx' %}fa-file-word
+                            {% elif doc.file.url|lower|endswith:'.xls' or doc.file.url|lower|endswith:'.xlsx' %}fa-file-excel
+                            {% elif doc.file.url|lower|endswith:'.jpg' or doc.file.url|lower|endswith:'.jpeg' or doc.file.url|lower|endswith:'.png' %}fa-file-image
+                            {% elif doc.file.url|lower|endswith:'.zip' %}fa-file-archive
+                            {% else %}fa-file{% endif %}"></i>
+                        </div>
+                        {% else %}
+                        <!-- لا يوجد معلومات ملف -->
+                        <div class="file-icon file">
+                            <i class="fas fa-file"></i>
+                        </div>
+                        {% endif %}
                         <div class="file-name">{{ doc.title }}</div>
                         <div class="file-meta">
                             <div>{{ doc.created_at|date:"d/m/Y" }}</div>
                         </div>
                     </div>
                 </a>
-                {% elif doc.file %}
-                <a href="{{ doc.file.url }}" class="text-decoration-none" target="_blank">
-                    <div class="file-card">
-                        <div class="file-icon {% if 'pdf' in doc.file.url %}pdf{% elif 'doc' in doc.file.url %}doc{% elif 'xls' in doc.file.url %}xls{% elif 'jpg' in doc.file.url or 'png' in doc.file.url or 'jpeg' in doc.file.url %}img{% elif 'zip' in doc.file.url %}zip{% endif %}">
-                            <i class="fas {% if 'pdf' in doc.file.url %}fa-file-pdf{% elif 'doc' in doc.file.url %}fa-file-word{% elif 'xls' in doc.file.url %}fa-file-excel{% elif 'jpg' in doc.file.url or 'png' in doc.file.url or 'jpeg' in doc.file.url %}fa-file-image{% elif 'zip' in doc.file.url %}fa-file-archive{% else %}fa-file{% endif %}"></i>
-                        </div>
-                        <div class="file-name">{{ doc.title }}</div>
-                        <div class="file-meta">
-                            <div>{{ doc.created_at|date:"d/m/Y" }}</div>
-                        </div>
-                    </div>
-                </a>
-                {% endif %}
                 {% endfor %}
             </div>
         {% else %}
