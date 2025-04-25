@@ -1,1 +1,1 @@
-# Initialize templatetags package
+# تحميل حزمة الـ template tags
