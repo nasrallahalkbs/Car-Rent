@@ -3324,23 +3324,55 @@ def admin_archive_upload(request):
             # إعادة تعيين مؤشر الملف للبداية
             uploaded_file.seek(0)
             
-            # إنشاء المستند مع تخزين الملف في قاعدة البيانات
-            document = Document(
-                title=title,
-                description=description,
-                document_type=document_type,
-                folder=folder,
-                created_by=request.user if hasattr(request, 'user') else None,
-                file_name=file_name,
-                file_type=file_type,
-                file_size=file_size,
-                file_content=file_content,  # استخدام محتوى الملف المقروء
-                file=uploaded_file,  # تعيين الملف بعد إعادة تعيين المؤشر
-                is_auto_created=False  # تأكيد أن المستند ليس تلقائي
-            )
+            print("DEBUG - بدء عملية إنشاء المستند")
             
-            # حفظ المستند
-            document.save()
+            # تخطي جميع إشارات منع المستندات التلقائية عند إنشاء مستند يدوي
+            try:
+                # إنشاء المستند مع تخزين الملف في قاعدة البيانات
+                document = Document(
+                    title=title,
+                    description=description,
+                    document_type=document_type,
+                    folder=folder,
+                    created_by=request.user if hasattr(request, 'user') else None,
+                    file_name=file_name,
+                    file_type=file_type,
+                    file_size=file_size,
+                    file_content=file_content,  # استخدام محتوى الملف المقروء
+                    file=uploaded_file,  # تعيين الملف بعد إعادة تعيين المؤشر
+                    is_auto_created=False  # تأكيد أن المستند ليس تلقائي
+                )
+                
+                # تعطيل الإشارات بشكل صريح وحفظ المستند (منع سريان إشارات منع المستندات التلقائية)
+                setattr(document, '_ignore_auto_document_signal', True)
+                document.save()
+                
+                print(f"DEBUG - تم حفظ المستند بنجاح! ID: {document.id}, العنوان: {document.title}")
+            except Exception as e:
+                print(f"ERROR - فشل في حفظ المستند: {str(e)}")
+                # محاولة أخرى بطريقة مباشرة لقاعدة البيانات
+                try:
+                    from django.db import connection
+                    cursor = connection.cursor()
+                    query = "INSERT INTO rental_document (title, description, document_type, folder_id, created_by_id, file_name, file_type, file_size, file_content, created_at, updated_at, is_auto_created) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s) RETURNING id;"
+                    cursor.execute(query, [
+                        title, 
+                        description, 
+                        document_type, 
+                        folder.id if folder else None, 
+                        request.user.id if hasattr(request, 'user') and request.user.is_authenticated else None, 
+                        file_name, 
+                        file_type, 
+                        file_size, 
+                        file_content,
+                        False
+                    ])
+                    document_id = cursor.fetchone()[0]
+                    document = Document.objects.get(id=document_id)
+                    print(f"DEBUG - تم حفظ المستند بنجاح باستخدام SQL المباشر! ID: {document.id}")
+                except Exception as sql_err:
+                    print(f"CRITICAL ERROR - فشل في حفظ المستند حتى باستخدام SQL المباشر: {str(sql_err)}")
+                    raise
             
             print(f"DEBUG - تم إنشاء مستند جديد: {document.title} (ID: {document.id}) في المجلد: {folder.name if folder else 'لا يوجد'}")
             
