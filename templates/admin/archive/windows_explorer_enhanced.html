@@ -855,12 +855,12 @@ $(document).ready(function() {
                         
                         <!-- الملفات في المجلد الرئيسي -->
                         {% for doc in documents %}
-                            <div class="file-item" data-file-url="{{ doc.file.url }}">
+                            <a href="{{ doc.file.url }}" target="_blank" class="file-item" data-file-url="{{ doc.file.url }}">
                                 <div class="file-icon {% if 'pdf' in doc.file.url %}pdf{% elif 'doc' in doc.file.url or 'docx' in doc.file.url %}doc{% elif 'xls' in doc.file.url or 'xlsx' in doc.file.url %}xls{% elif 'jpg' in doc.file.url or 'png' in doc.file.url or 'jpeg' in doc.file.url %}img{% elif 'zip' in doc.file.url %}zip{% endif %}">
                                     <i class="fas {% if 'pdf' in doc.file.url %}fa-file-pdf{% elif 'doc' in doc.file.url or 'docx' in doc.file.url %}fa-file-word{% elif 'xls' in doc.file.url or 'xlsx' in doc.file.url %}fa-file-excel{% elif 'jpg' in doc.file.url or 'png' in doc.file.url or 'jpeg' in doc.file.url %}fa-file-image{% elif 'zip' in doc.file.url %}fa-file-archive{% else %}fa-file{% endif %}"></i>
                                 </div>
                                 <div class="file-name">{{ doc.title }}</div>
-                            </div>
+                            </a>
                         {% endfor %}
                     {% endif %}
                     
@@ -897,7 +897,7 @@ $(document).ready(function() {
                         {% if current_folder %}
                             <!-- زر العودة للمجلد الأب -->
                             {% if current_folder.parent %}
-                                <tr class="folder-row" data-folder-id="{{ current_folder.parent.id }}">
+                                <tr class="folder-row" data-folder-id="{{ current_folder.parent.id }}" onclick="window.location='{% url 'admin_archive' %}?folder={{ current_folder.parent.id }}'">
                                     <td class="file-cell">
                                         <div class="file-list-icon folder">
                                             <i class="fas fa-arrow-up"></i>
@@ -909,7 +909,7 @@ $(document).ready(function() {
                                     <td>-</td>
                                 </tr>
                             {% else %}
-                                <tr class="folder-row" data-folder-id="">
+                                <tr class="folder-row" data-folder-id="" onclick="window.location='{% url 'admin_archive' %}'">
                                     <td class="file-cell">
                                         <div class="file-list-icon folder">
                                             <i class="fas fa-home"></i>
@@ -924,7 +924,7 @@ $(document).ready(function() {
                             
                             <!-- المجلدات الفرعية -->
                             {% for subfolder in subfolders %}
-                                <tr class="folder-row" data-folder-id="{{ subfolder.id }}">
+                                <tr class="folder-row" data-folder-id="{{ subfolder.id }}" onclick="window.location='{% url 'admin_archive' %}?folder={{ subfolder.id }}'">
                                     <td class="file-cell">
                                         <div class="file-list-icon folder">
                                             <i class="fas fa-folder"></i>
@@ -956,7 +956,7 @@ $(document).ready(function() {
                         {% else %}
                             <!-- المجلدات الرئيسية -->
                             {% for folder in root_folders %}
-                                <tr class="folder-row" data-folder-id="{{ folder.id }}">
+                                <tr class="folder-row" data-folder-id="{{ folder.id }}" onclick="window.location='{% url 'admin_archive' %}?folder={{ folder.id }}'">
                                     <td class="file-cell">
                                         <div class="file-list-icon folder">
                                             <i class="fas fa-folder"></i>
@@ -1102,9 +1102,13 @@ $(document).ready(function() {
             <form action="{% url 'admin_archive' %}?action=add_file" method="post" enctype="multipart/form-data" id="uploadFileForm">
                 <div class="modal-body">
                     {% csrf_token %}
+                    <!-- تخزين معرف المجلد الحالي إذا كان موجودًا -->
+                    {% if current_folder %}
+                        <input type="hidden" name="folder" value="{{ current_folder.id }}">
+                    {% endif %}
                     <div class="mb-3">
                         <label for="title" class="form-label">{% trans "عنوان الملف" %}</label>
-                        <input type="text" class="form-control" id="title" name="title" required>
+                        <input type="text" class="form-control" id="title" name="title" required autocomplete="off">
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label">{% trans "وصف الملف (اختياري)" %}</label>
@@ -1124,10 +1128,10 @@ $(document).ready(function() {
                     <div class="mb-3">
                         <label for="file" class="form-label">{% trans "اختر الملف" %}</label>
                         <input type="file" class="form-control" id="file" name="file" required>
-                        <small class="text-muted mt-2">{% trans "يمكنك رفع ملفات PDF، Word، Excel، الصور وملفات أخرى" %}</small>
+                        <small class="text-muted d-block mt-2">{% trans "يمكنك رفع ملفات PDF، Word، Excel، الصور وملفات أخرى" %}</small>
                     </div>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> {% trans "سيتم تخزين الملف في المجلد المحدد. يمكنك الوصول إليه من خلال نظام الأرشيف الإلكتروني." %}
+                        <i class="fas fa-info-circle"></i> {% trans "سيتم تخزين الملف في المجلد المحدد. سيظهر في نفس المجلد بعد الرفع مباشرة." %}
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1178,11 +1182,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // تفعيل النقر في جدول الملفات
-    $(document).on('click', '.folder-row', function() {
-        const folderId = $(this).data('folder-id');
-        console.log("تم النقر على صف المجلد: " + folderId);
-        window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
+    // لقد تم تعديل صفوف المجلدات لاستخدام روابط مباشرة وخاصية onclick
+    // نحتفظ ببعض التحسينات التفاعلية أثناء النقر لتجربة مستخدم أفضل
+    $(document).on('mouseenter', '.folder-row, .folder-item', function() {
+        $(this).addClass('hover');
+    }).on('mouseleave', '.folder-row, .folder-item', function() {
+        $(this).removeClass('hover');
     });
 });
 </script>
