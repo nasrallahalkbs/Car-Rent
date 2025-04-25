@@ -388,5 +388,5 @@ def admin_archive_windows(request):
         'show_documents': True  # إضافة متغير للتأكد من عرض المستندات دائمًا
     }
     
-    # استخدام قالب fixed_archive_main.html المعدل
-    return render(request, 'admin/archive/fixed_archive_main.html', context)
+    # استخدام قالب مشابه لمستكشف ويندوز
+    return render(request, 'admin/archive/windows_explorer_enhanced.html', context)
