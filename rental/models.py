@@ -587,8 +587,11 @@ class Document(models.Model):
     document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES, default='other', verbose_name=_('نوع المستند'))
     description = models.TextField(blank=True, null=True, verbose_name=_('وصف المستند'))
     
-    # ملف المستند
-    file = models.FileField(upload_to=archive_document_path, verbose_name=_('ملف المستند'))
+    # ملف المستند - تخزين في قاعدة البيانات
+    file = models.FileField(upload_to=archive_document_path, verbose_name=_('ملف المستند'), null=True, blank=True)
+    file_content = models.BinaryField(null=True, blank=True, verbose_name=_('محتوى الملف'), editable=False)
+    file_name = models.CharField(max_length=255, null=True, blank=True, verbose_name=_('اسم الملف الأصلي'))
+    file_type = models.CharField(max_length=100, null=True, blank=True, verbose_name=_('نوع الملف'))
     file_size = models.PositiveIntegerField(default=0, editable=False, verbose_name=_('حجم الملف (بايت)'))
     
     # تاريخ المستند
@@ -732,8 +735,26 @@ class Document(models.Model):
                         print(f"🚨 [DOCUMENT SAVE] منع ربط مستند تلقائي بمجلد حديث الإنشاء {self.folder.name}")
                         self.folder = None
         
-        # حساب حجم الملف عند الحفظ
-        if self.file:
+        # معالجة الملف وتخزينه في قاعدة البيانات
+        if self.file and not self.file_content:
+            try:
+                # حفظ محتوى الملف في قاعدة البيانات
+                self.file.seek(0)
+                self.file_content = self.file.read()
+                
+                # حفظ المعلومات الوصفية للملف
+                self.file_name = self.file.name.split('/')[-1]
+                self.file_size = self.file.size
+                
+                # تحديد نوع الملف
+                import mimetypes
+                self.file_type = mimetypes.guess_type(self.file.name)[0] or 'application/octet-stream'
+                
+                print(f"🚨 [DOCUMENT SAVE] تم حفظ الملف في قاعدة البيانات - الاسم: {self.file_name}, الحجم: {self.file_size}, النوع: {self.file_type}")
+            except Exception as e:
+                print(f"🚨 [DOCUMENT SAVE] خطأ في حفظ محتوى الملف: {str(e)}")
+        elif self.file:
+            # تحديث حجم الملف إن وجد
             try:
                 self.file_size = self.file.size
             except:
@@ -777,20 +798,39 @@ class Document(models.Model):
     @property
     def file_extension(self):
         """الحصول على امتداد الملف"""
-        if self.file:
+        if self.file_name:
+            return os.path.splitext(self.file_name)[1][1:]  # استخراج الامتداد بدون النقطة
+        elif self.file:
             return os.path.splitext(self.file.name)[1][1:]  # استخراج الامتداد بدون النقطة
         return ""
     
     @property
     def is_image(self):
         """التحقق مما إذا كان الملف صورة"""
+        if self.file_type and 'image/' in self.file_type:
+            return True
+        
         image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
         return self.file_extension.lower() in image_extensions
     
     @property
     def is_pdf(self):
         """التحقق مما إذا كان الملف PDF"""
+        if self.file_type and 'application/pdf' in self.file_type:
+            return True
+        
         return self.file_extension.lower() == 'pdf'
+    
+    def get_file_from_db(self):
+        """استرجاع الملف من قاعدة البيانات"""
+        if self.file_content:
+            return self.file_content
+        return None
+    
+    def get_file_url(self):
+        """إنشاء عنوان URL للملف المخزن في قاعدة البيانات"""
+        from django.urls import reverse
+        return reverse('document_file_view', kwargs={'pk': self.pk})
     
     @property
     def tags_list(self):
