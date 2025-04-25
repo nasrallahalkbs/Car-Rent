@@ -1891,13 +1891,40 @@ def admin_archive(request):
                 # الحصول على المجلدات الفرعية والمستندات
                 subfolders = ArchiveFolder.objects.filter(parent=current_folder).order_by('name')
                 
-                # استعلام محسّن للمستندات: يجلب المستندات بعنوان صحيح واستبعاد المستندات التلقائية
-                documents = Document.objects.filter(
-                    folder=current_folder,
-                    title__isnull=False
-                ).exclude(
-                    title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف", None]
-                ).order_by('-created_at')
+                # استعلام محسّن للمستندات: يشمل كل المستندات الصالحة وفلترة المستندات بشكل كامل
+                try:
+                    # الاستعلام الأساسي - بدون أي فلترة
+                    base_documents = Document.objects.filter(folder=current_folder)
+                    print(f"🔍 عدد المستندات الأولي في المجلد {current_folder.id}: {base_documents.count()}")
+                    
+                    # فلترة المستندات غير الصالحة
+                    documents = base_documents.filter(
+                        title__isnull=False
+                    ).exclude(
+                        title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف", None]
+                    ).order_by('-created_at')
+                    
+                    # التحقق من كل المستندات
+                    all_docs = []
+                    for doc in documents:
+                        # جلب معلومات حول حالة المستند
+                        has_file = hasattr(doc, 'file') and bool(doc.file)
+                        has_content = hasattr(doc, 'file_content') and bool(doc.file_content)
+                        
+                        # طباعة معلومات عن المستند
+                        print(f"🔍 مستند: {doc.id} | {doc.title} | file: {has_file} | file_content: {has_content}")
+                        
+                        # إضافة المستند إلى القائمة
+                        all_docs.append(doc)
+                    
+                    # تحويل قائمة المستندات الصالحة إلى queryset جديد - الخطوة الحاسمة!
+                    if all_docs:
+                        documents = Document.objects.filter(id__in=[doc.id for doc in all_docs]).order_by('-created_at')
+                    else:
+                        documents = Document.objects.none()
+                except Exception as e:
+                    print(f"❌ خطأ في استرجاع المستندات: {str(e)}")
+                    documents = Document.objects.none()
                 
                 # التحقق من المستندات وطباعة معلومات تصحيح
                 print(f"🔍 المستندات في المجلد {current_folder.name} (ID: {current_folder.id}):")
@@ -1922,18 +1949,44 @@ def admin_archive(request):
             print(f"DEBUG - المجلد غير موجود: {folder_param}")
     else:
         # عرض المستندات في المجلد الرئيسي (بدون مجلد) مع استبعاد المستندات التلقائية
-        documents = Document.objects.filter(
-            folder__isnull=True,
-            title__isnull=False
-        ).exclude(
-            title__in=['بدون عنوان', '', ' ', 'نموذج_استعلام_الارشيف', None]
-        ).order_by('-created_at')
-        
-        # طباعة معلومات المستندات في المجلد الرئيسي للتصحيح
-        print(f"🔍 المستندات في المجلد الرئيسي:")
-        for doc in documents:
-            print(f"📄 مستند: {doc.id} | {doc.title} | {doc.file_name if hasattr(doc, 'file_name') else 'لا يوجد اسم ملف'}")
-            print(f"   - نوع التخزين: {'file_content' if doc.file_content else 'file' if doc.file else 'غير معروف'}")
+        try:
+            # الاستعلام الأساسي - بدون أي فلترة
+            base_documents = Document.objects.filter(folder__isnull=True)
+            print(f"🔍 عدد المستندات الأولي في المجلد الرئيسي: {base_documents.count()}")
+            
+            # فلترة المستندات غير الصالحة
+            documents = base_documents.filter(
+                title__isnull=False
+            ).exclude(
+                title__in=['بدون عنوان', '', ' ', 'نموذج_استعلام_الارشيف', None]
+            ).order_by('-created_at')
+            
+            # طباعة معلومات المستندات في المجلد الرئيسي للتصحيح
+            print(f"🔍 المستندات المفلترة في المجلد الرئيسي: {documents.count()}")
+            
+            # التحقق من كل المستندات
+            all_docs = []
+            for doc in documents:
+                # جلب معلومات حول حالة المستند
+                has_file = hasattr(doc, 'file') and bool(doc.file)
+                has_content = hasattr(doc, 'file_content') and bool(doc.file_content)
+                
+                # طباعة معلومات عن المستند
+                print(f"📄 مستند: {doc.id} | {doc.title} | file: {has_file} | file_content: {has_content}")
+                print(f"   - نوع التخزين: {'file_content' if has_content else 'file' if has_file else 'غير معروف'}")
+                
+                # إضافة المستند إلى القائمة
+                all_docs.append(doc)
+            
+            # تحويل قائمة المستندات الصالحة إلى queryset جديد
+            if all_docs:
+                documents = Document.objects.filter(id__in=[doc.id for doc in all_docs]).order_by('-created_at')
+            else:
+                documents = Document.objects.none()
+                
+        except Exception as e:
+            print(f"❌ خطأ في استرجاع المستندات في المجلد الرئيسي: {str(e)}")
+            documents = Document.objects.none()
     
     # إعداد سياق البيانات
     # إضافة وقت حالي لمنع التخزين المؤقت

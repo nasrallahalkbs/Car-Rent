@@ -292,8 +292,8 @@ document.addEventListener('DOMContentLoaded', function() {
         {% if documents %}
             <div class="file-grid">
                 {% for doc in documents %}
-                <!-- عرض المستند - يستخدم الفلاتر المخصصة للتعامل مع المستندات -->
-                <a href="{% url 'admin_archive_view' doc.id %}" class="text-decoration-none document-card" target="_blank">
+                <!-- عرض المستند مع تحسينات إضافية لدعم جميع أنواع المستندات -->
+                <a href="{% url 'admin_archive_view' doc.id %}" class="text-decoration-none document-card" target="_blank" data-document-id="{{ doc.id }}">
                     <div class="file-card">
                         {% if doc.file_name %}
                         <!-- مستند file_content -->
@@ -313,7 +313,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         {% endif %}
                         <div class="file-name">{{ doc.title }}</div>
                         <div class="file-meta">
-                            <div>{{ doc.created_at|date:"d/m/Y" }}</div>
+                            <div class="file-date">{{ doc.created_at|date:"d/m/Y" }}</div>
+                            <div class="file-actions mt-2">
+                                <a href="{% url 'admin_archive_detail' doc.id %}" class="btn btn-sm btn-outline-secondary" title="{% trans 'تفاصيل' %}">
+                                    <i class="fas fa-info-circle"></i>
+                                </a>
+                                {% if doc.file_content %}
+                                <span class="badge bg-info text-white ms-1" title="{% trans 'مخزن في قاعدة البيانات' %}">DB</span>
+                                {% elif doc.file %}
+                                <span class="badge bg-success text-white ms-1" title="{% trans 'مخزن كملف' %}">FILE</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </a>
