@@ -350,6 +350,12 @@ def admin_archive_windows(request):
     from datetime import datetime
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     
+    # طباعة تشخيصية للمستندات
+    print(f"DEBUG - إجمالي عدد المستندات: {len(documents)}")
+    if documents:
+        for i, doc in enumerate(documents):
+            print(f"DEBUG - مستند {i+1}: ID={doc.id}, العنوان={doc.title}, النوع={doc.file_type}, الحجم={doc.file_size}")
+    
     context = {
         'root_folders': root_folders,
         'subfolders': subfolders,
@@ -363,7 +369,8 @@ def admin_archive_windows(request):
         'is_rtl': is_rtl,
         'folder_tree': json.dumps(folder_tree),
         'active_section': 'archive',
-        'current_date_time': current_time  # إضافة وقت حالي لمنع التخزين المؤقت
+        'current_date_time': current_time,  # إضافة وقت حالي لمنع التخزين المؤقت
+        'show_documents': True  # إضافة متغير للتأكد من عرض المستندات دائمًا
     }
     
     # استخدام قالب مشابه لمستكشف ويندوز
