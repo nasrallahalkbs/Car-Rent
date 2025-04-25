@@ -132,18 +132,37 @@ $(document).ready(function() {
         const folderId = $(this).data('folder-id');
         console.log("تم النقر المزدوج على المجلد: " + folderId);
         
-        if (!folderId) {
-            console.log("لم يتم العثور على معرف للمجلد - التحقق من المجلد الأب");
-            {% if current_folder and current_folder.parent %}
-            // التوجه للمجلد الأب إذا كان زر العودة للأعلى
-            window.location.href = "{% url 'admin_archive' %}?folder={{ current_folder.parent.id }}";
-            {% else %}
-            // العودة للرئيسية إذا كنا في المجلد الرئيسي
-            window.location.href = "{% url 'admin_archive' %}";
-            {% endif %}
-        } else {
-            // الانتقال للمجلد المحدد
-            window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
+        // عرض المزيد من معلومات التصحيح
+        console.log("معلومات المجلد:", {
+            element: $(this),
+            dataAttribute: $(this).data(),
+            folderName: $(this).find('.folder-name').text(),
+            href: "{% url 'admin_archive' %}?folder=" + folderId
+        });
+        
+        // إضافة معالج أخطاء
+        try {
+            if (!folderId) {
+                console.log("لم يتم العثور على معرف للمجلد - التحقق من المجلد الأب");
+                {% if current_folder and current_folder.parent %}
+                // التوجه للمجلد الأب إذا كان زر العودة للأعلى
+                console.log("الانتقال إلى المجلد الأب: {{ current_folder.parent.id }}");
+                window.location.href = "{% url 'admin_archive' %}?folder={{ current_folder.parent.id }}";
+                {% else %}
+                // العودة للرئيسية إذا كنا في المجلد الرئيسي
+                console.log("العودة إلى الصفحة الرئيسية للأرشيف");
+                window.location.href = "{% url 'admin_archive' %}";
+                {% endif %}
+            } else {
+                // الانتقال للمجلد المحدد
+                console.log("الانتقال إلى المجلد: " + folderId + " على العنوان: " + "{% url 'admin_archive' %}?folder=" + folderId);
+                // استخدام الوقت المستقطع للتأكد من ظهور سجلات التصحيح في وحدة التحكم قبل التنقل
+                setTimeout(function() {
+                    window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
+                }, 100);
+            }
+        } catch (error) {
+            console.error("حدث خطأ عند محاولة الانتقال إلى المجلد:", error);
         }
     });
     
@@ -692,17 +711,17 @@ $(document).ready(function() {
             </div>
             <div class="quick-access-links p-2">
                 <!-- زر الصفحة الرئيسية -->
-                <div class="quick-access-item d-flex align-items-center p-2" data-folder-id="">
+                <a href="{% url 'admin_archive' %}" class="quick-access-item d-flex align-items-center p-2 text-decoration-none" data-folder-id="">
                     <i class="fas fa-home me-2"></i>
                     <span>{% trans "الرئيسية" %}</span>
-                </div>
+                </a>
                 
                 <!-- عرض المجلدات الرئيسية في الوصول السريع -->
                 {% for folder in root_folders %}
-                <div class="quick-access-item d-flex align-items-center p-2" data-folder-id="{{ folder.id }}">
+                <a href="{% url 'admin_archive' %}?folder={{ folder.id }}" class="quick-access-item d-flex align-items-center p-2 text-decoration-none" data-folder-id="{{ folder.id }}">
                     <i class="fas fa-folder me-2 text-warning"></i>
                     <span>{{ folder.name }}</span>
-                </div>
+                </a>
                 {% endfor %}
             </div>
             
@@ -789,49 +808,49 @@ $(document).ready(function() {
                     {% if current_folder %}
                         <!-- زر العودة للمجلد الأب -->
                         {% if current_folder.parent %}
-                            <div class="folder-item" data-folder-id="{{ current_folder.parent.id }}">
+                            <a href="{% url 'admin_archive' %}?folder={{ current_folder.parent.id }}" class="folder-item" data-folder-id="{{ current_folder.parent.id }}">
                                 <div class="folder-icon">
                                     <i class="fas fa-arrow-up"></i>
                                 </div>
                                 <div class="folder-name">{% trans "العودة للأعلى" %}</div>
-                            </div>
+                            </a>
                         {% else %}
-                            <div class="folder-item" data-folder-id="">
+                            <a href="{% url 'admin_archive' %}" class="folder-item" data-folder-id="">
                                 <div class="folder-icon">
                                     <i class="fas fa-home"></i>
                                 </div>
                                 <div class="folder-name">{% trans "العودة للرئيسية" %}</div>
-                            </div>
+                            </a>
                         {% endif %}
                         
                         <!-- المجلدات الفرعية -->
                         {% for subfolder in subfolders %}
-                            <div class="folder-item" data-folder-id="{{ subfolder.id }}">
+                            <a href="{% url 'admin_archive' %}?folder={{ subfolder.id }}" class="folder-item" data-folder-id="{{ subfolder.id }}">
                                 <div class="folder-icon">
                                     <i class="fas fa-folder"></i>
                                 </div>
                                 <div class="folder-name">{{ subfolder.name }}</div>
-                            </div>
+                            </a>
                         {% endfor %}
                         
                         <!-- الملفات -->
                         {% for doc in documents %}
-                            <div class="file-item" data-file-url="{{ doc.file.url }}">
+                            <a href="{{ doc.file.url }}" target="_blank" class="file-item" data-file-url="{{ doc.file.url }}">
                                 <div class="file-icon {% if 'pdf' in doc.file.url %}pdf{% elif 'doc' in doc.file.url or 'docx' in doc.file.url %}doc{% elif 'xls' in doc.file.url or 'xlsx' in doc.file.url %}xls{% elif 'jpg' in doc.file.url or 'png' in doc.file.url or 'jpeg' in doc.file.url %}img{% elif 'zip' in doc.file.url %}zip{% endif %}">
                                     <i class="fas {% if 'pdf' in doc.file.url %}fa-file-pdf{% elif 'doc' in doc.file.url or 'docx' in doc.file.url %}fa-file-word{% elif 'xls' in doc.file.url or 'xlsx' in doc.file.url %}fa-file-excel{% elif 'jpg' in doc.file.url or 'png' in doc.file.url or 'jpeg' in doc.file.url %}fa-file-image{% elif 'zip' in doc.file.url %}fa-file-archive{% else %}fa-file{% endif %}"></i>
                                 </div>
                                 <div class="file-name">{{ doc.title }}</div>
-                            </div>
+                            </a>
                         {% endfor %}
                     {% else %}
                         <!-- المجلدات الرئيسية -->
                         {% for folder in root_folders %}
-                            <div class="folder-item" data-folder-id="{{ folder.id }}">
+                            <a href="{% url 'admin_archive' %}?folder={{ folder.id }}" class="folder-item" data-folder-id="{{ folder.id }}">
                                 <div class="folder-icon">
                                     <i class="fas fa-folder"></i>
                                 </div>
                                 <div class="folder-name">{{ folder.name }}</div>
-                            </div>
+                            </a>
                         {% endfor %}
                         
                         <!-- الملفات في المجلد الرئيسي -->
