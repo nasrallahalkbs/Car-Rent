@@ -1997,6 +1997,7 @@ def admin_archive(request):
         'root_folders': root_folders,
         'subfolders': subfolders,
         'documents': documents,
+        'files': documents,  # إضافة المستندات كـ files للتوافق مع القالب
         'current_folder': current_folder,
         'folder_path': folder_path,
         'folder_param': folder_param,

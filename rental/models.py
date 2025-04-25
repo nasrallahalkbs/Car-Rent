@@ -693,8 +693,11 @@ class Document(models.Model):
     def save(self, *args, **kwargs):
         import traceback, inspect
         
-        # منع حفظ المستندات التلقائية
-        if hasattr(self, '_auto_document') and self._auto_document:
+        # التحقق من وجود علامة تجاوز الإشارات
+        ignore_signal = getattr(self, '_ignore_auto_document_signal', False)
+        
+        # منع حفظ المستندات التلقائية - إلا إذا كان هناك تجاوز للإشارات
+        if hasattr(self, '_auto_document') and self._auto_document and not ignore_signal:
             print(f"🚨 [DOCUMENT SAVE] تم منع حفظ مستند تلقائي '{self.title}'")
             
             # تسجيل معلومات إضافية للتصحيح
@@ -857,7 +860,14 @@ from django.dispatch import receiver
 
 @receiver(pre_save, sender=Document)
 def absolute_prevent_auto_documents(sender, instance, **kwargs):
-    """منع إنشاء المستندات التلقائية بشكل قاطع"""
+    """منع إنشاء المستندات التلقائية بشكل قاطع - إلا عند وجود علامة تجاوز"""
+    # التحقق من وجود علامة تجاوز الإشارات
+    ignore_signal = getattr(instance, '_ignore_auto_document_signal', False)
+    
+    if ignore_signal:
+        print(f"[DOCUMENT SIGNAL] تم تجاوز منع المستندات التلقائية لـ: {instance.title}")
+        return
+        
     if not instance.pk and (not instance.title or instance.title.strip() == '' or instance.title == 'بدون عنوان'):
         print("[BLOCKED DOCUMENT] تم منع محاولة إنشاء مستند تلقائي")
         raise ValueError("تم منع إنشاء مستند تلقائي بشكل قاطع")
