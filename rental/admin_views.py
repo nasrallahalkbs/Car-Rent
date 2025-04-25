@@ -1930,7 +1930,15 @@ def admin_archive_add(request):
                 messages.error(request, "تنسيق تاريخ انتهاء الصلاحية غير صحيح")
                 return redirect('admin_archive_add')
         
-        # إنشاء المستند
+        # إنشاء المستند مع تخزين الملف في قاعدة البيانات
+        uploaded_file = request.FILES['file']
+        file_name = uploaded_file.name
+        file_type = uploaded_file.content_type
+        file_size = uploaded_file.size
+        
+        # قراءة محتوى الملف
+        file_content = uploaded_file.read()
+        
         document = Document(
             title=title,
             document_type=document_type,
@@ -1938,7 +1946,11 @@ def admin_archive_add(request):
             document_date=document_date,
             expiry_date=expiry_date,
             related_to=related_to,
-            file=request.FILES['file'],
+            # تخزين معلومات الملف
+            file_name=file_name,
+            file_type=file_type,
+            file_size=file_size,
+            file_content=file_content,
             tags=tags,
             added_by=request.user
         )
@@ -2081,14 +2093,30 @@ def admin_archive_edit(request, document_id):
         
         # تحديث الملف إذا تم تقديم ملف جديد
         if 'file' in request.FILES:
-            # حذف الملف القديم
+            # حذف الملف القديم من نظام الملفات إذا وجد
             if document.file:
                 try:
                     default_storage.delete(document.file.path)
                 except:
                     pass  # تجاهل الأخطاء إذا لم يمكن حذف الملف
             
-            document.file = request.FILES['file']
+            # قراءة الملف الجديد لتخزينه في قاعدة البيانات
+            uploaded_file = request.FILES['file']
+            file_name = uploaded_file.name
+            file_type = uploaded_file.content_type
+            file_size = uploaded_file.size
+            
+            # قراءة محتوى الملف
+            file_content = uploaded_file.read()
+            
+            # تحديث بيانات الملف
+            document.file_name = file_name
+            document.file_type = file_type
+            document.file_size = file_size
+            document.file_content = file_content
+            
+            # إلغاء الملف السابق
+            document.file = None
         
         # تعيين العلاقات حسب نوع الارتباط
         # إعادة تعيين العلاقات
