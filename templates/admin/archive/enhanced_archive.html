@@ -291,6 +291,19 @@ document.addEventListener('DOMContentLoaded', function() {
         {% if documents %}
             <div class="file-grid">
                 {% for doc in documents %}
+                {% if doc.file_content %}
+                <a href="{% url 'admin_archive_view' doc.id %}" class="text-decoration-none" target="_blank">
+                    <div class="file-card">
+                        <div class="file-icon {% if 'pdf' in doc.file_name %}pdf{% elif 'doc' in doc.file_name %}doc{% elif 'xls' in doc.file_name %}xls{% elif 'jpg' in doc.file_name or 'png' in doc.file_name or 'jpeg' in doc.file_name %}img{% elif 'zip' in doc.file_name %}zip{% endif %}">
+                            <i class="fas {% if 'pdf' in doc.file_name %}fa-file-pdf{% elif 'doc' in doc.file_name %}fa-file-word{% elif 'xls' in doc.file_name %}fa-file-excel{% elif 'jpg' in doc.file_name or 'png' in doc.file_name or 'jpeg' in doc.file_name %}fa-file-image{% elif 'zip' in doc.file_name %}fa-file-archive{% else %}fa-file{% endif %}"></i>
+                        </div>
+                        <div class="file-name">{{ doc.title }}</div>
+                        <div class="file-meta">
+                            <div>{{ doc.created_at|date:"d/m/Y" }}</div>
+                        </div>
+                    </div>
+                </a>
+                {% elif doc.file %}
                 <a href="{{ doc.file.url }}" class="text-decoration-none" target="_blank">
                     <div class="file-card">
                         <div class="file-icon {% if 'pdf' in doc.file.url %}pdf{% elif 'doc' in doc.file.url %}doc{% elif 'xls' in doc.file.url %}xls{% elif 'jpg' in doc.file.url or 'png' in doc.file.url or 'jpeg' in doc.file.url %}img{% elif 'zip' in doc.file.url %}zip{% endif %}">
@@ -302,6 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </a>
+                {% endif %}
                 {% endfor %}
             </div>
         {% else %}
