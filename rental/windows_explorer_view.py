@@ -81,7 +81,21 @@ def clean_document_list(documents):
         # طباعة معلومات المستندات الخام للتشخيص
         print(f"DEBUG - إجمالي المستندات الخام: {documents.count()}")
         for doc in documents[:5]:  # نطبع أول 5 مستندات فقط للاختصار
-            print(f"DEBUG - مستند خام: ID={doc.id}, العنوان={doc.title}, النوع={doc.file_type}, الحجم={doc.file_size}")
+            print(f"DEBUG - مستند خام: ID={doc.id}, العنوان={doc.title}, folder_id={doc.folder_id if hasattr(doc, 'folder_id') else 'None'}, النوع={doc.file_type}, الحجم={doc.file_size}")
+        
+        # استخدام سلسلة من المرشحات للتحقق من كل مشكلة محتملة
+        # 1. التحقق من المستندات التي ليس لها عنوان
+        docs_no_title = documents.filter(title__isnull=True).count()
+        docs_empty_title = documents.filter(title="").count()
+        
+        # 2. التحقق من المستندات التي ليس لها محتوى ملف
+        docs_no_content = documents.filter(file_content__isnull=True).count()
+        
+        # طباعة إحصاءات المشاكل المحتملة
+        print(f"DEBUG - إحصاءات المستندات:")
+        print(f"DEBUG - المستندات بدون عنوان: {docs_no_title}")
+        print(f"DEBUG - المستندات بعنوان فارغ: {docs_empty_title}")
+        print(f"DEBUG - المستندات بدون محتوى: {docs_no_content}")
         
         # استبعاد المستندات التي ليس لها عنوان فقط - لا نستبعد أي شيء آخر
         # فقد يكون لبعض المستندات قيم فارغة في حقول أخرى
@@ -89,6 +103,10 @@ def clean_document_list(documents):
         
         # طباعة عدد المستندات المتبقية بعد التنقية
         print(f"DEBUG - المستندات بعد التنقية: {filtered_docs.count()}")
+        
+        # طباعة معلومات المستندات المنقاة
+        for doc in filtered_docs[:5]:  # نطبع أول 5 مستندات فقط للاختصار
+            print(f"DEBUG - مستند منقى: ID={doc.id}, العنوان={doc.title}, folder_id={doc.folder_id if hasattr(doc, 'folder_id') else 'None'}, النوع={doc.file_type}, الحجم={doc.file_size}")
         
         return filtered_docs
     
