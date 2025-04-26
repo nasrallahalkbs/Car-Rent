@@ -1,0 +1,591 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "الأرشيف الإلكتروني" %}{% endblock %}
+
+{% block extra_head %}
+<!-- إضافة الأنماط والمكتبات اللازمة -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+
+<!-- إضافة ملف JavaScript المبسط -->
+<script src="{% static 'js/direct-buttons.js' %}"></script>
+
+<style>
+    .explorer-container {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+    
+    .explorer-header {
+        border-bottom: 1px solid #eee;
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f8f9fa;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    
+    .explorer-header h4 {
+        margin: 0;
+        color: #333;
+    }
+    
+    .explorer-toolbar {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .nav-buttons {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .nav-btn, .action-btn {
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    
+    .nav-btn:hover, .action-btn:hover:not(:disabled) {
+        background-color: #f0f0f0;
+    }
+    
+    .action-btn {
+        color: #495057;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .action-btn:hover:not(:disabled) {
+        transform: scale(1.1);
+        background-color: #f0f0f0;
+    }
+    
+    .action-btn:disabled {
+        color: #adb5bd;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    .action-btn#edit-btn:not(:disabled) {
+        color: #0078d7;
+    }
+    
+    .action-btn#delete-btn:not(:disabled) {
+        color: #dc3545;
+    }
+    
+    .action-btn#export-btn:not(:disabled) {
+        color: #198754;
+    }
+    
+    /* تأثير النبض للأزرار عند تحديد عنصر */
+    .action-btn:not(:disabled) {
+        animation: pulse 1s ease-in-out 1;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+    
+    .address-input {
+        flex-grow: 1;
+        margin: 0 10px;
+        position: relative;
+    }
+    
+    .address-input input {
+        width: 100%;
+        padding: 8px 10px 8px 35px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .home-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .address-text {
+        font-size: 14px;
+        color: #6c757d;
+    }
+    
+    .files-container {
+        padding: 15px;
+        min-height: 300px;
+    }
+    
+    .breadcrumb-container {
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .custom-breadcrumb {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    .custom-breadcrumb li {
+        display: flex;
+        align-items: center;
+    }
+    
+    .custom-breadcrumb li:not(:last-child)::after {
+        content: '/';
+        margin: 0 8px;
+        color: #adb5bd;
+    }
+    
+    .custom-breadcrumb a {
+        color: #0d6efd;
+        text-decoration: none;
+    }
+    
+    .custom-breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    
+    .custom-breadcrumb .active {
+        color: #6c757d;
+    }
+    
+    .files-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .folder-item, .file-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    
+    .folder-item:hover, .file-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .folder-icon, .file-icon {
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+    }
+    
+    .folder-icon {
+        color: #ffc107;
+    }
+    
+    .file-icon {
+        color: #6c757d;
+    }
+    
+    .file-icon.pdf {
+        color: #dc3545;
+    }
+    
+    .file-icon.image {
+        color: #28a745;
+    }
+    
+    .file-icon.doc {
+        color: #0d6efd;
+    }
+    
+    .folder-name, .file-name {
+        font-size: 0.9rem;
+        color: #212529;
+        word-break: break-word;
+        max-width: 100%;
+    }
+    
+    .no-files {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 0;
+        color: #6c757d;
+    }
+    
+    .no-files-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+    
+    .empty-folder {
+        text-align: center;
+        padding: 40px 0;
+        color: #6c757d;
+    }
+    
+    .empty-folder i {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 10px;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-left-color: #0d6efd;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}{% trans "الأرشيف الإلكتروني" %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">{% trans "لوحة التحكم" %}</a></li>
+<li class="breadcrumb-item active">{% trans "الأرشيف الإلكتروني" %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- نافذة المجلدات الرئيسية -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    {% trans "المجلدات الرئيسية" %}
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <a href="{% url 'admin_archive' %}" class="text-decoration-none">
+                                <i class="fas fa-folder{% if not current_folder %}-open{% endif %} text-warning me-2"></i> {% trans "الرئيسية" %}
+                            </a>
+                        </li>
+                        {% for folder in root_folders %}
+                        <li class="list-group-item">
+                            <a href="{% url 'admin_archive' folder_id=folder.id %}" class="text-decoration-none">
+                                <i class="fas fa-folder{% if current_folder.id == folder.id %}-open{% endif %} text-warning me-2"></i> {{ folder.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- إضافة مجلد/ملف -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    {% trans "إضافة جديد" %}
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFolderModal">
+                            <i class="fas fa-folder-plus me-2"></i> {% trans "إضافة مجلد" %}
+                        </button>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFileModal">
+                            <i class="fas fa-file-upload me-2"></i> {% trans "إضافة ملف" %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <!-- مستكشف الملفات -->
+            <div class="explorer-container">
+                <div class="explorer-header">
+                    <h4>{% trans "مستكشف الملفات" %}</h4>
+                </div>
+                
+                <div class="explorer-toolbar">
+                    <div class="nav-buttons">
+                        <button class="nav-btn" title="{% trans 'عودة للخلف' %}" onclick="history.back();">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <button class="nav-btn" title="{% trans 'اذهب للأمام' %}" onclick="history.forward();">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="nav-btn" title="{% trans 'تحديث' %}" onclick="location.reload();">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}">
+                            <i class="fas fa-file-export"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="breadcrumb-container">
+                    <ul class="custom-breadcrumb">
+                        <li>
+                            <a href="{% url 'admin_archive' %}">{% trans "الرئيسية" %}</a>
+                        </li>
+                        {% if current_folder %}
+                            {% for ancestor in folder_ancestors %}
+                                <li>
+                                    <a href="{% url 'admin_archive' folder_id=ancestor.id %}">{{ ancestor.name }}</a>
+                                </li>
+                            {% endfor %}
+                            <li class="active">{{ current_folder.name }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="files-container">
+                    <div class="files-grid">
+                        {% if subfolders %}
+                            {% for folder in subfolders %}
+                                <div class="folder-item" data-folder-id="{{ folder.id }}">
+                                    <a href="{% url 'admin_archive' folder_id=folder.id %}" class="text-decoration-none d-flex flex-column align-items-center">
+                                        <i class="fas fa-folder folder-icon"></i>
+                                        <span class="folder-name">{{ folder.name }}</span>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {% if documents %}
+                            {% for document in documents %}
+                                <div class="file-item" data-file-id="{{ document.id }}">
+                                    {% if document.file %}
+                                        <a href="{{ document.file.url }}" target="_blank" class="text-decoration-none d-flex flex-column align-items-center">
+                                    {% else %}
+                                        <a href="{% url 'view_document' document_id=document.id %}" class="text-decoration-none d-flex flex-column align-items-center">
+                                    {% endif %}
+                                        {% if document.file_type == 'application/pdf' %}
+                                            <i class="fas fa-file-pdf file-icon pdf"></i>
+                                        {% elif 'image' in document.file_type %}
+                                            <i class="fas fa-file-image file-icon image"></i>
+                                        {% elif 'word' in document.file_type or 'document' in document.file_type %}
+                                            <i class="fas fa-file-word file-icon doc"></i>
+                                        {% else %}
+                                            <i class="fas fa-file file-icon"></i>
+                                        {% endif %}
+                                        <span class="file-name">{{ document.title }}</span>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {% if not subfolders and not documents %}
+                            <div class="empty-folder col-12">
+                                <i class="fas fa-folder-open"></i>
+                                <p>{% trans "هذا المجلد فارغ" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة مجلد -->
+<div class="modal fade" id="addFolderModal" tabindex="-1" aria-labelledby="addFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFolderModalLabel">{% trans "إضافة مجلد جديد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'admin_archive' folder_id=current_folder.id action='add_folder' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="folder-name" class="form-label">{% trans "اسم المجلد" %}</label>
+                        <input type="text" class="form-control" id="folder-name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="folder-description" class="form-label">{% trans "وصف المجلد" %}</label>
+                        <textarea class="form-control" id="folder-description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "إضافة" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة ملف -->
+<div class="modal fade" id="addFileModal" tabindex="-1" aria-labelledby="addFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFileModalLabel">{% trans "إضافة ملف جديد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'admin_archive' folder_id=current_folder.id action='add_file' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="file-title" class="form-label">{% trans "عنوان الملف" %}</label>
+                        <input type="text" class="form-control" id="file-title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="file-description" class="form-label">{% trans "وصف الملف" %}</label>
+                        <textarea class="form-control" id="file-description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="file-upload" class="form-label">{% trans "اختر الملف" %}</label>
+                        <input type="file" class="form-control" id="file-upload" name="file" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "إضافة" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل مجلد -->
+<div class="modal fade" id="editFolderModal" tabindex="-1" aria-labelledby="editFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editFolderModalLabel">{% trans "تعديل المجلد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'admin_archive' action='edit_folder' %}">
+                {% csrf_token %}
+                <input type="hidden" id="edit-folder-id" name="folder_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-folder-name" class="form-label">{% trans "اسم المجلد" %}</label>
+                        <input type="text" class="form-control" id="edit-folder-name" name="name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "حفظ التغييرات" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل ملف -->
+<div class="modal fade" id="editFileModal" tabindex="-1" aria-labelledby="editFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editFileModalLabel">{% trans "تعديل الملف" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'admin_archive' action='edit_file' %}">
+                {% csrf_token %}
+                <input type="hidden" id="edit-file-id" name="file_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-file-title" class="form-label">{% trans "عنوان الملف" %}</label>
+                        <input type="text" class="form-control" id="edit-file-title" name="title" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "حفظ التغييرات" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal حذف مجلد -->
+<div class="modal fade" id="deleteFolderModal" tabindex="-1" aria-labelledby="deleteFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteFolderModalLabel">{% trans "تأكيد الحذف" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'admin_archive' action='delete_folder' %}">
+                {% csrf_token %}
+                <input type="hidden" id="delete-folder-id" name="folder_id">
+                <div class="modal-body">
+                    <p>{% trans "هل أنت متأكد أنك تريد حذف المجلد" %} <strong id="delete-folder-name"></strong>؟</p>
+                    <div class="alert alert-warning">
+                        {% trans "تحذير: سيتم حذف جميع الملفات والمجلدات الفرعية داخل هذا المجلد!" %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "حذف" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal حذف ملف -->
+<div class="modal fade" id="deleteFileModal" tabindex="-1" aria-labelledby="deleteFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteFileModalLabel">{% trans "تأكيد الحذف" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'admin_archive' action='delete_file' %}">
+                {% csrf_token %}
+                <input type="hidden" id="delete-file-id" name="file_id">
+                <div class="modal-body">
+                    <p>{% trans "هل أنت متأكد أنك تريد حذف الملف" %} <strong id="delete-file-name"></strong>؟</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "حذف" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
