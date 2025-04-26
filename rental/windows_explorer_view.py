@@ -261,7 +261,7 @@ def admin_archive_windows(request):
                 file_content = uploaded_file.read()
                 
                 # إنشاء المستند مع تخزين الملف في قاعدة البيانات
-                document = Document.objects.create(
+                document = Document(
                     title=title,
                     description=description,
                     document_type='other',  # استخدام القيمة الافتراضية 'other'
@@ -275,6 +275,12 @@ def admin_archive_windows(request):
                     added_by=request.user if request.user.is_authenticated else None,
                     folder=folder
                 )
+                
+                # تعيين علامة تجاوز الإشارات
+                setattr(document, '_ignore_auto_document_signal', True)
+                
+                # حفظ المستند بعد تعيين علامة التجاوز
+                document.save()
                 
                 print(f"DEBUG - تم إنشاء مستند جديد: {document.title}")
             except Exception as e:
