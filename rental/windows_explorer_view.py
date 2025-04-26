@@ -525,5 +525,5 @@ def admin_archive_windows(request, folder_id=None, action=None):
         'show_documents': True  # إضافة متغير للتأكد من عرض المستندات دائمًا
     }
     
-    # استخدام قالب الأرشيف البسيط والمباشر
-    return render(request, 'admin/archive/direct_fix.html', context)
+    # استخدام قالب مستكشف ويندوز المحسن
+    return render(request, 'admin/archive/windows_explorer_enhanced.html', context)
