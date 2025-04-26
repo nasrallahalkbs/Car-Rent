@@ -7,7 +7,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('rental', '0011_alter_document_options_and_more'),
-        ('rental', '0013_add_file_content_fields'),
     ]
 
     operations = [
