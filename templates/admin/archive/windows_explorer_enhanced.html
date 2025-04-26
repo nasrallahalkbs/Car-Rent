@@ -8,8 +8,9 @@
 <!-- إضافة مكتبات جافا سكريبت ضرورية -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
-<!-- استخدام ملف JavaScript المحسن للأرشيف -->
+<!-- استخدام ملفات JavaScript المحسنة للأرشيف -->
 <script src="{% static 'js/archive-explorer-fixed.js' %}"></script>
+<script src="{% static 'js/archive-buttons.js' %}"></script>
 {% endblock %}
 
 {% block page_title %}{% trans "الأرشيف الإلكتروني" %}{% endblock %}
@@ -645,13 +646,13 @@
                     </button>
 
                     <div class="vertical-separator"></div>
-                    <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}">
+                    <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}" onclick="handleEditClick(); return false;">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}">
+                    <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}" onclick="handleDeleteClick(); return false;">
                         <i class="fas fa-trash-alt"></i>
                     </button>
-                    <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}">
+                    <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}" onclick="handleExportClick(); return false;">
                         <i class="fas fa-file-export"></i>
                     </button>
                 </div>
@@ -1159,102 +1160,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
     
-    // إضافة معالجي الأحداث للأزرار بعد أن يتم تحميل الصفحة بالكامل
-    $(document).ready(function() {
-        // 1. أزرار التحرير والحذف والتصدير
-        $('#edit-btn').click(function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            console.log("تم النقر على زر التعديل");
-            
-            if (window.selectedItemType === 'folder' && window.selectedFolderId) {
-                $('#edit-folder-id').val(window.selectedFolderId);
-                $('#edit-folder-name').val(window.selectedItemName);
-                $('#editFolderModal').modal('show');
-            } else if (window.selectedItemType === 'file' && window.selectedFileId) {
-                $('#edit-file-id').val(window.selectedFileId);
-                $('#edit-file-title').val(window.selectedItemName);
-                $('#editFileModal').modal('show');
-            }
-        });
-        
-        $('#delete-btn').click(function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            console.log("تم النقر على زر الحذف");
-            
-            if (window.selectedItemType === 'folder' && window.selectedFolderId) {
-                $('#delete-folder-id').val(window.selectedFolderId);
-                $('#delete-folder-name').text(window.selectedItemName);
-                $('#deleteFolderModal').modal('show');
-            } else if (window.selectedItemType === 'file' && window.selectedFileId) {
-                $('#delete-file-id').val(window.selectedFileId);
-                $('#delete-file-name').text(window.selectedItemName);
-                $('#deleteFileModal').modal('show');
-            }
-        });
-        
-        $('#export-btn').click(function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            console.log("تم النقر على زر التصدير");
-            
-            if (window.selectedItemType === 'file' && window.selectedFileId) {
-                var url = "{% url 'view_document' 0 %}".replace('0', window.selectedFileId);
-                window.open(url, '_blank');
-            }
-        });
-        
-        // إضافة القدرة على النقر المزدوج على الملفات للفتح
-        $('.file-item').dblclick(function() {
-            var fileId = $(this).data('file-id');
-            if (fileId) {
-                window.open("{% url 'view_document' 0 %}".replace('0', fileId), '_blank');
-            }
-        });
+    // ربط الأزرار بالأحداث
+    $('#edit-btn').on('click', function() {
+        handleEditClick();
+        return false;
+    });
+    
+    $('#delete-btn').on('click', function() {
+        handleDeleteClick();
+        return false;
+    });
+    
+    $('#export-btn').on('click', function() {
+        handleExportClick();
+        return false;
     });
 });
 
-// دالة معالجة حدث النقر على زر التعديل
-function handleEditClick() {
-    if (window.selectedItemType === 'folder' && window.selectedFolderId) {
-        // فتح نافذة تعديل المجلد
-        $('#edit-folder-id').val(window.selectedFolderId);
-        $('#edit-folder-name').val(window.selectedItemName);
-        $('#editFolderModal').modal('show');
-    } else if (window.selectedItemType === 'file' && window.selectedFileId) {
-        // فتح نافذة تعديل الملف
-        $('#edit-file-id').val(window.selectedFileId);
-        $('#edit-file-title').val(window.selectedItemName);
-        $('#editFileModal').modal('show');
-    }
-    return false;
-}
-
-// دالة معالجة حدث النقر على زر الحذف
-function handleDeleteClick() {
-    if (window.selectedItemType === 'folder' && window.selectedFolderId) {
-        // فتح نافذة حذف المجلد
-        $('#delete-folder-id').val(window.selectedFolderId);
-        $('#delete-folder-name').text(window.selectedItemName);
-        $('#deleteFolderModal').modal('show');
-    } else if (window.selectedItemType === 'file' && window.selectedFileId) {
-        // فتح نافذة حذف الملف
-        $('#delete-file-id').val(window.selectedFileId);
-        $('#delete-file-name').text(window.selectedItemName);
-        $('#deleteFileModal').modal('show');
-    }
-    return false;
-}
-
-// دالة معالجة حدث النقر على زر التصدير (التنزيل)
-function handleExportClick() {
-    if (window.selectedItemType === 'file' && window.selectedFileId) {
-        // توجيه المتصفح إلى رابط تنزيل الملف
-        window.open("{% url 'view_document' 0 %}".replace('0', window.selectedFileId), '_blank');
-    }
-    return false;
-}
+// تم حذف المعالجات القديمة - الآن نستخدم فقط معالجات الأحداث في $(document).ready
 </script>
 {% endblock %}
 
