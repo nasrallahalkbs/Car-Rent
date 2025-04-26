@@ -9,9 +9,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
 <script>
+// متغيرات عامة خارج أي نطاق لتكون متاحة لجميع الدوال
+var selectedItem = null;
+var selectedItemType = null; // "folder" أو "file"
+var selectedItemId = null;
+
 // دوال التعامل مع النقر على الأزرار
 function handleEditClick() {
-    console.log("📝 معالجة زر التعديل يدوياً");
+    console.log("📝 معالجة زر التعديل يدوياً", {
+        item: selectedItem ? "موجود" : "غير موجود",
+        type: selectedItemType,
+        id: selectedItemId
+    });
+    
     if (selectedItem && selectedItemId) {
         if (selectedItemType === "folder") {
             // فتح مربع حوار تحرير المجلد
@@ -25,12 +35,18 @@ function handleEditClick() {
             $('#editFileModal').modal('show');
         }
     } else {
+        alert("الرجاء تحديد مجلد أو ملف أولاً");
         console.log("❌ لم يتم تحديد أي عنصر للتعديل");
     }
 }
 
 function handleDeleteClick() {
-    console.log("🗑️ معالجة زر الحذف يدوياً");
+    console.log("🗑️ معالجة زر الحذف يدوياً", {
+        item: selectedItem ? "موجود" : "غير موجود",
+        type: selectedItemType,
+        id: selectedItemId
+    });
+    
     if (selectedItem && selectedItemId) {
         if (selectedItemType === "folder") {
             // تأكيد حذف المجلد
@@ -44,16 +60,23 @@ function handleDeleteClick() {
             $('#deleteFileModal').modal('show');
         }
     } else {
+        alert("الرجاء تحديد مجلد أو ملف أولاً");
         console.log("❌ لم يتم تحديد أي عنصر للحذف");
     }
 }
 
 function handleExportClick() {
-    console.log("📤 معالجة زر التصدير يدوياً");
+    console.log("📤 معالجة زر التصدير يدوياً", {
+        item: selectedItem ? "موجود" : "غير موجود",
+        type: selectedItemType,
+        id: selectedItemId
+    });
+    
     if (selectedItem && selectedItemType === "file" && selectedItemId) {
         // فتح رابط التحميل في نافذة جديدة
         window.open("{% url 'download_document' 0 %}".replace('0', selectedItemId), '_blank');
     } else {
+        alert("الرجاء تحديد ملف أولاً");
         console.log("❌ لم يتم تحديد ملف للتصدير");
     }
 }
@@ -61,10 +84,7 @@ function handleExportClick() {
 $(document).ready(function() {
     console.log("🔍 تم تحميل صفحة الأرشيف بتصميم ويندوز - تبدأ مرحلة التصحيح");
     
-    // متغيرات عامة
-    let selectedItem = null;
-    let selectedItemType = null; // "folder" أو "file"
-    let selectedItemId = null;
+    // تمت إزالة تعريف المتغيرات المحلية هنا لأنها تم تعريفها بالفعل كمتغيرات عامة على مستوى النطاق الأعلى
     
     // تهيئة أزرار الإجراءات
     $('.action-btn').prop('disabled', true);
@@ -443,10 +463,19 @@ $(document).ready(function() {
     
     .action-btn {
         color: #495057;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .action-btn:hover:not(:disabled) {
+        transform: scale(1.1);
+        background-color: #f0f0f0;
     }
     
     .action-btn:disabled {
         color: #adb5bd;
+        cursor: not-allowed;
+        opacity: 0.5;
     }
     
     .action-btn#edit-btn:not(:disabled) {
@@ -459,6 +488,17 @@ $(document).ready(function() {
     
     .action-btn#export-btn:not(:disabled) {
         color: #198754;
+    }
+    
+    /* تأثير النبض للأزرار عند تحديد عنصر */
+    .action-btn:not(:disabled) {
+        animation: pulse 1s ease-in-out 1;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
     }
     
     .address-input {
