@@ -116,17 +116,21 @@ def clean_document_list(documents):
 
 @login_required
 @admin_required
-def admin_archive_windows(request):
+def admin_archive_windows(request, folder_id=None, action=None):
     """عرض الأرشيف الإلكتروني بتصميم مشابه لمستكشف ويندوز"""
     from django.utils.translation import get_language
     current_language = get_language()
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
-    # الحصول على معلمات URL
-    folder_param = request.GET.get('folder', None)
+    # الحصول على معلمات URL - دعم المعاملات القديمة والجديدة
+    folder_param = request.GET.get('folder', folder_id)
     document_param = request.GET.get('document', None)
-    action_param = request.GET.get('action', None)
+    action_param = request.GET.get('action', action)
+    
+    # تحويل folder_id إلى نص إذا كان موجوداً
+    if folder_id is not None:
+        folder_param = str(folder_id)
     
     print(f"DEBUG - معلمة المجلد: {folder_param}")
     print(f"DEBUG - معلمة المستند: {document_param}")
@@ -214,8 +218,9 @@ def admin_archive_windows(request):
                     print(f"DEBUG - تم إنشاء المجلد باستخدام الطريقة البديلة: {folder.name}")
                 messages.success(request, f"تم إنشاء المجلد '{name}' بنجاح")
                 
-                # إعادة توجيه إلى المجلد الجديد
-                return redirect(f"{request.path}?folder={folder.id}")
+                # إعادة توجيه إلى المجلد الجديد باستخدام المسار الجديد
+                from django.urls import reverse
+                return redirect(reverse('admin_archive_folder', kwargs={'folder_id': folder.id}))
             except Exception as e:
                 # لوج أي استثناءات للمساعدة في عملية التصحيح
                 print(f"ERROR - فشل في إنشاء المجلد: {str(e)}")
@@ -289,11 +294,12 @@ def admin_archive_windows(request):
                 return redirect(request.path)
             messages.success(request, f"تم إضافة الملف '{title}' بنجاح")
             
-            # إعادة توجيه
+            # إعادة توجيه باستخدام المسارات الجديدة
+            from django.urls import reverse
             if folder:
-                return redirect(f"{request.path}?folder={folder.id}")
+                return redirect(reverse('admin_archive_folder', kwargs={'folder_id': folder.id}))
             else:
-                return redirect(request.path)
+                return redirect(reverse('admin_archive'))
         else:
             if not title:
                 messages.error(request, "يرجى إدخال عنوان الملف")
@@ -357,9 +363,12 @@ def admin_archive_windows(request):
                 
                 # بناء مسار المجلد
                 folder_path = []
+                folder_ancestors = []
                 temp_folder = current_folder
                 while temp_folder:
                     folder_path.insert(0, temp_folder)
+                    if temp_folder != current_folder:  # لا نضيف المجلد الحالي للأسلاف
+                        folder_ancestors.insert(0, temp_folder)
                     temp_folder = temp_folder.parent
                 
                 print(f"DEBUG - المجلد الحالي: {current_folder.name}")
@@ -401,6 +410,7 @@ def admin_archive_windows(request):
         'files': documents,  # إضافة متغير 'files' ليكون متوافقًا مع قالب fixed_archive_main.html
         'current_folder': current_folder,
         'folder_path': folder_path,
+        'folder_ancestors': folder_ancestors if 'folder_ancestors' in locals() else [],
         'folder_param': folder_param,
         'document_param': document_param,
         'all_folders': all_folders,  # إضافة قائمة كاملة بجميع المجلدات
