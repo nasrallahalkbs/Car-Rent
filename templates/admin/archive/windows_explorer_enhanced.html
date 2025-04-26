@@ -8,426 +8,8 @@
 <!-- إضافة مكتبات جافا سكريبت ضرورية -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
-<script>
-// بداية - هذا هو التصحيح الكامل لمشكلة تحديد العناصر وعمل الأزرار
-
-// متغيرات عامة خارج أي نطاق لتكون متاحة لجميع الدوال
-window.archiveApp = {
-    selectedItem: null,
-    selectedItemType: null, // "folder" أو "file"
-    selectedItemId: null,
-    
-    // دالة تحديث أزرار الإجراءات
-    updateActionButtons: function() {
-        console.log("⚙️ تحديث حالة الأزرار:", {
-            selectedItem: this.selectedItem ? "موجود" : "غير موجود",
-            selectedItemType: this.selectedItemType,
-            selectedItemId: this.selectedItemId
-        });
-        
-        if (this.selectedItem) {
-            // تفعيل الأزرار إذا كان هناك عنصر محدد
-            $('.action-btn').prop('disabled', false);
-            
-            // تفعيل/تعطيل زر التصدير فقط للملفات
-            $('#export-btn').prop('disabled', this.selectedItemType !== "file");
-        } else {
-            // تعطيل الأزرار إذا لم يكن هناك عنصر محدد
-            $('.action-btn').prop('disabled', true);
-        }
-    },
-    
-    // دالة تحديد عنصر
-    selectItem: function(item) {
-        console.log("⚡️ تم تحديد عنصر:", item);
-        
-        // إزالة التحديد من جميع العناصر
-        $('.folder-item, .file-item').removeClass('selected');
-        
-        if (item) {
-            // إضافة صف التحديد للعنصر الحالي
-            $(item).addClass('selected');
-            
-            // تحديث المتغيرات العامة
-            this.selectedItem = $(item);
-            
-            if ($(item).hasClass('folder-item')) {
-                this.selectedItemType = "folder";
-                this.selectedItemId = $(item).data('folder-id');
-                console.log("✅ تم تحديد المجلد: " + this.selectedItemId);
-            } else if ($(item).hasClass('file-item')) {
-                this.selectedItemType = "file";
-                this.selectedItemId = $(item).data('file-id');
-                console.log("✅ تم تحديد الملف: " + this.selectedItemId);
-            }
-        } else {
-            // إلغاء التحديد
-            this.selectedItem = null;
-            this.selectedItemType = null;
-            this.selectedItemId = null;
-        }
-        
-        // تحديث حالة الأزرار
-        this.updateActionButtons();
-    }
-};
-
-// دوال معالجة أحداث النقر على الأزرار
-function handleEditClick() {
-    console.log("📝 معالجة زر التعديل يدوياً", {
-        item: window.archiveApp.selectedItem ? "موجود" : "غير موجود",
-        type: window.archiveApp.selectedItemType,
-        id: window.archiveApp.selectedItemId
-    });
-    
-    if (window.archiveApp.selectedItem && window.archiveApp.selectedItemId) {
-        if (window.archiveApp.selectedItemType === "folder") {
-            // فتح مربع حوار تحرير المجلد
-            $('#edit-folder-name').val(window.archiveApp.selectedItem.find('.folder-name').text().trim());
-            $('#edit-folder-id').val(window.archiveApp.selectedItemId);
-            $('#editFolderModal').modal('show');
-        } else if (window.archiveApp.selectedItemType === "file") {
-            // فتح مربع حوار تحرير الملف
-            $('#edit-file-title').val(window.archiveApp.selectedItem.find('.file-name').text().trim());
-            $('#edit-file-id').val(window.archiveApp.selectedItemId);
-            $('#editFileModal').modal('show');
-        }
-    } else {
-        alert("الرجاء تحديد مجلد أو ملف أولاً");
-        console.log("❌ لم يتم تحديد أي عنصر للتعديل");
-    }
-    
-    return false; // منع السلوك الافتراضي
-}
-
-function handleDeleteClick() {
-    console.log("🗑️ معالجة زر الحذف يدوياً", {
-        item: window.archiveApp.selectedItem ? "موجود" : "غير موجود",
-        type: window.archiveApp.selectedItemType,
-        id: window.archiveApp.selectedItemId
-    });
-    
-    if (window.archiveApp.selectedItem && window.archiveApp.selectedItemId) {
-        if (window.archiveApp.selectedItemType === "folder") {
-            // تأكيد حذف المجلد
-            $('#delete-folder-id').val(window.archiveApp.selectedItemId);
-            $('#delete-folder-name').text(window.archiveApp.selectedItem.find('.folder-name').text().trim());
-            $('#deleteFolderModal').modal('show');
-        } else if (window.archiveApp.selectedItemType === "file") {
-            // تأكيد حذف الملف
-            $('#delete-file-id').val(window.archiveApp.selectedItemId);
-            $('#delete-file-name').text(window.archiveApp.selectedItem.find('.file-name').text().trim());
-            $('#deleteFileModal').modal('show');
-        }
-    } else {
-        alert("الرجاء تحديد مجلد أو ملف أولاً");
-        console.log("❌ لم يتم تحديد أي عنصر للحذف");
-    }
-    
-    return false; // منع السلوك الافتراضي
-}
-
-function handleExportClick() {
-    console.log("📤 معالجة زر التصدير يدوياً", {
-        item: window.archiveApp.selectedItem ? "موجود" : "غير موجود",
-        type: window.archiveApp.selectedItemType,
-        id: window.archiveApp.selectedItemId
-    });
-    
-    if (window.archiveApp.selectedItem && window.archiveApp.selectedItemType === "file" && window.archiveApp.selectedItemId) {
-        // فتح رابط التحميل في نافذة جديدة
-        window.open("{% url 'download_document' 0 %}".replace('0', window.archiveApp.selectedItemId), '_blank');
-    } else {
-        alert("الرجاء تحديد ملف أولاً");
-        console.log("❌ لم يتم تحديد ملف للتصدير");
-    }
-    
-    return false; // منع السلوك الافتراضي
-}
-
-$(document).ready(function() {
-    console.log("🔍 تم تحميل صفحة الأرشيف بتصميم ويندوز - تبدأ مرحلة التصحيح");
-    
-    // تمت إزالة تعريف المتغيرات المحلية هنا لأنها تم تعريفها بالفعل كمتغيرات عامة على مستوى النطاق الأعلى
-    
-    // تهيئة أزرار الإجراءات
-    $('.action-btn').prop('disabled', true);
-    
-    // طباعة معلومات عن الأزرار والعناصر المتوفرة للتصحيح
-    console.log("🔍 أزرار الإجراءات:", {
-        editBtn: $('#edit-btn').length > 0 ? "موجود" : "غير موجود",
-        deleteBtn: $('#delete-btn').length > 0 ? "موجود" : "غير موجود",
-        exportBtn: $('#export-btn').length > 0 ? "موجود" : "غير موجود"
-    });
-    
-    console.log("🔍 المجلدات والملفات:", {
-        folderItems: $('.folder-item').length,
-        fileItems: $('.file-item').length
-    });
-    
-    // تحديد العنصر النشط حالياً في شجرة المجلدات
-    {% if current_folder %}
-    const currentFolderId = {{ current_folder.id }};
-    {% endif %}
-    
-
-    
-    // تهيئة شجرة المجلدات باستخدام jstree
-    $('#folder-tree').jstree({
-        'core': {
-            'data': {{ folder_tree|safe }},
-            'themes': {
-                'name': 'default',
-                'dots': true,
-                'icons': true,
-                'responsive': true
-            },
-            'multiple': false
-        },
-        'types': {
-            'default': {
-                'icon': 'fas fa-folder text-warning'
-            },
-            'root': {
-                'icon': 'fas fa-hdd text-primary'
-            },
-            'system': {
-                'icon': 'fas fa-cogs text-secondary'
-            }
-        },
-        'plugins': ['types', 'wholerow', 'search']
-    });
-    
-    // معالجة أحداث jsTree بعد تهيئة الشجرة
-    $('#folder-tree').on('ready.jstree', function() {
-        console.log("اكتملت تهيئة شجرة المجلدات");
-        // فتح العقدة الحالية بعد تحميل الشجرة
-        {% if current_folder %}
-        $('#folder-tree').jstree('select_node', 'folder-{{ current_folder.id }}');
-        $('#folder-tree').jstree('open_node', 'folder-{{ current_folder.id }}');
-        {% endif %}
-    }).on('select_node.jstree', function(e, data) {
-        // التعامل مع اختيار عقدة
-        const nodeId = data.node.id;
-        console.log("تم اختيار العقدة في شجرة المجلدات: " + nodeId);
-        if (nodeId.startsWith('folder-')) {
-            const folderId = nodeId.replace('folder-', '');
-            console.log("جاري الانتقال إلى المجلد رقم: " + folderId);
-            window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
-        }
-    });
-    
-    // تفعيل وظائف أزرار التنقل
-    $(document).on('click', '#back-btn', function() {
-        console.log("العودة للخلف");
-        window.history.back();
-    });
-    
-    $(document).on('click', '#forward-btn', function() {
-        console.log("الانتقال للأمام");
-        window.history.forward();
-    });
-    
-    $(document).on('click', '#up-btn', function() {
-        console.log("الانتقال للأعلى");
-        {% if current_folder and current_folder.parent %}
-        window.location.href = "{% url 'admin_archive' %}?folder={{ current_folder.parent.id }}";
-        {% else %}
-        window.location.href = "{% url 'admin_archive' %}";
-        {% endif %}
-    });
-    
-    $(document).on('click', '#refresh-btn', function() {
-        console.log("تحديث الصفحة");
-        // استخدام متغير currentFolderId لإعادة تحميل المحتوى الحالي بدلاً من تحديث الصفحة بالكامل
-        if (typeof currentFolderId !== 'undefined') {
-            window.location.href = "{% url 'admin_archive' %}?folder=" + currentFolderId + "&t=" + new Date().getTime();
-        } else {
-            // في حالة الصفحة الرئيسية
-            window.location.href = "{% url 'admin_archive' %}?t=" + new Date().getTime();
-        }
-    });
-    
-    $(document).on('click', '#home-btn', function() {
-        console.log("العودة للرئيسية");
-        window.location.href = "{% url 'admin_archive' %}";
-    });
-    
-    // تفعيل البحث في المجلدات
-    $(document).on('keyup', '.search-bar input', function() {
-        const searchText = $(this).val();
-        console.log("البحث عن: " + searchText);
-        
-        // اطلب البحث عن النص في المحتوى الحالي
-        if (searchText.length > 0) {
-            // إخفاء العناصر التي لا تحتوي على نص البحث
-            $('.folder-item, .file-item').each(function() {
-                const itemName = $(this).find('.folder-name, .file-name').text().toLowerCase();
-                if (itemName.includes(searchText.toLowerCase())) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
-                }
-            });
-        } else {
-            // إظهار كل العناصر
-            $('.folder-item, .file-item').show();
-        }
-    });
-    
-    // تفعيل تبديل نمط العرض
-    $(document).on('click', '.view-btn', function() {
-        $('.view-btn').removeClass('active');
-        $(this).addClass('active');
-        
-        const viewMode = $(this).data('view');
-        console.log("تم تغيير نمط العرض إلى: " + viewMode);
-        
-        // تبديل بين أنماط العرض المختلفة
-        if (viewMode === 'grid') {
-            $('#content-view').removeClass('list-view table-view').addClass('grid-view');
-            $('.files-grid').show();
-            $('.files-table').hide();
-        } else if (viewMode === 'list') {
-            $('#content-view').removeClass('grid-view table-view').addClass('list-view');
-            $('.files-table').show();
-            $('.files-grid').hide();
-        }
-    });
-    
-    // كود تفعيل أزرار العمليات (تحرير، حذف، تصدير) محذوف من هنا لأنه مكرر ومعرف بالفعل أدناه
-    
-    // وظيفة تحديث أزرار الإجراءات (تعديل، حذف، تصدير)
-    function updateActionButtons() {
-        if (selectedItem) {
-            // تفعيل الأزرار إذا كان هناك عنصر محدد
-            $('.action-btn').prop('disabled', false);
-            
-            // تفعيل/تعطيل زر التصدير فقط للملفات
-            $('#export-btn').prop('disabled', selectedItemType !== "file");
-        } else {
-            // تعطيل الأزرار إذا لم يكن هناك عنصر محدد
-            $('.action-btn').prop('disabled', true);
-        }
-    }
-    
-    // إعادة كتابة وظيفة اختيار الملفات والمجلدات
-    $(document).on('click', '.folder-item, .file-item', function(e) {
-        // إيقاف السلوك الافتراضي إذا كان هذا رابطاً
-        if ($(this).is('a')) {
-            // نسمح للنقر المزدوج بالعمل للتنقل، ولكن النقر المفرد للاختيار فقط
-            e.preventDefault();
-        }
-        
-        // منع انتشار الحدث للعناصر الأب لتفادي تداخل الأحداث
-        e.stopPropagation();
-        
-        console.log("⚡️ تم النقر على عنصر:", this);
-        console.log("⚡️ نوع العنصر:", $(this).hasClass('folder-item') ? "مجلد" : "ملف");
-        console.log("⚡️ خصائص data:", $(this).data());
-        
-        // استخدام دالة تحديد العنصر من كائن التطبيق
-        window.archiveApp.selectItem(this);
-        
-        console.log("⚡️ حالة الأزرار بعد التحديث:", {
-            editBtn: $('#edit-btn').prop('disabled') ? "معطل" : "مفعل",
-            deleteBtn: $('#delete-btn').prop('disabled') ? "معطل" : "مفعل",
-            exportBtn: $('#export-btn').prop('disabled') ? "معطل" : "مفعل"
-        });
-    });
-    
-    // إلغاء تحديد العناصر عند النقر على منطقة فارغة
-    $(document).on('click', '.content-view', function(e) {
-        if (e.target === this) {
-            // إلغاء التحديد من كائن التطبيق
-            window.archiveApp.selectItem(null);
-        }
-    });
-    
-    // تفعيل النقر المزدوج على المجلدات
-    $(document).on('dblclick', '.folder-item', function() {
-        const folderId = $(this).data('folder-id');
-        console.log("تم النقر المزدوج على المجلد: " + folderId);
-        
-        // عرض المزيد من معلومات التصحيح
-        console.log("معلومات المجلد:", {
-            element: $(this),
-            dataAttribute: $(this).data(),
-            folderName: $(this).find('.folder-name').text(),
-            href: "{% url 'admin_archive' %}?folder=" + folderId
-        });
-        
-        // إضافة معالج أخطاء
-        try {
-            if (!folderId) {
-                console.log("لم يتم العثور على معرف للمجلد - التحقق من المجلد الأب");
-                {% if current_folder and current_folder.parent %}
-                // التوجه للمجلد الأب إذا كان زر العودة للأعلى
-                console.log("الانتقال إلى المجلد الأب: {{ current_folder.parent.id }}");
-                window.location.href = "{% url 'admin_archive' %}?folder={{ current_folder.parent.id }}";
-                {% else %}
-                // العودة للرئيسية إذا كنا في المجلد الرئيسي
-                console.log("العودة إلى الصفحة الرئيسية للأرشيف");
-                window.location.href = "{% url 'admin_archive' %}";
-                {% endif %}
-            } else {
-                // الانتقال للمجلد المحدد
-                console.log("الانتقال إلى المجلد: " + folderId + " على العنوان: " + "{% url 'admin_archive' %}?folder=" + folderId);
-                // استخدام الوقت المستقطع للتأكد من ظهور سجلات التصحيح في وحدة التحكم قبل التنقل
-                setTimeout(function() {
-                    window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
-                }, 100);
-            }
-        } catch (error) {
-            console.error("حدث خطأ عند محاولة الانتقال إلى المجلد:", error);
-        }
-    });
-    
-    // تفعيل النقر المزدوج على الملفات
-    $(document).on('dblclick', '.file-item', function() {
-        const fileId = $(this).data('file-id');
-        console.log("تم النقر المزدوج على الملف: " + fileId);
-        window.open("{% url 'download_document' 0 %}".replace('0', fileId), '_blank');
-    });
-    
-    // تفعيل العناصر في قائمة الوصول السريع
-    $(document).on('click', '.quick-access-item', function() {
-        const folderId = $(this).data('folder-id');
-        console.log("تم النقر على عنصر الوصول السريع: " + folderId);
-        window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
-    });
-    
-    // تفعيل زر إضافة مجلد جديد
-    $(document).on('click', '#add-folder-btn', function() {
-        console.log("إضافة مجلد جديد");
-        // فتح نافذة منبثقة لإضافة مجلد جديد
-        $('#newFolderModal').modal('show');
-    });
-    
-    // تفعيل زر إضافة ملف جديد
-    $(document).on('click', '#add-file-btn', function() {
-        console.log("إضافة ملف جديد");
-        // فتح نافذة منبثقة لإضافة ملف جديد
-        $('#uploadFileModal').modal('show');
-    });
-    
-    // عدم استخدام معالجات الأحداث هنا لأنها معرّفة بالفعل في دوال منفصلة
-    // والأزرار تستخدم الآن معالجات onClick مباشرة
-    console.log("✅ تم تعطيل معالجات الأحداث المكررة للأزرار");
-
-    
-
-});
-</script>
-{% endblock %}
-
-{% block page_title %}{% trans "الأرشيف الإلكتروني" %}{% endblock %}
-
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">{% trans "لوحة التحكم" %}</a></li>
-<li class="breadcrumb-item active">{% trans "الأرشيف الإلكتروني" %}</li>
-{% endblock %}
-
+<!-- استخدام ملف JavaScript المحسن للأرشيف -->
+<script src="{% static 'js/archive-explorer-fixed.js' %}"></script>
 {% block extra_css %}
 <style>
     /* المستكشف الرئيسي */
