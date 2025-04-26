@@ -15,6 +15,10 @@ $(document).ready(function() {
     // متغيرات عامة
     let selectedItem = null;
     let selectedItemType = null; // "folder" أو "file"
+    let selectedItemId = null;
+    
+    // تهيئة أزرار الإجراءات
+    $('.action-btn').prop('disabled', true);
     
     // تحديد العنصر النشط حالياً في شجرة المجلدات
     {% if current_folder %}
@@ -90,7 +94,13 @@ $(document).ready(function() {
     
     $(document).on('click', '#refresh-btn', function() {
         console.log("تحديث الصفحة");
-        window.location.reload();
+        // استخدام متغير currentFolderId لإعادة تحميل المحتوى الحالي بدلاً من تحديث الصفحة بالكامل
+        if (typeof currentFolderId !== 'undefined') {
+            window.location.href = "{% url 'admin_archive' %}?folder=" + currentFolderId + "&t=" + new Date().getTime();
+        } else {
+            // في حالة الصفحة الرئيسية
+            window.location.href = "{% url 'admin_archive' %}?t=" + new Date().getTime();
+        }
     });
     
     $(document).on('click', '#home-btn', function() {
@@ -140,6 +150,20 @@ $(document).ready(function() {
         }
     });
     
+    // وظيفة تحديث أزرار الإجراءات (تعديل، حذف، تصدير)
+    function updateActionButtons() {
+        if (selectedItem) {
+            // تفعيل الأزرار إذا كان هناك عنصر محدد
+            $('.action-btn').prop('disabled', false);
+            
+            // تفعيل/تعطيل زر التصدير فقط للملفات
+            $('#export-btn').prop('disabled', selectedItemType !== "file");
+        } else {
+            // تعطيل الأزرار إذا لم يكن هناك عنصر محدد
+            $('.action-btn').prop('disabled', true);
+        }
+    }
+    
     // تفعيل اختيار الملفات والمجلدات
     $(document).on('click', '.folder-item, .file-item', function(e) {
         e.preventDefault();
@@ -159,7 +183,8 @@ $(document).ready(function() {
             console.log("تم تحديد الملف: " + selectedItemId);
         }
         
-
+        // تحديث حالة أزرار الإجراءات
+        updateActionButtons();
     });
     
     // إلغاء تحديد العناصر عند النقر على منطقة فارغة
@@ -169,7 +194,8 @@ $(document).ready(function() {
             selectedItem = null;
             selectedItemType = null;
             selectedItemId = null;
-
+            // تحديث حالة أزرار الإجراءات
+            updateActionButtons();
         }
     });
     
@@ -240,6 +266,49 @@ $(document).ready(function() {
         $('#uploadFileModal').modal('show');
     });
     
+    // تفعيل زر تعديل (للمجلدات والملفات)
+    $(document).on('click', '#edit-btn', function() {
+        console.log("تعديل العنصر المحدد: " + selectedItemType + " - " + selectedItemId);
+        
+        if (selectedItemType === "folder") {
+            // فتح مربع حوار تحرير المجلد
+            $('#editFolderModal').modal('show');
+            $('#edit-folder-name').val(selectedItem.find('.folder-name').text());
+            $('#edit-folder-id').val(selectedItemId);
+        } else if (selectedItemType === "file") {
+            // فتح مربع حوار تحرير الملف
+            $('#editFileModal').modal('show');
+            $('#edit-file-title').val(selectedItem.find('.file-name').text());
+            $('#edit-file-id').val(selectedItemId);
+        }
+    });
+    
+    // تفعيل زر حذف (للمجلدات والملفات)
+    $(document).on('click', '#delete-btn', function() {
+        console.log("حذف العنصر المحدد: " + selectedItemType + " - " + selectedItemId);
+        
+        if (selectedItemType === "folder") {
+            // تأكيد حذف المجلد
+            $('#deleteFolderModal').modal('show');
+            $('#delete-folder-id').val(selectedItemId);
+            $('#delete-folder-name').text(selectedItem.find('.folder-name').text());
+        } else if (selectedItemType === "file") {
+            // تأكيد حذف الملف
+            $('#deleteFileModal').modal('show');
+            $('#delete-file-id').val(selectedItemId);
+            $('#delete-file-name').text(selectedItem.find('.file-name').text());
+        }
+    });
+    
+    // تفعيل زر تصدير (للملفات فقط)
+    $(document).on('click', '#export-btn', function() {
+        console.log("تصدير الملف المحدد: " + selectedItemId);
+        
+        if (selectedItemType === "file" && selectedItemId) {
+            // فتح رابط التحميل في نافذة جديدة
+            window.open("{% url 'download_document' 0 %}".replace('0', selectedItemId), '_blank');
+        }
+    });
 
     
 
@@ -858,6 +927,16 @@ $(document).ready(function() {
                         <i class="fas fa-sync-alt"></i>
                     </button>
 
+                    <div class="vertical-separator"></div>
+                    <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                    <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}">
+                        <i class="fas fa-file-export"></i>
+                    </button>
                 </div>
                 <div class="address-input">
                     <span class="home-icon">
