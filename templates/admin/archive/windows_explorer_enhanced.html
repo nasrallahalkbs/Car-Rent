@@ -1051,79 +1051,167 @@ document.addEventListener('DOMContentLoaded', function() {
         $(this).removeClass('hover');
     });
     
-    // اختيار العناصر (المجلدات والملفات) عند النقر عليها
-    $(document).on('click', '.folder-item', function(e) {
-        // التعامل الخاص بالمجلدات - السماح بالنقر للتصفح
-        if ($(e.target).closest('.folder-name, .folder-icon').length) {
-            // هذا نقر على اسم المجلد أو أيقونة المجلد - لا نمنع السلوك الافتراضي
-            return true;
-        }
-        
+    // إعادة تعريف كامل لمعالجة تحديد العناصر
+    $('.file-item').on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
-        // إلغاء تحديد جميع العناصر الأخرى
+        // إلغاء تحديد جميع العناصر
         $('.folder-item, .file-item').removeClass('selected');
+        // تحديد هذا العنصر
         $(this).addClass('selected');
         
-        // تمكين أزرار التعديل والحذف
-        $('#edit-btn, #delete-btn').prop('disabled', false);
-        // تعطيل زر التصدير (للمجلدات فقط)
-        $('#export-btn').prop('disabled', true);
-        
-        // حفظ معرف المجلد المحدد
-        window.selectedFolderId = $(this).data('folder-id');
-        window.selectedFileId = null;
-        window.selectedItemName = $(this).find('.folder-name').text();
-        window.selectedItemType = 'folder';
-        console.log('تم تحديد المجلد:', window.selectedFolderId, window.selectedItemName);
-    });
-    
-    // معالجة خاصة للملفات
-    $(document).on('click', '.file-item', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // إلغاء تحديد جميع العناصر الأخرى
-        $('.folder-item, .file-item').removeClass('selected');
-        $(this).addClass('selected');
+        // تخزين المعلومات العامة للعنصر المحدد
+        window.selectedItemType = 'file';
+        window.selectedFileId = $(this).data('file-id');
+        window.selectedFolderId = null;
+        window.selectedItemName = $(this).find('.file-name').text();
         
         // تمكين جميع الأزرار
         $('#edit-btn, #delete-btn, #export-btn').prop('disabled', false);
         
-        // حفظ معرف الملف المحدد
-        window.selectedFileId = $(this).data('file-id');
-        window.selectedFolderId = null;
-        window.selectedItemName = $(this).find('.file-name').text();
-        window.selectedItemType = 'file';
         console.log('تم تحديد الملف:', window.selectedFileId, window.selectedItemName);
     });
     
-    // إضافة معالج نقر مزدوج للملفات
-    $(document).on('dblclick', '.file-item', function(e) {
+    // إضافة معالجة النقر المزدوج للملفات
+    $('.file-item').on('dblclick', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const fileId = $(this).data('file-id');
         if (fileId) {
             window.open("{% url 'view_document' 0 %}".replace('0', fileId), '_blank');
         }
     });
     
-    // التأكد من عمل أزرار التعديل والحذف والتصدير
-    $('#edit-btn').on('click', function(e) {
+    // للمجلدات، نسمح بالنقر عادي للتصفح، ولكن نضيف معالجة خاصة إذا كان النقر بالزر الأيمن
+    $('.folder-item').on('contextmenu', function(e) {
         e.preventDefault();
-        handleEditClick();
-        return false;
+        e.stopPropagation();
+        
+        // إلغاء تحديد جميع العناصر
+        $('.folder-item, .file-item').removeClass('selected');
+        // تحديد هذا العنصر
+        $(this).addClass('selected');
+        
+        // تخزين المعلومات العامة للعنصر المحدد
+        window.selectedItemType = 'folder';
+        window.selectedFolderId = $(this).data('folder-id');
+        window.selectedFileId = null;
+        window.selectedItemName = $(this).find('.folder-name').text();
+        
+        // تمكين أزرار التعديل والحذف فقط
+        $('#edit-btn, #delete-btn').prop('disabled', false);
+        // تعطيل زر التصدير للمجلدات
+        $('#export-btn').prop('disabled', true);
+        
+        console.log('تم تحديد المجلد:', window.selectedFolderId, window.selectedItemName);
     });
     
-    $('#delete-btn').on('click', function(e) {
+    // تعريف أحداث تحديد خاصة للروابط داخل عرض القائمة
+    $('.folder-row').on('click', function(e) {
+        // نسمح بالنقر العادي للتصفح
+        if (!$(e.target).hasClass('folder-action')) {
+            return true;
+        }
+        
         e.preventDefault();
-        handleDeleteClick();
-        return false;
+        e.stopPropagation();
+        
+        // إلغاء تحديد جميع العناصر
+        $('.folder-row, .file-row').removeClass('selected');
+        // تحديد هذا العنصر
+        $(this).addClass('selected');
+        
+        // تخزين معلومات المجلد
+        window.selectedItemType = 'folder';
+        window.selectedFolderId = $(this).data('folder-id');
+        window.selectedFileId = null;
+        window.selectedItemName = $(this).find('.file-cell span').text();
+        
+        // تمكين أزرار التعديل والحذف
+        $('#edit-btn, #delete-btn').prop('disabled', false);
+        $('#export-btn').prop('disabled', true);
+        
+        console.log('تم تحديد المجلد (جدول):', window.selectedFolderId, window.selectedItemName);
     });
     
-    $('#export-btn').on('click', function(e) {
+    $('.file-row').on('click', function(e) {
         e.preventDefault();
-        handleExportClick();
-        return false;
+        e.stopPropagation();
+        
+        // إلغاء تحديد جميع العناصر
+        $('.folder-row, .file-row').removeClass('selected');
+        // تحديد هذا العنصر
+        $(this).addClass('selected');
+        
+        // تخزين معلومات الملف
+        window.selectedItemType = 'file';
+        window.selectedFileId = $(this).data('file-id');
+        window.selectedFolderId = null;
+        window.selectedItemName = $(this).find('.file-cell span').text();
+        
+        // تمكين جميع الأزرار
+        $('#edit-btn, #delete-btn, #export-btn').prop('disabled', false);
+        
+        console.log('تم تحديد الملف (جدول):', window.selectedFileId, window.selectedItemName);
+    });
+    
+
+    
+    // إضافة معالجي الأحداث للأزرار بعد أن يتم تحميل الصفحة بالكامل
+    $(document).ready(function() {
+        // 1. أزرار التحرير والحذف والتصدير
+        $('#edit-btn').click(function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log("تم النقر على زر التعديل");
+            
+            if (window.selectedItemType === 'folder' && window.selectedFolderId) {
+                $('#edit-folder-id').val(window.selectedFolderId);
+                $('#edit-folder-name').val(window.selectedItemName);
+                $('#editFolderModal').modal('show');
+            } else if (window.selectedItemType === 'file' && window.selectedFileId) {
+                $('#edit-file-id').val(window.selectedFileId);
+                $('#edit-file-title').val(window.selectedItemName);
+                $('#editFileModal').modal('show');
+            }
+        });
+        
+        $('#delete-btn').click(function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log("تم النقر على زر الحذف");
+            
+            if (window.selectedItemType === 'folder' && window.selectedFolderId) {
+                $('#delete-folder-id').val(window.selectedFolderId);
+                $('#delete-folder-name').text(window.selectedItemName);
+                $('#deleteFolderModal').modal('show');
+            } else if (window.selectedItemType === 'file' && window.selectedFileId) {
+                $('#delete-file-id').val(window.selectedFileId);
+                $('#delete-file-name').text(window.selectedItemName);
+                $('#deleteFileModal').modal('show');
+            }
+        });
+        
+        $('#export-btn').click(function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log("تم النقر على زر التصدير");
+            
+            if (window.selectedItemType === 'file' && window.selectedFileId) {
+                var url = "{% url 'view_document' 0 %}".replace('0', window.selectedFileId);
+                window.open(url, '_blank');
+            }
+        });
+        
+        // إضافة القدرة على النقر المزدوج على الملفات للفتح
+        $('.file-item').dblclick(function() {
+            var fileId = $(this).data('file-id');
+            if (fileId) {
+                window.open("{% url 'view_document' 0 %}".replace('0', fileId), '_blank');
+            }
+        });
     });
 });
 
