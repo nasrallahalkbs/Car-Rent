@@ -722,7 +722,10 @@ class Document(models.Model):
             return
             
         # منع ربط المستندات بالمجلدات التي لم يتم الإنشاء اليدوي لها
-        if self.folder and not self.pk:  # مستند جديد
+        # التحقق من وجود علامة تجاوز الإشارات
+        ignore_signal = getattr(self, '_ignore_auto_document_signal', False)
+        
+        if self.folder and not self.pk and not ignore_signal:  # مستند جديد وليس له تجاوز للإشارات
             if hasattr(self.folder, 'created_at'):
                 from django.utils import timezone
                 time_diff = timezone.now() - self.folder.created_at
@@ -765,6 +768,7 @@ class Document(models.Model):
         
         # إنشاء رقم مرجعي للمستند إذا لم يكن موجودًا
         if not self.reference_number:
+            from django.utils import timezone
             now = timezone.now()
             year = now.strftime('%Y')
             month = now.strftime('%m')
