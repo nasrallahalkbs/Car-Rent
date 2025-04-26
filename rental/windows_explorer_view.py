@@ -423,4 +423,4 @@ def admin_archive_windows(request, folder_id=None, action=None):
     }
     
     # استخدام قالب مشابه لمستكشف ويندوز
-    return render(request, 'admin/archive/final_fix.html', context)
+    return render(request, 'admin/archive/windows_explorer_enhanced.html', context)
