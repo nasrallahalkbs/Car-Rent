@@ -10,42 +10,68 @@
 
 <style>
     .folder-item, .file-item {
-        padding: 10px;
-        margin: 10px;
-        border-radius: 5px;
-        cursor: pointer;
         text-align: center;
+        padding: 10px;
+        margin: 5px;
+        border-radius: 5px;
+        transition: all 0.2s;
+        position: relative;
+        background-color: #fefefe;
+        border: 1px solid #f0f0f0;
     }
     
     .folder-item:hover, .file-item:hover {
-        background-color: #f5f5f5;
+        background-color: #f8f9fa;
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
     
-    .folder-item.selected, .file-item.selected {
-        background-color: #e0f7fa;
-        border: 2px solid #00acc1;
+    .folder-icon, .file-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
     }
     
     .folder-icon {
         color: #ffc107;
-        font-size: 2.5rem;
     }
     
     .file-icon {
         color: #6c757d;
-        font-size: 2.5rem;
     }
     
     .file-icon.pdf {
         color: #dc3545;
     }
     
+    .file-icon.doc {
+        color: #0d6efd;
+    }
+    
     .file-icon.image {
         color: #28a745;
     }
     
-    .action-button {
-        margin: 5px;
+    .action-buttons {
+        margin-top: 8px;
+        background-color: rgba(248, 249, 250, 0.95);
+        border-radius: 4px;
+        padding: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    /* التحسينات الإضافية */
+    .folder-item a, .file-item a {
+        color: #333;
+    }
+    
+    .folder-item:hover a, .file-item:hover a {
+        color: #000;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
     }
 </style>
 {% endblock %}
@@ -114,7 +140,7 @@
                 <!-- شريط الأدوات -->
                 <div class="bg-light p-2 border-bottom">
                     <div class="d-flex justify-content-between">
-                        <!-- أزرار التنقل -->
+                        <!-- أزرار التنقل فقط -->
                         <div>
                             <button class="btn btn-sm btn-outline-secondary" onclick="window.history.back();">
                                 <i class="fas fa-arrow-left"></i> {% trans "رجوع" %}
@@ -124,19 +150,6 @@
                             </button>
                             <button class="btn btn-sm btn-outline-secondary" onclick="window.location.reload();">
                                 <i class="fas fa-sync-alt"></i> {% trans "تحديث" %}
-                            </button>
-                        </div>
-                        
-                        <!-- أزرار الإجراءات -->
-                        <div>
-                            <button class="btn btn-sm btn-outline-primary" id="editButton" disabled onclick="editSelectedItem()">
-                                <i class="fas fa-edit"></i> {% trans "تعديل" %}
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" id="deleteButton" disabled onclick="deleteSelectedItem()">
-                                <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
-                            </button>
-                            <button class="btn btn-sm btn-outline-success" id="exportButton" disabled onclick="exportSelectedItem()">
-                                <i class="fas fa-file-export"></i> {% trans "تصدير" %}
                             </button>
                         </div>
                     </div>
@@ -168,11 +181,20 @@
                         {% if subfolders %}
                             {% for folder in subfolders %}
                                 <div class="col-md-3 col-sm-4 mb-3">
-                                    <div class="folder-item" onclick="selectFolder(this, '{{ folder.id }}')">
-                                        <a href="{% url 'admin_archive_folder' folder_id=folder.id %}" class="d-block text-decoration-none" onclick="event.stopPropagation();">
+                                    <div class="folder-item">
+                                        <a href="{% url 'admin_archive_folder' folder_id=folder.id %}" class="d-block text-decoration-none">
                                             <i class="fas fa-folder folder-icon d-block mb-2"></i>
                                             <span class="d-block text-truncate">{{ folder.name }}</span>
                                         </a>
+                                        <!-- أزرار التحكم -->
+                                        <div class="action-buttons d-flex justify-content-center mt-2">
+                                            <a href="/ar/dashboard/archive/folder/edit/{{ folder.id }}/" class="btn btn-sm btn-outline-primary mx-1" title="{% trans 'تعديل' %}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="/ar/dashboard/archive/folder/delete/{{ folder.id }}/" class="btn btn-sm btn-outline-danger mx-1" title="{% trans 'حذف' %}" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا المجلد؟');">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -182,11 +204,11 @@
                         {% if documents %}
                             {% for document in documents %}
                                 <div class="col-md-3 col-sm-4 mb-3">
-                                    <div class="file-item" onclick="selectFile(this, '{{ document.id }}')">
+                                    <div class="file-item">
                                         {% if document.file %}
-                                            <a href="{{ document.file.url }}" target="_blank" class="d-block text-decoration-none" onclick="event.stopPropagation();">
+                                            <a href="{{ document.file.url }}" target="_blank" class="d-block text-decoration-none">
                                         {% else %}
-                                            <a href="{% url 'view_document' document_id=document.id %}" class="d-block text-decoration-none" onclick="event.stopPropagation();">
+                                            <a href="{% url 'view_document' document_id=document.id %}" class="d-block text-decoration-none">
                                         {% endif %}
                                             {% if document.file_type == 'application/pdf' %}
                                                 <i class="fas fa-file-pdf file-icon pdf d-block mb-2"></i>
@@ -199,6 +221,18 @@
                                             {% endif %}
                                             <span class="d-block text-truncate">{{ document.title }}</span>
                                         </a>
+                                        <!-- أزرار التحكم -->
+                                        <div class="action-buttons d-flex justify-content-center mt-2">
+                                            <a href="/ar/dashboard/archive/edit/{{ document.id }}/" class="btn btn-sm btn-outline-primary mx-1" title="{% trans 'تعديل' %}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="/ar/dashboard/archive/delete/{{ document.id }}/" class="btn btn-sm btn-outline-danger mx-1" title="{% trans 'حذف' %}" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا الملف؟');">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                            <a href="/ar/dashboard/archive/download/{{ document.id }}/" class="btn btn-sm btn-outline-success mx-1" title="{% trans 'تصدير/تنزيل' %}" target="_blank">
+                                                <i class="fas fa-file-export"></i>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -287,136 +321,19 @@
 </div>
 
 <script>
-// المتغيرات العامة
-var selectedItem = null;
-var editButton = document.getElementById('editButton');
-var deleteButton = document.getElementById('deleteButton');
-var exportButton = document.getElementById('exportButton');
-
-// تحديد مجلد
-function selectFolder(element, folderId) {
-    console.log('تم تحديد المجلد:', folderId);
-    
-    // إلغاء التحديد السابق
-    clearSelection();
-    
-    // تحديد العنصر الحالي
-    element.classList.add('selected');
-    
-    // تخزين معلومات العنصر المحدد
-    selectedItem = {
-        id: folderId,
-        type: 'folder',
-        element: element
-    };
-    
-    // تفعيل الأزرار المناسبة
-    editButton.disabled = false;
-    deleteButton.disabled = false;
-    exportButton.disabled = true;
-}
-
-// تحديد ملف
-function selectFile(element, fileId) {
-    console.log('تم تحديد الملف:', fileId);
-    
-    // إلغاء التحديد السابق
-    clearSelection();
-    
-    // تحديد العنصر الحالي
-    element.classList.add('selected');
-    
-    // تخزين معلومات العنصر المحدد
-    selectedItem = {
-        id: fileId,
-        type: 'file',
-        element: element
-    };
-    
-    // تفعيل الأزرار المناسبة
-    editButton.disabled = false;
-    deleteButton.disabled = false;
-    exportButton.disabled = false;
-}
-
-// إلغاء التحديد
-function clearSelection() {
-    // إزالة الفئة 'selected' من جميع العناصر
-    var selected = document.querySelectorAll('.folder-item.selected, .file-item.selected');
-    selected.forEach(function(item) {
-        item.classList.remove('selected');
-    });
-    
-    // إعادة تعيين المتغير selectedItem
-    selectedItem = null;
-    
-    // تعطيل الأزرار
-    editButton.disabled = true;
-    deleteButton.disabled = true;
-    exportButton.disabled = true;
-}
-
-// تعديل العنصر المحدد
-function editSelectedItem() {
-    if (!selectedItem) {
-        alert('الرجاء تحديد عنصر للتعديل');
-        return;
-    }
-    
-    if (selectedItem.type === 'folder') {
-        // تعديل المجلد
-        window.location.href = '/ar/dashboard/archive/folder/edit/' + selectedItem.id + '/';
-    } else if (selectedItem.type === 'file') {
-        // تعديل الملف
-        window.location.href = '/ar/dashboard/archive/edit/' + selectedItem.id + '/';
-    }
-}
-
-// حذف العنصر المحدد
-function deleteSelectedItem() {
-    if (!selectedItem) {
-        alert('الرجاء تحديد عنصر للحذف');
-        return;
-    }
-    
-    // التأكد من رغبة المستخدم في الحذف
-    var confirmDelete = confirm('هل أنت متأكد من رغبتك في حذف هذا العنصر؟');
-    if (!confirmDelete) {
-        return;
-    }
-    
-    if (selectedItem.type === 'folder') {
-        // حذف المجلد
-        window.location.href = '/ar/dashboard/archive/folder/delete/' + selectedItem.id + '/';
-    } else if (selectedItem.type === 'file') {
-        // حذف الملف
-        window.location.href = '/ar/dashboard/archive/delete/' + selectedItem.id + '/';
-    }
-}
-
-// تصدير الملف المحدد
-function exportSelectedItem() {
-    if (!selectedItem || selectedItem.type !== 'file') {
-        alert('الرجاء تحديد ملف للتصدير');
-        return;
-    }
-    
-    // فتح نافذة جديدة لتنزيل الملف
-    window.open('/ar/dashboard/archive/download/' + selectedItem.id + '/', '_blank');
-}
-
-// إضافة مستمع النقر لإلغاء التحديد عند النقر خارج العناصر
-document.addEventListener('click', function(event) {
-    // التحقق من أن النقر ليس على عنصر مجلد أو ملف أو زر إجراء
-    var isOutside = !event.target.closest('.folder-item, .file-item, .action-button, .modal');
-    if (isOutside) {
-        clearSelection();
-    }
-});
-
 // تنفيذ التهيئة عند تحميل المستند
 document.addEventListener('DOMContentLoaded', function() {
     console.log('تم تحميل الصفحة وتهيئة الأحداث');
+    
+    // إضافة تأثيرات التحويم على أزرار العمل
+    document.querySelectorAll('.action-buttons a').forEach(function(button) {
+        button.addEventListener('mouseenter', function() {
+            this.classList.add('shadow-sm');
+        });
+        button.addEventListener('mouseleave', function() {
+            this.classList.remove('shadow-sm');
+        });
+    });
 });
 </script>
 {% endblock %}
