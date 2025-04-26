@@ -729,12 +729,12 @@
                         
                         <!-- الملفات -->
                         {% for doc in documents %}
-                            <a href="{% url 'view_document' document_id=doc.id %}" target="_blank" class="file-item" data-file-id="{{ doc.id }}">
+                            <div class="file-item" data-file-id="{{ doc.id }}">
                                 <div class="file-icon {% if doc.file_type and 'pdf' in doc.file_type %}pdf{% elif doc.file_type and 'word' in doc.file_type or doc.file_type and 'doc' in doc.file_type %}doc{% elif doc.file_type and 'excel' in doc.file_type or doc.file_type and 'sheet' in doc.file_type %}xls{% elif doc.file_type and 'image' in doc.file_type %}img{% elif doc.file_type and 'zip' in doc.file_type or doc.file_type and 'compressed' in doc.file_type %}zip{% else %}file{% endif %}">
                                     <i class="fas {% if doc.file_type and 'pdf' in doc.file_type %}fa-file-pdf{% elif doc.file_type and 'word' in doc.file_type or doc.file_type and 'doc' in doc.file_type %}fa-file-word{% elif doc.file_type and 'excel' in doc.file_type or doc.file_type and 'sheet' in doc.file_type %}fa-file-excel{% elif doc.file_type and 'image' in doc.file_type %}fa-file-image{% elif doc.file_type and 'zip' in doc.file_type or doc.file_type and 'compressed' in doc.file_type %}fa-file-archive{% else %}fa-file{% endif %}"></i>
                                 </div>
-                                <div class="file-name">{{ doc.title }}</div>
-                            </a>
+                                <div class="file-name" title="{{ doc.title }}">{{ doc.title }}</div>
+                            </div>
                         {% endfor %}
                     {% else %}
                         <!-- المجلدات الرئيسية -->
@@ -749,12 +749,12 @@
                         
                         <!-- الملفات في المجلد الرئيسي -->
                         {% for doc in documents %}
-                            <a href="{% url 'view_document' document_id=doc.id %}" target="_blank" class="file-item" data-file-id="{{ doc.id }}">
+                            <div class="file-item" data-file-id="{{ doc.id }}">
                                 <div class="file-icon {% if doc.file_type and 'pdf' in doc.file_type %}pdf{% elif doc.file_type and 'word' in doc.file_type or doc.file_type and 'doc' in doc.file_type %}doc{% elif doc.file_type and 'excel' in doc.file_type or doc.file_type and 'sheet' in doc.file_type %}xls{% elif doc.file_type and 'image' in doc.file_type %}img{% elif doc.file_type and 'zip' in doc.file_type or doc.file_type and 'compressed' in doc.file_type %}zip{% else %}file{% endif %}">
                                     <i class="fas {% if doc.file_type and 'pdf' in doc.file_type %}fa-file-pdf{% elif doc.file_type and 'word' in doc.file_type or doc.file_type and 'doc' in doc.file_type %}fa-file-word{% elif doc.file_type and 'excel' in doc.file_type or doc.file_type and 'sheet' in doc.file_type %}fa-file-excel{% elif doc.file_type and 'image' in doc.file_type %}fa-file-image{% elif doc.file_type and 'zip' in doc.file_type or doc.file_type and 'compressed' in doc.file_type %}fa-file-archive{% else %}fa-file{% endif %}"></i>
                                 </div>
-                                <div class="file-name">{{ doc.title }}</div>
-                            </a>
+                                <div class="file-name" title="{{ doc.title }}">{{ doc.title }}</div>
+                            </div>
                         {% endfor %}
                     {% endif %}
                     
@@ -1045,41 +1045,52 @@ $(document).ready(function() {
 // نحتفظ ببعض التحسينات التفاعلية أثناء النقر لتجربة مستخدم أفضل
 document.addEventListener('DOMContentLoaded', function() {
     // تحسين تفاعل العناصر عند تمرير الماوس
-    $(document).on('mouseenter', '.folder-row, .folder-item', function() {
+    $(document).on('mouseenter', '.folder-row, .folder-item, .file-item', function() {
         $(this).addClass('hover');
-    }).on('mouseleave', '.folder-row, .folder-item', function() {
+    }).on('mouseleave', '.folder-row, .folder-item, .file-item', function() {
         $(this).removeClass('hover');
     });
     
     // اختيار العناصر (المجلدات والملفات) عند النقر عليها
     $(document).on('click', '.folder-item, .file-item', function(e) {
-        if (e.target.tagName !== 'A' && !$(e.target).closest('a').hasClass('no-select')) {
-            e.preventDefault();
-            $('.folder-item, .file-item').removeClass('selected');
-            $(this).addClass('selected');
-            
-            // تمكين أزرار الإجراءات بناءً على نوع العنصر المحدد
-            const isFolder = $(this).hasClass('folder-item');
-            const isFile = $(this).hasClass('file-item');
-            
-            // تمكين أزرار التعديل والحذف للجميع
-            $('#edit-btn, #delete-btn').prop('disabled', false);
-            
-            // تمكين زر التصدير للملفات فقط
-            $('#export-btn').prop('disabled', !isFile);
-            
-            // حفظ معرف العنصر المحدد للاستخدام في الإجراءات
-            if (isFolder) {
-                window.selectedFolderId = $(this).data('folder-id');
-                window.selectedFileId = null;
-                window.selectedItemName = $(this).find('.folder-name').text();
-                window.selectedItemType = 'folder';
-            } else if (isFile) {
-                window.selectedFileId = $(this).data('file-id');
-                window.selectedFolderId = null;
-                window.selectedItemName = $(this).find('.file-name').text();
-                window.selectedItemType = 'file';
-            }
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // إلغاء تحديد جميع العناصر الأخرى
+        $('.folder-item, .file-item').removeClass('selected');
+        $(this).addClass('selected');
+        
+        // تمكين أزرار الإجراءات بناءً على نوع العنصر المحدد
+        const isFolder = $(this).hasClass('folder-item');
+        const isFile = $(this).hasClass('file-item');
+        
+        // تمكين أزرار التعديل والحذف للجميع
+        $('#edit-btn, #delete-btn').prop('disabled', false);
+        
+        // تمكين زر التصدير للملفات فقط
+        $('#export-btn').prop('disabled', !isFile);
+        
+        // حفظ معرف العنصر المحدد للاستخدام في الإجراءات
+        if (isFolder) {
+            window.selectedFolderId = $(this).data('folder-id');
+            window.selectedFileId = null;
+            window.selectedItemName = $(this).find('.folder-name').text();
+            window.selectedItemType = 'folder';
+            console.log('تم تحديد المجلد:', window.selectedFolderId, window.selectedItemName);
+        } else if (isFile) {
+            window.selectedFileId = $(this).data('file-id');
+            window.selectedFolderId = null;
+            window.selectedItemName = $(this).find('.file-name').text();
+            window.selectedItemType = 'file';
+            console.log('تم تحديد الملف:', window.selectedFileId, window.selectedItemName);
+        }
+    });
+    
+    // إضافة معالج نقر مزدوج للملفات
+    $(document).on('dblclick', '.file-item', function(e) {
+        const fileId = $(this).data('file-id');
+        if (fileId) {
+            window.open("{% url 'view_document' 0 %}".replace('0', fileId), '_blank');
         }
     });
 });
