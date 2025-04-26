@@ -9,76 +9,140 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
 <script>
-// متغيرات عامة خارج أي نطاق لتكون متاحة لجميع الدوال
-var selectedItem = null;
-var selectedItemType = null; // "folder" أو "file"
-var selectedItemId = null;
+// بداية - هذا هو التصحيح الكامل لمشكلة تحديد العناصر وعمل الأزرار
 
-// دوال التعامل مع النقر على الأزرار
+// متغيرات عامة خارج أي نطاق لتكون متاحة لجميع الدوال
+window.archiveApp = {
+    selectedItem: null,
+    selectedItemType: null, // "folder" أو "file"
+    selectedItemId: null,
+    
+    // دالة تحديث أزرار الإجراءات
+    updateActionButtons: function() {
+        console.log("⚙️ تحديث حالة الأزرار:", {
+            selectedItem: this.selectedItem ? "موجود" : "غير موجود",
+            selectedItemType: this.selectedItemType,
+            selectedItemId: this.selectedItemId
+        });
+        
+        if (this.selectedItem) {
+            // تفعيل الأزرار إذا كان هناك عنصر محدد
+            $('.action-btn').prop('disabled', false);
+            
+            // تفعيل/تعطيل زر التصدير فقط للملفات
+            $('#export-btn').prop('disabled', this.selectedItemType !== "file");
+        } else {
+            // تعطيل الأزرار إذا لم يكن هناك عنصر محدد
+            $('.action-btn').prop('disabled', true);
+        }
+    },
+    
+    // دالة تحديد عنصر
+    selectItem: function(item) {
+        console.log("⚡️ تم تحديد عنصر:", item);
+        
+        // إزالة التحديد من جميع العناصر
+        $('.folder-item, .file-item').removeClass('selected');
+        
+        if (item) {
+            // إضافة صف التحديد للعنصر الحالي
+            $(item).addClass('selected');
+            
+            // تحديث المتغيرات العامة
+            this.selectedItem = $(item);
+            
+            if ($(item).hasClass('folder-item')) {
+                this.selectedItemType = "folder";
+                this.selectedItemId = $(item).data('folder-id');
+                console.log("✅ تم تحديد المجلد: " + this.selectedItemId);
+            } else if ($(item).hasClass('file-item')) {
+                this.selectedItemType = "file";
+                this.selectedItemId = $(item).data('file-id');
+                console.log("✅ تم تحديد الملف: " + this.selectedItemId);
+            }
+        } else {
+            // إلغاء التحديد
+            this.selectedItem = null;
+            this.selectedItemType = null;
+            this.selectedItemId = null;
+        }
+        
+        // تحديث حالة الأزرار
+        this.updateActionButtons();
+    }
+};
+
+// دوال معالجة أحداث النقر على الأزرار
 function handleEditClick() {
     console.log("📝 معالجة زر التعديل يدوياً", {
-        item: selectedItem ? "موجود" : "غير موجود",
-        type: selectedItemType,
-        id: selectedItemId
+        item: window.archiveApp.selectedItem ? "موجود" : "غير موجود",
+        type: window.archiveApp.selectedItemType,
+        id: window.archiveApp.selectedItemId
     });
     
-    if (selectedItem && selectedItemId) {
-        if (selectedItemType === "folder") {
+    if (window.archiveApp.selectedItem && window.archiveApp.selectedItemId) {
+        if (window.archiveApp.selectedItemType === "folder") {
             // فتح مربع حوار تحرير المجلد
-            $('#edit-folder-name').val(selectedItem.find('.folder-name').text().trim());
-            $('#edit-folder-id').val(selectedItemId);
+            $('#edit-folder-name').val(window.archiveApp.selectedItem.find('.folder-name').text().trim());
+            $('#edit-folder-id').val(window.archiveApp.selectedItemId);
             $('#editFolderModal').modal('show');
-        } else if (selectedItemType === "file") {
+        } else if (window.archiveApp.selectedItemType === "file") {
             // فتح مربع حوار تحرير الملف
-            $('#edit-file-title').val(selectedItem.find('.file-name').text().trim());
-            $('#edit-file-id').val(selectedItemId);
+            $('#edit-file-title').val(window.archiveApp.selectedItem.find('.file-name').text().trim());
+            $('#edit-file-id').val(window.archiveApp.selectedItemId);
             $('#editFileModal').modal('show');
         }
     } else {
         alert("الرجاء تحديد مجلد أو ملف أولاً");
         console.log("❌ لم يتم تحديد أي عنصر للتعديل");
     }
+    
+    return false; // منع السلوك الافتراضي
 }
 
 function handleDeleteClick() {
     console.log("🗑️ معالجة زر الحذف يدوياً", {
-        item: selectedItem ? "موجود" : "غير موجود",
-        type: selectedItemType,
-        id: selectedItemId
+        item: window.archiveApp.selectedItem ? "موجود" : "غير موجود",
+        type: window.archiveApp.selectedItemType,
+        id: window.archiveApp.selectedItemId
     });
     
-    if (selectedItem && selectedItemId) {
-        if (selectedItemType === "folder") {
+    if (window.archiveApp.selectedItem && window.archiveApp.selectedItemId) {
+        if (window.archiveApp.selectedItemType === "folder") {
             // تأكيد حذف المجلد
-            $('#delete-folder-id').val(selectedItemId);
-            $('#delete-folder-name').text(selectedItem.find('.folder-name').text().trim());
+            $('#delete-folder-id').val(window.archiveApp.selectedItemId);
+            $('#delete-folder-name').text(window.archiveApp.selectedItem.find('.folder-name').text().trim());
             $('#deleteFolderModal').modal('show');
-        } else if (selectedItemType === "file") {
+        } else if (window.archiveApp.selectedItemType === "file") {
             // تأكيد حذف الملف
-            $('#delete-file-id').val(selectedItemId);
-            $('#delete-file-name').text(selectedItem.find('.file-name').text().trim());
+            $('#delete-file-id').val(window.archiveApp.selectedItemId);
+            $('#delete-file-name').text(window.archiveApp.selectedItem.find('.file-name').text().trim());
             $('#deleteFileModal').modal('show');
         }
     } else {
         alert("الرجاء تحديد مجلد أو ملف أولاً");
         console.log("❌ لم يتم تحديد أي عنصر للحذف");
     }
+    
+    return false; // منع السلوك الافتراضي
 }
 
 function handleExportClick() {
     console.log("📤 معالجة زر التصدير يدوياً", {
-        item: selectedItem ? "موجود" : "غير موجود",
-        type: selectedItemType,
-        id: selectedItemId
+        item: window.archiveApp.selectedItem ? "موجود" : "غير موجود",
+        type: window.archiveApp.selectedItemType,
+        id: window.archiveApp.selectedItemId
     });
     
-    if (selectedItem && selectedItemType === "file" && selectedItemId) {
+    if (window.archiveApp.selectedItem && window.archiveApp.selectedItemType === "file" && window.archiveApp.selectedItemId) {
         // فتح رابط التحميل في نافذة جديدة
-        window.open("{% url 'download_document' 0 %}".replace('0', selectedItemId), '_blank');
+        window.open("{% url 'download_document' 0 %}".replace('0', window.archiveApp.selectedItemId), '_blank');
     } else {
         alert("الرجاء تحديد ملف أولاً");
         console.log("❌ لم يتم تحديد ملف للتصدير");
     }
+    
+    return false; // منع السلوك الافتراضي
 }
 
 $(document).ready(function() {
@@ -262,27 +326,9 @@ $(document).ready(function() {
         console.log("⚡️ نوع العنصر:", $(this).hasClass('folder-item') ? "مجلد" : "ملف");
         console.log("⚡️ خصائص data:", $(this).data());
         
-        // إزالة التحديد من جميع العناصر
-        $('.folder-item, .file-item').removeClass('selected');
+        // استخدام دالة تحديد العنصر من كائن التطبيق
+        window.archiveApp.selectItem(this);
         
-        // إضافة صف التحديد للعنصر الحالي
-        $(this).addClass('selected');
-        
-        // تحديث المتغيرات العامة
-        selectedItem = $(this);
-        
-        if ($(this).hasClass('folder-item')) {
-            selectedItemType = "folder";
-            selectedItemId = $(this).data('folder-id');
-            console.log("✅ تم تحديد المجلد: " + selectedItemId);
-        } else if ($(this).hasClass('file-item')) {
-            selectedItemType = "file";
-            selectedItemId = $(this).data('file-id');
-            console.log("✅ تم تحديد الملف: " + selectedItemId);
-        }
-        
-        // تحديث حالة أزرار الإجراءات
-        updateActionButtons();
         console.log("⚡️ حالة الأزرار بعد التحديث:", {
             editBtn: $('#edit-btn').prop('disabled') ? "معطل" : "مفعل",
             deleteBtn: $('#delete-btn').prop('disabled') ? "معطل" : "مفعل",
@@ -293,12 +339,8 @@ $(document).ready(function() {
     // إلغاء تحديد العناصر عند النقر على منطقة فارغة
     $(document).on('click', '.content-view', function(e) {
         if (e.target === this) {
-            $('.folder-item, .file-item').removeClass('selected');
-            selectedItem = null;
-            selectedItemType = null;
-            selectedItemId = null;
-            // تحديث حالة أزرار الإجراءات
-            updateActionButtons();
+            // إلغاء التحديد من كائن التطبيق
+            window.archiveApp.selectItem(null);
         }
     });
     
@@ -1013,13 +1055,13 @@ $(document).ready(function() {
                     </button>
 
                     <div class="vertical-separator"></div>
-                    <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}" onclick="handleEditClick()">
+                    <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}" onclick="return handleEditClick();">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}" onclick="handleDeleteClick()">
+                    <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}" onclick="return handleDeleteClick();">
                         <i class="fas fa-trash-alt"></i>
                     </button>
-                    <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}" onclick="handleExportClick()">
+                    <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}" onclick="return handleExportClick();">
                         <i class="fas fa-file-export"></i>
                     </button>
                 </div>
