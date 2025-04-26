@@ -1,122 +1,41 @@
 /**
- * وظائف معالجة أحداث الأزرار في واجهة الأرشيف الإلكتروني
+ * ملف JavaScript لإدارة أزرار الأرشيف الإلكتروني
  */
 
-// وظيفة تعديل المجلد أو الملف المحدد
-function handleEditClick() {
-    console.log('وظيفة التعديل');
-    if (selectedItemType === 'folder' && selectedFolderId) {
-        // فتح نافذة تعديل المجلد
-        $('#edit-folder-id').val(selectedFolderId);
-        $('#edit-folder-name').val(selectedItemName);
-        $('#editFolderModal').modal('show');
-    } else if (selectedItemType === 'file' && selectedFileId) {
-        // فتح نافذة تعديل الملف
-        $('#edit-file-id').val(selectedFileId);
-        $('#edit-file-title').val(selectedItemName);
-        $('#editFileModal').modal('show');
-    }
-    return false;
-}
+// عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // تهيئة أزرار القائمة المنسدلة
+    initDropdownMenus();
+});
 
-// وظيفة حذف المجلد أو الملف المحدد
-function handleDeleteClick() {
-    console.log('وظيفة الحذف');
-    if (selectedItemType === 'folder' && selectedFolderId) {
-        // فتح نافذة حذف المجلد
-        $('#delete-folder-id').val(selectedFolderId);
-        $('#delete-folder-name').text(selectedItemName);
-        $('#deleteFolderModal').modal('show');
-    } else if (selectedItemType === 'file' && selectedFileId) {
-        // فتح نافذة حذف الملف
-        $('#delete-file-id').val(selectedFileId);
-        $('#delete-file-name').text(selectedItemName);
-        $('#deleteFileModal').modal('show');
-    }
-    return false;
-}
-
-// وظيفة تصدير (تنزيل) الملف المحدد
-function handleExportClick() {
-    console.log('وظيفة التصدير');
-    if (selectedItemType === 'file' && selectedFileId) {
-        // توجيه المتصفح إلى رابط عرض الملف
-        var viewUrl = `/archive/view_document/${selectedFileId}/`;
-        window.open(viewUrl, '_blank');
-    }
-    return false;
-}
-
-// متغيرات عامة للاستخدام في جميع أنحاء التطبيق
-var selectedFileId = null;
-var selectedFolderId = null;
-var selectedItemName = "";
-var selectedItemType = null;
-
-// ربط الوظائف عند تحميل المستند
-$(document).ready(function() {
-    console.log('تم تحميل ملف archive-buttons.js');
-    
-    // ربط أحداث النقر على الأزرار
-    $('#edit-btn').on('click', handleEditClick);
-    $('#delete-btn').on('click', handleDeleteClick);
-    $('#export-btn').on('click', handleExportClick);
-    
-    // نسخ أحداث معالجة النقر من ملف archive-explorer-fixed.js
-    $('.file-item').on('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // إلغاء تحديد جميع العناصر
-        $('.folder-item, .file-item').removeClass('selected');
-        // تحديد هذا العنصر
-        $(this).addClass('selected');
-        
-        // تخزين المعلومات العامة للعنصر المحدد
-        selectedItemType = 'file';
-        selectedFileId = $(this).data('file-id');
-        selectedFolderId = null;
-        selectedItemName = $(this).find('.file-name').text();
-        
-        // تمكين جميع الأزرار
-        $('#edit-btn, #delete-btn, #export-btn').prop('disabled', false);
-        
-        console.log('تم تحديد الملف:', selectedFileId, selectedItemName);
+/**
+ * تهيئة القوائم المنسدلة لأزرار التحكم
+ */
+function initDropdownMenus() {
+    // إضافة مستمع حدث النقر لإغلاق جميع القوائم عند النقر على أي مكان في الصفحة
+    document.addEventListener('click', function(event) {
+        document.querySelectorAll('.item-actions.show').forEach(menu => {
+            menu.classList.remove('show');
+        });
     });
+}
+
+/**
+ * تبديل عرض قائمة الإجراءات
+ * @param {Event} event - حدث النقر
+ * @param {HTMLElement} actionMenu - عنصر HTML للقائمة
+ */
+function toggleItemMenu(event, actionMenu) {
+    // منع انتشار الحدث لتجنب النقر على العنصر نفسه
+    event.stopPropagation(); 
     
-    // إضافة معالجة النقر المزدوج للملفات
-    $('.file-item').on('dblclick', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const fileId = $(this).data('file-id');
-        if (fileId) {
-            var viewUrl = `/archive/view_document/${fileId}/`;
-            window.open(viewUrl, '_blank');
+    // إغلاق جميع القوائم المفتوحة أولاً
+    document.querySelectorAll('.item-actions.show').forEach(menu => {
+        if (menu !== actionMenu) {
+            menu.classList.remove('show');
         }
     });
     
-    // للمجلدات، نضيف معالجة خاصة عند النقر بالزر الأيمن
-    $('.folder-item').on('contextmenu', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // إلغاء تحديد جميع العناصر
-        $('.folder-item, .file-item').removeClass('selected');
-        // تحديد هذا العنصر
-        $(this).addClass('selected');
-        
-        // تخزين المعلومات العامة للعنصر المحدد
-        selectedItemType = 'folder';
-        selectedFolderId = $(this).data('folder-id');
-        selectedFileId = null;
-        selectedItemName = $(this).find('.folder-name').text();
-        
-        // تمكين أزرار التعديل والحذف فقط
-        $('#edit-btn, #delete-btn').prop('disabled', false);
-        // تعطيل زر التصدير للمجلدات
-        $('#export-btn').prop('disabled', true);
-        
-        console.log('تم تحديد المجلد بالزر الأيمن:', selectedFolderId, selectedItemName);
-    });
-});
+    // تبديل حالة العرض للقائمة الحالية
+    actionMenu.classList.toggle('show');
+}

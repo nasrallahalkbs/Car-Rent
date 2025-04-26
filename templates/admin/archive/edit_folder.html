@@ -1,0 +1,62 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "تعديل مجلد" %}{% endblock %}
+
+{% block page_title %}{% trans "تعديل مجلد" %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">{% trans "لوحة التحكم" %}</a></li>
+<li class="breadcrumb-item"><a href="{% url 'admin_archive' %}">{% trans "الأرشيف الإلكتروني" %}</a></li>
+<li class="breadcrumb-item active">{% trans "تعديل مجلد" %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{% trans "تعديل مجلد" %}</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'edit_folder' folder_id=folder.id %}" method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">{% trans "اسم المجلد" %} <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ folder.name }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">{% trans "وصف المجلد" %}</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ folder.description }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="parent_id" class="form-label">{% trans "المجلد الأب" %}</label>
+                            <select class="form-select" id="parent_id" name="parent_id">
+                                <option value="">{% trans "المجلد الرئيسي" %}</option>
+                                {% for f in folders %}
+                                <option value="{{ f.id }}" {% if folder.parent and folder.parent.id == f.id %}selected{% endif %}>{{ f.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">{% trans "اختر المجلد الأب الذي سيتم وضع هذا المجلد داخله، أو اتركه فارغًا ليكون في المستوى الرئيسي" %}</small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> {% trans "حفظ التغييرات" %}
+                            </button>
+                            <a href="{% url 'admin_archive' %}{% if folder.parent %}?folder={{ folder.parent.id }}{% endif %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i> {% trans "إلغاء" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
