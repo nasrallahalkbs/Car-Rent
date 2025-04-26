@@ -434,8 +434,11 @@
                 <h5 class="modal-title" id="addFolderModalLabel">{% trans "إضافة مجلد جديد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'admin_archive_action' folder_id=current_folder.id action='add_folder' %}">
+            <form method="post" action="{% url 'admin_archive_action_only' action='add_folder' %}">
                 {% csrf_token %}
+                {% if current_folder %}
+                <input type="hidden" name="parent_id" value="{{ current_folder.id }}">
+                {% endif %}
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="folder-name" class="form-label">{% trans "اسم المجلد" %}</label>
@@ -463,8 +466,11 @@
                 <h5 class="modal-title" id="addFileModalLabel">{% trans "إضافة ملف جديد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'admin_archive_action' folder_id=current_folder.id action='add_file' %}" enctype="multipart/form-data">
+            <form method="post" action="{% url 'admin_archive_action_only' action='add_file' %}" enctype="multipart/form-data">
                 {% csrf_token %}
+                {% if current_folder %}
+                <input type="hidden" name="folder_id" value="{{ current_folder.id }}">
+                {% endif %}
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="file-title" class="form-label">{% trans "عنوان الملف" %}</label>
