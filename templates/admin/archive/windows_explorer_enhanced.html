@@ -9,8 +9,57 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
 <script>
+// دوال التعامل مع النقر على الأزرار
+function handleEditClick() {
+    console.log("📝 معالجة زر التعديل يدوياً");
+    if (selectedItem && selectedItemId) {
+        if (selectedItemType === "folder") {
+            // فتح مربع حوار تحرير المجلد
+            $('#edit-folder-name').val(selectedItem.find('.folder-name').text().trim());
+            $('#edit-folder-id').val(selectedItemId);
+            $('#editFolderModal').modal('show');
+        } else if (selectedItemType === "file") {
+            // فتح مربع حوار تحرير الملف
+            $('#edit-file-title').val(selectedItem.find('.file-name').text().trim());
+            $('#edit-file-id').val(selectedItemId);
+            $('#editFileModal').modal('show');
+        }
+    } else {
+        console.log("❌ لم يتم تحديد أي عنصر للتعديل");
+    }
+}
+
+function handleDeleteClick() {
+    console.log("🗑️ معالجة زر الحذف يدوياً");
+    if (selectedItem && selectedItemId) {
+        if (selectedItemType === "folder") {
+            // تأكيد حذف المجلد
+            $('#delete-folder-id').val(selectedItemId);
+            $('#delete-folder-name').text(selectedItem.find('.folder-name').text().trim());
+            $('#deleteFolderModal').modal('show');
+        } else if (selectedItemType === "file") {
+            // تأكيد حذف الملف
+            $('#delete-file-id').val(selectedItemId);
+            $('#delete-file-name').text(selectedItem.find('.file-name').text().trim());
+            $('#deleteFileModal').modal('show');
+        }
+    } else {
+        console.log("❌ لم يتم تحديد أي عنصر للحذف");
+    }
+}
+
+function handleExportClick() {
+    console.log("📤 معالجة زر التصدير يدوياً");
+    if (selectedItem && selectedItemType === "file" && selectedItemId) {
+        // فتح رابط التحميل في نافذة جديدة
+        window.open("{% url 'download_document' 0 %}".replace('0', selectedItemId), '_blank');
+    } else {
+        console.log("❌ لم يتم تحديد ملف للتصدير");
+    }
+}
+
 $(document).ready(function() {
-    console.log("تم تحميل صفحة الأرشيف بتصميم ويندوز");
+    console.log("🔍 تم تحميل صفحة الأرشيف بتصميم ويندوز - تبدأ مرحلة التصحيح");
     
     // متغيرات عامة
     let selectedItem = null;
@@ -19,6 +68,18 @@ $(document).ready(function() {
     
     // تهيئة أزرار الإجراءات
     $('.action-btn').prop('disabled', true);
+    
+    // طباعة معلومات عن الأزرار والعناصر المتوفرة للتصحيح
+    console.log("🔍 أزرار الإجراءات:", {
+        editBtn: $('#edit-btn').length > 0 ? "موجود" : "غير موجود",
+        deleteBtn: $('#delete-btn').length > 0 ? "موجود" : "غير موجود",
+        exportBtn: $('#export-btn').length > 0 ? "موجود" : "غير موجود"
+    });
+    
+    console.log("🔍 المجلدات والملفات:", {
+        folderItems: $('.folder-item').length,
+        fileItems: $('.file-item').length
+    });
     
     // تحديد العنصر النشط حالياً في شجرة المجلدات
     {% if current_folder %}
@@ -166,12 +227,20 @@ $(document).ready(function() {
         }
     }
     
-    // تفعيل اختيار الملفات والمجلدات
+    // إعادة كتابة وظيفة اختيار الملفات والمجلدات
     $(document).on('click', '.folder-item, .file-item', function(e) {
-        e.preventDefault();
-        e.stopPropagation(); // منع انتشار الحدث للعناصر الأب
+        // إيقاف السلوك الافتراضي إذا كان هذا رابطاً
+        if ($(this).is('a')) {
+            // نسمح للنقر المزدوج بالعمل للتنقل، ولكن النقر المفرد للاختيار فقط
+            e.preventDefault();
+        }
         
-        console.log("تم النقر على عنصر:", this);
+        // منع انتشار الحدث للعناصر الأب لتفادي تداخل الأحداث
+        e.stopPropagation();
+        
+        console.log("⚡️ تم النقر على عنصر:", this);
+        console.log("⚡️ نوع العنصر:", $(this).hasClass('folder-item') ? "مجلد" : "ملف");
+        console.log("⚡️ خصائص data:", $(this).data());
         
         // إزالة التحديد من جميع العناصر
         $('.folder-item, .file-item').removeClass('selected');
@@ -185,15 +254,20 @@ $(document).ready(function() {
         if ($(this).hasClass('folder-item')) {
             selectedItemType = "folder";
             selectedItemId = $(this).data('folder-id');
-            console.log("تم تحديد المجلد: " + selectedItemId);
+            console.log("✅ تم تحديد المجلد: " + selectedItemId);
         } else if ($(this).hasClass('file-item')) {
             selectedItemType = "file";
             selectedItemId = $(this).data('file-id');
-            console.log("تم تحديد الملف: " + selectedItemId);
+            console.log("✅ تم تحديد الملف: " + selectedItemId);
         }
         
         // تحديث حالة أزرار الإجراءات
         updateActionButtons();
+        console.log("⚡️ حالة الأزرار بعد التحديث:", {
+            editBtn: $('#edit-btn').prop('disabled') ? "معطل" : "مفعل",
+            deleteBtn: $('#delete-btn').prop('disabled') ? "معطل" : "مفعل",
+            exportBtn: $('#export-btn').prop('disabled') ? "معطل" : "مفعل"
+        });
     });
     
     // إلغاء تحديد العناصر عند النقر على منطقة فارغة
@@ -275,49 +349,9 @@ $(document).ready(function() {
         $('#uploadFileModal').modal('show');
     });
     
-    // تفعيل زر تعديل (للمجلدات والملفات)
-    $(document).on('click', '#edit-btn', function() {
-        console.log("تعديل العنصر المحدد: " + selectedItemType + " - " + selectedItemId);
-        
-        if (selectedItemType === "folder") {
-            // فتح مربع حوار تحرير المجلد
-            $('#editFolderModal').modal('show');
-            $('#edit-folder-name').val(selectedItem.find('.folder-name').text());
-            $('#edit-folder-id').val(selectedItemId);
-        } else if (selectedItemType === "file") {
-            // فتح مربع حوار تحرير الملف
-            $('#editFileModal').modal('show');
-            $('#edit-file-title').val(selectedItem.find('.file-name').text());
-            $('#edit-file-id').val(selectedItemId);
-        }
-    });
-    
-    // تفعيل زر حذف (للمجلدات والملفات)
-    $(document).on('click', '#delete-btn', function() {
-        console.log("حذف العنصر المحدد: " + selectedItemType + " - " + selectedItemId);
-        
-        if (selectedItemType === "folder") {
-            // تأكيد حذف المجلد
-            $('#deleteFolderModal').modal('show');
-            $('#delete-folder-id').val(selectedItemId);
-            $('#delete-folder-name').text(selectedItem.find('.folder-name').text());
-        } else if (selectedItemType === "file") {
-            // تأكيد حذف الملف
-            $('#deleteFileModal').modal('show');
-            $('#delete-file-id').val(selectedItemId);
-            $('#delete-file-name').text(selectedItem.find('.file-name').text());
-        }
-    });
-    
-    // تفعيل زر تصدير (للملفات فقط)
-    $(document).on('click', '#export-btn', function() {
-        console.log("تصدير الملف المحدد: " + selectedItemId);
-        
-        if (selectedItemType === "file" && selectedItemId) {
-            // فتح رابط التحميل في نافذة جديدة
-            window.open("{% url 'download_document' 0 %}".replace('0', selectedItemId), '_blank');
-        }
-    });
+    // عدم استخدام معالجات الأحداث هنا لأنها معرّفة بالفعل في دوال منفصلة
+    // والأزرار تستخدم الآن معالجات onClick مباشرة
+    console.log("✅ تم تعطيل معالجات الأحداث المكررة للأزرار");
 
     
 
@@ -546,6 +580,8 @@ $(document).ready(function() {
     
     .folder-item.selected, .file-item.selected {
         background-color: #e6efff;
+        box-shadow: 0 0 5px rgba(0, 120, 215, 0.5);
+        z-index: 2;
     }
     
     .folder-item.selected::after, .file-item.selected::after {
@@ -555,7 +591,7 @@ $(document).ready(function() {
         left: 0;
         right: 0;
         bottom: 0;
-        border: 1px solid #99c2ff;
+        border: 2px solid #0078d7;
         border-radius: 2px;
         pointer-events: none;
     }
@@ -937,13 +973,13 @@ $(document).ready(function() {
                     </button>
 
                     <div class="vertical-separator"></div>
-                    <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}">
+                    <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}" onclick="handleEditClick()">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}">
+                    <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}" onclick="handleDeleteClick()">
                         <i class="fas fa-trash-alt"></i>
                     </button>
-                    <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}">
+                    <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}" onclick="handleExportClick()">
                         <i class="fas fa-file-export"></i>
                     </button>
                 </div>
