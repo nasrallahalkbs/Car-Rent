@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.translation import gettext as _, get_language
 from django.utils import timezone
 from django.contrib import messages
+from django.urls import reverse
 from .views import get_template_by_language
 from .models import ArchiveFolder, Document
 
@@ -227,6 +228,108 @@ def admin_archive_windows(request, folder_id=None, action=None):
                 messages.error(request, f"حدث خطأ أثناء إنشاء المجلد: {str(e)}")
         else:
             messages.error(request, "يرجى إدخال اسم المجلد")
+    
+    # معالجة تعديل اسم المجلد
+    if action_param == 'edit_folder' and request.method == 'POST':
+        folder_id = request.POST.get('folder_id')
+        new_name = request.POST.get('name')
+        
+        print(f"DEBUG - تعديل مجلد - معرف المجلد: {folder_id}")
+        print(f"DEBUG - تعديل مجلد - الاسم الجديد: {new_name}")
+        
+        if folder_id and new_name:
+            try:
+                folder = ArchiveFolder.objects.get(id=folder_id)
+                folder.name = new_name
+                folder.save()
+                
+                messages.success(request, _('تم تعديل اسم المجلد بنجاح'))
+                if folder.parent:
+                    return redirect(reverse('admin_archive') + f'?folder={folder.parent.id}')
+                else:
+                    return redirect('admin_archive')
+            
+            except ArchiveFolder.DoesNotExist:
+                messages.error(request, _('المجلد المحدد غير موجود'))
+                return redirect('admin_archive')
+        else:
+            messages.error(request, _('الرجاء ملء جميع الحقول المطلوبة'))
+            return redirect('admin_archive')
+    
+    # معالجة حذف المجلد
+    if action_param == 'delete_folder' and request.method == 'POST':
+        folder_id = request.POST.get('folder_id')
+        
+        print(f"DEBUG - حذف مجلد - معرف المجلد: {folder_id}")
+        
+        if folder_id:
+            try:
+                folder = ArchiveFolder.objects.get(id=folder_id)
+                parent_id = None
+                
+                if folder.parent:
+                    parent_id = folder.parent.id
+                
+                folder.delete()
+                
+                messages.success(request, _('تم حذف المجلد بنجاح'))
+                if parent_id:
+                    return redirect(reverse('admin_archive') + f'?folder={parent_id}')
+                else:
+                    return redirect('admin_archive')
+            
+            except ArchiveFolder.DoesNotExist:
+                messages.error(request, _('المجلد المحدد غير موجود'))
+                return redirect('admin_archive')
+        else:
+            messages.error(request, _('معرف المجلد المحدد غير صالح'))
+            return redirect('admin_archive')
+            
+    # معالجة تعديل اسم الملف
+    if action_param == 'edit_file' and request.method == 'POST':
+        file_id = request.POST.get('file_id')
+        new_title = request.POST.get('title')
+        
+        print(f"DEBUG - تعديل ملف - معرف الملف: {file_id}")
+        print(f"DEBUG - تعديل ملف - العنوان الجديد: {new_title}")
+        
+        if file_id and new_title:
+            try:
+                document = Document.objects.get(id=file_id)
+                document.title = new_title
+                document.save()
+                
+                messages.success(request, _('تم تعديل اسم الملف بنجاح'))
+                return redirect(reverse('admin_archive') + f'?folder={document.folder.id}')
+            
+            except Document.DoesNotExist:
+                messages.error(request, _('الملف المحدد غير موجود'))
+                return redirect('admin_archive')
+        else:
+            messages.error(request, _('الرجاء ملء جميع الحقول المطلوبة'))
+            return redirect('admin_archive')
+    
+    # معالجة حذف الملف
+    if action_param == 'delete_file' and request.method == 'POST':
+        file_id = request.POST.get('file_id')
+        
+        print(f"DEBUG - حذف ملف - معرف الملف: {file_id}")
+        
+        if file_id:
+            try:
+                document = Document.objects.get(id=file_id)
+                folder_id = document.folder.id
+                document.delete()
+                
+                messages.success(request, _('تم حذف الملف بنجاح'))
+                return redirect(reverse('admin_archive') + f'?folder={folder_id}')
+            
+            except Document.DoesNotExist:
+                messages.error(request, _('الملف المحدد غير موجود'))
+                return redirect('admin_archive')
+        else:
+            messages.error(request, _('معرف الملف المحدد غير صالح'))
+            return redirect('admin_archive')
     
     # معالجة إضافة ملف جديد
     if action_param == 'add_file' and request.method == 'POST':
