@@ -1670,7 +1670,97 @@ def admin_archive(request):
     print(f"DEBUG - معلمة المستند: {document_param}")
     print(f"DEBUG - معلمة الإجراء: {action_param}")
     
-    # معالجة إضافة مجلد جديد
+    # معالجة طلبات POST من النماذج
+    if request.method == 'POST':
+        action = request.POST.get('action', None)
+        
+        # معالجة تحرير المجلد
+        if action == 'edit_folder':
+            folder_id = request.POST.get('folder_id', None)
+            folder_name = request.POST.get('folder_name', '')
+            
+            if folder_id and folder_name:
+                try:
+                    folder = ArchiveFolder.objects.get(id=folder_id)
+                    folder.name = folder_name
+                    folder.save()
+                    
+                    # إعادة التوجيه إلى نفس المجلد
+                    if folder.parent:
+                        return redirect(f"{reverse('admin_archive')}?folder={folder.parent.id}")
+                    else:
+                        return redirect('admin_archive')
+                except ArchiveFolder.DoesNotExist:
+                    messages.error(request, _("المجلد غير موجود"))
+                    return redirect('admin_archive')
+        
+        # معالجة حذف المجلد
+        elif action == 'delete_folder':
+            folder_id = request.POST.get('folder_id', None)
+            
+            if folder_id:
+                try:
+                    folder = ArchiveFolder.objects.get(id=folder_id)
+                    parent_id = None
+                    if folder.parent:
+                        parent_id = folder.parent.id
+                    
+                    # حذف المجلد وكل محتوياته
+                    folder.delete()
+                    
+                    # إعادة التوجيه إلى المجلد الأب أو الرئيسية
+                    if parent_id:
+                        return redirect(f"{reverse('admin_archive')}?folder={parent_id}")
+                    else:
+                        return redirect('admin_archive')
+                except ArchiveFolder.DoesNotExist:
+                    messages.error(request, _("المجلد غير موجود"))
+                    return redirect('admin_archive')
+        
+        # معالجة تحرير المستند
+        elif action == 'edit_document':
+            document_id = request.POST.get('document_id', None)
+            document_title = request.POST.get('document_title', '')
+            
+            if document_id and document_title:
+                try:
+                    document = Document.objects.get(id=document_id)
+                    document.title = document_title
+                    document.save()
+                    
+                    # إعادة التوجيه إلى نفس المجلد
+                    if document.folder:
+                        return redirect(f"{reverse('admin_archive')}?folder={document.folder.id}")
+                    else:
+                        return redirect('admin_archive')
+                except Document.DoesNotExist:
+                    messages.error(request, _("المستند غير موجود"))
+                    return redirect('admin_archive')
+        
+        # معالجة حذف المستند
+        elif action == 'delete_document':
+            document_id = request.POST.get('document_id', None)
+            
+            if document_id:
+                try:
+                    document = Document.objects.get(id=document_id)
+                    folder_id = None
+                    if document.folder:
+                        folder_id = document.folder.id
+                    
+                    # حذف المستند
+                    document.delete()
+                    
+                    # إعادة التوجيه إلى نفس المجلد
+                    if folder_id:
+                        return redirect(f"{reverse('admin_archive')}?folder={folder_id}")
+                    else:
+                        return redirect('admin_archive')
+                except Document.DoesNotExist:
+                    messages.error(request, _("المستند غير موجود"))
+                    return redirect('admin_archive')
+    
+    # معالجة إضافة مجلد جديد عبر GET (من القالب القديم)
     if action_param == 'add_folder' and request.method == 'POST':
         name = request.POST.get('name', '')
         description = request.POST.get('description', '')
