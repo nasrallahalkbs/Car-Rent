@@ -12,10 +12,28 @@
 $(document).ready(function() {
     console.log("تم تحميل صفحة الأرشيف بتصميم ويندوز");
     
+    // متغيرات عامة
+    let selectedItem = null;
+    let selectedItemType = null; // "folder" أو "file"
+    
     // تحديد العنصر النشط حالياً في شجرة المجلدات
     {% if current_folder %}
     const currentFolderId = {{ current_folder.id }};
     {% endif %}
+    
+    // وظيفة تحديث أزرار الإجراءات (تعديل، حذف، تصدير)
+    function updateActionButtons() {
+        if (selectedItem) {
+            // تفعيل الأزرار إذا كان هناك عنصر محدد
+            $('.action-btn').prop('disabled', false);
+            
+            // تفعيل/تعطيل زر التصدير فقط للملفات
+            $('#export-btn').prop('disabled', selectedItemType !== "file");
+        } else {
+            // تعطيل الأزرار إذا لم يكن هناك عنصر محدد
+            $('.action-btn').prop('disabled', true);
+        }
+    }
     
     // تهيئة شجرة المجلدات باستخدام jstree
     $('#folder-tree').jstree({
@@ -93,10 +111,25 @@ $(document).ready(function() {
     });
     
     // تفعيل البحث في المجلدات
-    $(document).on('keyup', '#folder-search', function() {
+    $(document).on('keyup', '.search-bar input', function() {
         const searchText = $(this).val();
         console.log("البحث عن: " + searchText);
-        $('#folder-tree').jstree('search', searchText);
+        
+        // اطلب البحث عن النص في المحتوى الحالي
+        if (searchText.length > 0) {
+            // إخفاء العناصر التي لا تحتوي على نص البحث
+            $('.folder-item, .file-item').each(function() {
+                const itemName = $(this).find('.folder-name, .file-name').text().toLowerCase();
+                if (itemName.includes(searchText.toLowerCase())) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        } else {
+            // إظهار كل العناصر
+            $('.folder-item, .file-item').show();
+        }
     });
     
     // تفعيل تبديل نمط العرض
@@ -124,7 +157,33 @@ $(document).ready(function() {
         e.preventDefault();
         $('.folder-item, .file-item').removeClass('selected');
         $(this).addClass('selected');
-        console.log("تم تحديد العنصر: " + $(this).data('folder-id') || $(this).data('file-url'));
+        
+        // تحديث المتغيرات العامة
+        selectedItem = $(this);
+        
+        if ($(this).hasClass('folder-item')) {
+            selectedItemType = "folder";
+            selectedItemId = $(this).data('folder-id');
+            console.log("تم تحديد المجلد: " + selectedItemId);
+        } else {
+            selectedItemType = "file";
+            selectedItemId = $(this).data('file-id');
+            console.log("تم تحديد الملف: " + selectedItemId);
+        }
+        
+        // تحديث حالة أزرار الإجراءات
+        updateActionButtons();
+    });
+    
+    // إلغاء تحديد العناصر عند النقر على منطقة فارغة
+    $(document).on('click', '.content-view', function(e) {
+        if (e.target === this) {
+            $('.folder-item, .file-item').removeClass('selected');
+            selectedItem = null;
+            selectedItemType = null;
+            selectedItemId = null;
+            updateActionButtons();
+        }
     });
     
     // تفعيل النقر المزدوج على المجلدات
@@ -168,9 +227,9 @@ $(document).ready(function() {
     
     // تفعيل النقر المزدوج على الملفات
     $(document).on('dblclick', '.file-item', function() {
-        const fileUrl = $(this).data('file-url');
-        console.log("تم النقر المزدوج على الملف: " + fileUrl);
-        window.open(fileUrl, '_blank');
+        const fileId = $(this).data('file-id');
+        console.log("تم النقر المزدوج على الملف: " + fileId);
+        window.open("{% url 'download_document' 0 %}".replace('0', fileId), '_blank');
     });
     
     // تفعيل العناصر في قائمة الوصول السريع
@@ -179,6 +238,61 @@ $(document).ready(function() {
         console.log("تم النقر على عنصر الوصول السريع: " + folderId);
         window.location.href = "{% url 'admin_archive' %}?folder=" + folderId;
     });
+    
+    // تفعيل زر إضافة مجلد جديد
+    $(document).on('click', '#add-folder-btn', function() {
+        console.log("إضافة مجلد جديد");
+        // فتح نافذة منبثقة لإضافة مجلد جديد
+        $('#newFolderModal').modal('show');
+    });
+    
+    // تفعيل زر إضافة ملف جديد
+    $(document).on('click', '#add-file-btn', function() {
+        console.log("إضافة ملف جديد");
+        // فتح نافذة منبثقة لإضافة ملف جديد
+        $('#uploadFileModal').modal('show');
+    });
+    
+    // تفعيل زر تعديل العنصر المحدد
+    $(document).on('click', '#edit-btn', function() {
+        if (!selectedItem) return;
+        
+        if (selectedItemType === "folder") {
+            console.log("تعديل المجلد: " + selectedItemId);
+            window.location.href = "{% url 'admin_archive_folder_edit' 0 %}".replace('0', selectedItemId);
+        } else {
+            console.log("تعديل الملف: " + selectedItemId);
+            window.location.href = "{% url 'admin_archive_edit' 0 %}".replace('0', selectedItemId);
+        }
+    });
+    
+    // تفعيل زر حذف العنصر المحدد
+    $(document).on('click', '#delete-btn', function() {
+        if (!selectedItem) return;
+        
+        if (selectedItemType === "folder") {
+            if (confirm("هل أنت متأكد من حذف هذا المجلد؟ سيتم حذف جميع الملفات والمجلدات الفرعية داخله أيضاً.")) {
+                console.log("حذف المجلد: " + selectedItemId);
+                window.location.href = "{% url 'admin_archive_folder_delete' 0 %}".replace('0', selectedItemId);
+            }
+        } else {
+            if (confirm("هل أنت متأكد من حذف هذا الملف؟")) {
+                console.log("حذف الملف: " + selectedItemId);
+                window.location.href = "{% url 'admin_archive_delete' 0 %}".replace('0', selectedItemId);
+            }
+        }
+    });
+    
+    // تفعيل زر تصدير الملف المحدد
+    $(document).on('click', '#export-btn', function() {
+        if (!selectedItem || selectedItemType !== "file") return;
+        
+        console.log("تصدير الملف: " + selectedItemId);
+        window.open("{% url 'download_document' 0 %}".replace('0', selectedItemId), '_blank');
+    });
+    
+    // تهيئة أزرار الإجراءات في البداية
+    updateActionButtons();
 });
 </script>
 {% endblock %}
@@ -1241,4 +1355,102 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+{% endblock %}
+
+{% block modal_content %}
+<!-- نوافذ حوار منبثقة لإضافة المجلدات والملفات -->
+<!-- نافذة إضافة مجلد جديد -->
+<div class="modal fade" id="newFolderModal" tabindex="-1" aria-labelledby="newFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newFolderModalLabel">{% trans "إضافة مجلد جديد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'إغلاق' %}"></button>
+            </div>
+            <form method="post" action="{% url 'admin_archive_folder_add' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="folder-name" class="form-label">{% trans "اسم المجلد" %} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="folder-name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="folder-parent" class="form-label">{% trans "المجلد الأب" %}</label>
+                        <select class="form-select" id="folder-parent" name="parent">
+                            <option value="">{% trans "بدون (مجلد رئيسي)" %}</option>
+                            {% for folder in all_folders %}
+                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="folder-description" class="form-label">{% trans "وصف المجلد" %}</label>
+                        <textarea class="form-control" id="folder-description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "إضافة المجلد" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة رفع ملف جديد -->
+<div class="modal fade" id="uploadFileModal" tabindex="-1" aria-labelledby="uploadFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadFileModalLabel">{% trans "رفع ملف جديد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'إغلاق' %}"></button>
+            </div>
+            <form method="post" action="{% url 'admin_archive_upload' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="upload-title" class="form-label">{% trans "عنوان الملف" %} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="upload-title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="upload-file" class="form-label">{% trans "اختر الملف" %} <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="upload-file" name="file" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="upload-folder" class="form-label">{% trans "المجلد" %}</label>
+                        <select class="form-select" id="upload-folder" name="folder">
+                            <option value="">{% trans "بدون مجلد (الجذر)" %}</option>
+                            {% for folder in all_folders %}
+                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="upload-description" class="form-label">{% trans "وصف الملف" %}</label>
+                        <textarea class="form-control" id="upload-description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="upload-type" class="form-label">{% trans "نوع المستند" %}</label>
+                        <select class="form-select" id="upload-type" name="document_type">
+                            <option value="general">{% trans "عام" %}</option>
+                            <option value="contract">{% trans "عقد" %}</option>
+                            <option value="report">{% trans "تقرير" %}</option>
+                            <option value="invoice">{% trans "فاتورة" %}</option>
+                            <option value="receipt">{% trans "إيصال" %}</option>
+                            <option value="id">{% trans "مستند هوية" %}</option>
+                            <option value="letter">{% trans "خطاب" %}</option>
+                            <option value="form">{% trans "نموذج" %}</option>
+                            <option value="certificate">{% trans "شهادة" %}</option>
+                            <option value="other">{% trans "أخرى" %}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-success">{% trans "رفع الملف" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
