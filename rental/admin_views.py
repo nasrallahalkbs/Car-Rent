@@ -3250,7 +3250,7 @@ def admin_archive_tree(request):
 @login_required
 def download_document(request, document_id):
     """
-    تنزيل المستند من قاعدة البيانات
+    تنزيل المستند من قاعدة البيانات أو عرضه مباشرة في المتصفح
     """
     # الحصول على المستند من قاعدة البيانات
     document = get_object_or_404(Document, id=document_id)
@@ -3266,17 +3266,32 @@ def download_document(request, document_id):
         messages.error(request, _("هذا المستند غير متوفر للتحميل."))
         return redirect('admin_archive')
     
+    # تحديد ما إذا كان يجب عرض الملف مباشرة أو تنزيله
+    # سنعرض الصور وملفات PDF مباشرة في المتصفح
+    is_viewable = False
+    if document.file_type:
+        if document.file_type.startswith('image/') or document.file_type == 'application/pdf':
+            is_viewable = True
+    
     # تكوين استجابة الملف
     response = HttpResponse(
         document.file_content,
         content_type=document.file_type or 'application/octet-stream'
     )
     
-    # تحديد اسم الملف للتنزيل
+    # تحديد اسم الملف
     filename = document.file_name or f"{document.title}.{document.file_type.split('/')[-1] if document.file_type else 'pdf'}"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
-    print(f"DEBUG - تم إرسال الملف بنجاح: {filename}, الحجم={len(document.file_content)} بايت")
+    # إذا كان الملف قابل للعرض، عرضه مباشرة في المتصفح
+    if is_viewable:
+        # عرض الملف مباشرة في المتصفح
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        print(f"DEBUG - تم عرض الملف مباشرة في المتصفح: {filename}, الحجم={len(document.file_content)} بايت")
+    else:
+        # تنزيل الملف
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        print(f"DEBUG - تم إرسال الملف للتنزيل: {filename}, الحجم={len(document.file_content)} بايت")
+    
     return response
 @login_required
 @admin_required
