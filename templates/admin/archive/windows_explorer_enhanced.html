@@ -21,19 +21,7 @@ $(document).ready(function() {
     const currentFolderId = {{ current_folder.id }};
     {% endif %}
     
-    // وظيفة تحديث أزرار الإجراءات (تعديل، حذف، تصدير)
-    function updateActionButtons() {
-        if (selectedItem) {
-            // تفعيل الأزرار إذا كان هناك عنصر محدد
-            $('.action-btn').prop('disabled', false);
-            
-            // تفعيل/تعطيل زر التصدير فقط للملفات
-            $('#export-btn').prop('disabled', selectedItemType !== "file");
-        } else {
-            // تعطيل الأزرار إذا لم يكن هناك عنصر محدد
-            $('.action-btn').prop('disabled', true);
-        }
-    }
+
     
     // تهيئة شجرة المجلدات باستخدام jstree
     $('#folder-tree').jstree({
@@ -171,8 +159,7 @@ $(document).ready(function() {
             console.log("تم تحديد الملف: " + selectedItemId);
         }
         
-        // تحديث حالة أزرار الإجراءات
-        updateActionButtons();
+
     });
     
     // إلغاء تحديد العناصر عند النقر على منطقة فارغة
@@ -182,7 +169,7 @@ $(document).ready(function() {
             selectedItem = null;
             selectedItemType = null;
             selectedItemId = null;
-            updateActionButtons();
+
         }
     });
     
@@ -253,46 +240,9 @@ $(document).ready(function() {
         $('#uploadFileModal').modal('show');
     });
     
-    // تفعيل زر تعديل العنصر المحدد
-    $(document).on('click', '#edit-btn', function() {
-        if (!selectedItem) return;
-        
-        if (selectedItemType === "folder") {
-            console.log("تعديل المجلد: " + selectedItemId);
-            window.location.href = "{% url 'admin_archive_folder_edit' 0 %}".replace('0', selectedItemId);
-        } else {
-            console.log("تعديل الملف: " + selectedItemId);
-            window.location.href = "{% url 'admin_archive_edit' 0 %}".replace('0', selectedItemId);
-        }
-    });
+
     
-    // تفعيل زر حذف العنصر المحدد
-    $(document).on('click', '#delete-btn', function() {
-        if (!selectedItem) return;
-        
-        if (selectedItemType === "folder") {
-            if (confirm("هل أنت متأكد من حذف هذا المجلد؟ سيتم حذف جميع الملفات والمجلدات الفرعية داخله أيضاً.")) {
-                console.log("حذف المجلد: " + selectedItemId);
-                window.location.href = "{% url 'admin_archive_folder_delete' 0 %}".replace('0', selectedItemId);
-            }
-        } else {
-            if (confirm("هل أنت متأكد من حذف هذا الملف؟")) {
-                console.log("حذف الملف: " + selectedItemId);
-                window.location.href = "{% url 'admin_archive_delete' 0 %}".replace('0', selectedItemId);
-            }
-        }
-    });
-    
-    // تفعيل زر تصدير الملف المحدد
-    $(document).on('click', '#export-btn', function() {
-        if (!selectedItem || selectedItemType !== "file") return;
-        
-        console.log("تصدير الملف: " + selectedItemId);
-        window.open("{% url 'download_document' 0 %}".replace('0', selectedItemId), '_blank');
-    });
-    
-    // تهيئة أزرار الإجراءات في البداية
-    updateActionButtons();
+
 });
 </script>
 {% endblock %}
@@ -907,16 +857,7 @@ $(document).ready(function() {
                     <button class="nav-btn" id="refresh-btn" title="{% trans 'تحديث' %}">
                         <i class="fas fa-sync-alt"></i>
                     </button>
-                    <div class="vertical-separator"></div>
-                    <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                    <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}">
-                        <i class="fas fa-file-export"></i>
-                    </button>
+
                 </div>
                 <div class="address-input">
                     <span class="home-icon">
