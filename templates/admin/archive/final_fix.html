@@ -338,25 +338,25 @@
                 
                 <div class="explorer-toolbar">
                     <div class="nav-buttons">
-                        <button class="nav-btn" title="{% trans 'عودة للخلف' %}" data-action="back">
-                            <i class="fas fa-arrow-left"></i>
+                        <button class="btn btn-outline-secondary btn-sm mx-1" title="{% trans 'عودة للخلف' %}" onclick="window.history.back();">
+                            <i class="fas fa-arrow-left"></i> {% trans 'رجوع' %}
                         </button>
-                        <button class="nav-btn" title="{% trans 'اذهب للأمام' %}" data-action="forward">
-                            <i class="fas fa-arrow-right"></i>
+                        <button class="btn btn-outline-secondary btn-sm mx-1" title="{% trans 'اذهب للأمام' %}" onclick="window.history.forward();">
+                            <i class="fas fa-arrow-right"></i> {% trans 'تقدم' %}
                         </button>
-                        <button class="nav-btn" title="{% trans 'تحديث' %}" data-action="refresh">
-                            <i class="fas fa-sync-alt"></i>
+                        <button class="btn btn-outline-secondary btn-sm mx-1" title="{% trans 'تحديث' %}" onclick="window.location.reload();">
+                            <i class="fas fa-sync-alt"></i> {% trans 'تحديث' %}
                         </button>
                     </div>
                     <div class="action-buttons">
-                        <button class="nav-btn action-btn" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}">
-                            <i class="fas fa-edit"></i>
+                        <button class="btn btn-outline-primary btn-sm mx-1" id="edit-btn" disabled title="{% trans 'تعديل العنصر المحدد' %}" onclick="handleEditAction();">
+                            <i class="fas fa-edit"></i> {% trans 'تعديل' %}
                         </button>
-                        <button class="nav-btn action-btn" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}">
-                            <i class="fas fa-trash-alt"></i>
+                        <button class="btn btn-outline-danger btn-sm mx-1" id="delete-btn" disabled title="{% trans 'حذف العنصر المحدد' %}" onclick="handleDeleteAction();">
+                            <i class="fas fa-trash-alt"></i> {% trans 'حذف' %}
                         </button>
-                        <button class="nav-btn action-btn" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}">
-                            <i class="fas fa-file-export"></i>
+                        <button class="btn btn-outline-success btn-sm mx-1" id="export-btn" disabled title="{% trans 'تصدير الملف المحدد' %}" onclick="handleExportAction();">
+                            <i class="fas fa-file-export"></i> {% trans 'تصدير' %}
                         </button>
                     </div>
                 </div>
@@ -381,8 +381,8 @@
                     <div class="files-grid">
                         {% if subfolders %}
                             {% for folder in subfolders %}
-                                <div class="folder-item" data-folder-id="{{ folder.id }}">
-                                    <a href="{% url 'admin_archive_folder' folder_id=folder.id %}" class="text-decoration-none d-flex flex-column align-items-center">
+                                <div class="folder-item" data-folder-id="{{ folder.id }}" onclick="selectFolder(this, '{{ folder.id }}');">
+                                    <a href="{% url 'admin_archive_folder' folder_id=folder.id %}" class="text-decoration-none d-flex flex-column align-items-center" onclick="event.stopPropagation();">
                                         <i class="fas fa-folder folder-icon"></i>
                                         <span class="folder-name">{{ folder.name }}</span>
                                     </a>
@@ -392,11 +392,11 @@
                         
                         {% if documents %}
                             {% for document in documents %}
-                                <div class="file-item" data-file-id="{{ document.id }}">
+                                <div class="file-item" data-file-id="{{ document.id }}" onclick="selectFile(this, '{{ document.id }}');">
                                     {% if document.file %}
-                                        <a href="{{ document.file.url }}" target="_blank" class="text-decoration-none d-flex flex-column align-items-center">
+                                        <a href="{{ document.file.url }}" target="_blank" class="text-decoration-none d-flex flex-column align-items-center" onclick="event.stopPropagation();">
                                     {% else %}
-                                        <a href="{% url 'view_document' document_id=document.id %}" class="text-decoration-none d-flex flex-column align-items-center">
+                                        <a href="{% url 'view_document' document_id=document.id %}" class="text-decoration-none d-flex flex-column align-items-center" onclick="event.stopPropagation();">
                                     {% endif %}
                                         {% if document.file_type == 'application/pdf' %}
                                             <i class="fas fa-file-pdf file-icon pdf"></i>
@@ -594,4 +594,273 @@
         </div>
     </div>
 </div>
+
+<script>
+// كود JavaScript مباشر لضمان عمل الأزرار
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('تم تنفيذ الكود المباشر في القالب');
+    
+    // تعريف المتغيرات العالمية
+    window.selectedItem = null;
+    
+    // إضافة دالة تحديد المجلدات
+    window.selectFolder = function(folderElement, folderId) {
+        console.log('تم النقر على المجلد:', folderId);
+        
+        // إلغاء تحديد جميع العناصر
+        clearAllSelections();
+        
+        // تحديد المجلد
+        folderElement.classList.add('selected');
+        
+        // تخزين معلومات العنصر المحدد
+        window.selectedItem = {
+            id: folderId,
+            type: 'folder',
+            element: folderElement
+        };
+        
+        // تفعيل أزرار الإجراءات
+        document.getElementById('edit-btn').disabled = false;
+        document.getElementById('delete-btn').disabled = false;
+        document.getElementById('export-btn').disabled = true;
+    };
+    
+    // إضافة دالة تحديد الملفات
+    window.selectFile = function(fileElement, fileId) {
+        console.log('تم النقر على الملف:', fileId);
+        
+        // إلغاء تحديد جميع العناصر
+        clearAllSelections();
+        
+        // تحديد الملف
+        fileElement.classList.add('selected');
+        
+        // تخزين معلومات العنصر المحدد
+        window.selectedItem = {
+            id: fileId,
+            type: 'file',
+            element: fileElement
+        };
+        
+        // تفعيل أزرار الإجراءات
+        document.getElementById('edit-btn').disabled = false;
+        document.getElementById('delete-btn').disabled = false;
+        document.getElementById('export-btn').disabled = false;
+    };
+    
+    // دالة إلغاء تحديد جميع العناصر
+    window.clearAllSelections = function() {
+        document.querySelectorAll('.folder-item.selected, .file-item.selected').forEach(function(element) {
+            element.classList.remove('selected');
+        });
+        
+        window.selectedItem = null;
+    };
+    
+    // أزرار التنقل
+    var backButton = document.querySelector('.nav-btn[data-action="back"]');
+    var forwardButton = document.querySelector('.nav-btn[data-action="forward"]');
+    var refreshButton = document.querySelector('.nav-btn[data-action="refresh"]');
+    
+    if (backButton) {
+        backButton.onclick = function(e) {
+            e.preventDefault();
+            console.log('تم النقر على زر الرجوع');
+            window.history.back();
+            return false;
+        };
+    }
+    
+    if (forwardButton) {
+        forwardButton.onclick = function(e) {
+            e.preventDefault();
+            console.log('تم النقر على زر التقدم');
+            window.history.forward();
+            return false;
+        };
+    }
+    
+    if (refreshButton) {
+        refreshButton.onclick = function(e) {
+            e.preventDefault();
+            console.log('تم النقر على زر التحديث');
+            window.location.reload();
+            return false;
+        };
+    }
+    
+    // أزرار الإجراءات
+    var editButton = document.getElementById('edit-btn');
+    var deleteButton = document.getElementById('delete-btn');
+    var exportButton = document.getElementById('export-btn');
+    
+    if (editButton) {
+        editButton.onclick = function(e) {
+            e.preventDefault();
+            if (window.selectedItem) {
+                console.log('تم النقر على زر التعديل');
+                handleEditAction();
+            } else {
+                alert('الرجاء تحديد عنصر للتعديل');
+            }
+            return false;
+        };
+    }
+    
+    if (deleteButton) {
+        deleteButton.onclick = function(e) {
+            e.preventDefault();
+            if (window.selectedItem) {
+                console.log('تم النقر على زر الحذف');
+                handleDeleteAction();
+            } else {
+                alert('الرجاء تحديد عنصر للحذف');
+            }
+            return false;
+        };
+    }
+    
+    if (exportButton) {
+        exportButton.onclick = function(e) {
+            e.preventDefault();
+            if (window.selectedItem && window.selectedItem.type === 'file') {
+                console.log('تم النقر على زر التصدير');
+                handleExportAction();
+            } else {
+                alert('الرجاء تحديد ملف للتصدير');
+            }
+            return false;
+        };
+    }
+    
+    // تحديد العناصر
+    var folderItems = document.querySelectorAll('.folder-item');
+    var fileItems = document.querySelectorAll('.file-item');
+    
+    window.selectedItem = null;
+    
+    folderItems.forEach(function(folder) {
+        folder.onclick = function(e) {
+            // السماح بالنقر على الروابط
+            if (e.target.tagName === 'A' || e.target.closest('a')) {
+                return true;
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // إلغاء التحديدات السابقة
+            folderItems.forEach(function(f) { f.classList.remove('selected'); });
+            fileItems.forEach(function(f) { f.classList.remove('selected'); });
+            
+            // تحديد هذا المجلد
+            folder.classList.add('selected');
+            
+            // تحديث المعلومات
+            window.selectedItem = {
+                id: folder.getAttribute('data-folder-id'),
+                type: 'folder',
+                element: folder
+            };
+            
+            // تفعيل الأزرار
+            editButton.disabled = false;
+            deleteButton.disabled = false;
+            exportButton.disabled = true;
+            
+            console.log('تم تحديد مجلد:', window.selectedItem);
+            
+            return false;
+        };
+    });
+    
+    fileItems.forEach(function(file) {
+        file.onclick = function(e) {
+            // السماح بالنقر على الروابط
+            if (e.target.tagName === 'A' || e.target.closest('a')) {
+                return true;
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // إلغاء التحديدات السابقة
+            folderItems.forEach(function(f) { f.classList.remove('selected'); });
+            fileItems.forEach(function(f) { f.classList.remove('selected'); });
+            
+            // تحديد هذا الملف
+            file.classList.add('selected');
+            
+            // تحديث المعلومات
+            window.selectedItem = {
+                id: file.getAttribute('data-file-id'),
+                type: 'file',
+                element: file
+            };
+            
+            // تفعيل الأزرار
+            editButton.disabled = false;
+            deleteButton.disabled = false;
+            exportButton.disabled = false;
+            
+            console.log('تم تحديد ملف:', window.selectedItem);
+            
+            return false;
+        };
+    });
+    
+    // وظائف التعامل مع الإجراءات
+    window.handleEditAction = function() {
+        if (!window.selectedItem) {
+            alert('الرجاء تحديد عنصر للتعديل');
+            return;
+        }
+        
+        console.log('تنفيذ إجراء التعديل');
+        
+        if (window.selectedItem.type === 'folder') {
+            const folderId = window.selectedItem.id;
+            window.location.href = '/ar/dashboard/archive/folder/edit/' + folderId + '/';
+        } else if (window.selectedItem.type === 'file') {
+            const fileId = window.selectedItem.id;
+            window.location.href = '/ar/dashboard/archive/edit/' + fileId + '/';
+        }
+    };
+    
+    window.handleDeleteAction = function() {
+        if (!window.selectedItem) {
+            alert('الرجاء تحديد عنصر للحذف');
+            return;
+        }
+        
+        console.log('تنفيذ إجراء الحذف');
+        
+        const confirmation = confirm('هل أنت متأكد من رغبتك في حذف هذا العنصر؟');
+        if (!confirmation) {
+            return;
+        }
+        
+        if (window.selectedItem.type === 'folder') {
+            const folderId = window.selectedItem.id;
+            window.location.href = '/ar/dashboard/archive/folder/delete/' + folderId + '/';
+        } else if (window.selectedItem.type === 'file') {
+            const fileId = window.selectedItem.id;
+            window.location.href = '/ar/dashboard/archive/delete/' + fileId + '/';
+        }
+    };
+    
+    window.handleExportAction = function() {
+        if (!window.selectedItem || window.selectedItem.type !== 'file') {
+            alert('الرجاء تحديد ملف للتصدير');
+            return;
+        }
+        
+        console.log('تنفيذ إجراء التصدير');
+        
+        const fileId = window.selectedItem.id;
+        window.open('/ar/dashboard/archive/download/' + fileId + '/', '_blank');
+    };
+});
+</script>
 {% endblock %}

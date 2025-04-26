@@ -3,9 +3,30 @@
  * تاريخ: 2025-04-26
  */
 
+console.log('بدء تحميل ملف direct-fix.js - إصلاح مباشر لأزرار الأرشيف');
+
+// تنفيذ فوري للكود
+(function() {
+    console.log('تنفيذ فوري للكود في ملف direct-fix.js');
+})();
+
 // التأكد من تنفيذ الكود بعد تحميل الصفحة
+window.onload = function() {
+    console.log('الصفحة تم تحميلها بالكامل - تفعيل أزرار الأرشيف');
+    
+    // تفعيل أزرار التنقل
+    setupNavigationButtons();
+    
+    // تفعيل أزرار الإجراءات
+    setupActionButtons();
+    
+    // تفعيل اختيار العناصر
+    setupItemSelection();
+};
+
+// طريقة ثانية للتأكد من تنفيذ الكود
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('تم تحميل ملف direct-fix.js - إصلاح مباشر لأزرار الأرشيف');
+    console.log('DOM جاهز - تفعيل أزرار الأرشيف');
     
     // تفعيل أزرار التنقل
     setupNavigationButtons();
