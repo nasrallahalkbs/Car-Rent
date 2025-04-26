@@ -80,6 +80,10 @@ urlpatterns = [
 
     # مسار الأرشيف الإلكتروني - الصفحة الرئيسية فقط
     path('dashboard/archive/', admin_archive_windows, name='admin_archive'),
+    # إضافة مسارات جديدة لمعالجة معاملات المجلد والإجراء
+    path('dashboard/archive/<int:folder_id>/', admin_archive_windows, name='admin_archive_folder'),
+    path('dashboard/archive/<int:folder_id>/<str:action>/', admin_archive_windows, name='admin_archive_action'),
+    path('dashboard/archive/<str:action>/', admin_archive_windows, name='admin_archive_action_only'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
     path('dashboard/archive/upload/', admin_views.admin_archive_upload, name='admin_archive_upload'),
     path('dashboard/archive/folder/add/', admin_views.admin_archive_folder_add, name='admin_archive_folder_add'),

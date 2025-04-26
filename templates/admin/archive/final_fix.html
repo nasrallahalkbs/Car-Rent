@@ -302,7 +302,7 @@
                         </li>
                         {% for folder in root_folders %}
                         <li class="list-group-item">
-                            <a href="{% url 'admin_archive' folder_id=folder.id %}" class="text-decoration-none">
+                            <a href="{% url 'admin_archive_folder' folder_id=folder.id %}" class="text-decoration-none">
                                 <i class="fas fa-folder{% if current_folder.id == folder.id %}-open{% endif %} text-warning me-2"></i> {{ folder.name }}
                             </a>
                         </li>
@@ -369,7 +369,7 @@
                         {% if current_folder %}
                             {% for ancestor in folder_ancestors %}
                                 <li>
-                                    <a href="{% url 'admin_archive' folder_id=ancestor.id %}">{{ ancestor.name }}</a>
+                                    <a href="{% url 'admin_archive_folder' folder_id=ancestor.id %}">{{ ancestor.name }}</a>
                                 </li>
                             {% endfor %}
                             <li class="active">{{ current_folder.name }}</li>
@@ -382,7 +382,7 @@
                         {% if subfolders %}
                             {% for folder in subfolders %}
                                 <div class="folder-item" data-folder-id="{{ folder.id }}">
-                                    <a href="{% url 'admin_archive' folder_id=folder.id %}" class="text-decoration-none d-flex flex-column align-items-center">
+                                    <a href="{% url 'admin_archive_folder' folder_id=folder.id %}" class="text-decoration-none d-flex flex-column align-items-center">
                                         <i class="fas fa-folder folder-icon"></i>
                                         <span class="folder-name">{{ folder.name }}</span>
                                     </a>
@@ -434,7 +434,7 @@
                 <h5 class="modal-title" id="addFolderModalLabel">{% trans "إضافة مجلد جديد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'admin_archive' folder_id=current_folder.id action='add_folder' %}">
+            <form method="post" action="{% url 'admin_archive_action' folder_id=current_folder.id action='add_folder' %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
@@ -463,7 +463,7 @@
                 <h5 class="modal-title" id="addFileModalLabel">{% trans "إضافة ملف جديد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'admin_archive' folder_id=current_folder.id action='add_file' %}" enctype="multipart/form-data">
+            <form method="post" action="{% url 'admin_archive_action' folder_id=current_folder.id action='add_file' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
@@ -496,7 +496,7 @@
                 <h5 class="modal-title" id="editFolderModalLabel">{% trans "تعديل المجلد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'admin_archive' action='edit_folder' %}">
+            <form method="post" action="{% url 'admin_archive_action_only' action='edit_folder' %}">
                 {% csrf_token %}
                 <input type="hidden" id="edit-folder-id" name="folder_id">
                 <div class="modal-body">
@@ -522,7 +522,7 @@
                 <h5 class="modal-title" id="editFileModalLabel">{% trans "تعديل الملف" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'admin_archive' action='edit_file' %}">
+            <form method="post" action="{% url 'admin_archive_action_only' action='edit_file' %}">
                 {% csrf_token %}
                 <input type="hidden" id="edit-file-id" name="file_id">
                 <div class="modal-body">
@@ -548,7 +548,7 @@
                 <h5 class="modal-title" id="deleteFolderModalLabel">{% trans "تأكيد الحذف" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'admin_archive' action='delete_folder' %}">
+            <form method="post" action="{% url 'admin_archive_action_only' action='delete_folder' %}">
                 {% csrf_token %}
                 <input type="hidden" id="delete-folder-id" name="folder_id">
                 <div class="modal-body">
