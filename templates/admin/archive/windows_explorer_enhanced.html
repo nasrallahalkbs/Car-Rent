@@ -1044,12 +1044,86 @@ $(document).ready(function() {
 <script>
 // نحتفظ ببعض التحسينات التفاعلية أثناء النقر لتجربة مستخدم أفضل
 document.addEventListener('DOMContentLoaded', function() {
+    // تحسين تفاعل العناصر عند تمرير الماوس
     $(document).on('mouseenter', '.folder-row, .folder-item', function() {
         $(this).addClass('hover');
     }).on('mouseleave', '.folder-row, .folder-item', function() {
         $(this).removeClass('hover');
     });
+    
+    // اختيار العناصر (المجلدات والملفات) عند النقر عليها
+    $(document).on('click', '.folder-item, .file-item', function(e) {
+        if (e.target.tagName !== 'A' && !$(e.target).closest('a').hasClass('no-select')) {
+            e.preventDefault();
+            $('.folder-item, .file-item').removeClass('selected');
+            $(this).addClass('selected');
+            
+            // تمكين أزرار الإجراءات بناءً على نوع العنصر المحدد
+            const isFolder = $(this).hasClass('folder-item');
+            const isFile = $(this).hasClass('file-item');
+            
+            // تمكين أزرار التعديل والحذف للجميع
+            $('#edit-btn, #delete-btn').prop('disabled', false);
+            
+            // تمكين زر التصدير للملفات فقط
+            $('#export-btn').prop('disabled', !isFile);
+            
+            // حفظ معرف العنصر المحدد للاستخدام في الإجراءات
+            if (isFolder) {
+                window.selectedFolderId = $(this).data('folder-id');
+                window.selectedFileId = null;
+                window.selectedItemName = $(this).find('.folder-name').text();
+                window.selectedItemType = 'folder';
+            } else if (isFile) {
+                window.selectedFileId = $(this).data('file-id');
+                window.selectedFolderId = null;
+                window.selectedItemName = $(this).find('.file-name').text();
+                window.selectedItemType = 'file';
+            }
+        }
+    });
 });
+
+// دالة معالجة حدث النقر على زر التعديل
+function handleEditClick() {
+    if (window.selectedItemType === 'folder' && window.selectedFolderId) {
+        // فتح نافذة تعديل المجلد
+        $('#edit-folder-id').val(window.selectedFolderId);
+        $('#edit-folder-name').val(window.selectedItemName);
+        $('#editFolderModal').modal('show');
+    } else if (window.selectedItemType === 'file' && window.selectedFileId) {
+        // فتح نافذة تعديل الملف
+        $('#edit-file-id').val(window.selectedFileId);
+        $('#edit-file-title').val(window.selectedItemName);
+        $('#editFileModal').modal('show');
+    }
+    return false;
+}
+
+// دالة معالجة حدث النقر على زر الحذف
+function handleDeleteClick() {
+    if (window.selectedItemType === 'folder' && window.selectedFolderId) {
+        // فتح نافذة حذف المجلد
+        $('#delete-folder-id').val(window.selectedFolderId);
+        $('#delete-folder-name').text(window.selectedItemName);
+        $('#deleteFolderModal').modal('show');
+    } else if (window.selectedItemType === 'file' && window.selectedFileId) {
+        // فتح نافذة حذف الملف
+        $('#delete-file-id').val(window.selectedFileId);
+        $('#delete-file-name').text(window.selectedItemName);
+        $('#deleteFileModal').modal('show');
+    }
+    return false;
+}
+
+// دالة معالجة حدث النقر على زر التصدير (التنزيل)
+function handleExportClick() {
+    if (window.selectedItemType === 'file' && window.selectedFileId) {
+        // توجيه المتصفح إلى رابط تنزيل الملف
+        window.open("{% url 'download_document' 0 %}".replace('0', window.selectedFileId), '_blank');
+    }
+    return false;
+}
 </script>
 {% endblock %}
 
@@ -1159,10 +1233,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h5 class="modal-title" id="editFolderModalLabel">{% trans "تعديل اسم المجلد" %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'admin_archive' %}" method="post">
+            <form action="{% url 'admin_archive_action_only' action='edit_folder' %}" method="post">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <input type="hidden" name="action" value="edit_folder">
                     <input type="hidden" name="folder_id" id="edit-folder-id">
                     <div class="mb-3">
                         <label for="edit-folder-name" class="form-label">{% trans "اسم المجلد" %}</label>
