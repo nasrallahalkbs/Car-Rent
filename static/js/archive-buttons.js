@@ -56,4 +56,67 @@ var selectedItemType = null;
 // ربط الوظائف عند تحميل المستند
 $(document).ready(function() {
     console.log('تم تحميل ملف archive-buttons.js');
+    
+    // ربط أحداث النقر على الأزرار
+    $('#edit-btn').on('click', handleEditClick);
+    $('#delete-btn').on('click', handleDeleteClick);
+    $('#export-btn').on('click', handleExportClick);
+    
+    // نسخ أحداث معالجة النقر من ملف archive-explorer-fixed.js
+    $('.file-item').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // إلغاء تحديد جميع العناصر
+        $('.folder-item, .file-item').removeClass('selected');
+        // تحديد هذا العنصر
+        $(this).addClass('selected');
+        
+        // تخزين المعلومات العامة للعنصر المحدد
+        selectedItemType = 'file';
+        selectedFileId = $(this).data('file-id');
+        selectedFolderId = null;
+        selectedItemName = $(this).find('.file-name').text();
+        
+        // تمكين جميع الأزرار
+        $('#edit-btn, #delete-btn, #export-btn').prop('disabled', false);
+        
+        console.log('تم تحديد الملف:', selectedFileId, selectedItemName);
+    });
+    
+    // إضافة معالجة النقر المزدوج للملفات
+    $('.file-item').on('dblclick', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const fileId = $(this).data('file-id');
+        if (fileId) {
+            var viewUrl = `/archive/view_document/${fileId}/`;
+            window.open(viewUrl, '_blank');
+        }
+    });
+    
+    // للمجلدات، نضيف معالجة خاصة عند النقر بالزر الأيمن
+    $('.folder-item').on('contextmenu', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // إلغاء تحديد جميع العناصر
+        $('.folder-item, .file-item').removeClass('selected');
+        // تحديد هذا العنصر
+        $(this).addClass('selected');
+        
+        // تخزين المعلومات العامة للعنصر المحدد
+        selectedItemType = 'folder';
+        selectedFolderId = $(this).data('folder-id');
+        selectedFileId = null;
+        selectedItemName = $(this).find('.folder-name').text();
+        
+        // تمكين أزرار التعديل والحذف فقط
+        $('#edit-btn, #delete-btn').prop('disabled', false);
+        // تعطيل زر التصدير للمجلدات
+        $('#export-btn').prop('disabled', true);
+        
+        console.log('تم تحديد المجلد بالزر الأيمن:', selectedFolderId, selectedItemName);
+    });
 });
