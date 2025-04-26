@@ -150,50 +150,7 @@ $(document).ready(function() {
         }
     });
     
-    // تفعيل أزرار العمليات (تحرير، حذف، تصدير)
-    $(document).on('click', '#edit-btn', function() {
-        if (!selectedItem) return;
-        
-        if (selectedItemType === "folder") {
-            // تحرير مجلد
-            const folderName = selectedItem.find('.folder-name').text().trim();
-            $('#edit-folder-id').val(selectedItemId);
-            $('#edit-folder-name').val(folderName);
-            $('#editFolderModal').modal('show');
-        } else if (selectedItemType === "file") {
-            // تحرير ملف
-            const fileName = selectedItem.find('.file-name').text().trim();
-            $('#edit-file-id').val(selectedItemId);
-            $('#edit-file-title').val(fileName);
-            $('#editFileModal').modal('show');
-        }
-    });
-    
-    $(document).on('click', '#delete-btn', function() {
-        if (!selectedItem) return;
-        
-        if (selectedItemType === "folder") {
-            // حذف مجلد
-            const folderName = selectedItem.find('.folder-name').text().trim();
-            $('#delete-folder-id').val(selectedItemId);
-            $('#delete-folder-name').text(folderName);
-            $('#deleteFolderModal').modal('show');
-        } else if (selectedItemType === "file") {
-            // حذف ملف
-            const fileName = selectedItem.find('.file-name').text().trim();
-            $('#delete-file-id').val(selectedItemId);
-            $('#delete-file-name').text(fileName);
-            $('#deleteFileModal').modal('show');
-        }
-    });
-    
-    $(document).on('click', '#export-btn', function() {
-        if (!selectedItem || selectedItemType !== "file") return;
-        
-        // تصدير/تنزيل الملف
-        const fileId = selectedItemId;
-        window.location.href = "{% url 'admin_archive_download' document_id=0 %}".replace('0', fileId);
-    });
+    // كود تفعيل أزرار العمليات (تحرير، حذف، تصدير) محذوف من هنا لأنه مكرر ومعرف بالفعل أدناه
     
     // وظيفة تحديث أزرار الإجراءات (تعديل، حذف، تصدير)
     function updateActionButtons() {
@@ -212,7 +169,14 @@ $(document).ready(function() {
     // تفعيل اختيار الملفات والمجلدات
     $(document).on('click', '.folder-item, .file-item', function(e) {
         e.preventDefault();
+        e.stopPropagation(); // منع انتشار الحدث للعناصر الأب
+        
+        console.log("تم النقر على عنصر:", this);
+        
+        // إزالة التحديد من جميع العناصر
         $('.folder-item, .file-item').removeClass('selected');
+        
+        // إضافة صف التحديد للعنصر الحالي
         $(this).addClass('selected');
         
         // تحديث المتغيرات العامة
@@ -222,7 +186,7 @@ $(document).ready(function() {
             selectedItemType = "folder";
             selectedItemId = $(this).data('folder-id');
             console.log("تم تحديد المجلد: " + selectedItemId);
-        } else {
+        } else if ($(this).hasClass('file-item')) {
             selectedItemType = "file";
             selectedItemId = $(this).data('file-id');
             console.log("تم تحديد الملف: " + selectedItemId);
