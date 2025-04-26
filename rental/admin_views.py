@@ -2110,8 +2110,8 @@ def admin_archive(request):
         print(f"      - file_name: {doc.file_name if hasattr(doc, 'file_name') else 'غير موجود'}")
         print(f"      - file_type: {doc.file_type if hasattr(doc, 'file_type') else 'غير موجود'}")
         
-    # استخدام قالب الأرشيف المحسن مع أزرار التنقل والإجراءات
-    return render(request, 'admin/archive/final_fix.html', context)
+    # استخدام قالب الأرشيف البسيط والمباشر
+    return render(request, 'admin/archive/direct_fix.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""
