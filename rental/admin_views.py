@@ -3338,6 +3338,33 @@ def admin_archive_tree(request):
     return render(request, 'admin/archive/folder_tree.html', context)
 
 @login_required
+def view_document(request, document_id):
+    """
+    عرض المستند مباشرة في المتصفح
+    """
+    # الحصول على المستند من قاعدة البيانات
+    document = get_object_or_404(Document, id=document_id)
+    
+    # معلومات تشخيصية للمستند
+    print(f"DEBUG - طلب عرض المستند: ID={document.id}, العنوان={document.title}")
+    print(f"DEBUG - معلومات الملف: اسم={document.file_name}, نوع={document.file_type}, حجم={document.file_size} بايت")
+    print(f"DEBUG - حجم محتوى الملف: {len(document.file_content) if document.file_content else 0} بايت")
+    
+    # إذا كان المستند غير موجود، نعرض رسالة خطأ
+    if not document.file_content:
+        print(f"ERROR - محتوى الملف غير موجود للمستند ID={document.id}, العنوان={document.title}")
+        messages.error(request, _("هذا المستند غير متوفر للعرض."))
+        return redirect('admin_archive')
+    
+    # دائماً سنعرض الملف في المتصفح
+    content_type = document.file_type or mimetypes.guess_type(document.file_name)[0] or 'application/octet-stream'
+    response = HttpResponse(document.file_content, content_type=content_type)
+    
+    # إضافة رأس Content-Disposition لإخبار المتصفح بعرض الملف بدلاً من تنزيله
+    response['Content-Disposition'] = f'inline; filename="{document.file_name}"'
+    
+    return response
+
 def download_document(request, document_id):
     """
     تنزيل المستند من قاعدة البيانات أو عرضه مباشرة في المتصفح
