@@ -222,12 +222,8 @@
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <label for="related_to" class="form-label required-label">{% trans "Related To" %}</label>
-                                            <select class="form-select" id="related_to" name="related_to" required>
-                                                <option value="" disabled>{% trans "Select Relationship Type" %}</option>
-                                                {% for type_value, type_name in related_to_types %}
-                                                <option value="{{ type_value }}" {% if document.related_to == type_value %}selected{% endif %}>{{ type_name }}</option>
-                                                {% endfor %}
-                                            </select>
+                                            <input type="hidden" id="related_to" name="related_to" value="{{ document.related_to }}">
+                                            <div class="form-control bg-light">{{ document.get_related_to_display }}</div>
                                         </div>
                                         
                                         <div class="col-md-6">
@@ -664,42 +660,44 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="related_to" class="form-label">متعلق بـ *</label>
-                            <select class="form-select" id="related_to" name="related_to" required>
-                                <option value="">اختر نوع العلاقة</option>
-                                {% for relation_code, relation_name in related_to_choices %}
-                                <option value="{{ relation_code }}" {% if document.related_to == relation_code %}selected{% endif %}>{{ relation_name }}</option>
-                                {% endfor %}
-                            </select>
+                            <input type="hidden" id="related_to" name="related_to" value="{{ document.related_to }}">
+                            <div class="form-control bg-light">{{ document.get_related_to_display }}</div>
                         </div>
                         
                         <div class="col-md-6 mb-3 relation-field" id="reservation_relation">
                             <label for="reservation_id" class="form-label">الحجز المرتبط</label>
-                            <select class="form-select" id="reservation_id" name="reservation_id">
-                                <option value="">اختر حجزًا</option>
-                                {% for reservation in reservations %}
-                                <option value="{{ reservation.id }}" {% if document.reservation and document.reservation.id == reservation.id %}selected{% endif %}>{{ reservation.reservation_number }} - {{ reservation.car }}</option>
-                                {% endfor %}
-                            </select>
+                            <input type="hidden" id="reservation_id" name="reservation_id" value="{% if document.reservation %}{{ document.reservation.id }}{% endif %}">
+                            <div class="form-control bg-light">
+                                {% if document.reservation %}
+                                {{ document.reservation.reservation_number }} - {{ document.reservation.car }}
+                                {% else %}
+                                لا يوجد حجز مرتبط
+                                {% endif %}
+                            </div>
                         </div>
                         
                         <div class="col-md-6 mb-3 relation-field" id="car_relation">
                             <label for="car_id" class="form-label">السيارة المرتبطة</label>
-                            <select class="form-select" id="car_id" name="car_id">
-                                <option value="">اختر سيارة</option>
-                                {% for car in cars %}
-                                <option value="{{ car.id }}" {% if document.car and document.car.id == car.id %}selected{% endif %}>{{ car }}</option>
-                                {% endfor %}
-                            </select>
+                            <input type="hidden" id="car_id" name="car_id" value="{% if document.car %}{{ document.car.id }}{% endif %}">
+                            <div class="form-control bg-light">
+                                {% if document.car %}
+                                {{ document.car }}
+                                {% else %}
+                                لا توجد سيارة مرتبطة
+                                {% endif %}
+                            </div>
                         </div>
                         
                         <div class="col-md-6 mb-3 relation-field" id="user_relation">
                             <label for="user_id" class="form-label">المستخدم المرتبط</label>
-                            <select class="form-select" id="user_id" name="user_id">
-                                <option value="">اختر مستخدمًا</option>
-                                {% for user in users %}
-                                <option value="{{ user.id }}" {% if document.user and document.user.id == user.id %}selected{% endif %}>{{ user.username }} ({{ user.get_full_name|default:user.username }})</option>
-                                {% endfor %}
-                            </select>
+                            <input type="hidden" id="user_id" name="user_id" value="{% if document.user %}{{ document.user.id }}{% endif %}">
+                            <div class="form-control bg-light">
+                                {% if document.user %}
+                                {{ document.user.username }} ({{ document.user.get_full_name|default:document.user.username }})
+                                {% else %}
+                                لا يوجد مستخدم مرتبط
+                                {% endif %}
+                            </div>
                         </div>
                         
                         <div class="col-md-12 mb-3">
