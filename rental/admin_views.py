@@ -3600,3 +3600,151 @@ def delete_folder(request, folder_id):
     else:
         return redirect("admin_archive")
 
+@login_required
+@admin_required
+def folder_documents(request, folder_id):
+    """عرض جميع المستندات المرتبطة بمجلد معين"""
+    folder = get_object_or_404(ArchiveFolder, id=folder_id)
+    
+    # الحصول على جميع المستندات في المجلد (مع التنظيف)
+    documents = clean_document_list(Document.objects.filter(folder=folder).order_by('-created_at'))
+    
+    # الحصول على مسار المجلد (الهيكل التسلسلي للوصول إليه)
+    folder_path = []
+    current = folder
+    while current:
+        folder_path.insert(0, current)
+        current = current.parent
+    
+    # تحديد لغة المستخدم
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    context = {
+        'folder': folder,
+        'documents': documents,
+        'folder_path': folder_path,
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/folder_documents.html', context)
+
+@login_required
+@admin_required
+def add_document_to_folder(request, folder_id):
+    """إضافة مستند جديد إلى مجلد محدد"""
+    # التحقق من وجود المجلد
+    folder = get_object_or_404(ArchiveFolder, id=folder_id)
+    
+    if request.method == 'POST':
+        # استخراج البيانات من النموذج
+        title = request.POST.get('title')
+        document_type = request.POST.get('document_type', 'other')
+        description = request.POST.get('description', '')
+        document_date = request.POST.get('document_date')
+        expiry_date = request.POST.get('expiry_date')
+        related_to = request.POST.get('related_to', '')
+        related_id = request.POST.get('related_id')
+        tags = request.POST.get('tags', '')
+        
+        # التحقق من وجود عنوان للمستند
+        if not title:
+            messages.error(request, "يرجى إدخال عنوان المستند")
+            return redirect('admin_archive_folder_add_document', folder_id=folder_id)
+        
+        # تحميل الملف إذا تم تقديمه
+        file_name = None
+        file_type = None
+        file_size = 0
+        file_content = None
+        
+        if 'file' in request.FILES:
+            uploaded_file = request.FILES['file']
+            file_name = uploaded_file.name
+            file_type = uploaded_file.content_type
+            file_size = uploaded_file.size
+            file_content = uploaded_file.read()
+        
+        # إنشاء المستند وحفظه
+        document = Document(
+            title=title,
+            document_type=document_type,
+            description=description,
+            document_date=document_date,
+            expiry_date=expiry_date,
+            related_to=related_to,
+            file_name=file_name,
+            file_type=file_type,
+            file_size=file_size,
+            file_content=file_content,
+            tags=tags,
+            added_by=request.user,
+            folder=folder
+        )
+        
+        # تعيين العلاقات حسب نوع الارتباط
+        if related_to == 'reservation' and related_id:
+            try:
+                reservation = Reservation.objects.get(id=related_id)
+                document.reservation = reservation
+            except Reservation.DoesNotExist:
+                pass
+        elif related_to == 'car' and related_id:
+            try:
+                car = Car.objects.get(id=related_id)
+                document.car = car
+            except Car.DoesNotExist:
+                pass
+        elif related_to == 'user' and related_id:
+            try:
+                user = User.objects.get(id=related_id)
+                document.user = user
+            except User.DoesNotExist:
+                pass
+        
+        # حفظ المستند
+        document.save()
+        
+        messages.success(request, f"تم إضافة المستند '{title}' إلى المجلد '{folder.name}' بنجاح")
+        return redirect('admin_archive_folder', folder_id=folder_id)
+    
+    # الحصول على قوائم للعلاقات
+    reservations = Reservation.objects.order_by('-created_at')[:50]
+    cars = Car.objects.order_by('-id')[:50]
+    users = User.objects.order_by('-date_joined')[:50]
+    
+    # الحصول على مسار المجلد (الهيكل التسلسلي للوصول إليه)
+    folder_path = []
+    current = folder
+    while current:
+        folder_path.insert(0, current)
+        current = current.parent
+    
+    # تحديد لغة المستخدم
+    from django.utils.translation import get_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
+    
+    context = {
+        'folder': folder,
+        'folder_path': folder_path,
+        'document_types': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_types': Document.RELATED_TO_CHOICES,
+        'reservations': reservations,
+        'cars': cars,
+        'users': users,
+        'today': timezone.now().date().strftime('%Y-%m-%d'),
+        'is_english': is_english,
+        'is_rtl': is_rtl,
+        'current_user': request.user,
+        'active_section': 'archive'
+    }
+    
+    return render(request, 'admin/archive/add_document_to_folder.html', context)
+
