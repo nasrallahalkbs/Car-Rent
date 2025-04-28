@@ -93,7 +93,9 @@ urlpatterns = [
     path('dashboard/archive/folder/<int:folder_id>/add-document/', admin_views.add_document_to_folder, name='admin_archive_folder_add_document'),
     path('dashboard/archive/windows/', admin_archive_windows_explorer, name='admin_archive_windows'),
     path('dashboard/archive/document/<int:document_id>/download/', admin_views.download_document, name='download_document'),
+    path('dashboard/archive/download/<int:document_id>/', admin_views.download_document, name='admin_archive_download'),
     path('dashboard/archive/document/<int:document_id>/view/', admin_views.view_document, name='view_document'),
+    path('dashboard/archive/view/<int:document_id>/', admin_views.view_document, name='admin_archive_view'),
     path('dashboard/archive/document/<int:document_id>/', admin_views.document_detail, name='admin_archive_detail'),
     path('dashboard/archive/document/<int:document_id>/detail/', admin_views.document_detail, name='admin_document_detail'),
     # استخدام الوظائف الحالية للتعديل والحذف 
