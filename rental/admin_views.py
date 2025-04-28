@@ -2388,6 +2388,8 @@ def admin_archive_edit(request, document_id):
         'document': document,
         'document_types': Document.DOCUMENT_TYPE_CHOICES,
         'related_to_types': Document.RELATED_TO_CHOICES,
+        'document_type_choices': Document.DOCUMENT_TYPE_CHOICES,  # Adding this for compatibility
+        'related_to_choices': Document.RELATED_TO_CHOICES,  # Adding this for compatibility
         'reservations': reservations,
         'cars': cars,
         'users': users,
