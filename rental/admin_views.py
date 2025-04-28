@@ -859,8 +859,13 @@ def edit_document(request, document_id):
         document.save()
         
         messages.success(request, "تم تحديث الوثيقة بنجاح")
-        # العودة إلى صفحة الأرشيف بدلاً من صفحة التفاصيل لتجنب المشاكل في عرض صفحة التفاصيل
-        return redirect('admin_archive')
+        # التوجيه إلى صفحة الأرشيف بعد التحديث
+        if document.folder:
+            # التوجيه إلى نفس المجلد الذي كان فيه المستند
+            return redirect(f"{reverse('admin_archive')}?folder={document.folder.id}")
+        else:
+            # التوجيه إلى الصفحة الرئيسية للأرشيف
+            return redirect('admin_archive')
     
     # نموذج تعديل الوثيقة
     context = {
