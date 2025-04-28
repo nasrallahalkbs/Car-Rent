@@ -3526,12 +3526,9 @@ def admin_archive_upload(request):
     return redirect('admin_archive')
 
 @login_required
+@admin_required
 def edit_folder(request, folder_id):
     """تعديل مجلد"""
-    # التحقق من أن المستخدم مسؤول
-    if not request.user.is_admin:
-        messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
-        return redirect("index")
     
     folder = get_object_or_404(ArchiveFolder, id=folder_id)
     
@@ -3565,12 +3562,9 @@ def edit_folder(request, folder_id):
     return render(request, "admin/archive/edit_folder.html", context)
 
 @login_required
+@admin_required
 def delete_folder(request, folder_id):
     """حذف مجلد"""
-    # التحقق من أن المستخدم مسؤول
-    if not request.user.is_admin:
-        messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
-        return redirect("index")
     
     folder = get_object_or_404(ArchiveFolder, id=folder_id)
     
