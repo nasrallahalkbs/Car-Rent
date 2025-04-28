@@ -3738,4 +3738,3 @@ def add_document_to_folder(request, folder_id):
     }
     
     return render(request, 'admin/archive/add_document_to_folder.html', context)
-
