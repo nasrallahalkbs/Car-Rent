@@ -94,6 +94,8 @@ urlpatterns = [
     path('dashboard/archive/windows/', admin_archive_windows_explorer, name='admin_archive_windows'),
     path('dashboard/archive/document/<int:document_id>/download/', admin_views.download_document, name='download_document'),
     path('dashboard/archive/document/<int:document_id>/view/', admin_views.view_document, name='view_document'),
+    path('dashboard/archive/document/<int:document_id>/', admin_views.document_detail, name='admin_archive_detail'),
+    path('dashboard/archive/document/<int:document_id>/detail/', admin_views.document_detail, name='admin_document_detail'),
     # استخدام الوظائف الحالية للتعديل والحذف 
     path('dashboard/archive/edit/<int:document_id>/', admin_views.edit_document, name='edit_document'),
     path('dashboard/archive/delete/<int:document_id>/', admin_views.delete_document, name='delete_document'),
