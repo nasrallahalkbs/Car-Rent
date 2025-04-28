@@ -787,7 +787,6 @@ def document_detail(request, document_id):
     return render(request, 'admin/archive/document_detail.html', context)
 
 @login_required
-@login_required
 @admin_required
 def edit_document(request, document_id):
     """تعديل وثيقة"""
@@ -875,12 +874,9 @@ def edit_document(request, document_id):
     return render(request, 'admin/archive/edit_document.html', context)
 
 @login_required
+@admin_required
 def delete_document(request, document_id):
     """حذف وثيقة"""
-    # التحقق من أن المستخدم مسؤول
-    if not request.user.is_admin:
-        messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
-        return redirect('index')
     
     document = get_object_or_404(Document, id=document_id)
     
