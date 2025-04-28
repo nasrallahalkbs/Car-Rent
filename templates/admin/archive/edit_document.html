@@ -193,12 +193,8 @@
                                         
                                         <div class="col-md-6">
                                             <label for="document_type" class="form-label required-label">{% trans "Document Type" %}</label>
-                                            <select class="form-select" id="document_type" name="document_type" required>
-                                                <option value="" disabled>{% trans "Select Document Type" %}</option>
-                                                {% for type_value, type_name in document_types %}
-                                                <option value="{{ type_value }}" {% if document.document_type == type_value %}selected{% endif %}>{{ type_name }}</option>
-                                                {% endfor %}
-                                            </select>
+                                            <input type="hidden" id="document_type" name="document_type" value="{{ document.document_type }}">
+                                            <div class="form-control bg-light">{{ document.get_document_type_display }}</div>
                                         </div>
                                         
                                         <div class="col-md-6">
@@ -208,7 +204,8 @@
                                         
                                         <div class="col-md-6">
                                             <label for="expiry_date" class="form-label">{% trans "Expiry Date" %} <small class="text-muted">({% trans "if applicable" %})</small></label>
-                                            <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="{% if document.expiry_date %}{{ document.expiry_date|date:'Y-m-d' }}{% endif %}">
+                                            <input type="hidden" id="expiry_date" name="expiry_date" value="{% if document.expiry_date %}{{ document.expiry_date|date:'Y-m-d' }}{% endif %}">
+                                            <div class="form-control bg-light">{% if document.expiry_date %}{{ document.expiry_date|date:'Y-m-d' }}{% else %}{% trans "No Expiry Date" %}{% endif %}</div>
                                         </div>
                                         
                                         <div class="col-12">
@@ -331,30 +328,9 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="file-upload-container" id="file-drop-area">
-                                        <div class="file-icon mb-3">
-                                            <i class="fas fa-cloud-upload-alt fa-3x text-primary"></i>
-                                        </div>
-                                        <h5>{% trans "Upload New File" %} <small class="text-muted">({% trans "Optional" %})</small></h5>
-                                        <p class="text-muted">{% trans "Only upload a new file if you want to replace the current one" %}</p>
-                                        <div class="mt-3">
-                                            <button type="button" class="btn btn-primary btn-file">
-                                                <i class="fas fa-file-upload me-2"></i> {% trans "Select New File" %}
-                                                <input type="file" name="file" id="file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.rtf,.csv">
-                                            </button>
-                                        </div>
-                                        <div id="file-preview-container" class="mt-3" style="display: none;">
-                                            <img id="file-preview" class="file-preview" style="display: none;">
-                                            <div id="file-icon" style="display: none;">
-                                                <i class="fas fa-5x"></i>
-                                            </div>
-                                            <div id="file-info" class="file-info"></div>
-                                        </div>
-                                    </div>
-                                    <div class="form-text mt-2">
-                                        {% trans "Supported file types: PDF, Word, Excel, Images, Text files" %}<br>
-                                        {% trans "Maximum file size: 10MB" %}
-                                    </div>
+                                    <!-- تم إزالة خيار تحميل ملف جديد بناءً على طلب المستخدم -->
+                                    <input type="hidden" name="file" id="file-input" value="">
+                                    
                                 </div>
                                 
                                 <!-- زر الحفظ -->
@@ -621,12 +597,8 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label for="document_type" class="form-label">نوع المستند *</label>
-                            <select class="form-select" id="document_type" name="document_type" required>
-                                <option value="">اختر نوع المستند</option>
-                                {% for type_code, type_name in document_type_choices %}
-                                <option value="{{ type_code }}" {% if document.document_type == type_code %}selected{% endif %}>{{ type_name }}</option>
-                                {% endfor %}
-                            </select>
+                            <input type="hidden" id="document_type" name="document_type" value="{{ document.document_type }}">
+                            <div class="form-control bg-light">{{ document.get_document_type_display }}</div>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label for="reference_number" class="form-label">الرقم المرجعي</label>
@@ -663,14 +635,9 @@
                                 </div>
                             </div>
                             
-                            <label for="file" class="form-label">تغيير الملف</label>
-                            <input type="file" class="form-control" id="file" name="file">
-                            <small class="text-muted">اترك هذا الحقل فارغًا للاحتفاظ بالملف الحالي. الملفات المدعومة: PDF, JPG, PNG, DOCX (الحد الأقصى: 10 ميجابايت)</small>
+                            <!-- تم إزالة حقل تحميل الملف الجديد بناءً على طلب المستخدم -->
+                            <input type="hidden" id="file" name="file" value="">
                         </div>
-                    </div>
-                    <div class="document-preview" id="filePreview">
-                        <i class="fas fa-upload fa-3x mb-3"></i>
-                        <p>اسحب الملف هنا أو انقر للاختيار</p>
                     </div>
                 </div>
                 
@@ -684,8 +651,9 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="expiry_date" class="form-label">تاريخ انتهاء الصلاحية</label>
-                            <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="{% if document.expiry_date %}{{ document.expiry_date|date:'Y-m-d' }}{% endif %}">
-                            <small class="text-muted">اتركه فارغاً إذا كان المستند غير محدد المدة</small>
+                            <input type="hidden" id="expiry_date" name="expiry_date" value="{% if document.expiry_date %}{{ document.expiry_date|date:'Y-m-d' }}{% endif %}">
+                            <div class="form-control bg-light">{% if document.expiry_date %}{{ document.expiry_date|date:'Y-m-d' }}{% else %}لا يوجد تاريخ انتهاء{% endif %}</div>
+                            <small class="text-muted">تم تعطيل تعديل تاريخ الانتهاء</small>
                         </div>
                     </div>
                 </div>
