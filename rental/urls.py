@@ -98,6 +98,7 @@ urlpatterns = [
     path('dashboard/archive/document/<int:document_id>/detail/', admin_views.document_detail, name='admin_document_detail'),
     # استخدام الوظائف الحالية للتعديل والحذف 
     path('dashboard/archive/edit/<int:document_id>/', admin_views.edit_document, name='edit_document'),
+    path('dashboard/archive/document/<int:document_id>/edit/', admin_views.admin_archive_edit, name='admin_archive_edit'),
     path('dashboard/archive/delete/<int:document_id>/', admin_views.delete_document, name='delete_document'),
 
     # Diagnostic routes
