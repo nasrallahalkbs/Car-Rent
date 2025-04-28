@@ -19,38 +19,38 @@
         background-color: #fefefe;
         border: 1px solid #f0f0f0;
     }
-    
+
     .folder-item:hover, .file-item:hover {
         background-color: #f8f9fa;
         transform: translateY(-3px);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-    
+
     .folder-icon, .file-icon {
         font-size: 2.5rem;
         margin-bottom: 0.5rem;
     }
-    
+
     .folder-icon {
         color: #ffc107;
     }
-    
+
     .file-icon {
         color: #6c757d;
     }
-    
+
     .file-icon.pdf {
         color: #dc3545;
     }
-    
+
     .file-icon.doc {
         color: #0d6efd;
     }
-    
+
     .file-icon.image {
         color: #28a745;
     }
-    
+
     .action-buttons {
         margin-top: 8px;
         background-color: rgba(248, 249, 250, 0.95);
@@ -59,16 +59,16 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         border-top: 1px solid #f0f0f0;
     }
-    
+
     /* التحسينات الإضافية */
     .folder-item a, .file-item a {
         color: #333;
     }
-    
+
     .folder-item:hover a, .file-item:hover a {
         color: #000;
     }
-    
+
     .btn-sm {
         padding: 0.25rem 0.5rem;
         font-size: 0.75rem;
@@ -84,7 +84,26 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid mb-5">
+    <h1 class="mb-4">{% trans "Document Archive" %}</h1>
+
+    {% if request.session.document_updated %}
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            {% if request.session.updated_document_title %}
+                {% blocktrans with doc_title=request.session.updated_document_title %}
+                تم تحديث المستند "{{ doc_title }}" بنجاح
+                {% endblocktrans %}
+            {% else %}
+                {% trans "تم تحديث المستند بنجاح" %}
+            {% endif %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% with document_updated=None updated_document_title=None %}
+            {% do request.session.update({'document_updated': document_updated, 'updated_document_title': updated_document_title}) %}
+        {% endwith %}
+    {% endif %}
+
     <div class="row">
         <!-- القائمة الجانبية -->
         <div class="col-lg-3">
@@ -109,7 +128,7 @@
                     </ul>
                 </div>
             </div>
-            
+
             <!-- إضافة مجلد/ملف -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -127,7 +146,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- المحتوى الرئيسي -->
         <div class="col-lg-9">
             <div class="card">
@@ -136,7 +155,7 @@
                         <h5 class="mb-0">{% trans "مستكشف الأرشيف" %}</h5>
                     </div>
                 </div>
-                
+
                 <!-- شريط الأدوات -->
                 <div class="bg-light p-2 border-bottom">
                     <div class="d-flex justify-content-between">
@@ -154,7 +173,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- مسار التنقل -->
                 <div class="bg-light p-2 border-bottom">
                     <nav aria-label="breadcrumb">
@@ -173,7 +192,7 @@
                         </ol>
                     </nav>
                 </div>
-                
+
                 <!-- عرض المحتوى -->
                 <div class="card-body">
                     <div class="row">
@@ -199,7 +218,7 @@
                                 </div>
                             {% endfor %}
                         {% endif %}
-                        
+
                         <!-- الملفات -->
                         {% if documents %}
                             {% for document in documents %}
@@ -237,7 +256,7 @@
                                 </div>
                             {% endfor %}
                         {% endif %}
-                        
+
                         <!-- مجلد فارغ -->
                         {% if not subfolders and not documents %}
                             <div class="col-12 text-center py-5">
@@ -324,7 +343,7 @@
 // تنفيذ التهيئة عند تحميل المستند
 document.addEventListener('DOMContentLoaded', function() {
     console.log('تم تحميل الصفحة وتهيئة الأحداث');
-    
+
     // إضافة تأثيرات التحويم على أزرار العمل
     document.querySelectorAll('.action-buttons a').forEach(function(button) {
         button.addEventListener('mouseenter', function() {
