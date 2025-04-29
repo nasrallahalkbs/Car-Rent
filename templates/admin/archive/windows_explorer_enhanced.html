@@ -1102,11 +1102,11 @@
             <i class="fas fa-plus"></i>
         </div>
         <div class="fab-menu" id="fab-menu">
-            <div class="fab-item" data-bs-toggle="modal" data-bs-target="#newFolderModal">
+            <div class="fab-item" id="newFolderBtn">
                 <i class="fas fa-folder-plus"></i>
                 <span>{% trans "إنشاء مجلد" %}</span>
             </div>
-            <div class="fab-item" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
+            <div class="fab-item" id="uploadFileBtn">
                 <i class="fas fa-file-upload"></i>
                 <span>{% trans "رفع ملف" %}</span>
             </div>
@@ -1170,7 +1170,27 @@
                     keyboard: false
                 });
                 
-                // إضافة معالجات أحداث لجميع الأزرار التي تفتح النافذة المنبثقة
+                // إضافة معالج حدث لزر رفع الملف في القائمة العائمة
+                const uploadFileBtn = document.getElementById('uploadFileBtn');
+                if (uploadFileBtn) {
+                    console.log('إضافة معالج حدث لزر رفع الملف بالقائمة العائمة');
+                    uploadFileBtn.addEventListener('click', function(e) {
+                        console.log('⭐ تم النقر على زر رفع الملف!');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // إغلاق القائمة
+                        const fabMenu = document.getElementById('fab-menu');
+                        if (fabMenu) {
+                            fabMenu.classList.remove('open');
+                        }
+                        
+                        // عرض النافذة المنبثقة
+                        window.uploadModalInstance.show();
+                    });
+                }
+                
+                // إضافة معالجات أحداث لجميع الأزرار الأخرى التي تفتح النافذة المنبثقة
                 document.querySelectorAll('[data-bs-target="#uploadFileModal"]').forEach(function(button) {
                     console.log('إضافة معالج حدث لزر رفع الملف', button);
                     button.addEventListener('click', function(e) {
@@ -1189,7 +1209,27 @@
                     backdrop: 'static'
                 });
                 
-                // إضافة معالجات أحداث لجميع الأزرار التي تفتح النافذة المنبثقة
+                // إضافة معالج حدث لزر إنشاء المجلد في القائمة العائمة
+                const newFolderBtn = document.getElementById('newFolderBtn');
+                if (newFolderBtn) {
+                    console.log('إضافة معالج حدث لزر إنشاء المجلد بالقائمة العائمة');
+                    newFolderBtn.addEventListener('click', function(e) {
+                        console.log('⭐ تم النقر على زر إنشاء المجلد!');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // إغلاق القائمة
+                        const fabMenu = document.getElementById('fab-menu');
+                        if (fabMenu) {
+                            fabMenu.classList.remove('open');
+                        }
+                        
+                        // عرض النافذة المنبثقة
+                        window.folderModalInstance.show();
+                    });
+                }
+                
+                // إضافة معالجات أحداث لجميع الأزرار الأخرى التي تفتح النافذة المنبثقة
                 document.querySelectorAll('[data-bs-target="#newFolderModal"]').forEach(function(button) {
                     console.log('إضافة معالج حدث لزر إنشاء المجلد', button);
                     button.addEventListener('click', function(e) {
