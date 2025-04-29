@@ -7,6 +7,7 @@ from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
+from django.db import transaction
 from django.utils.translation import get_language, gettext as _
 from .models import User, Car, Reservation, CartItem, SiteSettings, Document, ArchiveFolder
 from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm, SiteSettingsForm
@@ -2454,19 +2455,35 @@ def admin_archive_view(request, document_id):
             content_type = document.file_type or 'application/octet-stream'
             print(f"📄 نوع المحتوى: {content_type}")
             
+            # للصور والملفات النصية والـ PDF، استخدم العرض المباشر
+            if (content_type.startswith('image/') or
+                content_type.startswith('text/') or
+                content_type == 'application/pdf'):
+                disposition = 'inline'
+            else:
+                # للملفات الأخرى، استخدم التنزيل
+                disposition = 'attachment'
+            
             # إنشاء استجابة HttpResponse بدلاً من FileResponse
             response = HttpResponse(document.file_content, content_type=content_type)
             
             # تعيين اسم الملف إذا كان متوفرًا
             if document.file_name:
-                response['Content-Disposition'] = f'inline; filename="{document.file_name}"'
+                response['Content-Disposition'] = f'{disposition}; filename="{document.file_name}"'
             else:
-                response['Content-Disposition'] = 'inline'
+                response['Content-Disposition'] = disposition
+            
+            # إضافة رأس التخزين المؤقت
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
             
             print(f"✅ تم إنشاء استجابة صحيحة للمستند {document.id}")
             return response
         except Exception as e:
             print(f"❌ خطأ في عرض المستند من قاعدة البيانات: {str(e)}")
+            import traceback
+            print(f"التفاصيل: {traceback.format_exc()}")
             messages.error(request, f"حدث خطأ أثناء عرض الملف: {str(e)}")
             return redirect('admin_archive_detail', document_id=document_id)
     
@@ -2493,15 +2510,31 @@ def admin_archive_view(request, document_id):
             
             print(f"📄 نوع المحتوى: {content_type}")
             
+            # للصور والملفات النصية والـ PDF، استخدم العرض المباشر
+            if (content_type.startswith('image/') or
+                content_type.startswith('text/') or
+                content_type == 'application/pdf'):
+                disposition = 'inline'
+            else:
+                # للملفات الأخرى، استخدم التنزيل
+                disposition = 'attachment'
+            
             # إرجاع استجابة FileResponse
             response = FileResponse(open(file_path, 'rb'), content_type=content_type)
-            response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
+            response['Content-Disposition'] = f'{disposition}; filename="{os.path.basename(file_path)}"'
+            
+            # إضافة رأس التخزين المؤقت
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
             
             print(f"✅ تم إنشاء استجابة FileResponse للمستند {document.id}")
             return response
         
         except Exception as e:
             print(f"❌ خطأ في عرض المستند من الملف: {str(e)}")
+            import traceback
+            print(f"التفاصيل: {traceback.format_exc()}")
             messages.error(request, f"حدث خطأ أثناء عرض الملف: {str(e)}")
             return redirect('admin_archive_detail', document_id=document_id)
     else:
@@ -3412,7 +3445,19 @@ def admin_archive_upload(request):
                 
                 # تعطيل الإشارات بشكل صريح وحفظ المستند (منع سريان إشارات منع المستندات التلقائية)
                 setattr(document, '_ignore_auto_document_signal', True)
-                document.save()
+                print(f"DEBUG - تم تعيين علامة تجاوز منع المستندات التلقائية: {getattr(document, '_ignore_auto_document_signal', False)}")
+                
+                with transaction.atomic():
+                    # استخدام save(force_insert=True) لإجبار إنشاء سجل جديد
+                    document.save(force_insert=True)
+                    
+                    # التحقق من نجاح الحفظ
+                    print(f"DEBUG - تم حفظ المستند بنجاح، التحقق من قاعدة البيانات...")
+                    verification = Document.objects.filter(id=document.id).exists()
+                    print(f"DEBUG - نتيجة التحقق: {verification}")
+                    
+                    if not verification:
+                        print("WARNING - لم يتم العثور على المستند في قاعدة البيانات بعد الحفظ!")
                 
                 print(f"DEBUG - تم حفظ المستند بنجاح! ID: {document.id}, العنوان: {document.title}")
             except Exception as e:
