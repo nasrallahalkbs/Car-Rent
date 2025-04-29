@@ -29,7 +29,7 @@ import uuid
 @login_required
 @admin_required
 def direct_sql_upload_document(request):
-    """وظيفة رفع ملفات باستخدام SQL مباشرة لتجاوز نظام منع المستندات التلقائية"""
+    """وظيفة رفع ملفات بطريقة مباشرة ومحسنة لتجاوز مشكلة الرفض التلقائي"""
     if request.method != 'POST':
         # عرض نموذج الرفع فقط
         folders = ArchiveFolder.objects.all().order_by('name')
@@ -40,7 +40,7 @@ def direct_sql_upload_document(request):
         }
         return render(request, 'admin/archive/direct_upload_form.html', context)
     
-    # مسار قاعدة البيانات - مطلوب للتحميل
+    # التحقق من وجود ملف
     if not request.FILES.get('file'):
         messages.error(request, "يرجى تحديد ملف للتحميل")
         return redirect('admin_archive')
@@ -65,78 +65,53 @@ def direct_sql_upload_document(request):
     file_type = uploaded_file.content_type
     
     try:
-        # استخدام SQL مباشرة لإدراج المستند
-        with transaction.atomic():
-            # حفظ الملف في نظام الملفات
-            media_dir = os.path.join(settings.MEDIA_ROOT, 'documents')
-            os.makedirs(media_dir, exist_ok=True)
-            
-            # إنشاء اسم فريد للملف
-            unique_id = uuid.uuid4().hex[:8]
-            unique_filename = f"direct_upload_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{unique_id}_{file_name}"
-            destination_path = os.path.join(media_dir, unique_filename)
-            
-            # حفظ الملف
-            with open(destination_path, 'wb') as destination:
-                for chunk in uploaded_file.chunks():
-                    destination.write(chunk)
-            
-            # المسار النسبي للملف
-            relative_path = os.path.relpath(destination_path, settings.MEDIA_ROOT)
-            
-            # إدراج البيانات في قاعدة البيانات
-            with connection.cursor() as cursor:
-                # الحصول على معرف جديد
-                cursor.execute("SELECT MAX(id) FROM rental_document")
-                max_id = cursor.fetchone()[0]
-                new_id = 1 if max_id is None else max_id + 1
-                
-                # إنشاء استعلام الإدراج
-                query = '''
-                INSERT INTO rental_document 
-                (id, title, description, document_type, related_to, folder_id, 
-                file, file_name, file_type, file_size, 
-                created_at, updated_at, is_archived, is_auto_created, 
-                document_date, expiry_date, added_by_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                '''
-                
-                # تحضير القيم
-                now = datetime.datetime.now()
-                
-                # معالجة التاريخ
-                document_date = now.date()
-                expiry_date_value = None
-                if expiry_date:
-                    try:
-                        expiry_date_value = datetime.datetime.strptime(expiry_date, '%Y-%m-%d').date()
-                    except ValueError:
-                        # في حالة الخطأ، نستخدم None
-                        pass
-                
-                # تنفيذ الاستعلام
-                cursor.execute(query, [
-                    new_id,
-                    title,
-                    description,
-                    document_type,
-                    related_to,
-                    folder_id if folder_id else None,
-                    relative_path,
-                    file_name,
-                    file_type,
-                    file_size,
-                    now,
-                    now,
-                    True,  # is_archived
-                    False,  # is_auto_created
-                    document_date,
-                    expiry_date_value,
-                    request.user.id  # added_by_id
-                ])
+        # تحويل تاريخ انتهاء الصلاحية إذا تم إدخاله
+        expiry_date_value = None
+        if expiry_date:
+            try:
+                expiry_date_value = datetime.datetime.strptime(expiry_date, '%Y-%m-%d').date()
+            except ValueError:
+                pass
         
-        # عرض رسالة نجاح
-        messages.success(request, f"تم رفع المستند '{title}' بنجاح باستخدام الطريقة المباشرة")
+        # استخدام نموذج Django مباشرة مع تجاوز الإشارات
+        with transaction.atomic():
+            # إنشاء مسار فريد للملف
+            unique_id = uuid.uuid4().hex[:8]
+            current_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+            unique_filename = f"direct_upload_{current_time}_{unique_id}_{file_name}"
+            
+            # إنشاء كائن المستند مباشرة
+            document = Document()
+            document.title = title
+            document.description = description
+            document.document_type = document_type
+            document.related_to = related_to
+            document.folder_id = folder_id if folder_id else None
+            document.file = uploaded_file  # استخدام ملف النموذج مباشرة
+            document.file_name = file_name
+            document.file_type = file_type
+            document.file_size = file_size
+            document.is_archived = True
+            document.is_auto_created = False
+            document.document_date = datetime.datetime.now().date()
+            document.expiry_date = expiry_date_value
+            document.added_by = request.user
+            
+            # تعطيل إشارات منع المستندات التلقائية مؤقتًا
+            from django.db.models.signals import pre_save
+            from rental.signals import prevent_auto_document_creation
+            
+            # فصل الإشارة مؤقتًا
+            pre_save.disconnect(prevent_auto_document_creation, sender=Document)
+            
+            try:
+                # حفظ المستند بدون تدخل الإشارة
+                document.save()
+                messages.success(request, f"تم رفع المستند '{title}' بنجاح باستخدام الطريقة المباشرة")
+                print(f"✅ تم رفع المستند بنجاح: {title}, الحجم: {file_size}, النوع: {file_type}")
+            finally:
+                # إعادة توصيل الإشارة بعد الانتهاء
+                pre_save.connect(prevent_auto_document_creation, sender=Document)
         
         # إعادة التوجيه
         if folder_id:
@@ -145,8 +120,10 @@ def direct_sql_upload_document(request):
             return redirect('admin_archive')
             
     except Exception as e:
-        # تسجيل الخطأ للتصحيح
-        print(f"خطأ في رفع المستند بالطريقة المباشرة: {str(e)}")
+        # تسجيل الخطأ للتصحيح مع تفاصيل أكثر
+        print(f"🔴 خطأ في رفع المستند بالطريقة المباشرة: {str(e)}")
+        print(f"🔴 نوع الخطأ: {type(e).__name__}")
+        print(f"🔴 تفاصيل الملف: الاسم={file_name}, الحجم={file_size}, النوع={file_type}")
         print(traceback.format_exc())
         
         # عرض رسالة خطأ للمستخدم
@@ -171,7 +148,7 @@ def create_upload_template():
         <div class="card-body">
             <div class="alert alert-info">
                 <i class="fas fa-info-circle"></i>
-                هذه الطريقة تستخدم SQL مباشرة لتجاوز آلية منع المستندات التلقائية
+                هذه الطريقة تتجاوز آلية منع المستندات التلقائية عن طريق فصل الإشارات مؤقتاً أثناء حفظ المستند
             </div>
             
             <form method="post" enctype="multipart/form-data" action="{% url 'direct_sql_upload_document' %}">
@@ -292,7 +269,7 @@ def add_url_route():
 
 def add_link_to_archive_page():
     """إضافة رابط في صفحة الأرشيف للوصول إلى وظيفة الرفع المباشر"""
-    archive_path = os.path.join('templates', 'admin', 'archive', 'archive.html')
+    archive_path = os.path.join('templates', 'admin', 'archive', 'archive_main.html')
     if not os.path.exists(archive_path):
         print(f"⚠️ قالب {archive_path} غير موجود")
         return
