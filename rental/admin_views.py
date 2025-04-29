@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .views import get_template_by_language
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+# استيراد وظيفة الرفع المباشر
+from .direct_sql_upload import direct_sql_upload
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
@@ -1572,7 +1574,7 @@ def get_user_reservations(request, user_id):
 @login_required
 @admin_required
 def admin_archive(request):
-    """عرض الأرشيف الإلكتروني بتصميم بسيط"""
+    """عرض الأرشيف الإلكتروني بالتصميم المحدث"""
     from django.utils.translation import get_language
     from django.shortcuts import redirect
     current_language = get_language()
@@ -2028,8 +2030,8 @@ def admin_archive(request):
         print(f"      - file_name: {doc.file_name if hasattr(doc, 'file_name') else 'غير موجود'}")
         print(f"      - file_type: {doc.file_type if hasattr(doc, 'file_type') else 'غير موجود'}")
         
-    # استخدام قالب الأرشيف البسيط والمباشر
-    return render(request, 'admin/archive/direct_fix.html', context)
+    # استخدام القالب المحدث
+    return render(request, 'admin/archive/direct_fix_v2.html', context)
 
 def admin_archive_add(request):
     """صفحة إضافة مستند جديد للأرشيف"""

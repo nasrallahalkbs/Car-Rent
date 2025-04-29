@@ -101,7 +101,7 @@ urlpatterns = [
     # استخدام دالة الرفع المحسنة بدلاً من الأصلية
     # المسار القديم محدث ليستخدم دالة الرفع المباشر الجديدة
     path('dashboard/archive/upload/', admin_views.admin_archive_upload, name='admin_archive_upload'),
-    
+
     # استدعاء دالة الرفع المباشر المطورة من ملف upload_direct.py
     path('dashboard/archive/upload-reliable/', upload_direct_view, name='admin_archive_upload_reliable'),
     path('dashboard/archive/guaranteed-upload/', guaranteed_upload_view, name='guaranteed_upload'),
@@ -129,4 +129,11 @@ urlpatterns = [
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
     path('csrf-debug-page/', csrf_debug_page, name='csrf_debug_page'),
+
+    # إضافة الإصلاح البسيط كخيار إضافي
+    path('dashboard/archive/simple-upload/', admin_views.simple_upload_form, name='simple_upload_form'),
+    path('dashboard/archive/simple-upload/process/', admin_views.simple_upload, name='simple_upload'),
+
+    # إضافة مسار الرفع المباشر عبر SQL
+    path('dashboard/archive/direct-sql-upload/', admin_views.direct_sql_upload, name='direct_sql_upload'),
 ]
