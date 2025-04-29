@@ -2287,6 +2287,11 @@ def admin_archive_edit(request, document_id):
         old_title = Document.objects.get(id=document_id).title
         old_type = Document.objects.get(id=document_id).document_type
         
+        # تعيين علامة تجاوز منع المستندات التلقائية
+        # هذه هي المشكلة الرئيسية - نحتاج إلى تعيين هذه العلامة لتجاوز إشارة pre_save
+        document._ignore_auto_document_signal = True
+        print(f"DEBUG: تم تعيين علامة تجاوز منع المستندات التلقائية: {document._ignore_auto_document_signal}")
+        
         document.save()
         
         # التحقق من نجاح الحفظ
