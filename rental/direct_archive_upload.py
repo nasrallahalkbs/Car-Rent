@@ -22,6 +22,10 @@ def super_direct_upload(request):
     وظيفة رفع مباشرة تتجاوز جميع آليات منع المستندات التلقائية
     """
     print("\n=== بدء عملية رفع مباشر للملفات (متجاوز للحماية) ===")
+    print(f"طريقة الطلب: {request.method}")
+    print(f"المسار: {request.path}")
+    print(f"البيانات المرسلة: {request.POST.keys()}")
+    print(f"الملفات المرسلة: {request.FILES.keys() if hasattr(request, 'FILES') else 'لا يوجد ملفات'}")
     
     if request.method != 'POST':
         messages.error(request, "طريقة طلب غير صالحة")
