@@ -43,8 +43,23 @@ def prevent_auto_document_creation_on_folder_creation(sender, instance, **kwargs
 
 @receiver(pre_save, sender=Document)
 def prevent_auto_document_creation(sender, instance, **kwargs):
-    """منع إنشاء المستندات التلقائية المرتبطة بمجلدات جديدة"""
+    """منع إنشاء المستندات التلقائية المرتبطة بمجلدات جديدة - مع سماح للمستندات اليدوية"""
     global _new_folders
+    
+    # التحقق من علامة التجاوز على المستند
+    if hasattr(instance, '_ignore_auto_document_signal') and instance._ignore_auto_document_signal:
+        print(f"✓ [signals]: السماح بالمستند لأنه يحمل علامة تجاوز الحماية")
+        return
+    
+    # السماح بالمستندات المنشأة من واجهة المستخدم
+    if hasattr(instance, 'file') and instance.file and not str(instance.file).startswith('djangotest'):
+        print(f"✓ [signals]: السماح بالمستند لأنه يحتوي على ملف صالح")
+        return
+    
+    # السماح بالمستندات ذات العناوين المخصصة
+    if hasattr(instance, 'title') and instance.title and instance.title != "بدون عنوان":
+        print(f"✓ [signals]: السماح بالمستند لأنه يحتوي على عنوان مخصص")
+        return
     
     # حالة المستند الجديد
     if not instance.pk:
