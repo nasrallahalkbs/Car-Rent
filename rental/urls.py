@@ -21,8 +21,8 @@ urlpatterns = [
     path('ar/dashboard/archive/direct_upload/', direct_sql_upload_document, name='direct_sql_upload_document'),
     path('ar/dashboard/archive/simple_upload/', very_simple_upload, name='very_simple_upload'),
     path('ar/dashboard/archive/super_upload/', super_upload, name='super_upload'),
-    # إضافة مسار الرفع للغة العربية
-    path('ar/dashboard/archive/upload/', admin_views.admin_archive_upload, name='admin_archive_upload_ar'),
+    # إضافة مسار الرفع للغة العربية باستخدام دالة الرفع الموثوقة الجديدة
+    path('ar/dashboard/archive/upload/', super_reliable_upload, name='admin_archive_upload_ar'),
     # User-facing views
     path('', views.index, name='index'),
     path('register/', views.register_view, name='register'),
@@ -102,8 +102,8 @@ urlpatterns = [
     path('dashboard/archive/<int:folder_id>/<str:action>/', admin_archive_windows, name='admin_archive_action'),
     path('dashboard/archive/<str:action>/', admin_archive_windows, name='admin_archive_action_only'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
-    # استخدام دالة الرفع المباشر الجديدة التي تتجاوز أي حماية
-    path('dashboard/archive/upload/', super_direct_upload, name='admin_archive_upload'),
+    # استخدام دالة الرفع الموثوقة الجديدة المطورة
+    path('dashboard/archive/upload/', super_reliable_upload, name='admin_archive_upload'),
 
     # استدعاء دالة الرفع المباشر المطورة من ملف upload_direct.py
     path('dashboard/archive/upload-reliable/', upload_direct_view, name='admin_archive_upload_reliable'),
