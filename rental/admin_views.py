@@ -2190,6 +2190,10 @@ def admin_archive_edit(request, document_id):
     document = get_object_or_404(Document, id=document_id)
     
     if request.method == 'POST':
+        # طباعة البيانات المستلمة للتصحيح
+        print(f"DEBUG: استلام بيانات POST لتعديل المستند {document_id}")
+        print(f"DEBUG: محتويات POST: {request.POST}")
+        
         # الحصول على بيانات النموذج
         title = request.POST.get('title')
         document_type = request.POST.get('document_type')
@@ -2199,6 +2203,8 @@ def admin_archive_edit(request, document_id):
         related_to = request.POST.get('related_to')
         related_id = request.POST.get('related_id', '')
         tags = request.POST.get('tags', '')
+        
+        print(f"DEBUG: القيم المستخرجة - العنوان: {title}, النوع: {document_type}, التاريخ: {document_date_str}, الارتباط: {related_to}")
         
         # التحقق من الحقول الإلزامية
         if not title or not document_type or not document_date_str or not related_to:
@@ -2274,8 +2280,19 @@ def admin_archive_edit(request, document_id):
             except User.DoesNotExist:
                 pass
         
-        # حفظ المستند
+        # حفظ المستند - مع إضافة تسجيل تصحيح إضافي
+        print(f"DEBUG: جاري حفظ المستند بالمعلومات المحدثة - العنوان: {document.title}, النوع: {document.document_type}")
+        
+        # حفظ بيانات المستند الحالية قبل الحفظ
+        old_title = Document.objects.get(id=document_id).title
+        old_type = Document.objects.get(id=document_id).document_type
+        
         document.save()
+        
+        # التحقق من نجاح الحفظ
+        updated_doc = Document.objects.get(id=document_id)
+        print(f"DEBUG: تم حفظ المستند - البيانات القديمة: العنوان: {old_title}, النوع: {old_type}")
+        print(f"DEBUG: تم حفظ المستند - البيانات الجديدة: العنوان: {updated_doc.title}, النوع: {updated_doc.document_type}")
         
         messages.success(request, f"تم تحديث المستند '{title}' بنجاح")
         return redirect('admin_archive_detail', document_id=document_id)
