@@ -1,0 +1,245 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "رفع مستند جديد" %}{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    .upload-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .upload-header {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .upload-header h2 {
+        color: #343a40;
+    }
+    
+    .upload-form {
+        padding: 20px 0;
+    }
+    
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .upload-status {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 5px;
+    }
+    
+    .upload-status.success {
+        background-color: rgba(40, 167, 69, 0.1);
+        border: 1px solid rgba(40, 167, 69, 0.2);
+        color: #28a745;
+    }
+    
+    .upload-status.error {
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    
+    .file-preview {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        display: none;
+    }
+    
+    .preview-image {
+        max-width: 100%;
+        max-height: 200px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="upload-container">
+        <div class="upload-header">
+            <h2><i class="fas fa-file-upload"></i> {% trans "رفع مستند جديد للأرشيف" %}</h2>
+            <p class="text-muted">{% trans "استخدم هذا النموذج لرفع ملف جديد إلى الأرشيف الإلكتروني" %}</p>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="upload-status {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="upload-form">
+            <form method="post" action="{% url 'admin_archive_upload_direct' %}" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+                
+                {% if folder_id %}
+                    <input type="hidden" name="folder" value="{{ folder_id }}">
+                {% endif %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="title" class="form-label fw-bold">{% trans "عنوان المستند" %} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="description" class="form-label fw-bold">{% trans "وصف المستند" %}</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="document_type" class="form-label fw-bold">{% trans "نوع المستند" %}</label>
+                        <select class="form-select" id="document_type" name="document_type">
+                            <option value="other" selected>{% trans "آخر" %}</option>
+                            <option value="contract">{% trans "عقد" %}</option>
+                            <option value="receipt">{% trans "إيصال" %}</option>
+                            <option value="official_document">{% trans "وثيقة رسمية" %}</option>
+                            <option value="custody">{% trans "عهدة" %}</option>
+                            <option value="custody_release">{% trans "إخلاء عهدة" %}</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="folder" class="form-label fw-bold">{% trans "المجلد" %}</label>
+                        <select class="form-select" id="folder" name="folder">
+                            <option value="">{% trans "المجلد الرئيسي" %}</option>
+                            {% for folder in folders %}
+                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <label for="file" class="form-label fw-bold">{% trans "الملف" %} <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                        <div id="filePreview" class="file-preview mt-2"></div>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="_ignore_auto_document_signal" value="true">
+                
+                <div class="form-actions">
+                    <a href="{% url 'admin_archive' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "العودة إلى الأرشيف" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-cloud-upload-alt me-1"></i> {% trans "رفع المستند" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('file');
+        const filePreview = document.getElementById('filePreview');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        console.log('تم تحميل صفحة رفع المستندات');
+        
+        // عرض معاينة الملف المحدد
+        fileInput.addEventListener('change', function() {
+            console.log('تم تحديد ملف:', this.files[0]?.name);
+            
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                filePreview.style.display = 'block';
+                
+                // إظهار معلومات الملف
+                let previewContent = `
+                    <div class="alert alert-info">
+                        <strong><i class="fas fa-file me-1"></i> ${file.name}</strong>
+                        <div class="text-muted mt-1">الحجم: ${(file.size / 1024).toFixed(2)} كيلوبايت</div>
+                    </div>
+                `;
+                
+                // إظهار معاينة للصور
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewContent += `<img src="${e.target.result}" class="preview-image mt-2 rounded">`;
+                        filePreview.innerHTML = previewContent;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    // للأنواع الأخرى، إظهار أيقونة مناسبة
+                    let iconClass = 'fas fa-file';
+                    
+                    if (file.type.includes('pdf')) {
+                        iconClass = 'fas fa-file-pdf text-danger';
+                    } else if (file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                        iconClass = 'fas fa-file-word text-primary';
+                    } else if (file.type.includes('excel') || file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
+                        iconClass = 'fas fa-file-excel text-success';
+                    } else if (file.type.includes('powerpoint') || file.name.endsWith('.ppt') || file.name.endsWith('.pptx')) {
+                        iconClass = 'fas fa-file-powerpoint text-warning';
+                    }
+                    
+                    previewContent += `<div class="text-center"><i class="${iconClass}" style="font-size: 48px;"></i></div>`;
+                    filePreview.innerHTML = previewContent;
+                }
+            } else {
+                filePreview.style.display = 'none';
+                filePreview.innerHTML = '';
+            }
+        });
+        
+        // معالجة تقديم النموذج
+        form.addEventListener('submit', function(event) {
+            console.log('تم تقديم النموذج');
+            
+            const title = document.getElementById('title').value.trim();
+            
+            if (!title) {
+                event.preventDefault();
+                alert('يرجى إدخال عنوان للمستند');
+                return false;
+            }
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                event.preventDefault();
+                alert('يرجى تحديد ملف للرفع');
+                return false;
+            }
+            
+            // إظهار حالة الرفع
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جاري الرفع...';
+            submitBtn.disabled = true;
+            
+            console.log('بدء عملية رفع المستند، اسم الملف:', fileInput.files[0].name);
+            return true;
+        });
+    });
+</script>
+{% endblock %}

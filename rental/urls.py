@@ -3,6 +3,7 @@ from simple_upload_fix import very_simple_upload
 from super_upload_without_signal import super_upload
 from .fixed_upload import super_reliable_upload
 from ultimate_upload_solution import ultimate_upload
+from .upload_direct import upload_direct_view
 
 
 from django.urls import path
@@ -96,7 +97,11 @@ urlpatterns = [
     path('dashboard/archive/<str:action>/', admin_archive_windows, name='admin_archive_action_only'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
     # استخدام دالة الرفع المحسنة بدلاً من الأصلية
-    path('dashboard/archive/upload/', super_reliable_upload, name='admin_archive_upload'),
+    # المسار القديم محدث ليستخدم دالة الرفع المباشر الجديدة
+    path('dashboard/archive/upload/', admin_views.admin_archive_upload, name='admin_archive_upload'),
+    
+    # استدعاء دالة الرفع المباشر المطورة من ملف upload_direct.py
+    path('dashboard/archive/upload-reliable/', upload_direct_view, name='admin_archive_upload_reliable'),
     path('dashboard/archive/ultimate-upload/', ultimate_upload, name='ultimate_upload'),
     path('dashboard/archive/upload-form/', admin_views.admin_archive_upload_form, name='admin_archive_upload_form'),
     path('dashboard/archive/folder/add/', admin_views.admin_archive_folder_add, name='admin_archive_folder_add'),
