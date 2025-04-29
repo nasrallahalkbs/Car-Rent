@@ -1,5 +1,7 @@
 from direct_upload_implementation import direct_sql_upload_document
 from simple_upload_fix import very_simple_upload
+from super_upload_without_signal import super_upload
+
 
 from django.urls import path
 from django.shortcuts import render
@@ -11,6 +13,7 @@ from .csrf_debug import csrf_debug_view, csrf_debug_page
 urlpatterns = [
     path('ar/dashboard/archive/direct_upload/', direct_sql_upload_document, name='direct_sql_upload_document'),
     path('ar/dashboard/archive/simple_upload/', very_simple_upload, name='very_simple_upload'),
+    path('ar/dashboard/archive/super_upload/', super_upload, name='super_upload'),
     # User-facing views
     path('', views.index, name='index'),
     path('register/', views.register_view, name='register'),
