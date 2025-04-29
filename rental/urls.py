@@ -1,6 +1,7 @@
 from direct_upload_implementation import direct_sql_upload_document
 from simple_upload_fix import very_simple_upload
 from super_upload_without_signal import super_upload
+from .fixed_upload import super_reliable_upload
 
 
 from django.urls import path
@@ -93,7 +94,8 @@ urlpatterns = [
     path('dashboard/archive/<int:folder_id>/<str:action>/', admin_archive_windows, name='admin_archive_action'),
     path('dashboard/archive/<str:action>/', admin_archive_windows, name='admin_archive_action_only'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
-    path('dashboard/archive/upload/', admin_views.admin_archive_upload, name='admin_archive_upload'),
+    # استخدام دالة الرفع المحسنة بدلاً من الأصلية
+    path('dashboard/archive/upload/', super_reliable_upload, name='admin_archive_upload'),
     path('dashboard/archive/upload-form/', admin_views.admin_archive_upload_form, name='admin_archive_upload_form'),
     path('dashboard/archive/folder/add/', admin_views.admin_archive_folder_add, name='admin_archive_folder_add'),
     path('dashboard/archive/folder/<int:folder_id>/edit/', admin_views.edit_folder, name='admin_archive_folder_edit'),
