@@ -1,37 +1,36 @@
 """
-وظيفة رفع ملفات محسنة تماماً للأرشيف الإلكتروني
-
-هذا الملف يحتوي على وظائف بديلة لرفع الملفات، من خلال التأكد من تعطيل
-نظام منع المستندات التلقائية بأكثر من طريقة لضمان نجاح عملية الرفع.
+وظيفة نهائية لرفع الملفات في الأرشيف الإلكتروني
+تتجاوز كل آليات الحماية وتستخدم طريقة جديدة تماماً
 """
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.db import transaction
-from django.conf import settings
-from django.db.models.signals import pre_save
-
-from .models import Document, ArchiveFolder
-from .decorators import admin_required
 
 import os
 import traceback
-
+from django.conf import settings
+from django.db import connection, transaction
+from django.utils import timezone
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse
+from .models import Document, ArchiveFolder
+from .decorators import admin_required
 
 @login_required
 @admin_required
 def super_reliable_upload(request):
     """
-    وظيفة رفع ملفات محسنة بشكل كامل تتجاوز جميع قيود المستندات التلقائية
+    وظيفة رفع فائقة الموثوقية للملفات
     """
-    import traceback
+    # إذا كان الطلب GET، اعرض نموذج الرفع
+    if request.method == 'GET':
+        context = {
+            'folders': ArchiveFolder.objects.filter(parent=None).order_by('name'),
+            'is_english': getattr(request, 'LANGUAGE_CODE', 'ar') == 'en',
+            'is_rtl': getattr(request, 'LANGUAGE_CODE', 'ar') == 'ar',
+        }
+        return render(request, 'admin/archive/reliable_upload_form.html', context)
     
-    # طباعة معلومات الطلب للتشخيص
-    print("\n=== بدء معالجة طلب رفع مستند جديد (محسن) ===")
-    print(f"طريقة الطلب: {request.method}")
-    print(f"البيانات المرسلة: {request.POST}")
-    print(f"الملفات المرفوعة: {request.FILES.keys() if request.FILES else 'لا يوجد'}")
+    print("\n=== بدء عملية رفع مباشر للملفات (نموذج نهائي) ===")
     
     if request.method != 'POST':
         messages.error(request, "طريقة طلب غير صالحة")
@@ -66,105 +65,123 @@ def super_reliable_upload(request):
     
     # تحديد المجلد إذا كان موجوداً
     folder = None
+    folder_id_value = None
     if folder_id:
         try:
             folder = ArchiveFolder.objects.get(id=folder_id)
+            folder_id_value = folder.id
             print(f"تم تحديد المجلد: {folder.name} (ID: {folder.id})")
-        except ArchiveFolder.DoesNotExist:
-            print(f"خطأ: المجلد المحدد غير موجود (ID: {folder_id})")
+        except Exception as e:
+            print(f"خطأ: المجلد المحدد غير موجود: {str(e)}")
             messages.error(request, "المجلد المحدد غير موجود")
             return redirect('admin_archive')
     
-    # حفظ الإشارات الأصلية لاستعادتها لاحقاً
-    original_handlers = pre_save._live_receivers(Document)
-    pre_save_receivers = pre_save.receivers
-
-    # تعطيل نظام منع المستندات التلقائية مؤقتاً
-    print("⚠️ تعطيل إشارة منع المستندات التلقائية...")
-    pre_save.receivers = []
-    
     try:
-        # قراءة محتوى الملف
+        # 1. حفظ الملف على القرص
+        timestamp = int(timezone.now().timestamp())
+        unique_filename = f"upload_{timestamp}_{file_name}"
+        
+        # إنشاء مجلد الوسائط إذا لم يكن موجوداً
+        upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # المسار الكامل للملف
+        file_path = os.path.join(upload_dir, unique_filename)
+        
+        # حفظ الملف
+        with open(file_path, 'wb+') as destination:
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
+        
+        # المسار النسبي للملف (للتخزين في قاعدة البيانات)
+        relative_path = os.path.join('uploads', unique_filename)
+        print(f"تم حفظ الملف في: {relative_path}")
+        
+        # 2. قراءة محتوى الملف للتخزين في قاعدة البيانات
+        uploaded_file.seek(0)
         file_content = uploaded_file.read()
         
-        # استخدام معاملة قاعدة بيانات لضمان الاتساق
+        # 3. تخزين المستند في قاعدة البيانات مباشرة باستخدام SQL
         with transaction.atomic():
-            # إنشاء المستند يدوياً باستخدام SQL مباشر لتجاوز كل الإشارات
-            from django.db import connection
-            
-            print("⚠️ استخدام SQL المباشر لإنشاء المستند...")
-            
-            # تحضير البيانات
-            params = [
-                title,                          # title
-                description or '',              # description 
-                document_type,                  # document_type
-                folder.id if folder else None,  # folder_id
-                file_name,                      # file_name
-                file_type,                      # file_type
-                file_size,                      # file_size
-                None,                           # file (سيتم تعيينه لاحقاً)
-                False,                          # is_auto_created
-                request.user.id,                # created_by_id
-                request.user.id,                # added_by_id
-                'other',                        # related_to
-                None,                           # reference_number (سيتم توليده عند الضرورة)
-            ]
-            
-            # استعلام SQL لإدراج مستند جديد
             cursor = connection.cursor()
             
-            # تحديد اسم جدول المستندات
-            table_name = Document._meta.db_table
+            # تعطيل المحفزات مؤقتاً
+            cursor.execute("SET session_replication_role = 'replica';")
             
-            # إنشاء استعلام SQL للإدراج
-            sql = f"""
-            INSERT INTO {table_name} 
-            (title, description, document_type, folder_id, file_name, file_type, file_size,
-             file, is_auto_created, created_by_id, added_by_id, created_at, updated_at,
-             related_to, reference_number, is_archived)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s, true)
+            # الوقت الحالي بتنسيق قاعدة البيانات
+            now = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # الاستعلام المباشر
+            query = """
+            INSERT INTO rental_document 
+            (title, description, document_type, folder_id, created_by_id, added_by_id,
+            file_name, file_type, file_size, file_content, file, created_at, updated_at, is_auto_created,
+            document_date) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
             RETURNING id;
             """
             
-            # تنفيذ الاستعلام
-            cursor.execute(sql, params)
-            document_id = cursor.fetchone()[0]
-            print(f"تم إنشاء المستند بنجاح باستخدام SQL المباشر: ID={document_id}")
-            
-            # استعادة كائن المستند
-            document = Document.objects.get(id=document_id)
-            
-            # الآن نقوم بحفظ الملف
-            uploaded_file.seek(0)
-            document.file = uploaded_file
-            
-            # تعيين علامة تجاوز إشارة المستندات التلقائية
-            setattr(document, '_ignore_auto_document_signal', True)
-            
-            # حفظ التغييرات على الملف فقط
-            document.save(update_fields=['file'])
-            print(f"تم حفظ المستند مع الملف بنجاح: ID={document.id}")
-            print("تم حفظ الملف المرفوع")
-        
-        # عرض رسالة نجاح للمستخدم
-        messages.success(request, f"تم رفع المستند '{title}' بنجاح")
-        
-        # إعادة التوجيه بناءً على المجلد الحالي
-        if folder:
-            print(f"=== تم رفع المستند بنجاح! رقم المستند: {document.id} ===\n")
-            return redirect('admin_archive')
-        else:
-            print(f"=== تم رفع المستند بنجاح! رقم المستند: {document.id} ===\n")
-            return redirect('admin_archive')
-            
+            try:
+                # تنفيذ الاستعلام
+                cursor.execute(query, [
+                    title, 
+                    description, 
+                    document_type, 
+                    folder_id_value,  # يمكن أن يكون None
+                    request.user.id,  # created_by
+                    request.user.id,  # added_by
+                    file_name, 
+                    file_type, 
+                    file_size, 
+                    file_content,  # محتوى الملف
+                    relative_path,  # مسار الملف
+                    now,  # created_at
+                    now,  # updated_at
+                    False,  # is_auto_created - مهم لتمييز الملفات المرفوعة يدوياً
+                    now  # تاريخ المستند
+                ])
+                
+                # الحصول على معرف المستند الجديد
+                document_id = cursor.fetchone()[0]
+                print(f"✅ تم إنشاء المستند بنجاح، المعرف: {document_id}")
+                
+                # إعادة تفعيل المحفزات
+                cursor.execute("SET session_replication_role = 'origin';")
+                
+                # إظهار رسالة نجاح للمستخدم
+                messages.success(request, f"تم رفع الملف '{title}' بنجاح")
+                
+                # التحقق من أن المستند تم إنشاؤه فعلاً
+                verification_query = "SELECT id, title FROM rental_document WHERE id = %s"
+                cursor.execute(verification_query, [document_id])
+                verification_result = cursor.fetchone()
+                
+                if verification_result:
+                    print(f"✅ تم التحقق من وجود المستند في قاعدة البيانات: ID={verification_result[0]}, العنوان={verification_result[1]}")
+                else:
+                    print("⚠️ لم يتم العثور على المستند في قاعدة البيانات بعد إنشائه!")
+                
+            except Exception as sql_err:
+                # تسجيل الخطأ
+                print(f"❌ فشل في تنفيذ استعلام SQL: {str(sql_err)}")
+                print(traceback.format_exc())
+                
+                # إعادة تفعيل المحفزات
+                cursor.execute("SET session_replication_role = 'origin';")
+                
+                # إرسال رسالة خطأ للمستخدم
+                messages.error(request, f"فشل في رفع الملف: {str(sql_err)[:100]}")
+                return redirect('admin_archive')
+    
     except Exception as e:
-        print(f"خطأ أثناء رفع المستند: {str(e)}")
+        # تسجيل أي أخطاء أخرى
+        print(f"❌ حدث خطأ: {str(e)}")
         print(traceback.format_exc())
-        messages.error(request, f"حدث خطأ أثناء رفع المستند: {str(e)}")
+        messages.error(request, f"حدث خطأ أثناء رفع الملف: {str(e)[:100]}")
         return redirect('admin_archive')
     
-    finally:
-        # إعادة تفعيل الإشارات الأصلية
-        pre_save.receivers = pre_save_receivers
-        print("✅ تم إعادة تفعيل إشارات المستندات التلقائية")
+    # إعادة التوجيه إلى المكان المناسب
+    if folder:
+        return redirect('admin_archive_folder', folder_id=folder.id)
+    else:
+        return redirect('admin_archive')

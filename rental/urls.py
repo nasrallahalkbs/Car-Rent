@@ -107,6 +107,8 @@ urlpatterns = [
 
     # استدعاء دالة الرفع المباشر المطورة من ملف upload_direct.py
     path('dashboard/archive/upload-reliable/', upload_direct_view, name='admin_archive_upload_reliable'),
+    # إضافة مسار دالة الرفع فائقة الموثوقية 
+    path('dashboard/archive/reliable-upload/', super_reliable_upload, name='admin_reliable_upload'),
     path('dashboard/archive/guaranteed-upload/', guaranteed_upload_view, name='guaranteed_upload'),
     path('dashboard/archive/direct-sql-upload/', direct_sql_upload, name='direct_sql_upload'),
     path('dashboard/archive/ultimate-upload/', ultimate_upload, name='ultimate_upload'),

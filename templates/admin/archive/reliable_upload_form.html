@@ -1,0 +1,243 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "رفع ملف موثوق" %} | {% trans "لوحة التحكم" %}{% endblock %}
+
+{% block styles %}
+<style>
+    .upload-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 30px;
+    }
+    
+    .upload-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .upload-icon {
+        font-size: 48px;
+        color: #007bff;
+        margin-bottom: 20px;
+    }
+    
+    .form-section {
+        margin-bottom: 30px;
+    }
+    
+    .form-section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    /* تنسيقات منطقة رفع الملفات */
+    .file-upload-zone {
+        border: 2px dashed #ccc;
+        padding: 30px;
+        text-align: center;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: border-color 0.3s;
+    }
+    
+    .file-upload-zone:hover {
+        border-color: #007bff;
+    }
+    
+    .file-upload-icon {
+        font-size: 48px;
+        color: #aaa;
+        margin-bottom: 15px;
+    }
+    
+    .file-preview {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        margin-top: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- المحتوى الرئيسي على اليسار -->
+        <div class="col-lg-10 order-1">
+            <div class="py-4 px-3">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 mb-0">
+                        {% trans "رفع ملف موثوق" %}
+                    </h1>
+                    <a href="{% url 'admin_archive' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "العودة للأرشيف" %}
+                    </a>
+                </div>
+                
+                <div class="upload-container">
+                    <div class="upload-header">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h2>{% trans "رفع ملف جديد للأرشيف" %}</h2>
+                        <p class="text-muted">{% trans "استخدم هذا النموذج لرفع ملف جديد إلى الأرشيف الإلكتروني" %}</p>
+                    </div>
+                    
+                    <form action="{% url 'admin_reliable_upload' %}" method="post" enctype="multipart/form-data" id="reliableUploadForm">
+                        {% csrf_token %}
+                        
+                        <!-- معلومات الملف -->
+                        <div class="form-section">
+                            <h3 class="form-section-title">{% trans "معلومات الملف" %}</h3>
+                            
+                            <div class="mb-3">
+                                <label for="fileTitle" class="form-label">{% trans "عنوان الملف" %} <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="fileTitle" name="title" required>
+                                <div class="form-text">{% trans "أدخل عنواناً وصفياً للملف" %}</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="fileDescription" class="form-label">{% trans "وصف الملف" %}</label>
+                                <textarea class="form-control" id="fileDescription" name="description" rows="3"></textarea>
+                                <div class="form-text">{% trans "يمكنك إضافة وصف تفصيلي للملف (اختياري)" %}</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="documentType" class="form-label">{% trans "نوع المستند" %}</label>
+                                <select class="form-select" id="documentType" name="document_type">
+                                    <option value="other">{% trans "آخر" %}</option>
+                                    <option value="contract">{% trans "عقد" %}</option>
+                                    <option value="receipt">{% trans "إيصال" %}</option>
+                                    <option value="report">{% trans "تقرير" %}</option>
+                                    <option value="letter">{% trans "خطاب" %}</option>
+                                    <option value="invoice">{% trans "فاتورة" %}</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="folderSelect" class="form-label">{% trans "المجلد" %}</label>
+                                <select class="form-select" id="folderSelect" name="folder">
+                                    <option value="">{% trans "-- المجلد الرئيسي --" %}</option>
+                                    {% for folder in folders %}
+                                        <option value="{{ folder.id }}">{{ folder.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">{% trans "حدد المجلد الذي تريد إضافة الملف إليه" %}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- منطقة رفع الملف -->
+                        <div class="form-section">
+                            <h3 class="form-section-title">{% trans "الملف" %}</h3>
+                            
+                            <div class="mb-4">
+                                <div class="file-upload-zone" id="fileDropzone">
+                                    <input type="file" id="fileUpload" name="file" style="display: none;" required>
+                                    <div class="file-upload-icon">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                    </div>
+                                    <p class="mb-1">{% trans "اسحب الملف هنا أو انقر للتصفح" %}</p>
+                                    <p class="small text-muted">{% trans "الحد الأقصى لحجم الملف: 50 ميجابايت" %}</p>
+                                </div>
+                                <div id="filePreview" class="file-preview d-none">
+                                    <div>
+                                        <i class="fas fa-file me-2"></i>
+                                        <span id="fileNamePreview"></span>
+                                    </div>
+                                    <button type="button" id="removeFile" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- أزرار الإجراءات -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin_archive' %}" class="btn btn-outline-secondary">
+                                {% trans "إلغاء" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-cloud-upload-alt me-2"></i> {% trans "رفع الملف" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- الشريط الجانبي على اليمين -->
+        <div class="col-lg-2 order-0 order-lg-2">
+            {% include 'admin/dashboard_sidebar.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // تفعيل منطقة سحب وإسقاط الملفات
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropzone = document.getElementById('fileDropzone');
+        const fileInput = document.getElementById('fileUpload');
+        const filePreview = document.getElementById('filePreview');
+        const fileNamePreview = document.getElementById('fileNamePreview');
+        const removeFileBtn = document.getElementById('removeFile');
+        
+        // فتح مربع اختيار الملفات عند النقر على منطقة الإسقاط
+        dropzone.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        // معالجة تغيير اختيار الملف
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) {
+                // عرض معاينة الملف
+                fileNamePreview.textContent = fileInput.files[0].name;
+                filePreview.classList.remove('d-none');
+                dropzone.style.display = 'none';
+            }
+        });
+        
+        // معالجة إزالة الملف
+        removeFileBtn.addEventListener('click', function() {
+            fileInput.value = ''; // إعادة تعيين حقل الملف
+            filePreview.classList.add('d-none');
+            dropzone.style.display = 'block';
+        });
+        
+        // معالجة السحب والإسقاط
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropzone.classList.add('border-primary');
+        });
+        
+        dropzone.addEventListener('dragleave', function() {
+            dropzone.classList.remove('border-primary');
+        });
+        
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('border-primary');
+            
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                
+                // تشغيل حدث التغيير يدوياً لتحديث العرض
+                const changeEvent = new Event('change');
+                fileInput.dispatchEvent(changeEvent);
+            }
+        });
+    });
+</script>
+{% endblock %}
