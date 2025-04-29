@@ -134,6 +134,6 @@ urlpatterns = [
     path('dashboard/archive/simple-upload/', admin_views.simple_upload_form, name='simple_upload_form'),
     path('dashboard/archive/simple-upload/process/', admin_views.simple_upload, name='simple_upload'),
 
-    # إضافة مسار الرفع المباشر عبر SQL
-    path('dashboard/archive/direct-sql-upload/', admin_views.direct_sql_upload, name='direct_sql_upload'),
+    # تم تعليق هذا المسار لتجنب التضارب - هناك تعريف آخر له في السطر 108
+    # path('dashboard/archive/direct-sql-upload/', admin_views.direct_sql_upload, name='direct_sql_upload'),
 ]
