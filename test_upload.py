@@ -1,18 +1,20 @@
 """
-اختبار رفع ملف باستخدام SQL مباشرة
+اختبار رفع ملف باستخدام Django ORM بدلاً من SQL المباشر
 """
 
 import os
 import traceback
 import datetime
 from django.conf import settings
-from django.db import connection, transaction
 from django.utils import timezone
+from rental.models import Document, User
+
+print("بدء اختبار رفع ملف باستخدام Django ORM...")
 
 # إعداد بيانات الملف
 test_file_path = 'test_file.txt'
-file_title = 'ملف اختباري مباشر'
-file_description = 'هذا ملف تم رفعه باستخدام SQL مباشرة'
+file_title = 'ملف اختباري من Django'
+file_description = 'هذا ملف تم رفعه باستخدام Django ORM بدلاً من SQL المباشر'
 
 # قراءة محتوى الملف
 with open(test_file_path, 'rb') as f:
@@ -40,65 +42,77 @@ with open(file_path, 'wb') as f:
 relative_path = os.path.join('uploads', unique_filename)
 
 try:
-    # تخزين المستند في قاعدة البيانات مباشرة باستخدام SQL متوافق مع SQLite
-    with transaction.atomic():
-        cursor = connection.cursor()
+    # الحصول على مستخدم الاختبار - المسؤول
+    admin_user = User.objects.first()
+    if not admin_user:
+        print("⚠️ لم يتم العثور على أي مستخدم في النظام")
+        exit(1)
+    
+    print(f"استخدام المستخدم: {admin_user.email}")
+    
+    # معرفة عدد المستندات قبل الإضافة
+    docs_before = Document.objects.count()
+    print(f"عدد المستندات قبل الإضافة: {docs_before}")
+    
+    # إنشاء المستند باستخدام Django ORM
+    new_doc = Document(
+        title=file_title,
+        description=file_description,
+        document_type='other',
+        file=relative_path,  # المسار النسبي للملف
+        document_date=timezone.now(),
+        related_to='general',
+        is_archived=False,
+        added_by=admin_user,
+        file_name=file_name,
+        file_type=file_type,
+        file_size=file_size,
+        file_content=file_content,
+        is_auto_created=False
+    )
+    
+    # تعطيل إشارات منع المستندات التلقائية
+    print("تعطيل إشارات منع المستندات التلقائية مؤقتاً...")
+    from django.db.models.signals import pre_save, post_save
+    from rental.signals import prevent_auto_document_creation
+    
+    # فصل إشارة منع المستندات التلقائية
+    pre_save.disconnect(prevent_auto_document_creation, sender=Document)
+    
+    # حفظ المستند
+    print("محاولة حفظ المستند...")
+    new_doc.save()
+    
+    # إعادة توصيل الإشارة بعد الانتهاء
+    pre_save.connect(prevent_auto_document_creation, sender=Document)
+    print("تمت إعادة توصيل إشارات منع المستندات التلقائية")
+    
+    # التحقق من نجاح الإضافة
+    docs_after = Document.objects.count()
+    print(f"عدد المستندات بعد الإضافة: {docs_after}")
+    
+    if docs_after > docs_before:
+        print(f"✅ تم إضافة المستند بنجاح! (ID: {new_doc.id})")
         
-        # زمن الآن بتنسيق SQLite
-        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # عرض تفاصيل المستند المضاف
+        print(f"\nتفاصيل المستند الجديد:")
+        print(f"المعرف: {new_doc.id}")
+        print(f"العنوان: {new_doc.title}")
+        print(f"الوصف: {new_doc.description}")
+        print(f"النوع: {new_doc.document_type}")
+        print(f"المسار: {new_doc.file}")
+        print(f"اسم الملف: {new_doc.file_name}")
+        print(f"حجم الملف: {new_doc.file_size}")
+        print(f"نوع الملف: {new_doc.file_type}")
+        print(f"تلقائي: {new_doc.is_auto_created}")
         
-        # الاستعلام المباشر - تجاوز التحققات بناءً على الأعمدة الفعلية في قاعدة البيانات
-        query = """
-        INSERT INTO rental_document 
-        (title, description, document_type, folder_id, added_by_id,
-        file_name, file_type, file_size, file_content, file, created_at, updated_at, is_auto_created,
-        document_date) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        
-        # معرف المستخدم الافتراضي (1 للمسؤول)
-        user_id = 1
-        
-        # تنفيذ الاستعلام
-        cursor.execute(query, [
-            file_title,
-            file_description,
-            'other',
-            None,  # folder_id
-            user_id,  # added_by
-            file_name,
-            file_type,
-            file_size,
-            file_content,  # محتوى الملف
-            relative_path,  # مسار الملف
-            now,  # created_at
-            now,  # updated_at
-            0,  # is_auto_created - مهم لتمييز الملفات المرفوعة يدوياً
-            now  # تاريخ المستند
-        ])
-        
-        # الحصول على معرف المستند الجديد
-        cursor.execute("SELECT last_insert_rowid()")
-        document_id = cursor.fetchone()[0]
-        print(f"✅ تم إنشاء المستند بنجاح، المعرف: {document_id}")
-        
-        # التحقق من أن المستند تم إنشاؤه فعلاً
-        verification_query = "SELECT id, title FROM rental_document WHERE id = ?"
-        cursor.execute(verification_query, [document_id])
-        verification_result = cursor.fetchone()
-        
-        if verification_result:
-            print(f"✅ تم التحقق من وجود المستند في قاعدة البيانات: ID={verification_result[0]}, العنوان={verification_result[1]}")
-        else:
-            print("⚠️ لم يتم العثور على المستند في قاعدة البيانات بعد إنشائه!")
-        
-        # استعلام للحصول على جميع المستندات
-        cursor.execute("SELECT id, title, file_name, is_auto_created FROM rental_document ORDER BY id DESC LIMIT 5")
-        rows = cursor.fetchall()
-        
+        # عرض آخر 5 مستندات
         print("\nآخر 5 مستندات في قاعدة البيانات:")
-        for row in rows:
-            print(f"ID={row[0]}, العنوان='{row[1]}', الملف='{row[2]}', تلقائي={row[3]}")
+        latest_docs = Document.objects.order_by('-id')[:5]
+        for doc in latest_docs:
+            print(f"ID={doc.id}, العنوان='{doc.title}', الملف='{doc.file_name}', تلقائي={doc.is_auto_created}")
+    else:
+        print("❌ فشل إضافة المستند!")
 
 except Exception as e:
     print(f"❌ حدث خطأ: {str(e)}")

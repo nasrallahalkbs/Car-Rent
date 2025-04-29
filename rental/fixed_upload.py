@@ -101,76 +101,71 @@ def super_reliable_upload(request):
         uploaded_file.seek(0)
         file_content = uploaded_file.read()
         
-        # 3. تخزين المستند في قاعدة البيانات مباشرة باستخدام SQL
+        # 3. تخزين المستند في قاعدة البيانات باستخدام Django ORM بعد تعطيل الإشارات
         with transaction.atomic():
-            cursor = connection.cursor()
-            
-            # تعطيل المحفزات مؤقتاً
-            cursor.execute("SET session_replication_role = 'replica';")
-            
-            # الوقت الحالي بتنسيق قاعدة البيانات
-            now = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            # الاستعلام المباشر
-            query = """
-            INSERT INTO rental_document 
-            (title, description, document_type, folder_id, created_by_id, added_by_id,
-            file_name, file_type, file_size, file_content, file, created_at, updated_at, is_auto_created,
-            document_date) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
-            RETURNING id;
-            """
-            
             try:
-                # تنفيذ الاستعلام
-                cursor.execute(query, [
-                    title, 
-                    description, 
-                    document_type, 
-                    folder_id_value,  # يمكن أن يكون None
-                    request.user.id,  # created_by
-                    request.user.id,  # added_by
-                    file_name, 
-                    file_type, 
-                    file_size, 
-                    file_content,  # محتوى الملف
-                    relative_path,  # مسار الملف
-                    now,  # created_at
-                    now,  # updated_at
-                    False,  # is_auto_created - مهم لتمييز الملفات المرفوعة يدوياً
-                    now  # تاريخ المستند
-                ])
+                print("تعطيل إشارات منع المستندات التلقائية مؤقتاً...")
+                from django.db.models.signals import pre_save, post_save
+                from .signals import prevent_auto_document_creation
+                
+                # فصل إشارة منع المستندات التلقائية
+                pre_save.disconnect(prevent_auto_document_creation, sender=Document)
+                
+                # إنشاء كائن المستند
+                new_document = Document(
+                    title=title,
+                    description=description,
+                    document_type=document_type,
+                    folder=folder,  # يمكن أن يكون None
+                    created_by=request.user,
+                    added_by=request.user,
+                    file_name=file_name,
+                    file_type=file_type,
+                    file_size=file_size,
+                    file_content=file_content,
+                    file=relative_path,  # مسار الملف
+                    document_date=timezone.now(),
+                    related_to='general',  # قيمة افتراضية مطلوبة
+                    is_archived=False,  # قيمة افتراضية مطلوبة
+                    is_auto_created=False  # مهم لتمييز الملفات المرفوعة يدوياً
+                )
+                
+                # حفظ المستند
+                print("محاولة حفظ المستند باستخدام Django ORM...")
+                new_document.save()
+                
+                # إعادة توصيل الإشارة بعد الانتهاء
+                pre_save.connect(prevent_auto_document_creation, sender=Document)
+                print("تمت إعادة توصيل إشارات منع المستندات التلقائية")
                 
                 # الحصول على معرف المستند الجديد
-                document_id = cursor.fetchone()[0]
+                document_id = new_document.id
                 print(f"✅ تم إنشاء المستند بنجاح، المعرف: {document_id}")
-                
-                # إعادة تفعيل المحفزات
-                cursor.execute("SET session_replication_role = 'origin';")
                 
                 # إظهار رسالة نجاح للمستخدم
                 messages.success(request, f"تم رفع الملف '{title}' بنجاح")
                 
-                # التحقق من أن المستند تم إنشاؤه فعلاً
-                verification_query = "SELECT id, title FROM rental_document WHERE id = %s"
-                cursor.execute(verification_query, [document_id])
-                verification_result = cursor.fetchone()
-                
-                if verification_result:
-                    print(f"✅ تم التحقق من وجود المستند في قاعدة البيانات: ID={verification_result[0]}, العنوان={verification_result[1]}")
-                else:
+                # التحقق من وجود المستند
+                try:
+                    verification_document = Document.objects.get(id=document_id)
+                    print(f"✅ تم التحقق من وجود المستند في قاعدة البيانات: ID={verification_document.id}, العنوان={verification_document.title}")
+                except Document.DoesNotExist:
                     print("⚠️ لم يتم العثور على المستند في قاعدة البيانات بعد إنشائه!")
                 
-            except Exception as sql_err:
+            except Exception as orm_err:
                 # تسجيل الخطأ
-                print(f"❌ فشل في تنفيذ استعلام SQL: {str(sql_err)}")
+                print(f"❌ فشل في حفظ المستند باستخدام Django ORM: {str(orm_err)}")
                 print(traceback.format_exc())
                 
-                # إعادة تفعيل المحفزات
-                cursor.execute("SET session_replication_role = 'origin';")
+                # إعادة توصيل الإشارة في حالة حدوث خطأ
+                try:
+                    pre_save.connect(prevent_auto_document_creation, sender=Document)
+                    print("تمت إعادة توصيل إشارات منع المستندات التلقائية بعد حدوث خطأ")
+                except:
+                    pass
                 
                 # إرسال رسالة خطأ للمستخدم
-                messages.error(request, f"فشل في رفع الملف: {str(sql_err)[:100]}")
+                messages.error(request, f"فشل في رفع الملف: {str(orm_err)[:100]}")
                 return redirect('admin_archive')
     
     except Exception as e:
