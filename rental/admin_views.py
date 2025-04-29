@@ -9,8 +9,9 @@ from django.db.models import Sum, Count, Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
-from django.db import transaction
+from django.db import transaction, connection
 from django.utils.translation import get_language, gettext as _
+from django.conf import settings
 from .models import User, Car, Reservation, CartItem, SiteSettings, Document, ArchiveFolder
 from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm, SiteSettingsForm
 from functools import wraps
@@ -27,6 +28,144 @@ from django.core.files.storage import default_storage
 from django.utils.text import slugify
 
 logger = logging.getLogger(__name__)
+
+
+# دالة تنظيف المستندات الوهمية من قائمة المستندات
+def clean_document_list(documents):
+    """تنظيف المستندات الوهمية من قائمة المستندات المعروضة"""
+    if documents:
+        return documents.filter(title__isnull=False).exclude(title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف"])
+    return documents
+
+def admin_required(function):
+    """
+    Decorator for views that checks if the user is an admin.
+    """
+    @wraps(function)
+    def wrapper(request, *args, **kwargs):
+        # Debug output for admin_required
+        print(f"Admin check for {request.user}, authenticated: {request.user.is_authenticated}")
+        if not request.user.is_authenticated:
+            messages.error(request, "يرجى تسجيل الدخول للوصول إلى لوحة التحكم")
+            next_url = request.path
+            login_url = reverse('login')
+            return redirect(f"{login_url}?next={next_url}")
+        elif not request.user.is_admin:
+            messages.error(request, "غير مصرح لك بالوصول إلى هذه الصفحة!")
+            return redirect('index')
+
+        # Set a global current_user variable for admin templates
+        request.current_user = request.user
+        return function(request, *args, **kwargs)
+    return wrapper
+
+@login_required
+@admin_required
+def simple_upload_form(request):
+    """عرض نموذج الرفع البسيط"""
+    folders = ArchiveFolder.objects.all().order_by('name')
+    context = {
+        'folders': folders,
+        'document_types': Document.DOCUMENT_TYPE_CHOICES,
+        'related_to_types': Document.RELATED_TO_CHOICES,
+    }
+    return render(request, 'admin/archive/simple_upload_form.html', context)
+
+@login_required
+@admin_required
+def simple_upload(request):
+    """معالجة رفع المستندات بطريقة بسيطة"""
+    if request.method != 'POST':
+        return redirect('simple_upload_form')
+    
+    try:
+        # الحصول على البيانات من النموذج
+        title = request.POST.get('title', '')
+        description = request.POST.get('description', '')
+        document_type = request.POST.get('document_type', 'OTHER')
+        related_to = request.POST.get('related_to', 'NONE')
+        folder_id = request.POST.get('folder', None)
+        
+        if folder_id == '':
+            folder_id = None
+            
+        expiry_date = request.POST.get('expiry_date', None)
+        expiry_date_value = None
+        
+        if expiry_date:
+            try:
+                expiry_date_value = datetime.strptime(expiry_date, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        # التأكد من وجود ملف
+        if 'file' not in request.FILES:
+            messages.error(request, "لم يتم تحديد ملف للرفع")
+            return redirect('simple_upload_form')
+            
+        uploaded_file = request.FILES['file']
+        file_name = uploaded_file.name
+        file_size = uploaded_file.size
+        file_type = uploaded_file.content_type
+        
+        # تخزين الملف على القرص
+        timestamp = int(datetime.now().timestamp())
+        random_part = str(timestamp)[-4:]
+        safe_filename = f"direct_{timestamp}_{random_part}_{file_name}"
+        
+        # مسار الملف
+        upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join('uploads', safe_filename)
+        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+        
+        # نسخ محتوى الملف
+        with open(full_path, 'wb+') as destination:
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
+        
+        # إدخال السجل في قاعدة البيانات باستخدام SQL مباشر
+        with connection.cursor() as cursor:
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            expiry_date_str = expiry_date_value.strftime('%Y-%m-%d') if expiry_date_value else None
+            
+            # استعلام SQL
+            query = """
+            INSERT INTO rental_document 
+            (title, description, document_type, related_to, folder_id, 
+            file, file_name, file_type, file_size, 
+            is_archived, is_auto_created, document_date, expiry_date, 
+            created_at, added_by_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
+            """
+            
+            # تنفيذ الاستعلام
+            cursor.execute(query, [
+                title, description, document_type, related_to, folder_id, 
+                file_path, file_name, file_type, file_size,
+                True, False, datetime.now().date().isoformat(), expiry_date_str,
+                now, request.user.id
+            ])
+            
+            # الحصول على معرف المستند الجديد
+            row = cursor.fetchone()
+            if row:
+                document_id = row[0]
+                messages.success(request, f"تم رفع المستند '{title}' بنجاح")
+            else:
+                messages.error(request, "حدث خطأ أثناء محاولة رفع المستند")
+        
+        # إعادة التوجيه
+        if folder_id:
+            return redirect('admin_archive_folder', folder_id=folder_id)
+        else:
+            return redirect('admin_archive')
+            
+    except Exception as e:
+        # عرض رسالة خطأ للمستخدم
+        messages.error(request, f"حدث خطأ أثناء رفع المستند: {str(e)[:100]}")
+        return redirect('admin_archive')
 
 
 # دالة تنظيف المستندات الوهمية من قائمة المستندات
