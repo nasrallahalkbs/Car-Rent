@@ -86,6 +86,7 @@ urlpatterns = [
     path('dashboard/archive/<str:action>/', admin_archive_windows, name='admin_archive_action_only'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
     path('dashboard/archive/upload/', admin_views.admin_archive_upload, name='admin_archive_upload'),
+    path('dashboard/archive/upload-form/', admin_views.admin_archive_upload_form, name='admin_archive_upload_form'),
     path('dashboard/archive/folder/add/', admin_views.admin_archive_folder_add, name='admin_archive_folder_add'),
     path('dashboard/archive/folder/<int:folder_id>/edit/', admin_views.edit_folder, name='admin_archive_folder_edit'),
     path('dashboard/archive/folder/<int:folder_id>/delete/', admin_views.delete_folder, name='admin_archive_folder_delete'),

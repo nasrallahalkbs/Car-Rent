@@ -3621,6 +3621,31 @@ def admin_archive_upload(request):
 
 @login_required
 @admin_required
+def admin_archive_upload_form(request):
+    """عرض نموذج رفع ملف جديد (مستقل)"""
+    # الحصول على رقم المجلد الحالي من المعلمات
+    folder_id = request.GET.get('folder', None)
+    current_folder = None
+    
+    # إذا تم تحديد مجلد، نحصل على معلوماته
+    if folder_id:
+        try:
+            current_folder = ArchiveFolder.objects.get(id=folder_id)
+        except ArchiveFolder.DoesNotExist:
+            messages.error(request, "المجلد المحدد غير موجود")
+    
+    # الحصول على قائمة المجلدات للاختيار
+    folders = ArchiveFolder.objects.all().order_by('name')
+    
+    context = {
+        'current_folder': current_folder,
+        'folders': folders,
+    }
+    
+    return render(request, 'admin/archive/direct_upload_form.html', context)
+
+@login_required
+@admin_required
 def edit_folder(request, folder_id):
     """تعديل مجلد"""
     
