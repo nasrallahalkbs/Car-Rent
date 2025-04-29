@@ -789,95 +789,12 @@ def document_detail(request, document_id):
 @login_required
 @admin_required
 def edit_document(request, document_id):
-    """تعديل وثيقة"""
+    """وظيفة تعديل وثيقة للحفاظ على التوافق مع الروابط القديمة. 
+    تم توحيد الوظيفة مع admin_archive_edit."""
     
-    document = get_object_or_404(Document, id=document_id)
-    
-    if request.method == 'POST':
-        # تحديث معلومات الوثيقة
-        document.title = request.POST.get('title')
-        document.document_type = request.POST.get('document_type')
-        document.description = request.POST.get('description')
-        document.related_to = request.POST.get('related_to')
-        document.tags = request.POST.get('tags')
-        document.reference_number = request.POST.get('reference_number')
-        
-        # ضبط التواريخ
-        document_date = request.POST.get('document_date')
-        expiry_date = request.POST.get('expiry_date')
-        
-        if document_date:
-            try:
-                document.document_date = datetime.strptime(document_date, '%Y-%m-%d').date()
-            except ValueError:
-                pass
-        
-        if expiry_date:
-            try:
-                document.expiry_date = datetime.strptime(expiry_date, '%Y-%m-%d').date()
-            except ValueError:
-                pass
-        
-        # ضبط العلاقات
-        reservation_id = request.POST.get('reservation_id')
-        car_id = request.POST.get('car_id')
-        user_id = request.POST.get('user_id')
-        
-        if reservation_id:
-            document.reservation_id = reservation_id
-        else:
-            document.reservation = None
-        
-        if car_id:
-            document.car_id = car_id
-        else:
-            document.car = None
-        
-        if user_id:
-            document.user_id = user_id
-        else:
-            document.user = None
-        
-        # تحديث ملف الوثيقة إذا تم تحميل ملف جديد
-        if 'file' in request.FILES:
-            # تسجيل معلومات التصحيح
-            print(f"DEBUG: تم استلام ملف جديد: {request.FILES['file'].name}")
-            
-            # تعيين الملف مباشرة إلى حقل FileField
-            document.file = request.FILES['file']
-            
-            # إذا كان لديك حقول منفصلة لتخزين معلومات الملف، فيمكنك تحديثها أيضاً
-            # لكن الخطأ كان في تعيين document.file إلى None
-            if hasattr(document, 'file_name'):
-                document.file_name = request.FILES['file'].name
-            if hasattr(document, 'file_type'):
-                document.file_type = request.FILES['file'].content_type
-            if hasattr(document, 'file_size'):
-                document.file_size = request.FILES['file'].size
-        
-        # حفظ التعديلات
-        document.save()
-        
-        messages.success(request, "تم تحديث الوثيقة بنجاح")
-        # التوجيه إلى صفحة الأرشيف بعد التحديث
-        if document.folder:
-            # التوجيه إلى نفس المجلد الذي كان فيه المستند
-            return redirect(f"{reverse('admin_archive')}?folder={document.folder.id}")
-        else:
-            # التوجيه إلى الصفحة الرئيسية للأرشيف
-            return redirect('admin_archive')
-    
-    # نموذج تعديل الوثيقة
-    context = {
-        'document': document,
-        'document_type_choices': Document.DOCUMENT_TYPE_CHOICES,
-        'related_to_choices': Document.RELATED_TO_CHOICES,
-        'reservations': Reservation.objects.filter(status__in=['confirmed', 'completed']).order_by('-created_at')[:50],
-        'cars': Car.objects.all().order_by('make'),
-        'users': User.objects.all().order_by('username'),
-    }
-    
-    return render(request, 'admin/archive/edit_document.html', context)
+    # توجيه الطلب إلى الوظيفة المحسنة
+    print(f"DEBUG: تم استدعاء edit_document، سيتم توجيه الطلب إلى admin_archive_edit")
+    return admin_archive_edit(request, document_id)
 
 @login_required
 @admin_required
