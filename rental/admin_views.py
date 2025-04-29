@@ -2290,10 +2290,12 @@ def admin_archive_edit(request, document_id):
         
         # تعيين علامة تجاوز منع المستندات التلقائية
         # هذه هي المشكلة الرئيسية - نحتاج إلى تعيين هذه العلامة لتجاوز إشارة pre_save
-        document._ignore_auto_document_signal = True
-        print(f"DEBUG: تم تعيين علامة تجاوز منع المستندات التلقائية: {document._ignore_auto_document_signal}")
+        setattr(document, '_ignore_auto_document_signal', True)
+        print(f"DEBUG: تم تعيين علامة تجاوز منع المستندات التلقائية: {getattr(document, '_ignore_auto_document_signal', False)}")
         
-        document.save()
+        # استخدام المعاملات لضمان نجاح الحفظ
+        with transaction.atomic():
+            document.save()
         
         # التحقق من نجاح الحفظ
         updated_doc = Document.objects.get(id=document_id)
@@ -3680,8 +3682,13 @@ def add_document_to_folder(request, folder_id):
             except User.DoesNotExist:
                 pass
         
-        # حفظ المستند
-        document.save()
+        # منع إنشاء المستندات التلقائية عند الحفظ
+        setattr(document, '_ignore_auto_document_signal', True)
+        print(f"DEBUG - تم تعيين علامة التجاوز: {getattr(document, '_ignore_auto_document_signal', False)}")
+        
+        # حفظ المستند باستخدام المعاملات لضمان نجاح العملية
+        with transaction.atomic():
+            document.save()
         
         messages.success(request, f"تم إضافة المستند '{title}' إلى المجلد '{folder.name}' بنجاح")
         return redirect('admin_archive_folder', folder_id=folder_id)
