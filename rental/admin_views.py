@@ -840,20 +840,20 @@ def edit_document(request, document_id):
         
         # تحديث ملف الوثيقة إذا تم تحميل ملف جديد
         if 'file' in request.FILES:
-            uploaded_file = request.FILES['file']
-            file_name = uploaded_file.name
-            file_type = uploaded_file.content_type
-            file_size = uploaded_file.size
-            file_content = uploaded_file.read()
+            # تسجيل معلومات التصحيح
+            print(f"DEBUG: تم استلام ملف جديد: {request.FILES['file'].name}")
             
-            # تخزين معلومات الملف في قاعدة البيانات
-            document.file_name = file_name
-            document.file_type = file_type
-            document.file_size = file_size
-            document.file_content = file_content
+            # تعيين الملف مباشرة إلى حقل FileField
+            document.file = request.FILES['file']
             
-            # إلغاء الملف السابق
-            document.file = None
+            # إذا كان لديك حقول منفصلة لتخزين معلومات الملف، فيمكنك تحديثها أيضاً
+            # لكن الخطأ كان في تعيين document.file إلى None
+            if hasattr(document, 'file_name'):
+                document.file_name = request.FILES['file'].name
+            if hasattr(document, 'file_type'):
+                document.file_type = request.FILES['file'].content_type
+            if hasattr(document, 'file_size'):
+                document.file_size = request.FILES['file'].size
         
         # حفظ التعديلات
         document.save()
