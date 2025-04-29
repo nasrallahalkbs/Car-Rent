@@ -111,10 +111,12 @@ def test_protected_upload():
         # إنشاء مستند بطريقة مباشرة
         doc = Document(
             title="مستند اختبار تلقائي",
-            document_type="اختبار",
-            is_auto_document=True,
+            document_type="other",
+            is_auto_created=True,
             added_by=User.objects.filter(is_staff=True).first(),
-            added_date=timezone.now()
+            created_at=timezone.now(),
+            related_to='other',
+            is_archived=False
         )
         
         # محاولة حفظ المستند
