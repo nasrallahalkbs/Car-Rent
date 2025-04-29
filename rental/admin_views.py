@@ -3379,27 +3379,112 @@ def download_document(request, document_id):
         print(f"DEBUG - تم إرسال الملف للتنزيل: {filename}, الحجم={len(document.file_content)} بايت")
     
     return response
+
 @login_required
 @admin_required
 def admin_archive_upload(request):
-    """وظيفة مخصصة لرفع المستندات إلى الأرشيف - نسخة محسنة مع تسجيل أفضل"""
-    import logging
+    """وظيفة رفع الملفات بطريقة محسنة"""
     import traceback
-    from django.db import connection
     
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    
-    # طباعة كل البيانات المستلمة للتشخيص
-    print("📥 بيانات الطلب المستلمة:")
-    print(f"📥 طريقة الطلب: {request.method}")
-    print(f"📥 بيانات POST: {request.POST}")
-    print(f"📥 ملفات مرفوعة: {request.FILES.keys() if request.FILES else 'لا يوجد'}")
+    # طباعة معلومات الطلب للتشخيص
+    print("بدء معالجة طلب رفع مستند جديد")
+    print(f"طريقة الطلب: {request.method}")
     
     if request.method != 'POST':
-        print("❌ طريقة الطلب غير صحيحة - يجب أن تكون POST")
         messages.error(request, "طريقة طلب غير صالحة")
         return redirect('admin_archive')
+    
+    # استخراج البيانات المرسلة
+    title = request.POST.get('title', '').strip()
+    description = request.POST.get('description', '')
+    folder_id = request.POST.get('folder', None)
+    document_type = request.POST.get('document_type', 'other')
+    
+    print(f"البيانات المستلمة: العنوان='{title}', النوع='{document_type}', المجلد={folder_id}")
+    
+    # التحقق من وجود البيانات المطلوبة
+    if not title:
+        messages.error(request, "يرجى إدخال عنوان للمستند")
+        return redirect('admin_archive')
+    
+    if 'file' not in request.FILES:
+        messages.error(request, "يرجى تحديد ملف للتحميل")
+        return redirect('admin_archive')
+    
+    # معالجة الملف المرفوع
+    uploaded_file = request.FILES['file']
+    file_name = uploaded_file.name
+    file_type = uploaded_file.content_type
+    file_size = uploaded_file.size
+    
+    print(f"معلومات الملف: اسم='{file_name}', النوع='{file_type}', الحجم={file_size} بايت")
+    
+    # تحديد المجلد إذا كان موجوداً
+    folder = None
+    if folder_id:
+        try:
+            folder = ArchiveFolder.objects.get(id=folder_id)
+            print(f"تم تحديد المجلد: {folder.name} (ID: {folder.id})")
+        except ArchiveFolder.DoesNotExist:
+            messages.error(request, "المجلد المحدد غير موجود")
+            return redirect('admin_archive')
+    
+    try:
+        # إنشاء المستند في معاملة واحدة
+        with transaction.atomic():
+            print("بدء معاملة قاعدة البيانات...")
+            
+            # قراءة محتوى الملف
+            file_content = uploaded_file.read()
+            print(f"تم قراءة محتوى الملف: {len(file_content)} بايت")
+            
+            # إعادة مؤشر الملف للبداية
+            uploaded_file.seek(0)
+            
+            # إنشاء المستند
+            document = Document(
+                title=title,
+                description=description,
+                document_type=document_type,
+                folder=folder,
+                file_name=file_name,
+                file_type=file_type,
+                file_size=file_size,
+                file_content=file_content,
+                created_by=request.user,
+                added_by=request.user,
+                is_auto_created=False  # هذا مهم جداً
+            )
+            
+            # تعيين علامة تجاوز إشارة المستندات التلقائية
+            document._ignore_auto_document_signal = True
+            print("تم تعيين علامة تجاوز الإشارة على المستند")
+            
+            # حفظ المستند
+            document.save()
+            print(f"تم حفظ المستند بنجاح: ID={document.id}")
+            
+            # تعيين الملف المرفوع
+            document.file = uploaded_file
+            document.save(update_fields=['file'])
+            print("تم حفظ الملف المرفوع")
+            
+            # عرض رسالة نجاح للمستخدم
+            messages.success(request, f"تم رفع المستند '{title}' بنجاح")
+            
+            # إعادة التوجيه بناءً على المجلد الحالي
+            if folder:
+                return redirect('admin_archive_folder', folder_id=folder.id)
+            else:
+                return redirect('admin_archive')
+                
+    except Exception as e:
+        print(f"حدث خطأ أثناء رفع المستند: {str(e)}")
+        print(traceback.format_exc())
+        messages.error(request, f"حدث خطأ أثناء رفع المستند: {str(e)[:100]}")
+    
+    return redirect('admin_archive')
+
     
     # 1. استخراج البيانات من النموذج
     title = request.POST.get('title', '').strip()
