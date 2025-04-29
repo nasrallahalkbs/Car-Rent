@@ -116,37 +116,96 @@ def direct_sql_upload_document(request):
             document.expiry_date = expiry_date_value
             document.added_by = request.user
             
-            # تعطيل إشارات منع المستندات التلقائية مؤقتًا
-            from django.db.models.signals import pre_save
-            from rental.signals import prevent_auto_document_creation
+            # طريقة جديدة: نستخدم علامة خاصة على كائن المستند لتجاوز الفحص
+            # بدلاً من فصل الإشارة (لأن فصل الإشارة قد يتسبب في مشاكل أمان أو تضارب)
+            print("🔄 إضافة علامة خاصة للتجاوز (_ignore_auto_document_signal)...")
+            document._ignore_auto_document_signal = True
             
-            print(f"🔄 محاولة فصل إشارة prevent_auto_document_creation...")
+            # إضافة علامة خاصة إضافية للتأكيد
+            document._manual_upload = True
+            document._is_auto_created = False
             
-            # التحقق من وجود الإشارة قبل محاولة فصلها
-            receivers = [r for r in pre_save._live_receivers(Document) if r.__self__ == prevent_auto_document_creation]
-            print(f"📶 عدد الإشارات المتصلة: {len(receivers)}")
+            # طباعة محتويات المستند للتأكد من صحة الإعداد
+            print("🔍 محتويات المستند:")
+            print(f"   - العنوان: {document.title}")
+            print(f"   - الوصف: {document.description[:30] + '...' if len(document.description) > 30 else document.description}")
+            print(f"   - المجلد: {document.folder_id}")
+            print(f"   - الملف: {document.file_name}") 
+            print(f"   - العلامات: _ignore_auto_document_signal={getattr(document, '_ignore_auto_document_signal', False)}")
             
-            if receivers:
-                # فصل الإشارة مؤقتًا
-                print("🔌 فصل الإشارة...")
-                pre_save.disconnect(prevent_auto_document_creation, sender=Document)
-                print("✅ تم فصل الإشارة بنجاح")
-            else:
-                print("⚠️ لم يتم العثور على إشارة للفصل")
-                
             try:
-                # حفظ المستند بدون تدخل الإشارة
+                # حفظ المستند مع العلامات الخاصة
                 print("💾 محاولة حفظ المستند في قاعدة البيانات...")
+                
+                # استخدام نموذج استبعاد الإشارات للحماية المزدوجة
+                from django.db import connection
+                from django.conf import settings
+                import time
+                
+                # حفظ المستند بالطريقة العادية أولاً
                 document.save()
-                print(f"📊 معرف المستند بعد الحفظ: {document.id}")
-                messages.success(request, f"تم رفع المستند '{title}' بنجاح باستخدام الطريقة المباشرة")
-                print(f"✅ تم رفع المستند بنجاح: {title}, الحجم: {file_size}, النوع: {file_type}")
-            finally:
-                # إعادة توصيل الإشارة بعد الانتهاء
-                if receivers:
-                    print("🔄 إعادة توصيل الإشارة...")
-                    pre_save.connect(prevent_auto_document_creation, sender=Document)
-                    print("✅ تم إعادة توصيل الإشارة بنجاح")
+                
+                # التأكد من نجاح الحفظ
+                if document.id:
+                    print(f"📊 معرف المستند بعد الحفظ: {document.id}")
+                    messages.success(request, f"تم رفع المستند '{title}' بنجاح")
+                    print(f"✅ تم رفع المستند بنجاح: {title}, الحجم: {file_size}, النوع: {file_type}")
+                else:
+                    print("⚠️ تم حفظ المستند لكن بدون معرف! هذا غريب...")
+                    
+                    # محاولة بديلة: استخدام SQL مباشر
+                    print("🔄 محاولة استخدام SQL مباشر للحفظ...")
+                    
+                    # توليد معرف فريد للملف
+                    timestamp = int(time.time())
+                    random_part = str(int(timestamp))[-4:]
+                    unique_path = f"uploads/direct_{timestamp}_{random_part}_{file_name}"
+                    
+                    # حفظ الملف على القرص
+                    from django.core.files.storage import default_storage
+                    from django.core.files.base import ContentFile
+                    
+                    file_path = default_storage.save(unique_path, ContentFile(uploaded_file.read()))
+                    print(f"✅ تم حفظ الملف في: {file_path}")
+                    
+                    # إدخال السجل في قاعدة البيانات مباشرة
+                    with connection.cursor() as cursor:
+                        # تحضير البيانات
+                        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        expiry_date_str = expiry_date_value.strftime('%Y-%m-%d') if expiry_date_value else None
+                        
+                        # بناء استعلام SQL آمن
+                        query = """
+                        INSERT INTO rental_document 
+                        (title, description, document_type, related_to, folder_id, 
+                        file, file_name, file_type, file_size, 
+                        is_archived, is_auto_created, document_date, expiry_date, 
+                        created_at, added_by_id)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        RETURNING id;
+                        """
+                        
+                        # تنفيذ الاستعلام
+                        cursor.execute(query, [
+                            title, description, document_type, related_to, folder_id, 
+                            file_path, file_name, file_type, file_size,
+                            True, False, datetime.datetime.now().date().isoformat(), expiry_date_str,
+                            now, request.user.id
+                        ])
+                        
+                        # الحصول على معرف المستند الجديد
+                        row = cursor.fetchone()
+                        if row:
+                            document_id = row[0]
+                            print(f"✅ تم إدخال المستند بنجاح باستخدام SQL المباشر، المعرف: {document_id}")
+                            messages.success(request, f"تم رفع المستند '{title}' بنجاح (بالطريقة البديلة)")
+                        else:
+                            print("❌ فشل إدخال المستند باستخدام SQL المباشر")
+                            messages.error(request, "حدث خطأ أثناء محاولة رفع المستند")
+            except Exception as e:
+                print(f"❌ خطأ أثناء حفظ المستند: {str(e)}")
+                print(f"نوع الخطأ: {type(e).__name__}")
+                print(traceback.format_exc())
         
         # إعادة التوجيه
         if folder_id:

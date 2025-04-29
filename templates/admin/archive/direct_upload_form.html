@@ -20,73 +20,75 @@
                     <h3 class="my-0">{% trans "رفع مستند جديد (الطريقة المباشرة)" %}</h3>
                 </div>
                 <div class="card-body">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i>
-                هذه الطريقة تتجاوز آلية منع المستندات التلقائية عن طريق فصل الإشارات مؤقتاً أثناء حفظ المستند
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        هذه الطريقة تتجاوز آلية منع المستندات التلقائية عن طريق فصل الإشارات مؤقتاً أثناء حفظ المستند
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data" action="{% url 'direct_sql_upload_document' %}">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="title" class="form-label">عنوان المستند *</label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="document_type" class="form-label">نوع المستند</label>
+                                <select class="form-select" id="document_type" name="document_type">
+                                    {% for value, label in document_types %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="related_to" class="form-label">متعلق بـ</label>
+                                <select class="form-select" id="related_to" name="related_to">
+                                    {% for value, label in related_to_types %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="folder" class="form-label">المجلد</label>
+                                <select class="form-select" id="folder" name="folder">
+                                    <option value="">-- بدون مجلد --</option>
+                                    {% for folder in folders %}
+                                    <option value="{{ folder.id }}">{{ folder.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="expiry_date" class="form-label">تاريخ انتهاء الصلاحية</label>
+                                <input type="date" class="form-control" id="expiry_date" name="expiry_date">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="file" class="form-label">الملف *</label>
+                                <input type="file" class="form-control" id="file" name="file" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">وصف المستند</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'admin_archive' %}" class="btn btn-secondary me-md-2">إلغاء</a>
+                            <button type="submit" class="btn btn-primary">رفع المستند</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            
-            <form method="post" enctype="multipart/form-data" action="{% url 'direct_sql_upload_document' %}">
-                {% csrf_token %}
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="title" class="form-label">عنوان المستند *</label>
-                        <input type="text" class="form-control" id="title" name="title" required>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label for="document_type" class="form-label">نوع المستند</label>
-                        <select class="form-select" id="document_type" name="document_type">
-                            {% for value, label in document_types %}
-                            <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="related_to" class="form-label">متعلق بـ</label>
-                        <select class="form-select" id="related_to" name="related_to">
-                            {% for value, label in related_to_types %}
-                            <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label for="folder" class="form-label">المجلد</label>
-                        <select class="form-select" id="folder" name="folder">
-                            <option value="">-- بدون مجلد --</option>
-                            {% for folder in folders %}
-                            <option value="{{ folder.id }}">{{ folder.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="expiry_date" class="form-label">تاريخ انتهاء الصلاحية</label>
-                        <input type="date" class="form-control" id="expiry_date" name="expiry_date">
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label for="file" class="form-label">الملف *</label>
-                        <input type="file" class="form-control" id="file" name="file" required>
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="description" class="form-label">وصف المستند</label>
-                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                </div>
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <a href="{% url 'admin_archive' %}" class="btn btn-secondary me-md-2">إلغاء</a>
-                    <button type="submit" class="btn btn-primary">رفع المستند</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
