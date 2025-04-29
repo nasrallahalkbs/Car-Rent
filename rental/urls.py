@@ -115,6 +115,7 @@ urlpatterns = [
     path('dashboard/archive/edit/<int:document_id>/', admin_views.edit_document, name='edit_document'),
     path('dashboard/archive/document/<int:document_id>/edit/', admin_views.admin_archive_edit, name='admin_archive_edit'),
     path('dashboard/archive/delete/<int:document_id>/', admin_views.delete_document, name='delete_document'),
+    path('dashboard/archive/upload-direct/', admin_views.admin_archive_upload_direct, name='admin_archive_upload_direct'),
 
     # Diagnostic routes
     path('csrf-debug/', csrf_debug_view, name='csrf_debug'),

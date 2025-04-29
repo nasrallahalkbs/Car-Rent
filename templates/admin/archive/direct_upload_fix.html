@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رفع ملف مباشر للأرشيف</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 30px;
+        }
+        .upload-card {
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .upload-card .card-header {
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 10px 10px 0 0;
+            padding: 15px 20px;
+        }
+        .upload-card .card-body {
+            padding: 30px;
+        }
+        .form-label {
+            font-weight: 500;
+        }
+        .btn-upload {
+            padding: 10px 25px;
+            font-weight: 500;
+        }
+        .error-message {
+            color: #dc3545;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        .success-message {
+            color: #198754;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: rgba(25, 135, 84, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card upload-card">
+                    <div class="card-header">
+                        <h3 class="mb-0">رفع مستند مباشر إلى الأرشيف</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <form method="post" action="{% url 'admin_archive_upload_direct' %}" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {% if folder_id %}
+                                <input type="hidden" name="folder" value="{{ folder_id }}">
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <label for="title" class="form-label">عنوان المستند <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">وصف المستند</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="document_type" class="form-label">نوع المستند</label>
+                                <select class="form-select" id="document_type" name="document_type">
+                                    <option value="other" selected>آخر</option>
+                                    <option value="contract">عقد</option>
+                                    <option value="receipt">إيصال</option>
+                                    <option value="official_document">وثيقة رسمية</option>
+                                    <option value="custody">عهدة</option>
+                                    <option value="custody_release">إخلاء عهدة</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="folder" class="form-label">المجلد</label>
+                                <select class="form-select" id="folder" name="folder">
+                                    <option value="">المجلد الرئيسي</option>
+                                    {% for folder in folders %}
+                                        <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="file" class="form-label">الملف <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="file" name="file" required>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'admin_archive' %}" class="btn btn-outline-secondary">العودة إلى الأرشيف</a>
+                                <button type="submit" class="btn btn-primary btn-upload">رفع المستند</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // التحقق من النموذج قبل الإرسال
+            document.querySelector('form').addEventListener('submit', function(event) {
+                const titleInput = document.getElementById('title');
+                const fileInput = document.getElementById('file');
+                
+                if (!titleInput.value.trim()) {
+                    alert('يرجى إدخال عنوان للمستند');
+                    event.preventDefault();
+                    return false;
+                }
+                
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('يرجى اختيار ملف للرفع');
+                    event.preventDefault();
+                    return false;
+                }
+                
+                // تعطيل الزر لمنع النقرات المتعددة
+                document.querySelector('.btn-upload').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جاري الرفع...';
+                document.querySelector('.btn-upload').disabled = true;
+            });
+        });
+    </script>
+</body>
+</html>
