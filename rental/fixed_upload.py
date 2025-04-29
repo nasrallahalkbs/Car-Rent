@@ -89,34 +89,62 @@ def super_reliable_upload(request):
         
         # استخدام معاملة قاعدة بيانات لضمان الاتساق
         with transaction.atomic():
-            # إنشاء المستند - بدون إشارات pre_save
-            document = Document(
-                title=title,
-                description=description,
-                document_type=document_type,
-                folder=folder,
-                file_name=file_name,
-                file_type=file_type,
-                file_size=file_size,
-                file_content=file_content,
-                created_by=request.user,
-                added_by=request.user,
-                is_auto_created=False  # هذا مهم جداً
-            )
+            # إنشاء المستند يدوياً باستخدام SQL مباشر لتجاوز كل الإشارات
+            from django.db import connection
+            
+            print("⚠️ استخدام SQL المباشر لإنشاء المستند...")
+            
+            # تحضير البيانات
+            params = [
+                title,                          # title
+                description or '',              # description 
+                document_type,                  # document_type
+                folder.id if folder else None,  # folder_id
+                file_name,                      # file_name
+                file_type,                      # file_type
+                file_size,                      # file_size
+                None,                           # file (سيتم تعيينه لاحقاً)
+                False,                          # is_auto_created
+                request.user.id,                # created_by_id
+                request.user.id,                # added_by_id
+                'other',                        # related_to
+                None,                           # reference_number (سيتم توليده عند الضرورة)
+            ]
+            
+            # استعلام SQL لإدراج مستند جديد
+            cursor = connection.cursor()
+            
+            # تحديد اسم جدول المستندات
+            table_name = Document._meta.db_table
+            
+            # إنشاء استعلام SQL للإدراج
+            sql = f"""
+            INSERT INTO {table_name} 
+            (title, description, document_type, folder_id, file_name, file_type, file_size,
+             file, is_auto_created, created_by_id, added_by_id, created_at, updated_at,
+             related_to, reference_number, is_archived)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s, true)
+            RETURNING id;
+            """
+            
+            # تنفيذ الاستعلام
+            cursor.execute(sql, params)
+            document_id = cursor.fetchone()[0]
+            print(f"تم إنشاء المستند بنجاح باستخدام SQL المباشر: ID={document_id}")
+            
+            # استعادة كائن المستند
+            document = Document.objects.get(id=document_id)
+            
+            # الآن نقوم بحفظ الملف
+            uploaded_file.seek(0)
+            document.file = uploaded_file
             
             # تعيين علامة تجاوز إشارة المستندات التلقائية
             setattr(document, '_ignore_auto_document_signal', True)
             
-            # حفظ المستند
-            document.save()
-            print(f"تم حفظ المستند بنجاح (بدون إشارات): ID={document.id}")
-            
-            # إعادة تعيين مؤشر الملف
-            uploaded_file.seek(0)
-            
-            # تعيين الملف المرفوع
-            document.file = uploaded_file
+            # حفظ التغييرات على الملف فقط
             document.save(update_fields=['file'])
+            print(f"تم حفظ المستند مع الملف بنجاح: ID={document.id}")
             print("تم حفظ الملف المرفوع")
         
         # عرض رسالة نجاح للمستخدم
