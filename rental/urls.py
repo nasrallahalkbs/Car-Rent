@@ -19,6 +19,8 @@ urlpatterns = [
     path('ar/dashboard/archive/direct_upload/', direct_sql_upload_document, name='direct_sql_upload_document'),
     path('ar/dashboard/archive/simple_upload/', very_simple_upload, name='very_simple_upload'),
     path('ar/dashboard/archive/super_upload/', super_upload, name='super_upload'),
+    # إضافة مسار الرفع للغة العربية
+    path('ar/dashboard/archive/upload/', admin_views.admin_archive_upload, name='admin_archive_upload_ar'),
     # User-facing views
     path('', views.index, name='index'),
     path('register/', views.register_view, name='register'),
