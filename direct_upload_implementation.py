@@ -60,13 +60,9 @@ def direct_sql_upload_document(request):
     
     # معالجة الملف
     uploaded_file = request.FILES['file']
-    file_content = uploaded_file.read()
     file_name = uploaded_file.name
     file_size = uploaded_file.size
     file_type = uploaded_file.content_type
-    
-    # إعادة مؤشر الملف للبداية
-    uploaded_file.seek(0)
     
     try:
         # استخدام SQL مباشرة لإدراج المستند
@@ -99,10 +95,10 @@ def direct_sql_upload_document(request):
                 query = '''
                 INSERT INTO rental_document 
                 (id, title, description, document_type, related_to, folder_id, 
-                file, file_name, file_type, file_size, file_content, 
+                file, file_name, file_type, file_size, 
                 created_at, updated_at, is_archived, is_auto_created, 
                 document_date, expiry_date, added_by_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 '''
                 
                 # تحضير القيم
@@ -130,7 +126,6 @@ def direct_sql_upload_document(request):
                     file_name,
                     file_type,
                     file_size,
-                    file_content,
                     now,
                     now,
                     True,  # is_archived
