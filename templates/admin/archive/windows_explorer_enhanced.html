@@ -627,15 +627,6 @@
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadFileModal">
                         <i class="fas fa-file-upload me-2"></i> {% trans "رفع ملف" %}
                     </button>
-                    <a href="{% url 'direct_sql_upload_document' %}" class="btn btn-primary mb-2">
-                        <i class="fas fa-file-upload"></i> {% trans "رفع مستند (مباشر)" %}
-                    </a>
-                    <a href="{% url 'very_simple_upload' %}" class="btn btn-success mb-2">
-                        <i class="fas fa-file-upload"></i> {% trans "رفع مستند (بسيط)" %}
-                    </a>
-                    <a href="{% url 'super_upload' %}" class="btn btn-danger mb-2">
-                        <i class="fas fa-file-upload"></i> {% trans "رفع مستند (فائق)" %}
-                    </a>
                 </div>
             </div>
         </div>
@@ -1075,13 +1066,26 @@
                         </div>
                         <div class="mb-3">
                             <label for="folder-id" class="form-label">{% trans "المجلد" %}</label>
-                            <select class="form-select" id="folder-id" name="folder_id">
+                            <select class="form-select" id="folder-id" name="folder">
                                 <option value="">{% trans "المجلد الرئيسي" %}</option>
                                 {% for folder in all_folders %}
                                     <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="mb-3">
+                            <label for="document-type" class="form-label">{% trans "نوع المستند" %}</label>
+                            <select class="form-select" id="document-type" name="document_type">
+                                <option value="other">{% trans "أخرى" %}</option>
+                                <option value="contract">{% trans "عقد" %}</option>
+                                <option value="invoice">{% trans "فاتورة" %}</option>
+                                <option value="receipt">{% trans "إيصال" %}</option>
+                                <option value="id">{% trans "هوية" %}</option>
+                                <option value="license">{% trans "رخصة" %}</option>
+                            </select>
+                        </div>
+                        <!-- تعيين علامة لإخبار النظام بأن هذا مستند يدوي وليس تلقائي -->
+                        <input type="hidden" name="is_auto_created" value="false">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
