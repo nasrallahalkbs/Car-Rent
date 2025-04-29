@@ -1,119 +1,142 @@
 """
-اختبار رفع ملف باستخدام Django ORM بدلاً من SQL المباشر
+اختبار وظيفة رفع الملفات في الأرشيف الإلكتروني باستخدام دالة الرفع الموثوقة الجديدة
 """
 
 import os
-import traceback
-import datetime
+import sys
+import django
+import requests
+from urllib.parse import urljoin
+import tempfile
 from django.conf import settings
 from django.utils import timezone
-from rental.models import Document, User
 
-print("بدء اختبار رفع ملف باستخدام Django ORM...")
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'car_rental_project.settings')
+django.setup()
 
-# إعداد بيانات الملف
-test_file_path = 'test_file.txt'
-file_title = 'ملف اختباري من Django'
-file_description = 'هذا ملف تم رفعه باستخدام Django ORM بدلاً من SQL المباشر'
+# استيراد النماذج المطلوبة
+from rental.models import ArchiveFolder, Document, User
 
-# قراءة محتوى الملف
-with open(test_file_path, 'rb') as f:
-    file_content = f.read()
+# الرابط الأساسي للتطبيق
+BASE_URL = "http://localhost:5000"
 
-# تحديد خصائص الملف
-file_name = os.path.basename(test_file_path)
-file_type = 'text/plain'
-file_size = os.path.getsize(test_file_path)
+# إنشاء ملف اختبار مؤقت
+def create_test_file():
+    with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as temp:
+        temp.write(b"this is a test file for upload")
+        temp_filename = temp.name
+    return temp_filename
 
-# إنشاء اسم ملف فريد
-timestamp = int(datetime.datetime.now().timestamp())
-unique_filename = f"test_upload_{timestamp}_{file_name}"
+def test_reliable_upload():
+    """اختبار دالة الرفع الموثوقة الجديدة"""
+    print("\n== اختبار وظيفة رفع الملفات باستخدام دالة الرفع الموثوقة ==\n")
+    
+    # الحصول على مجلد الأرشيف الرئيسي أو إنشائه إذا لم يكن موجوداً
+    root_folder = ArchiveFolder.objects.filter(name="الأرشيف الرئيسي").first()
+    if not root_folder:
+        print("إنشاء مجلد الأرشيف الرئيسي...")
+        root_folder = ArchiveFolder.objects.create(
+            name="الأرشيف الرئيسي",
+            parent=None,
+            is_system_folder=True,
+            created_by=User.objects.filter(is_staff=True).first()
+        )
+    
+    print(f"تم العثور على مجلد الأرشيف الرئيسي (ID: {root_folder.id})")
+    
+    # إنشاء ملف اختبار
+    test_file_path = create_test_file()
+    print(f"تم إنشاء ملف اختبار مؤقت: {test_file_path}")
+    
+    # شكل الطلب لرفع الملف
+    upload_url = urljoin(BASE_URL, "/dashboard/archive/reliable-upload/")
+    print(f"جاري محاولة رفع الملف إلى: {upload_url}")
+    
+    try:
+        # رفع الملف باستخدام طلب POST
+        with open(test_file_path, 'rb') as f:
+            files = {'document_file': (os.path.basename(test_file_path), f)}
+            data = {
+                'title': 'ملف اختبار الرفع الموثوق',
+                'folder': root_folder.id,
+                'document_type': 'عام',
+                'description': 'هذا ملف اختبار لوظيفة الرفع الموثوقة',
+                'is_public': 'on'
+            }
+            
+            response = requests.post(upload_url, files=files, data=data)
+            
+            # التحقق من نجاح الرفع
+            if response.status_code == 200 or response.status_code == 302:
+                print(f"✅ تم رفع الملف بنجاح (رمز الاستجابة: {response.status_code})")
+                print(f"   حجم الاستجابة: {len(response.text)} بايت")
+                print(f"   العناوين: {dict(response.headers)}")
+                
+                # التحقق من إضافة المستند في قاعدة البيانات
+                latest_doc = Document.objects.filter(title='ملف اختبار الرفع الموثوق').order_by('-id').first()
+                if latest_doc:
+                    print(f"✅ تم العثور على المستند في قاعدة البيانات:")
+                    print(f"   رقم المعرف: {latest_doc.id}")
+                    print(f"   العنوان: {latest_doc.title}")
+                    print(f"   تاريخ الإضافة: {latest_doc.added_date}")
+                    print(f"   النوع: {latest_doc.document_type}")
+                    print(f"   المجلد: {latest_doc.folder.name if latest_doc.folder else 'لا يوجد'}")
+                else:
+                    print("❌ لم يتم العثور على المستند في قاعدة البيانات!")
+            else:
+                print(f"❌ فشل رفع الملف (رمز الاستجابة: {response.status_code})")
+                print(f"   الاستجابة: {response.text[:500]}")
+    except Exception as e:
+        print(f"❌ حدث خطأ أثناء رفع الملف: {str(e)}")
+    finally:
+        # حذف الملف المؤقت
+        try:
+            os.unlink(test_file_path)
+            print(f"تم حذف ملف الاختبار المؤقت: {test_file_path}")
+        except:
+            pass
 
-# مسار حفظ الملف
-upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
-os.makedirs(upload_dir, exist_ok=True)
-file_path = os.path.join(upload_dir, unique_filename)
-
-# حفظ الملف على القرص
-with open(file_path, 'wb') as f:
-    f.write(file_content)
-
-# المسار النسبي للملف
-relative_path = os.path.join('uploads', unique_filename)
-
-try:
-    # الحصول على مستخدم الاختبار - المسؤول
-    admin_user = User.objects.first()
-    if not admin_user:
-        print("⚠️ لم يتم العثور على أي مستخدم في النظام")
-        exit(1)
+def test_protected_upload():
+    """اختبار أن المستندات التلقائية ما زالت محمية"""
+    print("\n== اختبار أن المستندات التلقائية ما زالت محمية ==\n")
     
-    print(f"استخدام المستخدم: {admin_user.email}")
-    
-    # معرفة عدد المستندات قبل الإضافة
-    docs_before = Document.objects.count()
-    print(f"عدد المستندات قبل الإضافة: {docs_before}")
-    
-    # إنشاء المستند باستخدام Django ORM
-    new_doc = Document(
-        title=file_title,
-        description=file_description,
-        document_type='other',
-        file=relative_path,  # المسار النسبي للملف
-        document_date=timezone.now(),
-        related_to='general',
-        is_archived=False,
-        added_by=admin_user,
-        file_name=file_name,
-        file_type=file_type,
-        file_size=file_size,
-        file_content=file_content,
-        is_auto_created=False
-    )
-    
-    # تعطيل إشارات منع المستندات التلقائية
-    print("تعطيل إشارات منع المستندات التلقائية مؤقتاً...")
-    from django.db.models.signals import pre_save, post_save
-    from rental.signals import prevent_auto_document_creation
-    
-    # فصل إشارة منع المستندات التلقائية
-    pre_save.disconnect(prevent_auto_document_creation, sender=Document)
-    
-    # حفظ المستند
-    print("محاولة حفظ المستند...")
-    new_doc.save()
-    
-    # إعادة توصيل الإشارة بعد الانتهاء
-    pre_save.connect(prevent_auto_document_creation, sender=Document)
-    print("تمت إعادة توصيل إشارات منع المستندات التلقائية")
-    
-    # التحقق من نجاح الإضافة
-    docs_after = Document.objects.count()
-    print(f"عدد المستندات بعد الإضافة: {docs_after}")
-    
-    if docs_after > docs_before:
-        print(f"✅ تم إضافة المستند بنجاح! (ID: {new_doc.id})")
+    try:
+        # محاولة إنشاء مستند بطريقة مباشرة (يجب أن يتم منعه)
+        import django.db.models.signals
+        from rental.signals import prevent_auto_document_creation
         
-        # عرض تفاصيل المستند المضاف
-        print(f"\nتفاصيل المستند الجديد:")
-        print(f"المعرف: {new_doc.id}")
-        print(f"العنوان: {new_doc.title}")
-        print(f"الوصف: {new_doc.description}")
-        print(f"النوع: {new_doc.document_type}")
-        print(f"المسار: {new_doc.file}")
-        print(f"اسم الملف: {new_doc.file_name}")
-        print(f"حجم الملف: {new_doc.file_size}")
-        print(f"نوع الملف: {new_doc.file_type}")
-        print(f"تلقائي: {new_doc.is_auto_created}")
+        doc_count_before = Document.objects.count()
+        print(f"عدد المستندات قبل محاولة الإنشاء: {doc_count_before}")
         
-        # عرض آخر 5 مستندات
-        print("\nآخر 5 مستندات في قاعدة البيانات:")
-        latest_docs = Document.objects.order_by('-id')[:5]
-        for doc in latest_docs:
-            print(f"ID={doc.id}, العنوان='{doc.title}', الملف='{doc.file_name}', تلقائي={doc.is_auto_created}")
-    else:
-        print("❌ فشل إضافة المستند!")
+        # إنشاء مستند بطريقة مباشرة
+        doc = Document(
+            title="مستند اختبار تلقائي",
+            document_type="اختبار",
+            is_auto_document=True,
+            added_by=User.objects.filter(is_staff=True).first(),
+            added_date=timezone.now()
+        )
+        
+        # محاولة حفظ المستند
+        try:
+            doc.save()
+            saved = True
+        except:
+            saved = False
+        
+        # التحقق من عدد المستندات بعد المحاولة
+        doc_count_after = Document.objects.count()
+        print(f"عدد المستندات بعد محاولة الإنشاء: {doc_count_after}")
+        
+        if doc_count_after > doc_count_before:
+            print("❌ تم إنشاء المستند التلقائي! الحماية لا تعمل.")
+        else:
+            print("✅ تم منع إنشاء المستند التلقائي بنجاح.")
+            
+    except Exception as e:
+        print(f"❌ حدث خطأ أثناء اختبار الحماية: {str(e)}")
 
-except Exception as e:
-    print(f"❌ حدث خطأ: {str(e)}")
-    print(traceback.format_exc())
+# تنفيذ الاختبارات
+if __name__ == "__main__":
+    test_reliable_upload()
+    test_protected_upload()
