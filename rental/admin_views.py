@@ -2314,30 +2314,23 @@ def admin_archive_edit(request, document_id):
         
         # تحديث الملف إذا تم تقديم ملف جديد
         if 'file' in request.FILES:
-            # حذف الملف القديم من نظام الملفات إذا وجد
-            if document.file:
-                try:
-                    default_storage.delete(document.file.path)
-                except:
-                    pass  # تجاهل الأخطاء إذا لم يمكن حذف الملف
+            print(f"DEBUG: تم استلام ملف جديد لتحديث المستند {document_id}")
             
-            # قراءة الملف الجديد لتخزينه في قاعدة البيانات
-            uploaded_file = request.FILES['file']
-            file_name = uploaded_file.name
-            file_type = uploaded_file.content_type
-            file_size = uploaded_file.size
+            # تعيين الملف مباشرة باستخدام حقل FileField - هذا يقوم تلقائياً بحذف الملف القديم
+            document.file = request.FILES['file']
             
-            # قراءة محتوى الملف
-            file_content = uploaded_file.read()
-            
-            # تحديث بيانات الملف
-            document.file_name = file_name
-            document.file_type = file_type
-            document.file_size = file_size
-            document.file_content = file_content
-            
-            # إلغاء الملف السابق
-            document.file = None
+            # تحديث بيانات الملف (إذا كانت هذه الحقول موجودة في النموذج)
+            if hasattr(document, 'file_name'):
+                document.file_name = request.FILES['file'].name
+                print(f"DEBUG: تم تحديث اسم الملف إلى {document.file_name}")
+                
+            if hasattr(document, 'file_type'):
+                document.file_type = request.FILES['file'].content_type
+                print(f"DEBUG: تم تحديث نوع الملف إلى {document.file_type}")
+                
+            if hasattr(document, 'file_size'):
+                document.file_size = request.FILES['file'].size
+                print(f"DEBUG: تم تحديث حجم الملف إلى {document.file_size}")
         
         # تعيين العلاقات حسب نوع الارتباط
         # إعادة تعيين العلاقات
