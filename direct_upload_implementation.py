@@ -30,19 +30,30 @@ import uuid
 @admin_required
 def direct_sql_upload_document(request):
     """وظيفة رفع ملفات بطريقة مباشرة ومحسنة لتجاوز مشكلة الرفض التلقائي"""
+    print("\n🚀 تم استدعاء وظيفة الرفع المباشر")
+    print(f"🔍 طريقة الطلب: {request.method}")
+    
     if request.method != 'POST':
         # عرض نموذج الرفع فقط
+        print("⚪ عرض نموذج الرفع")
         folders = ArchiveFolder.objects.all().order_by('name')
         context = {
             'folders': folders,
             'document_types': Document.DOCUMENT_TYPE_CHOICES,
             'related_to_types': Document.RELATED_TO_CHOICES,
         }
+        print(f"📂 عدد المجلدات المتاحة: {len(folders)}")
+        print(f"📑 عدد أنواع المستندات: {len(Document.DOCUMENT_TYPE_CHOICES)}")
         return render(request, 'admin/archive/direct_upload_form.html', context)
     
     # التحقق من وجود ملف
+    print("🔄 معالجة طلب رفع ملف...")
+    print(f"📝 محتويات request.FILES: {list(request.FILES.keys()) if request.FILES else 'لا يوجد ملفات'}")
+    print(f"📝 محتويات request.POST: {list(request.POST.keys())}")
+    
     if not request.FILES.get('file'):
         messages.error(request, "يرجى تحديد ملف للتحميل")
+        print("⛔ لم يتم العثور على ملف للتحميل")
         return redirect('admin_archive')
     
     # استخراج البيانات من النموذج
@@ -52,6 +63,14 @@ def direct_sql_upload_document(request):
     related_to = request.POST.get('related_to', 'other')
     folder_id = request.POST.get('folder')
     expiry_date = request.POST.get('expiry_date')
+    
+    print(f"📑 البيانات المستخرجة من النموذج:")
+    print(f"   - العنوان: {title}")
+    print(f"   - الوصف: {description[:30] + '...' if len(description) > 30 else description}")
+    print(f"   - نوع المستند: {document_type}")
+    print(f"   - متعلق بـ: {related_to}")
+    print(f"   - معرف المجلد: {folder_id if folder_id else 'لا يوجد'}")
+    print(f"   - تاريخ الانتهاء: {expiry_date if expiry_date else 'لا يوجد'}")
     
     # التحقق من البيانات الإلزامية
     if not title:
@@ -101,17 +120,33 @@ def direct_sql_upload_document(request):
             from django.db.models.signals import pre_save
             from rental.signals import prevent_auto_document_creation
             
-            # فصل الإشارة مؤقتًا
-            pre_save.disconnect(prevent_auto_document_creation, sender=Document)
+            print(f"🔄 محاولة فصل إشارة prevent_auto_document_creation...")
             
+            # التحقق من وجود الإشارة قبل محاولة فصلها
+            receivers = [r for r in pre_save._live_receivers(Document) if r.__self__ == prevent_auto_document_creation]
+            print(f"📶 عدد الإشارات المتصلة: {len(receivers)}")
+            
+            if receivers:
+                # فصل الإشارة مؤقتًا
+                print("🔌 فصل الإشارة...")
+                pre_save.disconnect(prevent_auto_document_creation, sender=Document)
+                print("✅ تم فصل الإشارة بنجاح")
+            else:
+                print("⚠️ لم يتم العثور على إشارة للفصل")
+                
             try:
                 # حفظ المستند بدون تدخل الإشارة
+                print("💾 محاولة حفظ المستند في قاعدة البيانات...")
                 document.save()
+                print(f"📊 معرف المستند بعد الحفظ: {document.id}")
                 messages.success(request, f"تم رفع المستند '{title}' بنجاح باستخدام الطريقة المباشرة")
                 print(f"✅ تم رفع المستند بنجاح: {title}, الحجم: {file_size}, النوع: {file_type}")
             finally:
                 # إعادة توصيل الإشارة بعد الانتهاء
-                pre_save.connect(prevent_auto_document_creation, sender=Document)
+                if receivers:
+                    print("🔄 إعادة توصيل الإشارة...")
+                    pre_save.connect(prevent_auto_document_creation, sender=Document)
+                    print("✅ تم إعادة توصيل الإشارة بنجاح")
         
         # إعادة التوجيه
         if folder_id:
