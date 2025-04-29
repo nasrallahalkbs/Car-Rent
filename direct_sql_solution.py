@@ -16,6 +16,7 @@ import logging
 import uuid
 import psycopg2
 import base64
+from django.conf import settings  # إضافة استيراد الإعدادات هنا
 
 from rental.decorators import admin_required
 from rental.models import ArchiveFolder
@@ -82,7 +83,14 @@ def direct_sql_upload(request):
         file_content = file.read()
         
         # تحويل المحتوى لقاعدة البيانات
-        encoded_content = base64.b64encode(file_content).decode('utf-8')
+        # تحسين: إضافة استثناء للتعامل مع الملفات الكبيرة
+        try:
+            encoded_content = base64.b64encode(file_content).decode('utf-8')
+            print(f"تم ترميز الملف بنجاح. الحجم بعد الترميز: {len(encoded_content)} بايت")
+        except Exception as e:
+            print(f"خطأ في ترميز الملف: {str(e)}")
+            messages.error(request, f"حدث خطأ أثناء معالجة الملف. قد يكون الملف كبير جدًا: {str(e)}")
+            return redirect(request.path)
         
         print(f"معلومات الملف المرفق: {file_name}, {file_type}, {file_size} بايت")
         
@@ -124,6 +132,39 @@ def direct_sql_upload(request):
                 document_id = cursor.fetchone()[0]
                 
                 print(f"✅ تم إنشاء المستند بنجاح: ID={document_id}")
+                
+                # حفظ نسخة مادية من الملف في نظام الملفات
+                try:
+                    import os
+                    from django.conf import settings
+                    
+                    # إعادة تعيين مؤشر الملف
+                    file.seek(0)
+                    
+                    # إنشاء مجلد للملفات المرفوعة
+                    upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads', 'documents')
+                    os.makedirs(upload_dir, exist_ok=True)
+                    
+                    # إنشاء اسم ملف فريد
+                    file_id = str(document_id).zfill(6)
+                    unique_filename = f"doc_{file_id}_{file_name}"
+                    file_path = os.path.join(upload_dir, unique_filename)
+                    
+                    # حفظ الملف
+                    with open(file_path, 'wb+') as destination:
+                        for chunk in file.chunks():
+                            destination.write(chunk)
+                    
+                    # تحديث مسار الملف في قاعدة البيانات
+                    rel_path = os.path.join('uploads', 'documents', unique_filename)
+                    update_query = "UPDATE rental_document SET file = %s WHERE id = %s"
+                    cursor.execute(update_query, [rel_path, document_id])
+                    
+                    print(f"📝 تم حفظ نسخة مادية من الملف في: {rel_path}")
+                    
+                except Exception as file_error:
+                    print(f"⚠️ تحذير: لم يتم حفظ نسخة مادية من الملف: {str(file_error)}")
+                    print(traceback.format_exc())
                 
                 # إظهار رسالة نجاح
                 messages.success(request, f"تم رفع المستند '{title}' بنجاح")
