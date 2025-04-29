@@ -1,3 +1,4 @@
+from direct_upload_implementation import direct_sql_upload_document
 from django.urls import path
 from django.shortcuts import render
 from . import views, admin_views, payment_views, analytics_views
@@ -6,6 +7,7 @@ from .windows_explorer_view import admin_archive_windows
 from .csrf_debug import csrf_debug_view, csrf_debug_page
 
 urlpatterns = [
+    path('ar/dashboard/archive/direct_upload/', direct_sql_upload_document, name='direct_sql_upload_document'),
     # User-facing views
     path('', views.index, name='index'),
     path('register/', views.register_view, name='register'),
