@@ -5,6 +5,7 @@ from .fixed_upload import super_reliable_upload
 from ultimate_upload_solution import ultimate_upload
 from .upload_direct import upload_direct_view
 from working_upload_solution import guaranteed_upload_view
+from direct_sql_solution import direct_sql_upload
 
 
 from django.urls import path
@@ -104,6 +105,7 @@ urlpatterns = [
     # استدعاء دالة الرفع المباشر المطورة من ملف upload_direct.py
     path('dashboard/archive/upload-reliable/', upload_direct_view, name='admin_archive_upload_reliable'),
     path('dashboard/archive/guaranteed-upload/', guaranteed_upload_view, name='guaranteed_upload'),
+    path('dashboard/archive/direct-sql-upload/', direct_sql_upload, name='direct_sql_upload'),
     path('dashboard/archive/ultimate-upload/', ultimate_upload, name='ultimate_upload'),
     path('dashboard/archive/upload-form/', admin_views.admin_archive_upload_form, name='admin_archive_upload_form'),
     path('dashboard/archive/folder/add/', admin_views.admin_archive_folder_add, name='admin_archive_folder_add'),
