@@ -889,6 +889,11 @@ class CarConditionReport(models.Model):
         ('inspection', _('فحص فني')),
         ('other', _('أخرى')),
     ]
+    
+    INSPECTION_TYPE_CHOICES = [
+        ('manual', _('فحص يدوي')),
+        ('electronic', _('فحص إلكتروني')),
+    ]
 
     # معلومات أساسية
     reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name='condition_reports',
@@ -916,6 +921,8 @@ class CarConditionReport(models.Model):
                                 verbose_name=_('مستوى الوقود'))
     maintenance_type = models.CharField(max_length=20, choices=MAINTENANCE_TYPE_CHOICES, 
                                       blank=True, null=True, verbose_name=_('نوع الصيانة'))
+    inspection_type = models.CharField(max_length=20, choices=INSPECTION_TYPE_CHOICES, 
+                                     default='manual', verbose_name=_('نوع الفحص'))
     
     # الشخص المسؤول عن التوثيق
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, 
