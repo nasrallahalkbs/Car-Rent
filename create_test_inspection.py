@@ -10,7 +10,7 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "car_rental_project.settings")
 django.setup()
 
-from rental.models import Car, CarConditionReport, CarInspectionCategory, CarInspectionItem, Reservation, Customer
+from rental.models import Car, CarConditionReport, CarInspectionCategory, CarInspectionItem, Reservation, User
 
 def create_test_inspection_report():
     """إنشاء تقرير فحص سيارة تجريبي"""
@@ -32,33 +32,45 @@ def create_test_inspection_report():
     else:
         car = Car.objects.first()
         
-    # التأكد من وجود عميل على الأقل
-    if Customer.objects.count() == 0:
-        print("إنشاء عميل تجريبي أولاً...")
-        customer = Customer.objects.create(
-            name="عميل تجريبي",
+    # التأكد من وجود مستخدم على الأقل
+    if User.objects.count() == 0:
+        print("إنشاء مستخدم تجريبي أولاً...")
+        # ملاحظة: هنا نستخدم create_user بدلاً من create للمستخدمين
+        user = User.objects.create_user(
+            username="test_user",
             email="test@example.com",
-            phone="123456789",
-            id_number="123456789012",
-            id_type="national_id"
+            password="test12345",
+            first_name="مستخدم",
+            last_name="تجريبي"
         )
     else:
-        customer = Customer.objects.first()
+        user = User.objects.first()
     
     # التأكد من وجود حجز على الأقل
-    if Reservation.objects.count() == 0:
-        print("إنشاء حجز تجريبي أولاً...")
-        reservation = Reservation.objects.create(
-            car=car,
-            customer=customer,
-            pickup_date=timezone.now(),
-            return_date=timezone.now() + datetime.timedelta(days=7),
-            status="confirmed",
-            total_price=1000,
-            payment_status="unpaid"
-        )
-    else:
+    try:
+        # محاولة الحصول على حجز موجود
         reservation = Reservation.objects.first()
+        if not reservation:
+            raise Reservation.DoesNotExist
+    except:
+        print("إنشاء حجز تجريبي أولاً...")
+        today = timezone.now().date()
+        pickup_date = today
+        return_date = today + datetime.timedelta(days=7)
+        
+        # إنشاء حجز جديد
+        reservation = Reservation.objects.create(
+            user=user,
+            car=car,
+            start_date=pickup_date,
+            end_date=return_date,
+            pickup_date=pickup_date,
+            return_date=return_date,
+            total_price=1000,
+            reservation_number="TEST123",
+            status="confirmed",
+            payment_status="paid"
+        )
     
     # إنشاء تقرير فحص جديد
     try:
@@ -74,9 +86,42 @@ def create_test_inspection_report():
         )
         
         print(f"تم إنشاء تقرير فحص تجريبي (رقم {report.id}) للسيارة {car.make} {car.model}")
-        print(f"يمكنك الآن الوصول إلى صفحة التقرير عبر الرابط: /ar/admin/car-condition/{report.id}/details/")
+        print(f"يمكنك الآن الوصول إلى صفحة التقرير عبر: /ar/admin/car-condition/{report.id}/details/")
+        
+        # إضافة صور تجريبية للتقرير (الهيكل الخارجي)
+        from django.core.files.base import ContentFile
+        from rental.models import CarInspectionImage
+        
+        print("إضافة صور تجريبية للهيكل الخارجي...")
+        
+        descriptions = [
+            "صورة أمامية للسيارة",
+            "صورة خلفية للسيارة",
+            "صورة جانبية للسيارة",
+            "صورة داخلية للسيارة"
+        ]
+        
+        for desc in descriptions:
+            # إنشاء ملف محتوى فارغ - ملاحظة: في بيئة الإنتاج، سيتم تحميل صور حقيقية
+            # هنا ننشئ ملف فارغ فقط للتجربة
+            content = ContentFile(b'TEST IMAGE CONTENT')
+            
+            # إنشاء صورة جديدة للتقرير - نضيف صور عامة (لا تنتمي لعنصر فحص محدد)
+            image = CarInspectionImage(
+                report=report,
+                description=desc,
+                # لا نضيف حقل inspection_detail لأنها صورة عامة
+            )
+            
+            # حفظ الملف بإسم مناسب
+            image_name = f"test_image_{desc.split(' ')[1]}.jpg"
+            image.image.save(image_name, content, save=False)
+            image.save()
+            
+            print(f"✓ تمت إضافة {desc}")
         
         return report
+        
     except Exception as e:
         print(f"حدث خطأ أثناء إنشاء التقرير: {str(e)}")
         
