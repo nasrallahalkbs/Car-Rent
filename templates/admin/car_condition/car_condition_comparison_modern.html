@@ -622,7 +622,10 @@
         <div class="row">
             <div class="col-12">
                 <div class="company-logo-container">
-                    <img src="{{ STATIC_URL }}img/logo.png" alt="شعار الشركة" onerror="this.src='{{ STATIC_URL }}img/company-logo.png'; this.onerror='';">
+                    <!-- استخدام رمز بدلاً من الصورة لتجنب مشاكل عدم وجود الملفات -->
+                    <div style="font-size: 3rem; color: var(--primary-color); margin-bottom: 0.5rem;">
+                        <i class="fas fa-car-alt"></i>
+                    </div>
                 </div>
                 <div class="document-title">
                     <h1>{% trans "تقرير مقارنة حالة المركبة الرسمي" %}</h1>
@@ -636,12 +639,12 @@
                     </div>
                 </div>
                 <div class="official-document-badge">
-                    <span>{% trans "وثيقة رسمية" %}</span>
+                    <span>{% trans "تقرير مقارنة رسمي" %}</span>
                 </div>
             </div>
         </div>
         
-        <div class="row">
+        <div class="row mt-4">
             <div class="col-md-6">
                 <div class="info-panel">
                     <h5><i class="fas fa-calendar-alt"></i> {% trans "معلومات التقرير" %}</h5>
@@ -668,10 +671,25 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="d-flex justify-content-end no-print">
-                    <button onclick="window.print();" class="btn print-button">
-                        <i class="fas fa-print"></i> {% trans "طباعة التقرير" %}
-                    </button>
+                <div class="info-panel">
+                    <h5><i class="fas fa-info-circle"></i> {% trans "إصدار الوثيقة" %}</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="comparison-label">{% trans "تم إصدار بواسطة" %}</div>
+                            <div class="comparison-value">{% trans "نظام إدارة السيارات" %}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="comparison-label">{% trans "نوع الوثيقة" %}</div>
+                            <div class="comparison-value">{% trans "تقرير مقارنة رسمي" %}</div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12 d-flex justify-content-end">
+                            <button onclick="window.print();" class="btn print-button no-print">
+                                <i class="fas fa-print"></i> {% trans "طباعة التقرير" %}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1035,82 +1053,57 @@
         </div>
     </div>
 
-    <!-- القسم الرسمي والتوقيعات -->
+    <!-- تفاصيل المستند الرسمي -->
     <div class="row">
         <div class="col-md-12 mb-4">
-            <!-- القسم القانوني -->
             <div class="comparison-card mb-4">
                 <div class="card-header">
-                    <i class="fas fa-gavel me-2"></i> {% trans "الإقرار القانوني" %}
+                    <i class="fas fa-file-alt me-2"></i> {% trans "معلومات المستند" %}
                 </div>
                 <div class="card-body">
-                    <p class="text-justify" style="font-weight: 500; line-height: 1.8;">
-                        {% trans "بموجب هذه الوثيقة، أقر أنا الموقع أدناه بأنني قد فحصت المركبة المبينة تفاصيلها في هذه الوثيقة بتاريخ الاستلام المذكور، وأن جميع المعلومات الواردة في هذا التقرير صحيحة وكاملة. كما أقر بأن الفروقات في حالة المركبة بين التسليم والاستلام (إن وجدت) قد تم تحديدها ومراجعتها بدقة. وأؤكد أيضاً بأن هذا التقرير يعتبر مستنداً رسمياً يجوز استخدامه لأغراض الفوترة وتسوية المطالبات والإجراءات القانونية ذات الصلة." %}
-                    </p>
+                    <div class="row mb-4">
+                        <div class="col-md-4 text-center">
+                            <div class="mb-2" style="font-weight: 600; color: var(--primary-dark);">{% trans "الرقم المرجعي" %}</div>
+                            <div class="p-2 bg-light rounded" style="border: 1px dashed var(--primary-color);">
+                                CR-{{ car.id }}-{{ reservation.id }}-{{ current_date|date:"Ymd" }}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="mb-2" style="font-weight: 600; color: var(--primary-dark);">{% trans "تاريخ الإصدار" %}</div>
+                            <div class="p-2 bg-light rounded" style="border: 1px dashed var(--primary-color);">
+                                {{ current_date|date:"Y-m-d" }}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="mb-2" style="font-weight: 600; color: var(--primary-dark);">{% trans "وقت الإصدار" %}</div>
+                            <div class="p-2 bg-light rounded" style="border: 1px dashed var(--primary-color);">
+                                {{ current_date|date:"H:i:s" }}
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div class="mt-4">
-                        <div class="form-check">
-                            <input class="form-check-input no-print" type="checkbox" id="termsCheck">
-                            <label class="form-check-label" for="termsCheck">
-                                {% trans "أوافق على الشروط والأحكام المذكورة أعلاه" %}
-                            </label>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-info mb-0">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-info-circle me-2 fs-5"></i>
+                                    <div>
+                                        <p class="mb-1" style="font-weight: 500;">{% trans "هذا تقرير مقارنة رسمي لحالة المركبة بين التسليم والاستلام" %}</p>
+                                        <p class="mb-0 small">{% trans "تم إنشاء هذا التقرير تلقائياً بواسطة نظام إدارة تأجير السيارات. يوضح هذا التقرير الاختلافات بين حالة المركبة وقت التسليم ووقت الاستلام." %}</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        
-            <!-- الختم الرسمي والتوقيعات -->
+            
+            <!-- معلومات المستند الرسمي -->
             <div class="official-stamp">
                 <div class="row">
                     <div class="col-12 text-center mb-3">
-                        <h4>{% trans "وثيقة رسمية" %}</h4>
-                        <p class="mb-0">{% trans "تقرير معتمد من شركة تأجير السيارات" %}</p>
-                    </div>
-                </div>
-                
-                <div class="row mb-4">
-                    <div class="col-md-4 text-center">
-                        <div class="mb-2" style="font-weight: 600; color: var(--primary-dark);">{% trans "الرقم المرجعي" %}</div>
-                        <div class="p-2 bg-light rounded" style="border: 1px dashed var(--primary-color);">
-                            {{ car.id }}-{{ reservation.id }}-{{ current_date|date:"Ymd" }}
-                        </div>
-                    </div>
-                    <div class="col-md-4 text-center">
-                        <div class="mb-2" style="font-weight: 600; color: var(--primary-dark);">{% trans "تاريخ الإصدار" %}</div>
-                        <div class="p-2 bg-light rounded" style="border: 1px dashed var(--primary-color);">
-                            {{ current_date|date:"Y-m-d" }}
-                        </div>
-                    </div>
-                    <div class="col-md-4 text-center">
-                        <div class="mb-2" style="font-weight: 600; color: var(--primary-dark);">{% trans "وقت الإصدار" %}</div>
-                        <div class="p-2 bg-light rounded" style="border: 1px dashed var(--primary-color);">
-                            {{ current_date|date:"H:i:s" }}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="signature-area">
-                    <div class="signature-box">
-                        <div style="font-weight: 600; color: var(--primary-dark);">{% trans "توقيع موظف التسليم" %}</div>
-                        <div style="height: 70px; margin: 1rem 0; position: relative;">
-                            {% if delivery_report.signature %}
-                            <img src="{{ delivery_report.signature.url }}" alt="{% trans 'توقيع موظف التسليم' %}" style="max-height: 100%; max-width: 100%;">
-                            {% else %}
-                            <div style="border-bottom: 2px dashed var(--gray-color); position: absolute; bottom: 0; width: 100%;"></div>
-                            {% endif %}
-                        </div>
-                        <div class="mt-2">{{ delivery_report.created_by.get_full_name }}</div>
-                    </div>
-                    <div class="signature-box">
-                        <div style="font-weight: 600; color: var(--primary-dark);">{% trans "توقيع موظف الاستلام" %}</div>
-                        <div style="height: 70px; margin: 1rem 0; position: relative;">
-                            {% if return_report.signature %}
-                            <img src="{{ return_report.signature.url }}" alt="{% trans 'توقيع موظف الاستلام' %}" style="max-height: 100%; max-width: 100%;">
-                            {% else %}
-                            <div style="border-bottom: 2px dashed var(--gray-color); position: absolute; bottom: 0; width: 100%;"></div>
-                            {% endif %}
-                        </div>
-                        <div class="mt-2">{{ return_report.created_by.get_full_name }}</div>
+                        <h4>{% trans "تقرير مقارنة رسمي" %}</h4>
+                        <p class="mb-0">{% trans "وثيقة معتمدة من نظام إدارة تأجير السيارات" %}</p>
                     </div>
                 </div>
                 
@@ -1120,19 +1113,21 @@
                             <div style="position: absolute; top: -10px; right: -10px; transform: rotate(15deg); color: var(--primary-color); font-size: 2rem;">
                                 <i class="fas fa-certificate"></i>
                             </div>
-                            <div style="font-weight: 700; color: var(--primary-dark);">{% trans "ختم الشركة" %}</div>
-                            <div style="font-size: 0.8rem; color: var(--gray-color);">{% trans "ختم إلكتروني معتمد" %}</div>
+                            <div style="font-weight: 700; color: var(--primary-dark);">{% trans "مستند رسمي" %}</div>
+                            <div style="font-size: 0.8rem; color: var(--gray-color);">{% trans "تاريخ الإصدار" %}: {{ current_date|date:"Y-m-d H:i" }}</div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="mt-4 text-center">
                     <div style="font-size: 0.8rem; color: var(--gray-color);">
-                        {% trans "هذه الوثيقة صالحة دون الحاجة لختم إضافي. للتحقق من صحة هذه الوثيقة، يرجى الاتصال بمكتب خدمة العملاء." %}
+                        {% trans "هذا المستند لأغراض المقارنة الرسمية فقط" %}
                     </div>
-                    <small class="text-muted mt-2 d-block">
-                        {% trans "تم إصدار هذا التقرير بتاريخ" %}: {{ current_date|date:"Y-m-d H:i" }}
-                    </small>
+                    <div class="mt-2">
+                        <div class="badge bg-light text-dark p-2">
+                            <i class="fas fa-print me-1"></i> {% trans "نسخة قابلة للطباعة" %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
