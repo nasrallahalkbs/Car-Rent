@@ -938,40 +938,130 @@ class CarConditionReport(models.Model):
         # التأكد من أن السيارة تطابق السيارة في الحجز
         if self.reservation and not self.car_id:
             self.car = self.reservation.car
+            
         super().save(*args, **kwargs)
 
 
-# تم نقل الإشارات إلى ملف signals.py المنفصل
-# لتجنب تداخلات في Django signals ولتنظيم الكود بشكل أفضل
-# منع المستندات التلقائية مباشرة في النماذج
-from django.db.models.signals import pre_save, post_save
-from django.dispatch import receiver
+class CarInspectionCategory(models.Model):
+    """فئات فحص السيارة مثل الهيكل الخارجي، المحرك، إلخ"""
+    
+    name = models.CharField(max_length=100, verbose_name=_('اسم الفئة'))
+    description = models.TextField(blank=True, null=True, verbose_name=_('وصف الفئة'))
+    display_order = models.PositiveIntegerField(default=0, verbose_name=_('ترتيب العرض'))
+    is_active = models.BooleanField(default=True, verbose_name=_('نشط'))
+    
+    class Meta:
+        verbose_name = _('فئة فحص السيارة')
+        verbose_name_plural = _('فئات فحص السيارة')
+        ordering = ['display_order', 'name']
+        
+    def __str__(self):
+        return self.name
 
-@receiver(pre_save, sender=Document)
-def absolute_prevent_auto_documents(sender, instance, **kwargs):
-    """منع إنشاء المستندات التلقائية بشكل قاطع - إلا عند وجود علامة تجاوز"""
-    # التحقق من وجود علامة تجاوز الإشارات
-    ignore_signal = getattr(instance, '_ignore_auto_document_signal', False)
+
+class CarInspectionItem(models.Model):
+    """عناصر فحص السيارة مثل المحرك، الفرامل، الإطارات، إلخ"""
     
-    if ignore_signal:
-        print(f"[DOCUMENT SIGNAL] تم تجاوز منع المستندات التلقائية لـ: {instance.title}")
-        return
-        
-    if not instance.pk and (not instance.title or instance.title.strip() == '' or instance.title == 'بدون عنوان'):
-        print("[BLOCKED DOCUMENT] تم منع محاولة إنشاء مستند تلقائي")
-        raise ValueError("تم منع إنشاء مستند تلقائي بشكل قاطع")
-        
-# التأكد من تعطيل المستندات التلقائية في كل مجلد
-@receiver(pre_save, sender=ArchiveFolder)
-def ensure_disable_auto_documents(sender, instance, **kwargs):
-    """التأكد من تعطيل المستندات التلقائية في كل مجلد"""
-    instance.disable_auto_documents = True
-    instance._skip_auto_document_creation = True
-    instance._prevent_auto_docs = True
+    CONDITION_CHOICES = [
+        ('excellent', _('ممتازة')),
+        ('good', _('جيدة')),
+        ('fair', _('متوسطة')),
+        ('poor', _('سيئة')),
+        ('damaged', _('متضررة')),
+        ('not_applicable', _('غير منطبق')),
+    ]
     
-# تنظيف فوري بعد إنشاء أي مجلد
-@receiver(post_save, sender=ArchiveFolder)
-def cleanup_after_folder_save(sender, instance, created, **kwargs):
-    """تنظيف فوري بعد إنشاء أي مجلد"""
-    if instance:
-        Document.objects.filter(folder=instance, title__in=['', 'بدون عنوان', None]).delete()
+    category = models.ForeignKey(CarInspectionCategory, on_delete=models.CASCADE,
+                               related_name='inspection_items', verbose_name=_('الفئة'))
+    name = models.CharField(max_length=100, verbose_name=_('اسم العنصر'))
+    description = models.TextField(blank=True, null=True, verbose_name=_('وصف العنصر'))
+    display_order = models.PositiveIntegerField(default=0, verbose_name=_('ترتيب العرض'))
+    is_required = models.BooleanField(default=True, verbose_name=_('إلزامي'))
+    is_active = models.BooleanField(default=True, verbose_name=_('نشط'))
+    
+    class Meta:
+        verbose_name = _('عنصر فحص السيارة')
+        verbose_name_plural = _('عناصر فحص السيارة')
+        ordering = ['category__display_order', 'display_order', 'name']
+        
+    def __str__(self):
+        return f"{self.category.name} - {self.name}"
+
+
+class CarInspectionDetail(models.Model):
+    """تفاصيل فحص عنصر معين في تقرير حالة السيارة"""
+    
+    report = models.ForeignKey(CarConditionReport, on_delete=models.CASCADE,
+                             related_name='inspection_details', verbose_name=_('تقرير الحالة'))
+    inspection_item = models.ForeignKey(CarInspectionItem, on_delete=models.CASCADE,
+                                      related_name='details', verbose_name=_('عنصر الفحص'))
+    condition = models.CharField(max_length=20, choices=CarInspectionItem.CONDITION_CHOICES,
+                               verbose_name=_('الحالة'))
+    notes = models.TextField(blank=True, null=True, verbose_name=_('ملاحظات'))
+    
+    class Meta:
+        verbose_name = _('تفاصيل فحص العنصر')
+        verbose_name_plural = _('تفاصيل فحص العناصر')
+        unique_together = ('report', 'inspection_item')
+        
+    def __str__(self):
+        return f"{self.report} - {self.inspection_item.name} - {self.get_condition_display()}"
+
+
+class CarInspectionImage(models.Model):
+    """صور تقرير حالة السيارة"""
+    
+    def inspection_image_path(instance, filename):
+        """تحديد مسار تخزين صور السيارة"""
+        ext = filename.split('.')[-1]
+        car_id = instance.report.car.id
+        report_date = instance.report.date.strftime('%Y%m%d')
+        report_type = instance.report.report_type
+        return f'car_inspection/car_{car_id}/{report_date}_{report_type}/{uuid.uuid4().hex[:8]}.{ext}'
+    
+    report = models.ForeignKey(CarConditionReport, on_delete=models.CASCADE,
+                             related_name='images', verbose_name=_('تقرير الحالة'))
+    inspection_detail = models.ForeignKey(CarInspectionDetail, on_delete=models.CASCADE,
+                                        related_name='images', null=True, blank=True,
+                                        verbose_name=_('تفاصيل الفحص'))
+    image = models.ImageField(upload_to=inspection_image_path, verbose_name=_('الصورة'))
+    description = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('وصف الصورة'))
+    upload_date = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الرفع'))
+    
+    class Meta:
+        verbose_name = _('صورة فحص السيارة')
+        verbose_name_plural = _('صور فحص السيارة')
+        ordering = ['-upload_date']
+        
+    def __str__(self):
+        return f"{self.report} - {self.upload_date.strftime('%Y-%m-%d %H:%M')}"
+
+
+class CustomerSignature(models.Model):
+    """توقيع العميل والموظف على تقرير حالة السيارة"""
+    
+    def signature_path(instance, filename):
+        """تحديد مسار تخزين توقيع العميل"""
+        ext = filename.split('.')[-1]
+        car_id = instance.report.car.id
+        report_date = instance.report.date.strftime('%Y%m%d')
+        report_type = instance.report.report_type
+        signature_type = 'customer' if instance.is_customer else 'staff'
+        return f'signatures/car_{car_id}/{report_date}_{report_type}/{signature_type}_{uuid.uuid4().hex[:8]}.{ext}'
+    
+    report = models.ForeignKey(CarConditionReport, on_delete=models.CASCADE,
+                             related_name='signatures', verbose_name=_('تقرير الحالة'))
+    signature = models.ImageField(upload_to=signature_path, verbose_name=_('التوقيع'))
+    is_customer = models.BooleanField(default=True, verbose_name=_('توقيع العميل'))
+    signed_by_name = models.CharField(max_length=100, verbose_name=_('اسم الموقع'))
+    signed_date = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ التوقيع'))
+    ip_address = models.GenericIPAddressField(blank=True, null=True, verbose_name=_('عنوان IP'))
+    
+    class Meta:
+        verbose_name = _('توقيع على تقرير الحالة')
+        verbose_name_plural = _('توقيعات على تقارير الحالة')
+        unique_together = ('report', 'is_customer')
+        
+    def __str__(self):
+        signature_type = _("العميل") if self.is_customer else _("الموظف")
+        return f"{self.report} - توقيع {signature_type} - {self.signed_by_name}"
