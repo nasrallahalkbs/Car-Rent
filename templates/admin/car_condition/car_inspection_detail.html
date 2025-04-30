@@ -261,26 +261,38 @@
         </div>
     </div>
     
-    <!-- الصور العامة والتوقيعات -->
+    <!-- الهيكل الخارجي والتوقيعات -->
     <div class="row">
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header pb-0">
                     <div class="d-flex align-items-center">
-                        <i class="fas fa-camera text-primary me-2"></i>
-                        <h6 class="mb-0">{% trans "الصور العامة" %}</h6>
+                        <i class="fas fa-car-alt text-primary me-2"></i>
+                        <h6 class="mb-0">{% trans "الهيكل الخارجي" %}</h6>
                     </div>
                 </div>
                 <div class="card-body">
                     {% if general_images %}
                         <div class="row">
                             {% for image in general_images %}
-                                <div class="col-md-4 col-6 mb-3">
+                                <div class="col-md-6 col-6 mb-3">
                                     <a href="{{ image.image.url }}" class="general-image" data-bs-toggle="modal" data-bs-target="#imageModal" data-image-url="{{ image.image.url }}" data-image-desc="{{ image.description }}">
                                         <div class="image-card">
                                             <img src="{{ image.image.url }}" alt="{{ image.description|default:'صورة' }}" class="img-fluid rounded">
                                             {% if image.description %}
-                                                <div class="image-caption">{{ image.description }}</div>
+                                                <div class="image-caption">
+                                                    {% if 'صورة أمامية' in image.description %}
+                                                        <strong>{% trans "صورة أمامية" %}</strong>
+                                                    {% elif 'صورة خلفية' in image.description %}
+                                                        <strong>{% trans "صورة خلفية" %}</strong>
+                                                    {% elif 'صورة جانبية' in image.description %}
+                                                        <strong>{% trans "صورة جانبية" %}</strong>
+                                                    {% elif 'صورة داخلية' in image.description %}
+                                                        <strong>{% trans "صورة داخلية" %}</strong>
+                                                    {% else %}
+                                                        {{ image.description }}
+                                                    {% endif %}
+                                                </div>
                                             {% endif %}
                                         </div>
                                     </a>
@@ -289,8 +301,8 @@
                         </div>
                     {% else %}
                         <div class="text-center py-5">
-                            <i class="fas fa-images fa-3x text-muted mb-3"></i>
-                            <p>{% trans "لا توجد صور عامة مرفقة بهذا التقرير" %}</p>
+                            <i class="fas fa-car fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد صور للهيكل الخارجي مرفقة بهذا التقرير" %}</p>
                             <a href="{% url 'add_inspection_images' report.id %}" class="btn btn-sm btn-primary">
                                 <i class="fas fa-plus me-1"></i> {% trans "إضافة صور" %}
                             </a>
