@@ -6,170 +6,481 @@
 
 {% block extra_head %}
 <style>
-    .comparison-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        color: #343a40;
-        border-bottom: 2px solid #005192; /* اللون الرسمي */
-        padding-bottom: 0.5rem;
+    :root {
+        --primary-color: #005192;
+        --primary-dark: #003e70;
+        --primary-light: #0078d7;
+        --secondary-color: #212529;
+        --accent-color: #f3a712;
+        --light-bg: #f8f9fa;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --gray-color: #6b7280;
+        --light-border: #e5e7eb;
     }
 
+    /* Fonts & Typography */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* General Styles */
+    .comparison-title {
+        position: relative;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        color: var(--secondary-color);
+        padding-bottom: 0.8rem;
+        display: inline-block;
+    }
+    
+    .comparison-title:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        border-radius: 2px;
+    }
+
+    /* Modern Cards */
     .comparison-card {
         border: none;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        margin-bottom: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .comparison-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
     }
 
     .comparison-card .card-header {
-        background-color: #005192; /* اللون الرسمي */
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         color: white;
         font-weight: 600;
-        border-radius: 8px 8px 0 0;
+        border-radius: 12px 12px 0 0;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .comparison-card .card-header i {
+        margin-right: 0.5rem;
+        font-size: 1.2rem;
+    }
+    
+    .comparison-card .card-body {
+        padding: 1.5rem;
     }
 
+    /* Info Panels */
+    .info-panel {
+        background-color: white;
+        border-radius: 12px;
+        border-right: 5px solid var(--primary-color);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .info-panel::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 6px;
+        height: 100%;
+        background: linear-gradient(to bottom, var(--primary-color), var(--primary-light));
+        border-radius: 3px 0 0 3px;
+    }
+    
+    .info-panel h5 {
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        font-weight: 700;
+        margin-bottom: 1.2rem;
+    }
+    
+    .info-panel h5 i {
+        margin-left: 8px;
+        color: var(--primary-color);
+    }
+    
+    .panel-bg-icon {
+        position: absolute;
+        bottom: -15px;
+        right: -15px;
+        font-size: 8rem;
+        color: rgba(0, 0, 0, 0.03);
+        transform: rotate(-15deg);
+    }
+
+    /* Labels and Values */
     .comparison-label {
         font-weight: 600;
-        color: #495057;
+        color: var(--secondary-color);
+        margin-bottom: 0.3rem;
     }
 
     .comparison-value {
-        font-weight: 400;
+        font-weight: 500;
+        color: var(--gray-color);
     }
 
+    /* Highlight and Changes */
     .difference-highlight {
-        background-color: #fff3cd;
-        border-radius: 4px;
-        padding: 0.2rem 0.5rem;
+        background-color: #fff8e1;
+        border-radius: 6px;
+        padding: 0.3rem 0.7rem;
+        border-left: 3px solid var(--warning-color);
+        font-weight: 500;
     }
 
     .negative-change {
-        color: #dc3545;
+        color: var(--danger-color);
         font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+    
+    .negative-change i {
+        margin-right: 5px;
     }
 
     .positive-change {
-        color: #28a745;
+        color: var(--success-color);
         font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+    
+    .positive-change i {
+        margin-right: 5px;
     }
 
     .no-change {
-        color: #6c757d;
+        color: var(--gray-color);
+        display: flex;
+        align-items: center;
+    }
+    
+    .no-change i {
+        margin-right: 5px;
     }
 
-    .car-image-container {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 1rem;
-        text-align: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .car-image {
-        max-width: 100%;
-        max-height: 200px;
-        object-fit: contain;
-    }
-
-    .car-info-box {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        border-right: 4px solid #005192; /* اللون الرسمي */
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
+    /* Status Indicators */
     .status-indicator {
-        height: 12px;
-        width: 12px;
+        height: 14px;
+        width: 14px;
         border-radius: 50%;
         display: inline-block;
-        margin-left: 0.5rem;
+        margin-left: 8px;
+        position: relative;
+    }
+    
+    .status-indicator::after {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        border-radius: 50%;
+        border: 1px solid;
+        opacity: 0.2;
     }
 
     .status-good {
-        background-color: #28a745;
+        background-color: var(--success-color);
+    }
+    
+    .status-good::after {
+        border-color: var(--success-color);
     }
 
     .status-warning {
-        background-color: #ffc107;
+        background-color: var(--warning-color);
+    }
+    
+    .status-warning::after {
+        border-color: var(--warning-color);
     }
 
     .status-bad {
-        background-color: #dc3545;
+        background-color: var(--danger-color);
+    }
+    
+    .status-bad::after {
+        border-color: var(--danger-color);
     }
 
-    /* مؤشر مستوى الوقود */
+    /* Fuel Gauge */
+    .fuel-container {
+        position: relative;
+        padding: 5px 0;
+    }
+    
     .fuel-gauge {
         width: 100%;
-        height: 20px;
+        height: 22px;
         background-color: #e9ecef;
-        border-radius: 10px;
+        border-radius: 11px;
         overflow: hidden;
-        margin-top: 5px;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative;
     }
 
     .fuel-gauge-fill {
         height: 100%;
-        background-color: #005192; /* اللون الرسمي */
-        transition: width 0.5s;
+        background: linear-gradient(90deg, #ff9800 0%, #ffca00 100%);
+        transition: width 0.8s ease-in-out;
+        border-radius: 11px;
+        position: relative;
+    }
+    
+    .fuel-gauge-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.1),
+            rgba(255, 255, 255, 0.1) 10px,
+            rgba(255, 255, 255, 0.2) 10px,
+            rgba(255, 255, 255, 0.2) 20px
+        );
     }
 
-    .fuel-level-label {
+    .fuel-level-markers {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 4px;
         margin-top: 5px;
-        font-weight: 600;
-        font-size: 0.8rem;
-        color: #005192; /* اللون الرسمي */
+        font-size: 0.75rem;
+        color: var(--gray-color);
+    }
+    
+    .fuel-icon {
+        position: absolute;
+        right: -10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.9rem;
+        color: #ff6d00;
+        z-index: 10;
     }
 
-    /* ارتفاع الأسعار أو الأميال */
-    .price-increase {
-        color: #dc3545;
-        font-weight: 600;
-    }
-
+    /* Mileage Display */
     .mileage-increase {
-        background-color: #f8d7da;
-        padding: 0.2rem 0.5rem;
-        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        background-color: rgba(239, 68, 68, 0.1);
+        color: var(--danger-color);
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
         font-weight: 600;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+    }
+    
+    .mileage-increase i {
+        margin-right: 5px;
     }
 
-    .official-stamp {
-        border: 2px solid #005192; /* اللون الرسمي */
+    /* Table Styling */
+    .comparison-table {
         border-radius: 8px;
-        padding: 1rem;
-        text-align: center;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .comparison-table thead {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .comparison-table th {
         font-weight: 600;
-        color: #005192; /* اللون الرسمي */
-        margin-top: 1.5rem;
+        padding: 1rem;
+        border: none;
+    }
+    
+    .comparison-table td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-color: var(--light-border);
+    }
+    
+    .comparison-table tr:nth-child(even) {
+        background-color: rgba(0, 81, 146, 0.03);
+    }
+    
+    .comparison-table tr:hover {
+        background-color: rgba(0, 81, 146, 0.06);
+    }
+
+    /* Official Documents Styling */
+    .official-stamp {
+        border: 3px solid var(--primary-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-top: 2rem;
+        position: relative;
+        background-color: rgba(0, 81, 146, 0.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    
+    .official-stamp::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        left: -50px;
+        width: 100px;
+        height: 100px;
+        background-color: rgba(0, 81, 146, 0.05);
+        border-radius: 50%;
+    }
+    
+    .official-stamp::after {
+        content: '';
+        position: absolute;
+        bottom: -50px;
+        right: -50px;
+        width: 100px;
+        height: 100px;
+        background-color: rgba(0, 81, 146, 0.05);
+        border-radius: 50%;
     }
 
     .signature-area {
-        margin-top: 2rem;
+        margin-top: 2.5rem;
         display: flex;
         justify-content: space-between;
     }
 
     .signature-box {
-        border-top: 1px solid #dee2e6;
-        padding-top: 0.5rem;
+        border-top: 2px solid var(--light-border);
+        padding-top: 0.8rem;
         width: 45%;
         text-align: center;
+        position: relative;
+    }
+    
+    .signature-box::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: 0;
+        width: 50px;
+        height: 2px;
+        background-color: var(--primary-color);
     }
 
+    /* Buttons and Actions */
     .print-button {
-        background-color: #005192; /* اللون الرسمي */
+        background: linear-gradient(to right, var(--primary-color), var(--primary-dark));
         color: white;
         border: none;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
     }
-
+    
     .print-button:hover {
-        background-color: #003e70; /* اللون الرسمي (داكن) */
+        background: linear-gradient(to right, var(--primary-dark), var(--primary-color));
         color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .print-button i {
+        margin-right: 8px;
+        font-size: 1.1rem;
     }
 
+    /* Car Information Box */
+    .car-info-box {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        border-bottom: 4px solid var(--primary-color);
+    }
+    
+    .car-info-box h5 {
+        color: var(--secondary-color);
+        display: flex;
+        align-items: center;
+        font-weight: 700;
+        margin-bottom: 1.2rem;
+    }
+    
+    .car-info-box .badge {
+        padding: 0.5rem 0.8rem;
+        border-radius: 6px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+
+    /* Alert Box Styling */
+    .alert {
+        border: none;
+        border-radius: 12px;
+        padding: 1.2rem 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .alert h5 {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.8rem;
+        font-weight: 700;
+    }
+    
+    .alert h5 i {
+        margin-right: 8px;
+        font-size: 1.2rem;
+    }
+    
+    .alert-warning {
+        background-color: #fff8e1;
+        color: #b45309;
+        border-left: 4px solid #f59e0b;
+    }
+    
+    .alert-success {
+        background-color: #ecfdf5;
+        color: #065f46;
+        border-left: 4px solid #10b981;
+    }
+
+    /* Print Styles */
     @media print {
         .no-print {
             display: none !important;
@@ -178,16 +489,38 @@
         body {
             padding: 0;
             margin: 0;
+            background-color: white;
         }
         
         .container-fluid {
             width: 100%;
-            padding: 0;
+            padding: 1cm;
             margin: 0;
         }
         
-        .card {
+        .comparison-card, .car-info-box, .info-panel {
+            box-shadow: none !important;
+            border: 1px solid #ddd;
             break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        
+        .comparison-card .card-header {
+            background: var(--primary-color) !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .comparison-table thead {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .fuel-gauge-fill {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
     }
 </style>
