@@ -252,6 +252,38 @@
                                         </div>
                                         {% endif %}
                                     </div>
+
+                                    <!-- حقول قطع الغيار والإصلاحات المطلوبة -->
+                                    <div class="col-12 mt-3">
+                                        <div class="card border border-warning">
+                                            <div class="card-header bg-warning bg-opacity-10">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-tools me-2"></i>
+                                                    {% trans "قطع الغيار والإصلاحات المطلوبة" %}
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row g-3">
+                                                    <div class="col-12">
+                                                        <label class="form-label">{% trans "وصف الإصلاحات المطلوبة" %}</label>
+                                                        <textarea name="repair_description" class="form-control" rows="3" placeholder="{% trans 'اكتب وصفاً تفصيلياً للإصلاحات المطلوبة' %}"></textarea>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">{% trans "قطع الغيار المطلوبة" %}</label>
+                                                        <textarea name="repair_parts" class="form-control" rows="3" placeholder="{% trans 'اكتب قائمة بقطع الغيار المطلوبة، كل قطعة في سطر منفصل' %}"></textarea>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">{% trans "تكلفة قطع الغيار المقدرة" %}</label>
+                                                        <input type="number" name="parts_cost" class="form-control" min="0" step="0.01" placeholder="{% trans 'تكلفة قطع الغيار' %}">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">{% trans "تكلفة اليد العاملة المقدرة" %}</label>
+                                                        <input type="number" name="labor_cost" class="form-control" min="0" step="0.01" placeholder="{% trans 'تكلفة اليد العاملة' %}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -300,6 +332,19 @@
 {% block extra_scripts %}
 <script>
     $(document).ready(function() {
+        // إخفاء قسم الإصلاحات في البداية
+        $(".card.border-warning").hide();
+        
+        // إظهار قسم الإصلاحات فقط عندما تكون حالة السيارة "سيئة" أو "تالفة"
+        $("#{{ form.car_condition.id_for_label }}").change(function() {
+            var condition = $(this).val();
+            if (condition === 'poor' || condition === 'damaged') {
+                $(".card.border-warning").slideDown();
+            } else {
+                $(".card.border-warning").slideUp();
+            }
+        });
+        
         // إنشاء عناصر عرض معلومات العميل والسيارة
         var customerInfoDiv = $('<div class="customer-info mt-3 card bg-light mb-3" style="display:none">')
             .append('<div class="card-header bg-info text-white"><h6 class="mb-0"><i class="fas fa-user me-2"></i>{% trans "معلومات العميل والحجز" %}</h6></div>')
