@@ -1,0 +1,353 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .car-image-section {
+        margin-bottom: 20px;
+    }
+    
+    .car-image-container {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        height: 100%;
+        background-color: #f8f9fa;
+        transition: transform 0.2s;
+    }
+    
+    .car-image-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .car-image-box {
+        width: 100%;
+        padding-top: 75%; /* Aspect ratio 4:3 */
+        border: 2px dashed #ced4da;
+        border-radius: 8px;
+        position: relative;
+        background-color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        cursor: pointer;
+        overflow: hidden;
+    }
+    
+    .car-image-box i {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2rem;
+        color: #adb5bd;
+    }
+    
+    .car-image-box img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+    }
+    
+    .car-image-preview {
+        display: none;
+    }
+    
+    .car-image-notes {
+        width: 100%;
+    }
+    
+    .inspection-category {
+        margin-bottom: 30px;
+    }
+    
+    .inspection-items-table {
+        margin-top: 10px;
+    }
+    
+    .condition-option {
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    
+    .condition-option:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .condition-option.selected {
+        background-color: #e9ecef;
+        font-weight: bold;
+    }
+    
+    .needs-repair-check {
+        margin-top: 5px;
+    }
+    
+    .fuel-level-selector {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    
+    .fuel-level-option {
+        text-align: center;
+        cursor: pointer;
+    }
+    
+    .fuel-level-option.selected {
+        font-weight: bold;
+    }
+    
+    .fuel-gauge {
+        width: 100%;
+        background-color: #f5f5f5;
+        border-radius: 5px;
+        overflow: hidden;
+        height: 20px;
+        margin-top: 10px;
+    }
+    
+    .fuel-gauge-fill {
+        height: 100%;
+        background-color: #28a745;
+        transition: width 0.3s;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ title }}</h5>
+                        <a href="{% url 'car_condition_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i> {% trans "العودة للقائمة" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="carInspectionForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- معلومات أساسية -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">{% trans "معلومات أساسية" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        {{ form.car|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.reservation|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.report_type|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.mileage|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.date|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- قسم صور السيارة -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">{% trans "صور توثيق حالة السيارة" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row car-image-section">
+                                    <!-- صورة أمامية -->
+                                    <div class="col-md-3 mb-3">
+                                        <div class="car-image-container">
+                                            <h6>{% trans "صورة أمامية" %}</h6>
+                                            <div class="car-image-box" id="frontImageBox">
+                                                <i class="fas fa-camera"></i>
+                                                <img src="" id="frontImagePreview" class="car-image-preview">
+                                                <input type="file" name="front_image" id="frontImage" class="d-none" accept="image/*">
+                                            </div>
+                                            <textarea name="front_image_notes" class="form-control car-image-notes" rows="2" placeholder="{% trans 'ملاحظات عن الصورة الأمامية' %}"></textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- صورة خلفية -->
+                                    <div class="col-md-3 mb-3">
+                                        <div class="car-image-container">
+                                            <h6>{% trans "صورة خلفية" %}</h6>
+                                            <div class="car-image-box" id="rearImageBox">
+                                                <i class="fas fa-camera"></i>
+                                                <img src="" id="rearImagePreview" class="car-image-preview">
+                                                <input type="file" name="rear_image" id="rearImage" class="d-none" accept="image/*">
+                                            </div>
+                                            <textarea name="rear_image_notes" class="form-control car-image-notes" rows="2" placeholder="{% trans 'ملاحظات عن الصورة الخلفية' %}"></textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- صورة جانبية -->
+                                    <div class="col-md-3 mb-3">
+                                        <div class="car-image-container">
+                                            <h6>{% trans "صورة جانبية" %}</h6>
+                                            <div class="car-image-box" id="sideImageBox">
+                                                <i class="fas fa-camera"></i>
+                                                <img src="" id="sideImagePreview" class="car-image-preview">
+                                                <input type="file" name="side_image" id="sideImage" class="d-none" accept="image/*">
+                                            </div>
+                                            <textarea name="side_image_notes" class="form-control car-image-notes" rows="2" placeholder="{% trans 'ملاحظات عن الصورة الجانبية' %}"></textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- صورة داخلية -->
+                                    <div class="col-md-3 mb-3">
+                                        <div class="car-image-container">
+                                            <h6>{% trans "صورة داخلية" %}</h6>
+                                            <div class="car-image-box" id="interiorImageBox">
+                                                <i class="fas fa-camera"></i>
+                                                <img src="" id="interiorImagePreview" class="car-image-preview">
+                                                <input type="file" name="interior_image" id="interiorImage" class="d-none" accept="image/*">
+                                            </div>
+                                            <textarea name="interior_image_notes" class="form-control car-image-notes" rows="2" placeholder="{% trans 'ملاحظات عن الصورة الداخلية' %}"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- معلومات إضافية -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">{% trans "معلومات إضافية" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        {{ form.inspection_type|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">{{ form.fuel_level.label }}</label>
+                                        {{ form.fuel_level }}
+                                        
+                                        <div class="fuel-gauge">
+                                            <div class="fuel-gauge-fill" id="fuel-gauge-visual"></div>
+                                        </div>
+                                        
+                                        <div class="fuel-level-selector">
+                                            <div class="fuel-level-option" data-value="empty" data-percentage="0">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "فارغ" %}</div>
+                                            </div>
+                                            <div class="fuel-level-option" data-value="quarter" data-percentage="25">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "ربع" %}</div>
+                                            </div>
+                                            <div class="fuel-level-option" data-value="half" data-percentage="50">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "نصف" %}</div>
+                                            </div>
+                                            <div class="fuel-level-option" data-value="three_quarters" data-percentage="75">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "ثلاثة أرباع" %}</div>
+                                            </div>
+                                            <div class="fuel-level-option" data-value="full" data-percentage="100">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "ممتلئ" %}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 text-end">
+                                <a href="{% url 'car_condition_list' %}" class="btn btn-secondary me-2">
+                                    <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> {% trans "حفظ وإكمال التقرير" %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // وظائف إدارة صور السيارة
+        function setupImagePreview(boxId, inputId, previewId) {
+            // النقر على مربع الصورة
+            $(boxId).click(function() {
+                $(inputId).click();
+            });
+            
+            // عند اختيار ملف
+            $(inputId).change(function() {
+                if (this.files && this.files[0]) {
+                    var reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        $(previewId).attr('src', e.target.result);
+                        $(previewId).show();
+                    }
+                    
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+        
+        // إعداد كل مربعات الصور
+        setupImagePreview('#frontImageBox', '#frontImage', '#frontImagePreview');
+        setupImagePreview('#rearImageBox', '#rearImage', '#rearImagePreview');
+        setupImagePreview('#sideImageBox', '#sideImage', '#sideImagePreview');
+        setupImagePreview('#interiorImageBox', '#interiorImage', '#interiorImagePreview');
+        
+        // إدارة مستوى الوقود
+        $('.fuel-level-option').click(function() {
+            var value = $(this).data('value');
+            var percentage = $(this).data('percentage');
+            
+            // تحديث القيمة المحددة
+            $('#id_fuel_level').val(value);
+            
+            // تحديث التصميم المرئي
+            $('.fuel-level-option').removeClass('selected');
+            $(this).addClass('selected');
+            
+            // تحديث مؤشر مستوى الوقود
+            $('#fuel-gauge-visual').css('width', percentage + '%');
+        });
+        
+        // تحديد القيمة الأولية لمستوى الوقود إذا كانت موجودة
+        var initialFuelLevel = $('#id_fuel_level').val();
+        if (initialFuelLevel) {
+            $('.fuel-level-option[data-value="' + initialFuelLevel + '"]').click();
+        }
+    });
+</script>
+{% endblock %}

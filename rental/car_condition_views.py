@@ -617,10 +617,26 @@ def complete_car_inspection_create(request):
             # حفظ التقرير وتفاصيل الفحص
             report = form.save()
             
+            # معالجة صور السيارة
+            image_types = ['front_image', 'rear_image', 'side_image', 'interior_image']
+            
+            for image_type in image_types:
+                if image_type in request.FILES:
+                    image_file = request.FILES[image_type]
+                    notes = request.POST.get(f'{image_type}_notes', '')
+                    
+                    # إنشاء سجل لصورة الفحص
+                    CarInspectionImage.objects.create(
+                        report=report,
+                        image=image_file,
+                        description=notes or f'صورة {image_type.replace("_image", "")}',
+                        inspection_detail=None  # صورة عامة
+                    )
+            
             messages.success(request, _('تم إنشاء تقرير فحص السيارة بنجاح'))
             
-            # توجيه لإضافة الصور والتوقيعات
-            return redirect('add_inspection_images', report_id=report.id)
+            # توجيه إلى صفحة تفاصيل التقرير
+            return redirect('car_inspection_detail', report.id)
     else:
         form = CompleteCarInspectionForm(initial=initial_data, user=request.user)
     
