@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 import os
 import uuid
+from django.conf import settings
 
 class User(AbstractUser):
     """Extended User model for car rental app"""
