@@ -3,8 +3,13 @@ from django.core.validators import MinValueValidator
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.utils import timezone
 from datetime import date
+from django.utils.translation import gettext_lazy as _
 
-from .models import User, Car, Review, CarConditionReport, Reservation
+from .models import (
+    User, Car, Review, CarConditionReport, Reservation,
+    CarInspectionCategory, CarInspectionItem, CarInspectionDetail,
+    CarInspectionImage, CustomerSignature
+)
 
 class LoginForm(AuthenticationForm):
     """User login form"""
@@ -301,7 +306,7 @@ class ManualPaymentForm(forms.Form):
     
 
 class CarConditionReportForm(forms.ModelForm):
-    """نموذج توثيق حالة السيارة"""
+    """نموذج توثيق حالة السيارة الأساسي"""
     
     class Meta:
         model = CarConditionReport
@@ -387,6 +392,327 @@ class CarConditionReportForm(forms.ModelForm):
             self.add_error('car', 'السيارة المحددة لا تتطابق مع السيارة في الحجز')
             
         return cleaned_data
+
+
+class CarInspectionCategoryForm(forms.ModelForm):
+    """نموذج لإضافة أو تعديل فئات فحص السيارة"""
+    
+    class Meta:
+        model = CarInspectionCategory
+        fields = ['name', 'description', 'display_order', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'اسم الفئة مثل: الهيكل الخارجي، المحرك، إلخ',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'وصف مختصر للفئة',
+            }),
+            'display_order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'placeholder': 'ترتيب العرض (الأرقام الأصغر تظهر أولاً)',
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+
+
+class CarInspectionItemForm(forms.ModelForm):
+    """نموذج لإضافة أو تعديل عناصر فحص السيارة"""
+    
+    class Meta:
+        model = CarInspectionItem
+        fields = ['category', 'name', 'description', 'display_order', 'is_required', 'is_active']
+        widgets = {
+            'category': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'اسم العنصر مثل: المحرك، الفرامل، إلخ',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'وصف مختصر للعنصر',
+            }),
+            'display_order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'placeholder': 'ترتيب العرض (الأرقام الأصغر تظهر أولاً)',
+            }),
+            'is_required': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+
+
+class CarInspectionDetailForm(forms.ModelForm):
+    """نموذج لتوثيق حالة عنصر محدد في تقرير الفحص"""
+    
+    class Meta:
+        model = CarInspectionDetail
+        fields = ['inspection_item', 'condition', 'notes']
+        widgets = {
+            'inspection_item': forms.Select(attrs={
+                'class': 'form-select',
+                'disabled': 'disabled',  # سيتم تعبئته تلقائياً
+            }),
+            'condition': forms.Select(attrs={
+                'class': 'form-select condition-select',
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'ملاحظات إضافية عن حالة هذا العنصر',
+            }),
+        }
+
+
+class CarInspectionImageForm(forms.ModelForm):
+    """نموذج لإضافة صور لتقرير حالة السيارة"""
+    
+    class Meta:
+        model = CarInspectionImage
+        fields = ['image', 'description', 'inspection_detail']
+        widgets = {
+            'image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*',
+                'capture': 'camera',  # للسماح باستخدام الكاميرا في الأجهزة المحمولة
+            }),
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'وصف مختصر للصورة',
+            }),
+            'inspection_detail': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+        }
+
+
+class CustomerSignatureForm(forms.ModelForm):
+    """نموذج لتوثيق توقيع العميل أو الموظف"""
+    
+    signature_data = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=True,
+        help_text=_('بيانات التوقيع الرقمي')
+    )
+    
+    class Meta:
+        model = CustomerSignature
+        fields = ['is_customer', 'signed_by_name']
+        widgets = {
+            'is_customer': forms.HiddenInput(),  # سيتم تحديده عند إنشاء النموذج
+            'signed_by_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'الاسم الكامل للموقّع',
+                'required': 'required',
+            }),
+        }
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # تحويل بيانات التوقيع من base64 إلى صورة
+        if 'signature_data' in self.cleaned_data and self.cleaned_data['signature_data']:
+            import base64
+            from django.core.files.base import ContentFile
+            
+            signature_data = self.cleaned_data['signature_data']
+            if signature_data.startswith('data:image'):
+                # استخراج البيانات من رمز base64
+                format, signature_data = signature_data.split(';base64,')
+                ext = format.split('/')[-1]
+                
+                # إنشاء ملف من البيانات
+                signature_file = ContentFile(base64.b64decode(signature_data), name=f'signature.{ext}')
+                instance.signature = signature_file
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
+
+class CompleteCarInspectionForm(forms.Form):
+    """نموذج شامل لتوثيق تقرير حالة السيارة مع جميع تفاصيل الفحص"""
+    
+    # البيانات الأساسية للتقرير
+    reservation = forms.ModelChoiceField(
+        queryset=Reservation.objects.filter(status__in=['pending', 'confirmed']),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False,
+        label=_('الحجز')
+    )
+    
+    car = forms.ModelChoiceField(
+        queryset=Car.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label=_('السيارة')
+    )
+    
+    report_type = forms.ChoiceField(
+        choices=CarConditionReport.REPORT_TYPE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label=_('نوع التقرير')
+    )
+    
+    mileage = forms.IntegerField(
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('المسافة المقطوعة بالكيلومتر')
+        }),
+        label=_('العداد (كم)')
+    )
+    
+    date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={
+            'class': 'form-control',
+            'type': 'datetime-local'
+        }),
+        initial=timezone.now,
+        label=_('تاريخ ووقت الفحص')
+    )
+    
+    fuel_level = forms.ChoiceField(
+        choices=CarConditionReport.FUEL_LEVEL_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label=_('مستوى الوقود')
+    )
+    
+    car_condition = forms.ChoiceField(
+        choices=CarConditionReport.CAR_CONDITION_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label=_('حالة السيارة العامة')
+    )
+    
+    notes = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': _('ملاحظات عامة حول حالة السيارة')
+        }),
+        required=False,
+        label=_('ملاحظات عامة')
+    )
+    
+    # تفاصيل الأضرار
+    defects = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': _('وصف الأعطال أو الأضرار إن وجدت')
+        }),
+        required=False,
+        label=_('الأضرار')
+    )
+    
+    defect_cause = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': _('سبب العطل أو الضرر')
+        }),
+        required=False,
+        label=_('سبب الضرر')
+    )
+    
+    repair_cost = forms.DecimalField(
+        decimal_places=2,
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'placeholder': _('تكلفة الإصلاح المقدرة')
+        }),
+        label=_('تكلفة الإصلاح المقدرة')
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # إضافة حقول ديناميكية لعناصر الفحص
+        categories = CarInspectionCategory.objects.filter(is_active=True).order_by('display_order')
+        
+        for category in categories:
+            items = CarInspectionItem.objects.filter(
+                category=category,
+                is_active=True
+            ).order_by('display_order')
+            
+            for item in items:
+                field_name = f'item_{item.id}'
+                
+                # إضافة حقل حالة العنصر
+                self.fields[field_name] = forms.ChoiceField(
+                    choices=CarInspectionItem.CONDITION_CHOICES,
+                    widget=forms.Select(attrs={
+                        'class': 'form-select inspection-condition',
+                        'data-item-id': item.id,
+                        'data-category-id': category.id,
+                    }),
+                    required=item.is_required,
+                    label=item.name
+                )
+                
+                # إضافة حقل ملاحظات لكل عنصر
+                self.fields[f'{field_name}_notes'] = forms.CharField(
+                    widget=forms.Textarea(attrs={
+                        'class': 'form-control',
+                        'rows': 2,
+                        'placeholder': _('ملاحظات عن هذا العنصر'),
+                        'data-item-id': item.id,
+                    }),
+                    required=False,
+                    label=f'{item.name} - ملاحظات'
+                )
+    
+    def save(self):
+        """حفظ تقرير حالة السيارة مع كافة التفاصيل"""
+        # إنشاء التقرير الأساسي
+        report = CarConditionReport(
+            reservation=self.cleaned_data.get('reservation'),
+            car=self.cleaned_data.get('car'),
+            report_type=self.cleaned_data.get('report_type'),
+            mileage=self.cleaned_data.get('mileage'),
+            date=self.cleaned_data.get('date'),
+            fuel_level=self.cleaned_data.get('fuel_level'),
+            car_condition=self.cleaned_data.get('car_condition'),
+            notes=self.cleaned_data.get('notes'),
+            defects=self.cleaned_data.get('defects'),
+            defect_cause=self.cleaned_data.get('defect_cause'),
+            repair_cost=self.cleaned_data.get('repair_cost') or 0,
+            created_by=self.user
+        )
+        report.save()
+        
+        # حفظ تفاصيل الفحص
+        for field_name, value in self.cleaned_data.items():
+            if field_name.startswith('item_') and not field_name.endswith('_notes'):
+                item_id = int(field_name.split('_')[1])
+                notes_field = f'{field_name}_notes'
+                
+                inspection_detail = CarInspectionDetail(
+                    report=report,
+                    inspection_item_id=item_id,
+                    condition=value,
+                    notes=self.cleaned_data.get(notes_field, '')
+                )
+                inspection_detail.save()
+        
+        return report
 
 
 class SiteSettingsForm(forms.ModelForm):

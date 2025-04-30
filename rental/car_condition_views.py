@@ -2,12 +2,26 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Prefetch
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse, Http404
+from django.core.paginator import Paginator
+from django.views.decorators.http import require_POST
+from django.conf import settings
+import json
+import base64
+from django.core.files.base import ContentFile
 
-from .models import Car, Reservation, CarConditionReport
-from .forms import CarConditionReportForm
+from .models import (
+    Car, Reservation, CarConditionReport, CarInspectionCategory,
+    CarInspectionItem, CarInspectionDetail, CarInspectionImage,
+    CustomerSignature
+)
+from .forms import (
+    CarConditionReportForm, CarInspectionCategoryForm, CarInspectionItemForm,
+    CarInspectionDetailForm, CarInspectionImageForm, CustomerSignatureForm,
+    CompleteCarInspectionForm
+)
 
 @login_required
 def car_condition_list(request):
@@ -284,6 +298,14 @@ def car_condition_comparison(request, reservation_id):
         report_type='delivery'
     ).order_by('-date').first()
     
+    # تحميل تفاصيل الفحص للتقرير بطريقة فعالة
+    if delivery_report:
+        delivery_report.inspection_details_list = CarInspectionDetail.objects.filter(
+            report=delivery_report
+        ).select_related('inspection_item', 'inspection_item__category').order_by(
+            'inspection_item__category__display_order', 'inspection_item__display_order'
+        )
+    
     return_report = CarConditionReport.objects.filter(
         reservation=reservation,
         report_type='return'
@@ -326,3 +348,468 @@ def car_condition_comparison(request, reservation_id):
     }
     
     return render(request, 'admin/car_condition/car_condition_comparison_modern.html', context)
+
+
+# وظائف العرض الجديدة لنظام توثيق حالة السيارة المتقدم
+@login_required
+def inspection_category_list(request):
+    """عرض قائمة فئات الفحص مع إمكانية الإضافة والتعديل"""
+    
+    categories = CarInspectionCategory.objects.all().order_by('display_order')
+    
+    if request.method == 'POST':
+        form = CarInspectionCategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('تم إضافة فئة الفحص بنجاح'))
+            return redirect('inspection_category_list')
+    else:
+        form = CarInspectionCategoryForm()
+    
+    context = {
+        'categories': categories,
+        'form': form
+    }
+    
+    return render(request, 'admin/car_condition/inspection_category_list.html', context)
+
+
+@login_required
+def inspection_category_edit(request, category_id):
+    """تعديل فئة الفحص"""
+    
+    category = get_object_or_404(CarInspectionCategory, id=category_id)
+    
+    if request.method == 'POST':
+        form = CarInspectionCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('تم تحديث فئة الفحص بنجاح'))
+            return redirect('inspection_category_list')
+    else:
+        form = CarInspectionCategoryForm(instance=category)
+    
+    context = {
+        'form': form,
+        'category': category
+    }
+    
+    return render(request, 'admin/car_condition/inspection_category_form.html', context)
+
+
+@login_required
+def inspection_category_delete(request, category_id):
+    """حذف فئة الفحص"""
+    
+    category = get_object_or_404(CarInspectionCategory, id=category_id)
+    
+    if request.method == 'POST':
+        try:
+            category.delete()
+            messages.success(request, _('تم حذف فئة الفحص بنجاح'))
+        except Exception as e:
+            messages.error(request, _('لا يمكن حذف الفئة لأنها مرتبطة بعناصر فحص'))
+        return redirect('inspection_category_list')
+    
+    context = {
+        'category': category
+    }
+    
+    return render(request, 'admin/car_condition/inspection_category_confirm_delete.html', context)
+
+
+@login_required
+def inspection_item_list(request):
+    """عرض قائمة عناصر الفحص مع إمكانية الإضافة والتعديل"""
+    
+    items = CarInspectionItem.objects.all().select_related('category').order_by(
+        'category__display_order', 'display_order'
+    )
+    
+    if request.method == 'POST':
+        form = CarInspectionItemForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('تم إضافة عنصر الفحص بنجاح'))
+            return redirect('inspection_item_list')
+    else:
+        form = CarInspectionItemForm()
+    
+    context = {
+        'items': items,
+        'form': form
+    }
+    
+    return render(request, 'admin/car_condition/inspection_item_list.html', context)
+
+
+@login_required
+def inspection_item_edit(request, item_id):
+    """تعديل عنصر الفحص"""
+    
+    item = get_object_or_404(CarInspectionItem, id=item_id)
+    
+    if request.method == 'POST':
+        form = CarInspectionItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('تم تحديث عنصر الفحص بنجاح'))
+            return redirect('inspection_item_list')
+    else:
+        form = CarInspectionItemForm(instance=item)
+    
+    context = {
+        'form': form,
+        'item': item
+    }
+    
+    return render(request, 'admin/car_condition/inspection_item_form.html', context)
+
+
+@login_required
+def inspection_item_delete(request, item_id):
+    """حذف عنصر الفحص"""
+    
+    item = get_object_or_404(CarInspectionItem, id=item_id)
+    
+    if request.method == 'POST':
+        try:
+            item.delete()
+            messages.success(request, _('تم حذف عنصر الفحص بنجاح'))
+        except Exception as e:
+            messages.error(request, _('لا يمكن حذف العنصر لأنه مرتبط بتقارير فحص'))
+        return redirect('inspection_item_list')
+    
+    context = {
+        'item': item
+    }
+    
+    return render(request, 'admin/car_condition/inspection_item_confirm_delete.html', context)
+
+
+@login_required
+def complete_car_inspection_create(request):
+    """إنشاء تقرير فحص تفصيلي للسيارة"""
+    
+    car_id = request.GET.get('car_id')
+    reservation_id = request.GET.get('reservation_id')
+    report_type = request.GET.get('report_type', 'delivery')
+    
+    initial_data = {
+        'report_type': report_type,
+        'date': timezone.now()
+    }
+    
+    # إذا تم تمرير معرف الحجز
+    if reservation_id:
+        try:
+            reservation = Reservation.objects.get(id=reservation_id)
+            initial_data['reservation'] = reservation
+            initial_data['car'] = reservation.car
+        except Reservation.DoesNotExist:
+            pass
+    # إذا تم تمرير معرف السيارة فقط
+    elif car_id:
+        try:
+            car = Car.objects.get(id=car_id)
+            initial_data['car'] = car
+        except Car.DoesNotExist:
+            pass
+    
+    if request.method == 'POST':
+        form = CompleteCarInspectionForm(request.POST, user=request.user)
+        if form.is_valid():
+            # حفظ التقرير وتفاصيل الفحص
+            report = form.save()
+            
+            messages.success(request, _('تم إنشاء تقرير فحص السيارة بنجاح'))
+            
+            # توجيه لإضافة الصور والتوقيعات
+            return redirect('add_inspection_images', report_id=report.id)
+    else:
+        form = CompleteCarInspectionForm(initial=initial_data, user=request.user)
+    
+    context = {
+        'form': form,
+        'title': _('إنشاء تقرير فحص تفصيلي للسيارة'),
+        'car_id': car_id,
+        'reservation_id': reservation_id
+    }
+    
+    return render(request, 'admin/car_condition/complete_car_inspection_form.html', context)
+
+
+@login_required
+def car_inspection_detail(request, report_id):
+    """عرض تفاصيل تقرير فحص السيارة التفصيلي"""
+    
+    report = get_object_or_404(CarConditionReport, id=report_id)
+    
+    # تحميل تفاصيل الفحص بشكل منظم حسب الفئة
+    inspection_details = CarInspectionDetail.objects.filter(
+        report=report
+    ).select_related('inspection_item', 'inspection_item__category').order_by(
+        'inspection_item__category__display_order', 'inspection_item__display_order'
+    )
+    
+    # تنظيم التفاصيل حسب الفئة
+    categories = {}
+    for detail in inspection_details:
+        category = detail.inspection_item.category
+        if category.id not in categories:
+            categories[category.id] = {
+                'name': category.name,
+                'description': category.description,
+                'items': []
+            }
+        
+        # إضافة الصور لكل عنصر
+        detail.images_list = detail.images.all()
+        
+        categories[category.id]['items'].append(detail)
+    
+    # تحميل الصور العامة للتقرير (غير المرتبطة بعنصر محدد)
+    general_images = CarInspectionImage.objects.filter(
+        report=report, inspection_detail__isnull=True
+    )
+    
+    # تحميل التوقيعات
+    customer_signature = CustomerSignature.objects.filter(
+        report=report, is_customer=True
+    ).first()
+    
+    staff_signature = CustomerSignature.objects.filter(
+        report=report, is_customer=False
+    ).first()
+    
+    context = {
+        'report': report,
+        'categories': categories,
+        'general_images': general_images,
+        'customer_signature': customer_signature,
+        'staff_signature': staff_signature
+    }
+    
+    return render(request, 'admin/car_condition/car_inspection_detail.html', context)
+
+
+@login_required
+def add_inspection_images(request, report_id):
+    """إضافة صور لتقرير فحص السيارة"""
+    
+    report = get_object_or_404(CarConditionReport, id=report_id)
+    
+    # تحميل تفاصيل الفحص للتقرير
+    inspection_details = CarInspectionDetail.objects.filter(
+        report=report
+    ).select_related('inspection_item').order_by(
+        'inspection_item__category__display_order', 'inspection_item__display_order'
+    )
+    
+    if request.method == 'POST':
+        form = CarInspectionImageForm(request.POST, request.FILES)
+        if form.is_valid():
+            image = form.save(commit=False)
+            image.report = report
+            image.save()
+            
+            messages.success(request, _('تم إضافة الصورة بنجاح'))
+            
+            # إعادة تعيين النموذج لإضافة صورة أخرى
+            form = CarInspectionImageForm(initial={'report': report})
+    else:
+        form = CarInspectionImageForm(initial={'report': report})
+    
+    # الحصول على الصور الحالية
+    images = CarInspectionImage.objects.filter(report=report).order_by('-upload_date')
+    
+    context = {
+        'form': form,
+        'report': report,
+        'images': images,
+        'inspection_details': inspection_details,
+        'title': _('إضافة صور لتقرير فحص السيارة')
+    }
+    
+    return render(request, 'admin/car_condition/add_inspection_images.html', context)
+
+
+@login_required
+def delete_inspection_image(request, image_id):
+    """حذف صورة من تقرير فحص السيارة"""
+    
+    image = get_object_or_404(CarInspectionImage, id=image_id)
+    report_id = image.report.id
+    
+    if request.method == 'POST':
+        image.delete()
+        messages.success(request, _('تم حذف الصورة بنجاح'))
+        return redirect('add_inspection_images', report_id=report_id)
+    
+    context = {
+        'image': image
+    }
+    
+    return render(request, 'admin/car_condition/delete_inspection_image.html', context)
+
+
+@login_required
+def add_customer_signature(request, report_id):
+    """إضافة توقيع العميل على تقرير فحص السيارة"""
+    
+    report = get_object_or_404(CarConditionReport, id=report_id)
+    
+    if request.method == 'POST':
+        form = CustomerSignatureForm(request.POST)
+        if form.is_valid():
+            signature = form.save(commit=False)
+            signature.report = report
+            signature.is_customer = True
+            signature.ip_address = request.META.get('REMOTE_ADDR')
+            signature.save()
+            
+            messages.success(request, _('تم إضافة توقيع العميل بنجاح'))
+            return redirect('car_inspection_detail', report_id=report.id)
+    else:
+        # التحقق من وجود توقيع سابق
+        existing_signature = CustomerSignature.objects.filter(
+            report=report, is_customer=True
+        ).first()
+        
+        if existing_signature:
+            messages.warning(request, _('يوجد توقيع للعميل بالفعل. إضافة توقيع جديد سيحل محل التوقيع الحالي.'))
+        
+        form = CustomerSignatureForm(initial={'is_customer': True})
+    
+    context = {
+        'form': form,
+        'report': report,
+        'title': _('إضافة توقيع العميل')
+    }
+    
+    return render(request, 'admin/car_condition/add_signature.html', context)
+
+
+@login_required
+def add_staff_signature(request, report_id):
+    """إضافة توقيع الموظف على تقرير فحص السيارة"""
+    
+    report = get_object_or_404(CarConditionReport, id=report_id)
+    
+    if request.method == 'POST':
+        form = CustomerSignatureForm(request.POST)
+        if form.is_valid():
+            signature = form.save(commit=False)
+            signature.report = report
+            signature.is_customer = False
+            signature.ip_address = request.META.get('REMOTE_ADDR')
+            signature.save()
+            
+            messages.success(request, _('تم إضافة توقيع الموظف بنجاح'))
+            return redirect('car_inspection_detail', report_id=report.id)
+    else:
+        # التحقق من وجود توقيع سابق
+        existing_signature = CustomerSignature.objects.filter(
+            report=report, is_customer=False
+        ).first()
+        
+        if existing_signature:
+            messages.warning(request, _('يوجد توقيع للموظف بالفعل. إضافة توقيع جديد سيحل محل التوقيع الحالي.'))
+        
+        # استخدام بيانات المستخدم الحالي
+        initial_data = {
+            'is_customer': False,
+            'signed_by_name': request.user.get_full_name() or request.user.username
+        }
+        
+        form = CustomerSignatureForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'report': report,
+        'title': _('إضافة توقيع الموظف')
+    }
+    
+    return render(request, 'admin/car_condition/add_signature.html', context)
+
+
+@login_required
+def download_inspection_report_pdf(request, report_id):
+    """تنزيل تقرير فحص السيارة بصيغة PDF"""
+    
+    report = get_object_or_404(CarConditionReport, id=report_id)
+    
+    # تحميل تفاصيل الفحص بشكل منظم حسب الفئة
+    inspection_details = CarInspectionDetail.objects.filter(
+        report=report
+    ).select_related('inspection_item', 'inspection_item__category').order_by(
+        'inspection_item__category__display_order', 'inspection_item__display_order'
+    )
+    
+    # تنظيم التفاصيل حسب الفئة
+    categories = {}
+    for detail in inspection_details:
+        category = detail.inspection_item.category
+        if category.id not in categories:
+            categories[category.id] = {
+                'name': category.name,
+                'description': category.description,
+                'items': []
+            }
+        
+        # إضافة الصور لكل عنصر
+        detail.images_list = detail.images.all()
+        
+        categories[category.id]['items'].append(detail)
+    
+    # تحميل الصور العامة للتقرير (غير المرتبطة بعنصر محدد)
+    general_images = CarInspectionImage.objects.filter(
+        report=report, inspection_detail__isnull=True
+    )
+    
+    # تحميل التوقيعات
+    customer_signature = CustomerSignature.objects.filter(
+        report=report, is_customer=True
+    ).first()
+    
+    staff_signature = CustomerSignature.objects.filter(
+        report=report, is_customer=False
+    ).first()
+    
+    context = {
+        'report': report,
+        'categories': categories,
+        'general_images': general_images,
+        'customer_signature': customer_signature,
+        'staff_signature': staff_signature,
+        'domain': settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else request.get_host(),
+        'protocol': 'https' if request.is_secure() else 'http'
+    }
+    
+    # استخدام قالب HTML لإنشاء PDF
+    html_template = 'admin/car_condition/car_inspection_pdf.html'
+    html = render(request, html_template, context).content
+    
+    # إنشاء PDF من HTML
+    from weasyprint import HTML, CSS
+    from django.conf import settings
+    import tempfile
+    
+    # استخدام ملف مؤقت لتخزين PDF
+    pdf_file = tempfile.NamedTemporaryFile(delete=False)
+    
+    # تحويل HTML إلى PDF
+    HTML(string=html.decode()).write_pdf(
+        pdf_file.name,
+        stylesheets=[
+            CSS(string='@page { size: A4; margin: 1cm; }')
+        ]
+    )
+    
+    # إرسال الملف في الاستجابة
+    with open(pdf_file.name, 'rb') as pdf:
+        response = HttpResponse(pdf.read(), content_type='application/pdf')
+        report_date = report.date.strftime('%Y%m%d')
+        filename = f'car_inspection_{report.car.license_plate}_{report_date}.pdf'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
