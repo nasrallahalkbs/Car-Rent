@@ -991,6 +991,13 @@ class CarInspectionItem(models.Model):
 class CarInspectionDetail(models.Model):
     """تفاصيل فحص عنصر معين في تقرير حالة السيارة"""
     
+    REPAIR_STATUS_CHOICES = [
+        ('not_needed', _('لا يحتاج إصلاح')),
+        ('needed', _('يحتاج إصلاح')),
+        ('in_progress', _('قيد الإصلاح')),
+        ('completed', _('تم الإصلاح')),
+    ]
+    
     report = models.ForeignKey(CarConditionReport, on_delete=models.CASCADE,
                              related_name='inspection_details', verbose_name=_('تقرير الحالة'))
     inspection_item = models.ForeignKey(CarInspectionItem, on_delete=models.CASCADE,
@@ -999,6 +1006,16 @@ class CarInspectionDetail(models.Model):
                                verbose_name=_('الحالة'))
     notes = models.TextField(blank=True, null=True, verbose_name=_('ملاحظات'))
     
+    # حقول الإصلاحات والتكاليف
+    needs_repair = models.BooleanField(default=False, verbose_name=_('يحتاج إصلاح'))
+    repair_description = models.TextField(blank=True, null=True, verbose_name=_('وصف الإصلاح المطلوب'))
+    repair_parts = models.TextField(blank=True, null=True, verbose_name=_('قطع الغيار المطلوبة'))
+    repair_cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name=_('تكلفة الإصلاح'))
+    labor_cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name=_('تكلفة اليد العاملة'))
+    repair_status = models.CharField(max_length=20, choices=REPAIR_STATUS_CHOICES, default='not_needed', verbose_name=_('حالة الإصلاح'))
+    repair_date = models.DateField(blank=True, null=True, verbose_name=_('تاريخ الإصلاح'))
+    repair_workshop = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('الورشة المسؤولة عن الإصلاح'))
+    
     class Meta:
         verbose_name = _('تفاصيل فحص العنصر')
         verbose_name_plural = _('تفاصيل فحص العناصر')
@@ -1006,6 +1023,13 @@ class CarInspectionDetail(models.Model):
         
     def __str__(self):
         return f"{self.report} - {self.inspection_item.name} - {self.get_condition_display()}"
+        
+    @property
+    def total_repair_cost(self):
+        """إجمالي تكلفة الإصلاح (قطع الغيار + اليد العاملة)"""
+        parts_cost = self.repair_cost or 0
+        labor = self.labor_cost or 0
+        return parts_cost + labor
 
 
 class CarInspectionImage(models.Model):
