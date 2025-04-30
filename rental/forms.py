@@ -498,6 +498,59 @@ class CarInspectionImageForm(forms.ModelForm):
         }
 
 
+class CarRepairForm(forms.ModelForm):
+    """نموذج إضافة الإصلاحات والتكاليف المطلوبة للعنصر"""
+    
+    class Meta:
+        model = CarInspectionDetail
+        fields = [
+            'needs_repair', 'repair_description', 'repair_parts', 
+            'repair_cost', 'labor_cost', 'repair_status', 
+            'repair_date', 'repair_workshop'
+        ]
+        widgets = {
+            'needs_repair': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'onchange': 'toggleRepairFields(this)',
+            }),
+            'repair_description': forms.Textarea(attrs={
+                'class': 'form-control repair-field',
+                'rows': 3,
+                'placeholder': 'وصف الإصلاح المطلوب بالتفصيل',
+            }),
+            'repair_parts': forms.Textarea(attrs={
+                'class': 'form-control repair-field',
+                'rows': 3,
+                'placeholder': 'قطع الغيار المطلوبة، اكتب كل قطعة في سطر',
+            }),
+            'repair_cost': forms.NumberInput(attrs={
+                'class': 'form-control repair-field',
+                'min': 0,
+                'step': 0.01,
+                'placeholder': 'تكلفة قطع الغيار',
+                'onchange': 'calculateTotalCost()',
+            }),
+            'labor_cost': forms.NumberInput(attrs={
+                'class': 'form-control repair-field',
+                'min': 0,
+                'step': 0.01,
+                'placeholder': 'تكلفة اليد العاملة',
+                'onchange': 'calculateTotalCost()',
+            }),
+            'repair_status': forms.Select(attrs={
+                'class': 'form-select repair-field',
+            }),
+            'repair_date': forms.DateInput(attrs={
+                'class': 'form-control repair-field',
+                'type': 'date',
+            }),
+            'repair_workshop': forms.TextInput(attrs={
+                'class': 'form-control repair-field',
+                'placeholder': 'الورشة المسؤولة عن الإصلاح',
+            }),
+        }
+
+
 class CustomerSignatureForm(forms.ModelForm):
     """نموذج لتوثيق توقيع العميل أو الموظف"""
     

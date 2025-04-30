@@ -20,7 +20,7 @@ from .models import (
 from .forms import (
     CarConditionReportForm, CarInspectionCategoryForm, CarInspectionItemForm,
     CarInspectionDetailForm, CarInspectionImageForm, CustomerSignatureForm,
-    CompleteCarInspectionForm
+    CompleteCarInspectionForm, CarRepairForm
 )
 
 @login_required
