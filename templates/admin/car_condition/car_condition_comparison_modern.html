@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load custom_filters %}
 
-{% block title %}{% trans "مقارنة حالة السيارة" %} - {{ car.make }} {{ car.model }}{% endblock %}
+{% block title %}{% trans "تقرير مقارنة حالة المركبة الرسمي" %} - {{ car.make }} {{ car.model }}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -18,11 +18,12 @@
         --warning-color: #f59e0b;
         --gray-color: #6b7280;
         --light-border: #e5e7eb;
+        --gold-color: #d4af37;
     }
 
     /* Fonts & Typography */
     body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Traditional Arabic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     /* General Styles */
@@ -45,6 +46,94 @@
         height: 4px;
         background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
         border-radius: 2px;
+    }
+    
+    /* Document Header */
+    .document-header {
+        border-bottom: 2px solid var(--primary-dark);
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+    }
+    
+    .company-logo-container {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .company-logo-container img {
+        height: 80px;
+        width: auto;
+    }
+    
+    .document-title {
+        text-align: center;
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .document-title h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 1.5rem;
+        display: inline-block;
+        position: relative;
+    }
+    
+    .document-title h1:before,
+    .document-title h1:after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 100px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--light-border), var(--primary-color));
+    }
+    
+    .document-title h1:before {
+        right: 100%;
+    }
+    
+    .document-title h1:after {
+        left: 100%;
+    }
+    
+    .document-subtitle {
+        font-size: 1.2rem;
+        color: var(--gray-color);
+        text-align: center;
+        font-weight: 500;
+    }
+    
+    .document-number {
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        background-color: rgba(0, 81, 146, 0.05);
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+    
+    .official-document-badge {
+        position: relative;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .official-document-badge span {
+        background-color: var(--primary-dark);
+        color: white;
+        font-weight: 700;
+        padding: 0.4rem 1.5rem;
+        border-radius: 30px;
+        display: inline-block;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 1;
     }
 
     /* Modern Cards */
@@ -528,15 +617,62 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="comparison-title">
-                    {% trans "مقارنة حالة السيارة" %} - {{ reservation.reservation_number }}
-                </h2>
-                <button onclick="window.print();" class="btn print-button no-print">
-                    <i class="fas fa-print"></i> {% trans "طباعة التقرير" %}
-                </button>
+    <!-- ترويسة المستند الرسمي -->
+    <div class="document-header">
+        <div class="row">
+            <div class="col-12">
+                <div class="company-logo-container">
+                    <img src="{{ STATIC_URL }}img/logo.png" alt="شعار الشركة" onerror="this.src='{{ STATIC_URL }}img/company-logo.png'; this.onerror='';">
+                </div>
+                <div class="document-title">
+                    <h1>{% trans "تقرير مقارنة حالة المركبة الرسمي" %}</h1>
+                </div>
+                <div class="document-subtitle text-center">
+                    {% trans "وثيقة رسمية تثبت حالة المركبة عند التسليم والاستلام" %}
+                </div>
+                <div class="text-center mt-3">
+                    <div class="document-number">
+                        {% trans "رقم الوثيقة" %}: CR-{{ reservation.id }}-{{ current_date|date:"YmdHis" }}
+                    </div>
+                </div>
+                <div class="official-document-badge">
+                    <span>{% trans "وثيقة رسمية" %}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-panel">
+                    <h5><i class="fas fa-calendar-alt"></i> {% trans "معلومات التقرير" %}</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="comparison-label">{% trans "تاريخ إصدار الوثيقة" %}</div>
+                            <div class="comparison-value">{{ current_date|date:"Y/m/d" }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="comparison-label">{% trans "وقت إصدار الوثيقة" %}</div>
+                            <div class="comparison-value">{{ current_date|date:"H:i:s" }}</div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="comparison-label">{% trans "رقم الحجز" %}</div>
+                            <div class="comparison-value">{{ reservation.reservation_number }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="comparison-label">{% trans "حالة الحجز" %}</div>
+                            <div class="comparison-value">{{ reservation.get_status_display }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end no-print">
+                    <button onclick="window.print();" class="btn print-button">
+                        <i class="fas fa-print"></i> {% trans "طباعة التقرير" %}
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -902,6 +1038,28 @@
     <!-- القسم الرسمي والتوقيعات -->
     <div class="row">
         <div class="col-md-12 mb-4">
+            <!-- القسم القانوني -->
+            <div class="comparison-card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-gavel me-2"></i> {% trans "الإقرار القانوني" %}
+                </div>
+                <div class="card-body">
+                    <p class="text-justify" style="font-weight: 500; line-height: 1.8;">
+                        {% trans "بموجب هذه الوثيقة، أقر أنا الموقع أدناه بأنني قد فحصت المركبة المبينة تفاصيلها في هذه الوثيقة بتاريخ الاستلام المذكور، وأن جميع المعلومات الواردة في هذا التقرير صحيحة وكاملة. كما أقر بأن الفروقات في حالة المركبة بين التسليم والاستلام (إن وجدت) قد تم تحديدها ومراجعتها بدقة. وأؤكد أيضاً بأن هذا التقرير يعتبر مستنداً رسمياً يجوز استخدامه لأغراض الفوترة وتسوية المطالبات والإجراءات القانونية ذات الصلة." %}
+                    </p>
+                    
+                    <div class="mt-4">
+                        <div class="form-check">
+                            <input class="form-check-input no-print" type="checkbox" id="termsCheck">
+                            <label class="form-check-label" for="termsCheck">
+                                {% trans "أوافق على الشروط والأحكام المذكورة أعلاه" %}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- الختم الرسمي والتوقيعات -->
             <div class="official-stamp">
                 <div class="row">
                     <div class="col-12 text-center mb-3">
@@ -909,27 +1067,70 @@
                         <p class="mb-0">{% trans "تقرير معتمد من شركة تأجير السيارات" %}</p>
                     </div>
                 </div>
-                <div class="signature-area">
-                    <div class="signature-box">
-                        <div>{% trans "توقيع موظف التسليم" %}</div>
-                        <div class="mt-4">..........................</div>
-                        <div class="mt-2">{{ delivery_report.created_by.get_full_name }}</div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4 text-center">
+                        <div class="mb-2" style="font-weight: 600; color: var(--primary-dark);">{% trans "الرقم المرجعي" %}</div>
+                        <div class="p-2 bg-light rounded" style="border: 1px dashed var(--primary-color);">
+                            {{ car.id }}-{{ reservation.id }}-{{ current_date|date:"Ymd" }}
+                        </div>
                     </div>
-                    <div class="signature-box">
-                        <div>{% trans "توقيع موظف الاستلام" %}</div>
-                        <div class="mt-4">..........................</div>
-                        <div class="mt-2">{{ return_report.created_by.get_full_name }}</div>
+                    <div class="col-md-4 text-center">
+                        <div class="mb-2" style="font-weight: 600; color: var(--primary-dark);">{% trans "تاريخ الإصدار" %}</div>
+                        <div class="p-2 bg-light rounded" style="border: 1px dashed var(--primary-color);">
+                            {{ current_date|date:"Y-m-d" }}
+                        </div>
                     </div>
-                </div>
-                <div class="row mt-4">
-                    <div class="col-12 text-center">
-                        <div class="d-inline-block p-3 border border-secondary rounded">
-                            {% trans "ختم الشركة" %}
+                    <div class="col-md-4 text-center">
+                        <div class="mb-2" style="font-weight: 600; color: var(--primary-dark);">{% trans "وقت الإصدار" %}</div>
+                        <div class="p-2 bg-light rounded" style="border: 1px dashed var(--primary-color);">
+                            {{ current_date|date:"H:i:s" }}
                         </div>
                     </div>
                 </div>
+                
+                <div class="signature-area">
+                    <div class="signature-box">
+                        <div style="font-weight: 600; color: var(--primary-dark);">{% trans "توقيع موظف التسليم" %}</div>
+                        <div style="height: 70px; margin: 1rem 0; position: relative;">
+                            {% if delivery_report.signature %}
+                            <img src="{{ delivery_report.signature.url }}" alt="{% trans 'توقيع موظف التسليم' %}" style="max-height: 100%; max-width: 100%;">
+                            {% else %}
+                            <div style="border-bottom: 2px dashed var(--gray-color); position: absolute; bottom: 0; width: 100%;"></div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2">{{ delivery_report.created_by.get_full_name }}</div>
+                    </div>
+                    <div class="signature-box">
+                        <div style="font-weight: 600; color: var(--primary-dark);">{% trans "توقيع موظف الاستلام" %}</div>
+                        <div style="height: 70px; margin: 1rem 0; position: relative;">
+                            {% if return_report.signature %}
+                            <img src="{{ return_report.signature.url }}" alt="{% trans 'توقيع موظف الاستلام' %}" style="max-height: 100%; max-width: 100%;">
+                            {% else %}
+                            <div style="border-bottom: 2px dashed var(--gray-color); position: absolute; bottom: 0; width: 100%;"></div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2">{{ return_report.created_by.get_full_name }}</div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <div class="d-inline-block p-3 border border-3 border-primary rounded position-relative" style="background: rgba(0, 81, 146, 0.03);">
+                            <div style="position: absolute; top: -10px; right: -10px; transform: rotate(15deg); color: var(--primary-color); font-size: 2rem;">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <div style="font-weight: 700; color: var(--primary-dark);">{% trans "ختم الشركة" %}</div>
+                            <div style="font-size: 0.8rem; color: var(--gray-color);">{% trans "ختم إلكتروني معتمد" %}</div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="mt-4 text-center">
-                    <small class="text-muted">
+                    <div style="font-size: 0.8rem; color: var(--gray-color);">
+                        {% trans "هذه الوثيقة صالحة دون الحاجة لختم إضافي. للتحقق من صحة هذه الوثيقة، يرجى الاتصال بمكتب خدمة العملاء." %}
+                    </div>
+                    <small class="text-muted mt-2 d-block">
                         {% trans "تم إصدار هذا التقرير بتاريخ" %}: {{ current_date|date:"Y-m-d H:i" }}
                     </small>
                 </div>
