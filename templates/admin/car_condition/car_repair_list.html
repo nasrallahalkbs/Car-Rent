@@ -1,0 +1,251 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "قائمة الإصلاحات" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 5px 10px;
+    }
+    
+    .repair-status-not_needed {
+        background-color: #e9ecef;
+        color: #495057;
+    }
+    
+    .repair-status-needed {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .repair-status-in_progress {
+        background-color: #fd7e14;
+        color: white;
+    }
+    
+    .repair-status-completed {
+        background-color: #198754;
+        color: white;
+    }
+    
+    .cost-summary {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .filters-card {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="row mb-3">
+        <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item active">{% trans "قائمة الإصلاحات" %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow-sm filters-card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">{% trans "تصفية الإصلاحات" %}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="car_id" class="form-label">{% trans "السيارة" %}</label>
+                            <select name="car_id" id="car_id" class="form-select">
+                                <option value="">{% trans "جميع السيارات" %}</option>
+                                {% for car in cars %}
+                                <option value="{{ car.id }}" {% if car_id|stringformat:"s" == car.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ car.make }} {{ car.model }} ({{ car.license_plate }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="repair_status" class="form-label">{% trans "حالة الإصلاح" %}</label>
+                            <select name="repair_status" id="repair_status" class="form-select">
+                                <option value="">{% trans "جميع الحالات" %}</option>
+                                {% for status_code, status_label in repair_status_choices %}
+                                <option value="{{ status_code }}" {% if repair_status == status_code %}selected{% endif %}>
+                                    {{ status_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="date_from" class="form-label">{% trans "من تاريخ" %}</label>
+                            <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="date_to" class="form-label">{% trans "إلى تاريخ" %}</label>
+                            <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
+                        </div>
+                        
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-2"></i>{% trans "تصفية" %}
+                            </button>
+                            <a href="{% url 'car_repair_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>{% trans "إلغاء التصفية" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100 cost-summary">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">{% trans "إجمالي تكاليف الإصلاح" %}</h5>
+                            <div class="mt-3">
+                                <p class="mb-1">
+                                    <span class="text-muted">{% trans "تكلفة قطع الغيار:" %}</span>
+                                    <span class="float-end fw-bold">{{ total_repair_cost|floatformat:2 }}</span>
+                                </p>
+                                <p class="mb-1">
+                                    <span class="text-muted">{% trans "تكلفة اليد العاملة:" %}</span>
+                                    <span class="float-end fw-bold">{{ total_labor_cost|floatformat:2 }}</span>
+                                </p>
+                                <hr>
+                                <p class="mb-0">
+                                    <span class="text-muted fw-bold">{% trans "الإجمالي:" %}</span>
+                                    <span class="float-end fw-bold text-primary">{{ total_cost|floatformat:2 }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title text-primary mb-0">{% trans "إحصائيات سريعة" %}</h5>
+                                <a href="{% url 'car_repair_report' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-file-pdf me-2"></i>{% trans "تقرير تفصيلي" %}
+                                </a>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <div class="p-3 text-center border rounded">
+                                        <h4 class="text-danger">{{ repairs|length }}</h4>
+                                        <p class="text-muted mb-0">{% trans "عدد الإصلاحات" %}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="p-3 text-center border rounded">
+                                        <h4 class="text-warning">{{ repairs|dictsort:"repair_cost"|last.repair_cost|default:"0.00" }}</h4>
+                                        <p class="text-muted mb-0">{% trans "أعلى تكلفة" %}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="p-3 text-center border rounded">
+                                        <h4 class="text-success">{{ repairs|dictsortreversed:"report.date"|first.report.date|date:"d/m/Y"|default:"-" }}</h4>
+                                        <p class="text-muted mb-0">{% trans "أحدث إصلاح" %}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="p-3 text-center border rounded">
+                                        <h4 class="text-primary">{{ total_cost|floatformat:0 }}</h4>
+                                        <p class="text-muted mb-0">{% trans "متوسط التكلفة" %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i>{% trans "قائمة الإصلاحات" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if repairs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>{% trans "السيارة" %}</th>
+                                    <th>{% trans "عنصر الإصلاح" %}</th>
+                                    <th>{% trans "حالة الإصلاح" %}</th>
+                                    <th>{% trans "تكلفة قطع الغيار" %}</th>
+                                    <th>{% trans "تكلفة اليد العاملة" %}</th>
+                                    <th>{% trans "إجمالي التكلفة" %}</th>
+                                    <th>{% trans "تاريخ التقرير" %}</th>
+                                    <th>{% trans "الإجراءات" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for repair in repairs %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <a href="{% url 'car_detail' car_id=repair.report.car.id %}">
+                                            {{ repair.report.car.make }} {{ repair.report.car.model }}
+                                            <small class="d-block text-muted">{{ repair.report.car.license_plate }}</small>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {{ repair.inspection_item.name }}
+                                        <small class="d-block text-muted">{{ repair.inspection_item.category.name }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge status-badge repair-status-{{ repair.repair_status }}">
+                                            {{ repair.get_repair_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ repair.repair_cost|default:"0.00" }}</td>
+                                    <td>{{ repair.labor_cost|default:"0.00" }}</td>
+                                    <td class="fw-bold">
+                                        {% with total=repair.total_repair_cost %}
+                                            {{ total|floatformat:2 }}
+                                        {% endwith %}
+                                    </td>
+                                    <td>{{ repair.report.date|date:"Y-m-d" }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'car_repair_detail' detail_id=repair.id %}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'car_inspection_detail' report_id=repair.report.id %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>{% trans "لا توجد إصلاحات مطلوبة حاليًا مطابقة لمعايير البحث." %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

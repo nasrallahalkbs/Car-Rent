@@ -1,0 +1,211 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .repair-cost-summary {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+    }
+    
+    .repair-field {
+        transition: all 0.3s ease;
+    }
+    
+    .repair-field.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'car_condition_list' %}">{% trans "تقارير حالة السيارات" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'car_inspection_detail' report_id=report.id %}">{% trans "تفاصيل الفحص" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i>{{ title }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">{% trans "معلومات السيارة" %}</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>{% trans "السيارة:" %}</strong> {{ report.car.make }} {{ report.car.model }} ({{ report.car.year }})</p>
+                                    <p><strong>{% trans "رقم اللوحة:" %}</strong> {{ report.car.license_plate }}</p>
+                                    <p><strong>{% trans "اللون:" %}</strong> {{ report.car.color }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">{% trans "معلومات الفحص" %}</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>{% trans "نوع التقرير:" %}</strong> {{ report.get_report_type_display }}</p>
+                                    <p><strong>{% trans "تاريخ التقرير:" %}</strong> {{ report.date|date:"Y-m-d" }}</p>
+                                    <p><strong>{% trans "عنصر الفحص:" %}</strong> {{ detail.inspection_item.name }} ({{ detail.inspection_item.category.name }})</p>
+                                    <p><strong>{% trans "الحالة:" %}</strong> <span class="badge {% if detail.condition == 'excellent' %}bg-success{% elif detail.condition == 'good' %}bg-info{% elif detail.condition == 'fair' %}bg-warning{% else %}bg-danger{% endif %}">{{ detail.get_condition_display }}</span></p>
+                                    {% if detail.notes %}
+                                    <p><strong>{% trans "ملاحظات:" %}</strong> {{ detail.notes }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" class="mt-3">
+                        {% csrf_token %}
+                        
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">{% trans "بيانات الإصلاح" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    {{ form.needs_repair }}
+                                    <label class="form-check-label" for="{{ form.needs_repair.id_for_label }}">
+                                        {% trans "يحتاج إلى إصلاح" %}
+                                    </label>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.repair_description|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.repair_parts|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            {{ form.repair_cost|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            {{ form.labor_cost|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="repair-cost-summary">
+                                            <h6>{% trans "ملخص التكلفة" %}</h6>
+                                            <p class="mb-1"><strong>{% trans "تكلفة قطع الغيار:" %}</strong> <span id="parts-cost">{{ detail.repair_cost|default:"0.00" }}</span></p>
+                                            <p class="mb-1"><strong>{% trans "تكلفة اليد العاملة:" %}</strong> <span id="labor-cost">{{ detail.labor_cost|default:"0.00" }}</span></p>
+                                            <p class="mb-0"><strong>{% trans "إجمالي التكلفة:" %}</strong> <span id="total-cost">{{ detail.total_repair_cost }}</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            {{ form.repair_workshop|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            {{ form.repair_date|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            {{ form.repair_status|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'car_inspection_detail' report_id=report.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>{% trans "رجوع" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{% trans "حفظ معلومات الإصلاح" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // تفعيل أو تعطيل حقول الإصلاح بناءً على حالة الاختيار
+    function toggleRepairFields(checkbox) {
+        const repairFields = document.querySelectorAll('.repair-field');
+        repairFields.forEach(field => {
+            if (checkbox.checked) {
+                field.classList.remove('disabled');
+                field.disabled = false;
+            } else {
+                field.classList.add('disabled');
+                field.disabled = true;
+            }
+        });
+    }
+    
+    // حساب إجمالي التكلفة
+    function calculateTotalCost() {
+        const repairCost = parseFloat(document.getElementById('id_repair_cost').value) || 0;
+        const laborCost = parseFloat(document.getElementById('id_labor_cost').value) || 0;
+        const totalCost = repairCost + laborCost;
+        
+        document.getElementById('parts-cost').textContent = repairCost.toFixed(2);
+        document.getElementById('labor-cost').textContent = laborCost.toFixed(2);
+        document.getElementById('total-cost').textContent = totalCost.toFixed(2);
+    }
+    
+    // عند تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        // تهيئة حالة حقول الإصلاح
+        const needsRepairCheckbox = document.getElementById('id_needs_repair');
+        toggleRepairFields(needsRepairCheckbox);
+        
+        // تعيين المستمعين للأحداث
+        needsRepairCheckbox.addEventListener('change', function() {
+            toggleRepairFields(this);
+        });
+        
+        document.getElementById('id_repair_cost').addEventListener('input', calculateTotalCost);
+        document.getElementById('id_labor_cost').addEventListener('input', calculateTotalCost);
+        
+        // حساب التكلفة الأولية
+        calculateTotalCost();
+    });
+</script>
+{% endblock %}

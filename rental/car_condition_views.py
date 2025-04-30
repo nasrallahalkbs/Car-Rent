@@ -813,3 +813,147 @@ def download_inspection_report_pdf(request, report_id):
         filename = f'car_inspection_{report.car.license_plate}_{report_date}.pdf'
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
+
+
+@login_required
+def car_repair_detail(request, detail_id):
+    """عرض وتحديث معلومات الإصلاح والتكاليف للعنصر المتضرر"""
+    
+    inspection_detail = get_object_or_404(CarInspectionDetail, id=detail_id)
+    report = inspection_detail.report
+    
+    if request.method == 'POST':
+        form = CarRepairForm(request.POST, instance=inspection_detail)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('تم تحديث معلومات الإصلاح بنجاح'))
+            return redirect('car_inspection_detail', report_id=report.id)
+    else:
+        form = CarRepairForm(instance=inspection_detail)
+    
+    context = {
+        'form': form,
+        'detail': inspection_detail,
+        'report': report,
+        'title': _('تفاصيل إصلاح: {}').format(inspection_detail.inspection_item.name)
+    }
+    
+    return render(request, 'admin/car_condition/car_repair_form.html', context)
+
+
+@login_required
+def car_repair_list(request):
+    """عرض قائمة بجميع الإصلاحات المطلوبة للسيارات"""
+    
+    # الحصول على معلمات التصفية
+    car_id = request.GET.get('car_id', '')
+    repair_status = request.GET.get('repair_status', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # البحث عن العناصر التي تحتاج إلى إصلاح
+    repairs = CarInspectionDetail.objects.filter(needs_repair=True).select_related(
+        'report', 'report__car', 'inspection_item', 'inspection_item__category'
+    )
+    
+    # تطبيق التصفية
+    if car_id:
+        repairs = repairs.filter(report__car_id=car_id)
+    
+    if repair_status:
+        repairs = repairs.filter(repair_status=repair_status)
+    
+    if date_from:
+        repairs = repairs.filter(report__date__gte=date_from)
+    
+    if date_to:
+        repairs = repairs.filter(report__date__lte=date_to)
+    
+    # ترتيب الإصلاحات حسب حالة الإصلاح والتاريخ
+    repairs = repairs.order_by('repair_status', '-report__date')
+    
+    # الحصول على قائمة بجميع السيارات للفلترة
+    cars = Car.objects.all().order_by('make', 'model')
+    
+    # حساب إجمالي تكاليف الإصلاح
+    total_repair_cost = sum(repair.repair_cost or 0 for repair in repairs)
+    total_labor_cost = sum(repair.labor_cost or 0 for repair in repairs)
+    total_cost = total_repair_cost + total_labor_cost
+    
+    context = {
+        'repairs': repairs,
+        'cars': cars,
+        'car_id': car_id,
+        'repair_status': repair_status,
+        'date_from': date_from,
+        'date_to': date_to,
+        'repair_status_choices': CarInspectionDetail.REPAIR_STATUS_CHOICES,
+        'total_repair_cost': total_repair_cost,
+        'total_labor_cost': total_labor_cost,
+        'total_cost': total_cost,
+    }
+    
+    return render(request, 'admin/car_condition/car_repair_list.html', context)
+
+
+@login_required
+def car_repair_report(request, car_id=None):
+    """تقرير إصلاحات السيارات مع إجمالي التكاليف"""
+    
+    # البحث عن الإصلاحات
+    repairs = CarInspectionDetail.objects.filter(needs_repair=True).select_related(
+        'report', 'report__car', 'inspection_item', 'inspection_item__category'
+    )
+    
+    # تصفية حسب السيارة إذا تم تحديدها
+    if car_id:
+        car = get_object_or_404(Car, id=car_id)
+        repairs = repairs.filter(report__car=car)
+        title = _('تقرير إصلاحات سيارة: {} {}').format(car.make, car.model)
+    else:
+        car = None
+        title = _('تقرير إصلاحات جميع السيارات')
+    
+    # تجميع البيانات حسب السيارة
+    cars_data = {}
+    total_all_cars = 0
+    
+    for repair in repairs:
+        car_id = repair.report.car.id
+        car_name = f"{repair.report.car.make} {repair.report.car.model} ({repair.report.car.license_plate})"
+        
+        if car_id not in cars_data:
+            cars_data[car_id] = {
+                'car': repair.report.car,
+                'car_name': car_name,
+                'repairs': [],
+                'total_cost': 0,
+            }
+        
+        # إضافة تفاصيل الإصلاح
+        repair_cost = repair.repair_cost or 0
+        labor_cost = repair.labor_cost or 0
+        total_item_cost = repair_cost + labor_cost
+        
+        cars_data[car_id]['repairs'].append({
+            'detail': repair,
+            'item_name': repair.inspection_item.name,
+            'category_name': repair.inspection_item.category.name,
+            'repair_cost': repair_cost,
+            'labor_cost': labor_cost,
+            'total_cost': total_item_cost,
+            'status': repair.get_repair_status_display(),
+        })
+        
+        # تحديث المجموع
+        cars_data[car_id]['total_cost'] += total_item_cost
+        total_all_cars += total_item_cost
+    
+    context = {
+        'title': title,
+        'cars_data': cars_data,
+        'total_all_cars': total_all_cars,
+        'car': car,
+    }
+    
+    return render(request, 'admin/car_condition/car_repair_report.html', context)
