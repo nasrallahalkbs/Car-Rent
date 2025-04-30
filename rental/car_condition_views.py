@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q, Count
 from django.utils import timezone
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 
 from .models import Car, Reservation, CarConditionReport
 from .forms import CarConditionReportForm
@@ -256,3 +256,61 @@ def car_condition_statistics(request):
     }
     
     return render(request, 'admin/car_condition/car_condition_statistics.html', context)
+
+
+@login_required
+def car_condition_comparison(request, reservation_id):
+    """عرض مقارنة بين تقرير حالة السيارة عند التسليم والاستلام"""
+    
+    # الحصول على معلومات الحجز
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    car = reservation.car
+    
+    # البحث عن تقرير التسليم والاستلام
+    delivery_report = CarConditionReport.objects.filter(
+        reservation=reservation,
+        report_type='delivery'
+    ).order_by('-date').first()
+    
+    return_report = CarConditionReport.objects.filter(
+        reservation=reservation,
+        report_type='return'
+    ).order_by('-date').first()
+    
+    # التحقق من وجود كلا التقريرين
+    if not delivery_report or not return_report:
+        messages.error(request, _('لا يمكن عرض المقارنة. يجب وجود تقرير تسليم وتقرير استلام للحجز.'))
+        return redirect('car_condition_list')
+    
+    # تحديد ما إذا كانت هناك أضرار جديدة
+    has_damages = False
+    
+    # تحقق من الأضرار الجديدة (إذا كان تقرير الاستلام يحتوي على أضرار لم تكن موجودة في تقرير التسليم)
+    if return_report.defects and (not delivery_report.defects or delivery_report.defects != return_report.defects):
+        has_damages = True
+    
+    # تحقق من تغير حالة السيارة للأسوأ
+    condition_values = {
+        'excellent': 5,
+        'good': 4,
+        'fair': 3,
+        'poor': 2,
+        'damaged': 1
+    }
+    
+    delivery_condition = condition_values.get(delivery_report.car_condition, 0)
+    return_condition = condition_values.get(return_report.car_condition, 0)
+    
+    if return_condition < delivery_condition:
+        has_damages = True
+    
+    context = {
+        'reservation': reservation,
+        'car': car,
+        'delivery_report': delivery_report,
+        'return_report': return_report,
+        'has_damages': has_damages,
+        'current_date': timezone.now()
+    }
+    
+    return render(request, 'admin/car_condition/car_condition_comparison.html', context)

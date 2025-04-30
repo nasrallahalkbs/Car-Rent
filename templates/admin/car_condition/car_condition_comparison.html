@@ -1,0 +1,520 @@
+{% extends "admin_layout.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "مقارنة حالة السيارة" %} - {{ car.make }} {{ car.model }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .comparison-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #343a40;
+        border-bottom: 2px solid #005192; /* اللون الرسمي */
+        padding-bottom: 0.5rem;
+    }
+
+    .comparison-card {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+
+    .comparison-card .card-header {
+        background-color: #005192; /* اللون الرسمي */
+        color: white;
+        font-weight: 600;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .comparison-label {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .comparison-value {
+        font-weight: 400;
+    }
+
+    .difference-highlight {
+        background-color: #fff3cd;
+        border-radius: 4px;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .negative-change {
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .positive-change {
+        color: #28a745;
+        font-weight: 600;
+    }
+
+    .no-change {
+        color: #6c757d;
+    }
+
+    .car-image-container {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .car-image {
+        max-width: 100%;
+        max-height: 200px;
+        object-fit: contain;
+    }
+
+    .car-info-box {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border-right: 4px solid #005192; /* اللون الرسمي */
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .status-indicator {
+        height: 12px;
+        width: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-left: 0.5rem;
+    }
+
+    .status-good {
+        background-color: #28a745;
+    }
+
+    .status-warning {
+        background-color: #ffc107;
+    }
+
+    .status-bad {
+        background-color: #dc3545;
+    }
+
+    /* مؤشر مستوى الوقود */
+    .fuel-gauge {
+        width: 100%;
+        height: 20px;
+        background-color: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+
+    .fuel-gauge-fill {
+        height: 100%;
+        background-color: #005192; /* اللون الرسمي */
+        transition: width 0.5s;
+    }
+
+    .fuel-level-label {
+        margin-top: 5px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #005192; /* اللون الرسمي */
+    }
+
+    /* ارتفاع الأسعار أو الأميال */
+    .price-increase {
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .mileage-increase {
+        background-color: #f8d7da;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    .official-stamp {
+        border: 2px solid #005192; /* اللون الرسمي */
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        font-weight: 600;
+        color: #005192; /* اللون الرسمي */
+        margin-top: 1.5rem;
+    }
+
+    .signature-area {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .signature-box {
+        border-top: 1px solid #dee2e6;
+        padding-top: 0.5rem;
+        width: 45%;
+        text-align: center;
+    }
+
+    .print-button {
+        background-color: #005192; /* اللون الرسمي */
+        color: white;
+        border: none;
+    }
+
+    .print-button:hover {
+        background-color: #003e70; /* اللون الرسمي (داكن) */
+        color: white;
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container-fluid {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .card {
+            break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="comparison-title mb-0">{% trans "مقارنة حالة السيارة قبل وبعد الإيجار" %}</h3>
+                <div>
+                    <a href="{% url 'car_condition_list' %}" class="btn btn-secondary btn-sm no-print me-2">
+                        <i class="fas fa-arrow-right ml-1"></i> {% trans "العودة للقائمة" %}
+                    </a>
+                    <button class="btn btn-sm print-button no-print" onclick="window.print()">
+                        <i class="fas fa-print ml-1"></i> {% trans "طباعة التقرير" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات السيارة والحجز -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="car-info-box">
+                <div class="d-flex justify-content-between">
+                    <h5><i class="fas fa-car ml-2"></i> {% trans "معلومات السيارة" %}</h5>
+                    <span>{{ reservation.reservation_number }}</span>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p><span class="comparison-label">{% trans "الماركة" %}:</span> <span class="comparison-value">{{ car.make }}</span></p>
+                        <p><span class="comparison-label">{% trans "الموديل" %}:</span> <span class="comparison-value">{{ car.model }}</span></p>
+                        <p><span class="comparison-label">{% trans "سنة الصنع" %}:</span> <span class="comparison-value">{{ car.year }}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><span class="comparison-label">{% trans "رقم اللوحة" %}:</span> <span class="comparison-value">{{ car.license_plate }}</span></p>
+                        <p><span class="comparison-label">{% trans "اللون" %}:</span> <span class="comparison-value">{{ car.color }}</span></p>
+                        <p><span class="comparison-label">{% trans "نوع الوقود" %}:</span> <span class="comparison-value">{{ car.get_fuel_type_display }}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="car-info-box">
+                <div class="d-flex justify-content-between">
+                    <h5><i class="fas fa-calendar-alt ml-2"></i> {% trans "معلومات الحجز" %}</h5>
+                    <span class="badge {% if reservation.status == 'completed' %}bg-success{% else %}bg-primary{% endif %}">
+                        {{ reservation.get_status_display }}
+                    </span>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p><span class="comparison-label">{% trans "العميل" %}:</span> <span class="comparison-value">{{ reservation.user.get_full_name }}</span></p>
+                        <p><span class="comparison-label">{% trans "رقم الهاتف" %}:</span> <span class="comparison-value">{{ reservation.user.phone }}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><span class="comparison-label">{% trans "تاريخ البداية" %}:</span> <span class="comparison-value">{{ reservation.start_date|date:"d/m/Y" }}</span></p>
+                        <p><span class="comparison-label">{% trans "تاريخ النهاية" %}:</span> <span class="comparison-value">{{ reservation.end_date|date:"d/m/Y" }}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- المقارنة الرئيسية بين البيانات -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card comparison-card">
+                <div class="card-header">
+                    <h5 class="mb-0">{% trans "مقارنة حالة السيارة" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{% trans "البيان" %}</th>
+                                    <th>{% trans "عند التسليم للعميل" %}</th>
+                                    <th>{% trans "عند الاستلام من العميل" %}</th>
+                                    <th>{% trans "الفرق" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- المسافة المقطوعة -->
+                                <tr>
+                                    <td class="comparison-label">{% trans "المسافة المقطوعة (كم)" %}</td>
+                                    <td>{{ delivery_report.mileage }}</td>
+                                    <td>{{ return_report.mileage }}</td>
+                                    <td>
+                                        {% with diff=return_report.mileage|add:"-"|add:delivery_report.mileage %}
+                                        {% if diff > 0 %}
+                                        <span class="mileage-increase">+ {{ diff }} {% trans "كم" %}</span>
+                                        {% else %}
+                                        <span class="no-change">{{ diff }} {% trans "كم" %}</span>
+                                        {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                </tr>
+                                
+                                <!-- حالة السيارة العامة -->
+                                <tr>
+                                    <td class="comparison-label">{% trans "حالة السيارة العامة" %}</td>
+                                    <td>
+                                        <span class="status-indicator 
+                                            {% if delivery_report.car_condition == 'excellent' or delivery_report.car_condition == 'good' %}status-good
+                                            {% elif delivery_report.car_condition == 'fair' %}status-warning
+                                            {% else %}status-bad{% endif %}"></span>
+                                        {{ delivery_report.get_car_condition_display }}
+                                    </td>
+                                    <td>
+                                        <span class="status-indicator 
+                                            {% if return_report.car_condition == 'excellent' or return_report.car_condition == 'good' %}status-good
+                                            {% elif return_report.car_condition == 'fair' %}status-warning
+                                            {% else %}status-bad{% endif %}"></span>
+                                        {{ return_report.get_car_condition_display }}
+                                    </td>
+                                    <td>
+                                        {% if delivery_report.car_condition != return_report.car_condition %}
+                                        <span class="difference-highlight">{% trans "تغيير في الحالة" %}</span>
+                                        {% else %}
+                                        <span class="no-change">{% trans "لا تغيير" %}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                
+                                <!-- مستوى الوقود -->
+                                <tr>
+                                    <td class="comparison-label">{% trans "مستوى الوقود" %}</td>
+                                    <td>
+                                        <div>{{ delivery_report.get_fuel_level_display }}</div>
+                                        <div class="fuel-gauge">
+                                            {% if delivery_report.fuel_level == 'empty' %}
+                                            <div class="fuel-gauge-fill" style="width: 0%"></div>
+                                            {% elif delivery_report.fuel_level == 'quarter' %}
+                                            <div class="fuel-gauge-fill" style="width: 25%"></div>
+                                            {% elif delivery_report.fuel_level == 'half' %}
+                                            <div class="fuel-gauge-fill" style="width: 50%"></div>
+                                            {% elif delivery_report.fuel_level == 'three_quarters' %}
+                                            <div class="fuel-gauge-fill" style="width: 75%"></div>
+                                            {% elif delivery_report.fuel_level == 'full' %}
+                                            <div class="fuel-gauge-fill" style="width: 100%"></div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>{{ return_report.get_fuel_level_display }}</div>
+                                        <div class="fuel-gauge">
+                                            {% if return_report.fuel_level == 'empty' %}
+                                            <div class="fuel-gauge-fill" style="width: 0%"></div>
+                                            {% elif return_report.fuel_level == 'quarter' %}
+                                            <div class="fuel-gauge-fill" style="width: 25%"></div>
+                                            {% elif return_report.fuel_level == 'half' %}
+                                            <div class="fuel-gauge-fill" style="width: 50%"></div>
+                                            {% elif return_report.fuel_level == 'three_quarters' %}
+                                            <div class="fuel-gauge-fill" style="width: 75%"></div>
+                                            {% elif return_report.fuel_level == 'full' %}
+                                            <div class="fuel-gauge-fill" style="width: 100%"></div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if delivery_report.fuel_level != return_report.fuel_level %}
+                                        <span class="difference-highlight">{% trans "تغيير في مستوى الوقود" %}</span>
+                                        {% else %}
+                                        <span class="no-change">{% trans "لا تغيير" %}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                
+                                <!-- الأعطال والأضرار -->
+                                <tr>
+                                    <td class="comparison-label">{% trans "الأعطال والأضرار" %}</td>
+                                    <td>
+                                        {% if delivery_report.defects %}
+                                        {{ delivery_report.defects }}
+                                        {% else %}
+                                        <span class="text-muted">{% trans "لا توجد أعطال" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if return_report.defects %}
+                                        {{ return_report.defects }}
+                                        {% else %}
+                                        <span class="text-muted">{% trans "لا توجد أعطال" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if delivery_report.defects != return_report.defects and return_report.defects %}
+                                        <span class="negative-change">{% trans "أضرار جديدة" %}</span>
+                                        {% elif not delivery_report.defects and not return_report.defects %}
+                                        <span class="positive-change">{% trans "لا توجد أضرار" %}</span>
+                                        {% else %}
+                                        <span class="no-change">{% trans "لا تغيير" %}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                
+                                <!-- تكلفة الإصلاح -->
+                                <tr>
+                                    <td class="comparison-label">{% trans "تكلفة الإصلاح (إن وجدت)" %}</td>
+                                    <td>
+                                        {% if delivery_report.repair_cost %}
+                                        {{ delivery_report.repair_cost }} {% trans "ريال" %}
+                                        {% else %}
+                                        <span class="text-muted">0.00 {% trans "ريال" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if return_report.repair_cost %}
+                                        {{ return_report.repair_cost }} {% trans "ريال" %}
+                                        {% else %}
+                                        <span class="text-muted">0.00 {% trans "ريال" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if return_report.repair_cost %}
+                                        <span class="price-increase">{{ return_report.repair_cost }} {% trans "ريال" %}</span>
+                                        {% else %}
+                                        <span class="no-change">0.00 {% trans "ريال" %}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الملاحظات -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card comparison-card">
+                <div class="card-header">
+                    <h5 class="mb-0">{% trans "ملاحظات عند التسليم" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if delivery_report.notes %}
+                    <p>{{ delivery_report.notes }}</p>
+                    {% else %}
+                    <p class="text-muted">{% trans "لا توجد ملاحظات" %}</p>
+                    {% endif %}
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            {% trans "تم التوثيق بواسطة" %}: {{ delivery_report.created_by.get_full_name }} - 
+                            {{ delivery_report.date|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card comparison-card">
+                <div class="card-header">
+                    <h5 class="mb-0">{% trans "ملاحظات عند الاستلام" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if return_report.notes %}
+                    <p>{{ return_report.notes }}</p>
+                    {% else %}
+                    <p class="text-muted">{% trans "لا توجد ملاحظات" %}</p>
+                    {% endif %}
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            {% trans "تم التوثيق بواسطة" %}: {{ return_report.created_by.get_full_name }} - 
+                            {{ return_report.date|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ملخص التقرير والتوقيعات -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card comparison-card">
+                <div class="card-header">
+                    <h5 class="mb-0">{% trans "ملخص التقرير" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert {% if has_damages %}alert-warning{% else %}alert-success{% endif %}">
+                        {% if has_damages %}
+                        <h5><i class="fas fa-exclamation-triangle ml-2"></i> {% trans "توجد أضرار جديدة في السيارة" %}</h5>
+                        <p>{% trans "تم تسجيل أضرار جديدة في السيارة عند الاستلام. يرجى مراجعة الجدول أعلاه للتفاصيل." %}</p>
+                        {% if return_report.repair_cost %}
+                        <p>{% trans "تكلفة الإصلاح المقدرة" %}: <strong>{{ return_report.repair_cost }}</strong> {% trans "ريال" %}</p>
+                        {% endif %}
+                        {% else %}
+                        <h5><i class="fas fa-check-circle ml-2"></i> {% trans "تم استلام السيارة بحالة جيدة" %}</h5>
+                        <p>{% trans "تم استلام السيارة بنفس الحالة التي تم تسليمها بها للعميل. لا توجد أضرار جديدة تستدعي الإصلاح." %}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="official-stamp">
+                        {% trans "تقرير رسمي صادر من شركة" %} [اسم الشركة]
+                        <div>{{ current_date|date:"d/m/Y" }}</div>
+                    </div>
+                    
+                    <div class="signature-area">
+                        <div class="signature-box">
+                            <p class="mb-1">{% trans "توقيع العميل" %}</p>
+                            <p class="text-muted">_________________________</p>
+                        </div>
+                        <div class="signature-box">
+                            <p class="mb-1">{% trans "توقيع مسؤول الاستلام" %}</p>
+                            <p class="text-muted">_________________________</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    $(document).ready(function() {
+        // عند الطباعة، إظهار كافة الأقسام
+        window.onbeforeprint = function() {
+            $('.collapse').addClass('show');
+        };
+    });
+</script>
+{% endblock %}
