@@ -459,7 +459,12 @@ class CarInspectionDetailForm(forms.ModelForm):
     
     class Meta:
         model = CarInspectionDetail
-        fields = ['inspection_item', 'condition', 'notes']
+        fields = [
+            'inspection_item', 'condition', 'notes', 
+            'needs_repair', 'repair_status', 'repair_description', 
+            'repair_parts', 'repair_cost', 'labor_cost', 
+            'repair_date', 'repair_workshop'
+        ]
         widgets = {
             'inspection_item': forms.Select(attrs={
                 'class': 'form-select',
@@ -472,6 +477,42 @@ class CarInspectionDetailForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 2,
                 'placeholder': 'ملاحظات إضافية عن حالة هذا العنصر',
+            }),
+            'needs_repair': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+            'repair_status': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'repair_description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'وصف الإصلاحات المطلوبة',
+            }),
+            'repair_parts': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'قطع الغيار المطلوبة',
+            }),
+            'repair_cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'step': '0.01',
+                'placeholder': 'تكلفة قطع الغيار',
+            }),
+            'labor_cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'step': '0.01',
+                'placeholder': 'تكلفة العمالة',
+            }),
+            'repair_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+            'repair_workshop': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'اسم ورشة الإصلاح',
             }),
         }
 
