@@ -278,6 +278,71 @@
                             </div>
                         </div>
                         
+                        <!-- تفاصيل الفحص -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-clipboard-check me-2"></i>{% trans "تفاصيل الفحص" %}
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                {% if inspection_categories %}
+                                    {% for category in inspection_categories %}
+                                        {% if category.name != 'الهيكل الخارجي' %}
+                                        <div class="inspection-category mb-4">
+                                            <h6 class="border-bottom pb-2 mb-3">
+                                                <i class="fas fa-check-circle me-2 text-primary"></i>{{ category.name }}
+                                            </h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th class="col-4">{% trans "العنصر" %}</th>
+                                                            <th class="col-3">{% trans "الحالة" %}</th>
+                                                            <th class="col-3">{% trans "ملاحظات" %}</th>
+                                                            <th class="col-1 text-center">{% trans "إصلاح" %}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in category.inspection_items.all %}
+                                                            {% if item.is_required %}
+                                                            <tr>
+                                                                <td>
+                                                                    <strong>{{ item.name }}</strong>
+                                                                </td>
+                                                                <td>
+                                                                    <select name="inspection_item_{{ item.id }}" class="form-select form-select-sm" required>
+                                                                        <option value="">{% trans "-- اختر --" %}</option>
+                                                                        {% for value, text in condition_choices %}
+                                                                        <option value="{{ value }}">{{ text }}</option>
+                                                                        {% endfor %}
+                                                                    </select>
+                                                                </td>
+                                                                <td>
+                                                                    <textarea name="notes_item_{{ item.id }}" class="form-control form-control-sm" rows="1" placeholder="{% trans 'ملاحظات (اختياري)' %}"></textarea>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <div class="form-check d-flex justify-content-center align-items-center">
+                                                                        <input class="form-check-input" type="checkbox" name="needs_repair_{{ item.id }}" id="needs_repair_{{ item.id }}">
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>{% trans "لا توجد فئات فحص مضافة حتى الآن. يرجى إضافة فئات وعناصر الفحص أولاً." %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-12 text-end">
                                 <a href="{% url 'car_condition_list' %}" class="btn btn-secondary me-2">

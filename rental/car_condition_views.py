@@ -640,11 +640,21 @@ def complete_car_inspection_create(request):
     else:
         form = CompleteCarInspectionForm(initial=initial_data, user=request.user)
     
+    # جلب فئات الفحص وعناصرها المنشطة
+    inspection_categories = CarInspectionCategory.objects.filter(is_active=True).prefetch_related(
+        Prefetch('inspection_items', queryset=CarInspectionItem.objects.filter(is_active=True).order_by('display_order'))
+    ).order_by('display_order')
+    
+    # قائمة خيارات حالة العناصر
+    condition_choices = CarInspectionItem.CONDITION_CHOICES
+    
     context = {
         'form': form,
         'title': _('إنشاء تقرير فحص تفصيلي للسيارة'),
         'car_id': car_id,
-        'reservation_id': reservation_id
+        'reservation_id': reservation_id,
+        'inspection_categories': inspection_categories,
+        'condition_choices': condition_choices
     }
     
     return render(request, 'admin/car_condition/complete_car_inspection_form.html', context)
