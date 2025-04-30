@@ -1,0 +1,215 @@
+{% extends "admin_layout.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إحصائيات تقارير حالة السيارات" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{% trans "إحصائيات تقارير حالة السيارات" %}</h5>
+                <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> {% trans "العودة للقائمة" %}
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card bg-primary text-white h-100">
+                        <div class="card-body text-center">
+                            <h1 class="display-4 fw-bold">{{ total_reports }}</h1>
+                            <p class="mb-0">{% trans "إجمالي عدد التقارير" %}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-9 col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "توزيع التقارير حسب النوع" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for type_code, report_data in reports_by_type.items %}
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <div class="card
+                                        {% if type_code == 'delivery' %}border-primary
+                                        {% elif type_code == 'return' %}border-success
+                                        {% elif type_code == 'maintenance' %}border-warning
+                                        {% elif type_code == 'periodic' %}border-info
+                                        {% endif %}">
+                                        <div class="card-body text-center p-3">
+                                            <div class="badge
+                                                {% if type_code == 'delivery' %}bg-primary
+                                                {% elif type_code == 'return' %}bg-success
+                                                {% elif type_code == 'maintenance' %}bg-warning
+                                                {% elif type_code == 'periodic' %}bg-info
+                                                {% endif %} mb-2">
+                                                {{ report_data.label }}
+                                            </div>
+                                            <h3 class="mb-0">{{ report_data.count }}</h3>
+                                            <small>{{ report_data.percentage }}%</small>
+                                            <div class="progress mt-2" style="height: 5px;">
+                                                <div class="progress-bar
+                                                    {% if type_code == 'delivery' %}bg-primary
+                                                    {% elif type_code == 'return' %}bg-success
+                                                    {% elif type_code == 'maintenance' %}bg-warning
+                                                    {% elif type_code == 'periodic' %}bg-info
+                                                    {% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ report_data.percentage }}%;" 
+                                                    aria-valuenow="{{ report_data.percentage }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "توزيع التقارير حسب حالة السيارة" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for condition_code, condition_data in reports_by_condition.items %}
+                                <div class="col-md-4 col-sm-6 mb-3">
+                                    <div class="card
+                                        {% if condition_code == 'excellent' %}border-success
+                                        {% elif condition_code == 'good' %}border-info
+                                        {% elif condition_code == 'fair' %}border-warning
+                                        {% elif condition_code == 'poor' %}border-danger
+                                        {% elif condition_code == 'damaged' %}border-danger
+                                        {% endif %}">
+                                        <div class="card-body text-center p-3">
+                                            <div class="badge
+                                                {% if condition_code == 'excellent' %}bg-success
+                                                {% elif condition_code == 'good' %}bg-info
+                                                {% elif condition_code == 'fair' %}bg-warning
+                                                {% elif condition_code == 'poor' %}bg-danger
+                                                {% elif condition_code == 'damaged' %}bg-danger
+                                                {% endif %} mb-2">
+                                                {{ condition_data.label }}
+                                            </div>
+                                            <h3 class="mb-0">{{ condition_data.count }}</h3>
+                                            <small>{{ condition_data.percentage }}%</small>
+                                            <div class="progress mt-2" style="height: 5px;">
+                                                <div class="progress-bar
+                                                    {% if condition_code == 'excellent' %}bg-success
+                                                    {% elif condition_code == 'good' %}bg-info
+                                                    {% elif condition_code == 'fair' %}bg-warning
+                                                    {% elif condition_code == 'poor' %}bg-danger
+                                                    {% elif condition_code == 'damaged' %}bg-danger
+                                                    {% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ condition_data.percentage }}%;" 
+                                                    aria-valuenow="{{ condition_data.percentage }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "السيارات التي سجلت أكثر الأعطال" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if cars_with_most_defects %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>{% trans "السيارة" %}</th>
+                                            <th>{% trans "عدد تقارير الأعطال" %}</th>
+                                            <th>{% trans "الإجراء" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for car in cars_with_most_defects %}
+                                        <tr>
+                                            <td>
+                                                {{ car.make }} {{ car.model }} ({{ car.license_plate }})
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-danger">{{ car.defect_count }}</span>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'car_history_reports' car.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-history me-1"></i> {% trans "سجل التقارير" %}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <div class="empty-state">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                    <h5>{% trans "لا توجد أعطال مسجلة" %}</h5>
+                                    <p class="text-muted">{% trans "لم يتم تسجيل أي أعطال للسيارات في النظام" %}</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "إجراءات سريعة" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{% url 'car_condition_create' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-1"></i> {% trans "إنشاء تقرير جديد" %}
+                                </a>
+                                <a href="{% url 'car_condition_list' %}" class="btn btn-info">
+                                    <i class="fas fa-list me-1"></i> {% trans "قائمة التقارير" %}
+                                </a>
+                                <a href="{% url 'admin_cars' %}" class="btn btn-secondary">
+                                    <i class="fas fa-car me-1"></i> {% trans "إدارة السيارات" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    $(document).ready(function() {
+        // يمكن إضافة كود JavaScript لرسومات بيانية متقدمة هنا
+        // مثل: Chart.js أو Morris.js أو D3.js
+    });
+</script>
+{% endblock %}

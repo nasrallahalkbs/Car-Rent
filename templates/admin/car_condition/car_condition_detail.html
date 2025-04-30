@@ -1,0 +1,281 @@
+{% extends "admin_layout.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "تفاصيل تقرير حالة السيارة" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{% trans "تفاصيل تقرير حالة السيارة" %} #{{ report.id }}</h5>
+                <div>
+                    <a href="{% url 'car_condition_edit' report.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> {% trans "تعديل" %}
+                    </a>
+                    <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "العودة للقائمة" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "معلومات أساسية" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>{% trans "رقم التقرير:" %}</strong> {{ report.id }}</p>
+                                    <p>
+                                        <strong>{% trans "نوع التقرير:" %}</strong>
+                                        <span class="badge 
+                                            {% if report.report_type == 'delivery' %}bg-primary
+                                            {% elif report.report_type == 'return' %}bg-success
+                                            {% elif report.report_type == 'maintenance' %}bg-warning
+                                            {% elif report.report_type == 'periodic' %}bg-info
+                                            {% endif %}">
+                                            {{ report.get_report_type_display }}
+                                        </span>
+                                    </p>
+                                    <p><strong>{% trans "تاريخ التقرير:" %}</strong> {{ report.date|date:"Y-m-d H:i" }}</p>
+                                    <p><strong>{% trans "تم التوثيق بواسطة:" %}</strong> {{ report.created_by.get_full_name|default:report.created_by.username }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p>
+                                        <strong>{% trans "حالة السيارة:" %}</strong>
+                                        <span class="badge 
+                                            {% if report.car_condition == 'excellent' %}bg-success
+                                            {% elif report.car_condition == 'good' %}bg-info
+                                            {% elif report.car_condition == 'fair' %}bg-warning
+                                            {% elif report.car_condition == 'poor' %}bg-danger
+                                            {% elif report.car_condition == 'damaged' %}bg-danger text-white
+                                            {% endif %}">
+                                            {{ report.get_car_condition_display }}
+                                        </span>
+                                    </p>
+                                    <p><strong>{% trans "المسافة المقطوعة:" %}</strong> {{ report.mileage }} كم</p>
+                                    <p>
+                                        <strong>{% trans "مستوى الوقود:" %}</strong>
+                                        <div class="d-flex align-items-center mt-1">
+                                            <div class="progress me-2" style="width: 100px; height: 15px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 
+                                                    {% if report.fuel_level == 'empty' %}0%
+                                                    {% elif report.fuel_level == 'quarter' %}25%
+                                                    {% elif report.fuel_level == 'half' %}50%
+                                                    {% elif report.fuel_level == 'three_quarters' %}75%
+                                                    {% elif report.fuel_level == 'full' %}100%
+                                                    {% endif %}" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            {{ report.get_fuel_level_display }}
+                                        </div>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "معلومات السيارة والحجز" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p>
+                                        <strong>{% trans "السيارة:" %}</strong>
+                                        <a href="{% url 'car_history_reports' report.car.id %}">
+                                            {{ report.car.make }} {{ report.car.model }}
+                                        </a>
+                                    </p>
+                                    <p><strong>{% trans "رقم اللوحة:" %}</strong> {{ report.car.license_plate }}</p>
+                                    <p><strong>{% trans "الموديل:" %}</strong> {{ report.car.year }}</p>
+                                    <p><strong>{% trans "اللون:" %}</strong> {{ report.car.color }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if report.reservation %}
+                                    <p>
+                                        <strong>{% trans "رقم الحجز:" %}</strong>
+                                        <a href="{% url 'admin_reservation_detail' report.reservation.id %}">
+                                            {{ report.reservation.reservation_number }}
+                                        </a>
+                                    </p>
+                                    <p><strong>{% trans "العميل:" %}</strong> {{ report.reservation.user.get_full_name }}</p>
+                                    <p><strong>{% trans "تاريخ الاستلام:" %}</strong> {{ report.reservation.start_date|date:"Y-m-d" }}</p>
+                                    <p><strong>{% trans "تاريخ التسليم:" %}</strong> {{ report.reservation.end_date|date:"Y-m-d" }}</p>
+                                    {% else %}
+                                    <p class="text-muted">{% trans "لا يوجد حجز مرتبط بهذا التقرير" %}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "الأعطال والصيانة" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p>
+                                        <strong>{% trans "نوع الصيانة:" %}</strong>
+                                        {% if report.maintenance_type %}
+                                            {{ report.get_maintenance_type_display }}
+                                        {% else %}
+                                            <span class="text-muted">{% trans "غير محدد" %}</span>
+                                        {% endif %}
+                                    </p>
+                                    
+                                    <p><strong>{% trans "سبب العطل:" %}</strong></p>
+                                    <div class="p-3 bg-light rounded mb-3">
+                                        {% if report.defect_cause %}
+                                            {{ report.defect_cause|linebreaks }}
+                                        {% else %}
+                                            <span class="text-muted">{% trans "لم يتم تحديد سبب للعطل" %}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <p>
+                                        <strong>{% trans "تكلفة الإصلاح:" %}</strong>
+                                        {% if report.repair_cost %}
+                                            {{ report.repair_cost }} {% trans "ريال" %}
+                                        {% else %}
+                                            <span class="text-muted">{% trans "غير محدد" %}</span>
+                                        {% endif %}
+                                    </p>
+                                    
+                                    <p><strong>{% trans "الأعطال المكتشفة:" %}</strong></p>
+                                    <div class="p-3 bg-light rounded mb-3">
+                                        {% if report.defects %}
+                                            {{ report.defects|linebreaks }}
+                                        {% else %}
+                                            <span class="text-muted">{% trans "لا توجد أعطال مسجلة" %}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "ملاحظات إضافية" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="p-3 bg-light rounded">
+                                {% if report.notes %}
+                                    {{ report.notes|linebreaks }}
+                                {% else %}
+                                    <span class="text-muted">{% trans "لا توجد ملاحظات إضافية" %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if related_reports %}
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "تقارير سابقة لنفس السيارة" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>{% trans "رقم التقرير" %}</th>
+                                            <th>{% trans "النوع" %}</th>
+                                            <th>{% trans "التاريخ" %}</th>
+                                            <th>{% trans "حالة السيارة" %}</th>
+                                            <th>{% trans "المسافة المقطوعة" %}</th>
+                                            <th>{% trans "الإجراء" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for related_report in related_reports %}
+                                        <tr>
+                                            <td>{{ related_report.id }}</td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if related_report.report_type == 'delivery' %}bg-primary
+                                                    {% elif related_report.report_type == 'return' %}bg-success
+                                                    {% elif related_report.report_type == 'maintenance' %}bg-warning
+                                                    {% elif related_report.report_type == 'periodic' %}bg-info
+                                                    {% endif %}">
+                                                    {{ related_report.get_report_type_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ related_report.date|date:"Y-m-d" }}</td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if related_report.car_condition == 'excellent' %}bg-success
+                                                    {% elif related_report.car_condition == 'good' %}bg-info
+                                                    {% elif related_report.car_condition == 'fair' %}bg-warning
+                                                    {% elif related_report.car_condition == 'poor' %}bg-danger
+                                                    {% elif related_report.car_condition == 'damaged' %}bg-danger text-white
+                                                    {% endif %}">
+                                                    {{ related_report.get_car_condition_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ related_report.mileage }} كم</td>
+                                            <td>
+                                                <a href="{% url 'car_condition_detail' related_report.id %}" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <a href="{% url 'car_history_reports' report.car.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-history me-1"></i> {% trans "عرض تاريخ السيارة كاملاً" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="d-flex justify-content-between mt-2">
+                <a href="{% url 'car_condition_delete' report.id %}" class="btn btn-danger">
+                    <i class="fas fa-trash me-1"></i> {% trans "حذف التقرير" %}
+                </a>
+                
+                <div>
+                    <a href="{% url 'car_condition_edit' report.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> {% trans "تعديل" %}
+                    </a>
+                    <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "العودة للقائمة" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "admin_layout.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "تأكيد حذف تقرير حالة السيارة" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">{% trans "تأكيد الحذف" %}</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{% trans "هل أنت متأكد من حذف هذا التقرير؟" %}
+                </h5>
+                <p>{% trans "سيتم حذف جميع بيانات هذا التقرير نهائياً ولا يمكن التراجع عن هذه العملية." %}</p>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">{% trans "معلومات التقرير المراد حذفه" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>{% trans "رقم التقرير:" %}</strong> {{ report.id }}</p>
+                            <p>
+                                <strong>{% trans "نوع التقرير:" %}</strong>
+                                <span class="badge 
+                                    {% if report.report_type == 'delivery' %}bg-primary
+                                    {% elif report.report_type == 'return' %}bg-success
+                                    {% elif report.report_type == 'maintenance' %}bg-warning
+                                    {% elif report.report_type == 'periodic' %}bg-info
+                                    {% endif %}">
+                                    {{ report.get_report_type_display }}
+                                </span>
+                            </p>
+                            <p><strong>{% trans "تاريخ التقرير:" %}</strong> {{ report.date|date:"Y-m-d H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>{% trans "السيارة:" %}</strong> {{ report.car.make }} {{ report.car.model }} ({{ report.car.license_plate }})</p>
+                            {% if report.reservation %}
+                            <p><strong>{% trans "الحجز:" %}</strong> {{ report.reservation.reservation_number }}</p>
+                            {% endif %}
+                            <p>
+                                <strong>{% trans "حالة السيارة:" %}</strong>
+                                <span class="badge 
+                                    {% if report.car_condition == 'excellent' %}bg-success
+                                    {% elif report.car_condition == 'good' %}bg-info
+                                    {% elif report.car_condition == 'fair' %}bg-warning
+                                    {% elif report.car_condition == 'poor' %}bg-danger
+                                    {% elif report.car_condition == 'damaged' %}bg-danger text-white
+                                    {% endif %}">
+                                    {{ report.get_car_condition_display }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post" action="">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'car_condition_detail' report.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> {% trans "تأكيد الحذف" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

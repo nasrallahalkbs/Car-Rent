@@ -1,0 +1,310 @@
+{% extends "admin_layout.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "تاريخ حالة السيارة" %} - {{ car.make }} {{ car.model }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    {% trans "تاريخ حالة السيارة" %} - {{ car.make }} {{ car.model }} ({{ car.license_plate }})
+                </h5>
+                <div>
+                    <a href="{% url 'car_condition_create' %}?car_id={{ car.id }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> {% trans "إنشاء تقرير جديد" %}
+                    </a>
+                    <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "العودة للقائمة" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "معلومات السيارة" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>{% trans "الماركة:" %}</strong> {{ car.make }}</p>
+                                    <p><strong>{% trans "الموديل:" %}</strong> {{ car.model }}</p>
+                                    <p><strong>{% trans "سنة الصنع:" %}</strong> {{ car.year }}</p>
+                                    <p><strong>{% trans "اللون:" %}</strong> {{ car.color }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>{% trans "رقم اللوحة:" %}</strong> {{ car.license_plate }}</p>
+                                    <p><strong>{% trans "الفئة:" %}</strong> {{ car.get_category_display }}</p>
+                                    <p><strong>{% trans "ناقل الحركة:" %}</strong> {{ car.get_transmission_display }}</p>
+                                    <p><strong>{% trans "نوع الوقود:" %}</strong> {{ car.get_fuel_type_display }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <a href="{% url 'edit_car' car.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit me-1"></i> {% trans "تعديل بيانات السيارة" %}
+                                </a>
+                                <a href="{% url 'admin_cars' %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-car me-1"></i> {% trans "قائمة السيارات" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "إحصائيات تقارير الحالة" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card bg-light mb-3">
+                                        <div class="card-body text-center">
+                                            <h2 class="fw-bold">{{ reports.count }}</h2>
+                                            <p class="mb-0">{% trans "إجمالي عدد التقارير" %}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card bg-light mb-3">
+                                        <div class="card-body text-center">
+                                            {% with latest_report=reports.first %}
+                                            {% if latest_report %}
+                                            <h2 class="fw-bold">{{ latest_report.mileage }} كم</h2>
+                                            <p class="mb-0">{% trans "آخر قراءة للعداد" %}</p>
+                                            {% else %}
+                                            <h2 class="fw-bold">-</h2>
+                                            <p class="mb-0">{% trans "آخر قراءة للعداد" %}</p>
+                                            {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    <p class="fw-bold mt-3 mb-2">{% trans "توزيع التقارير حسب النوع:" %}</p>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-primary">
+                                            {% trans "تسليم للعميل:" %} 
+                                            {{ reports.delivery_count|default:"0" }}
+                                        </span>
+                                        <span class="badge bg-success">
+                                            {% trans "استلام من العميل:" %} 
+                                            {{ reports.return_count|default:"0" }}
+                                        </span>
+                                        <span class="badge bg-warning">
+                                            {% trans "فحص صيانة:" %} 
+                                            {{ reports.maintenance_count|default:"0" }}
+                                        </span>
+                                        <span class="badge bg-info">
+                                            {% trans "فحص دوري:" %} 
+                                            {{ reports.periodic_count|default:"0" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timeline of car condition reports -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">{% trans "تقارير حالة السيارة (من الأحدث للأقدم)" %}</h6>
+                </div>
+                <div class="card-body">
+                    {% if reports %}
+                    <div class="car-condition-timeline">
+                        {% for report in reports %}
+                        <div class="car-condition-timeline-item">
+                            <div class="timeline-icon 
+                                {% if report.report_type == 'delivery' %}bg-primary
+                                {% elif report.report_type == 'return' %}bg-success
+                                {% elif report.report_type == 'maintenance' %}bg-warning
+                                {% elif report.report_type == 'periodic' %}bg-info
+                                {% endif %}">
+                                {% if report.report_type == 'delivery' %}
+                                <i class="fas fa-car"></i>
+                                {% elif report.report_type == 'return' %}
+                                <i class="fas fa-undo"></i>
+                                {% elif report.report_type == 'maintenance' %}
+                                <i class="fas fa-wrench"></i>
+                                {% elif report.report_type == 'periodic' %}
+                                <i class="fas fa-clipboard-check"></i>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-content card">
+                                <div class="card-header d-flex justify-content-between align-items-center py-2">
+                                    <span class="badge 
+                                        {% if report.report_type == 'delivery' %}bg-primary
+                                        {% elif report.report_type == 'return' %}bg-success
+                                        {% elif report.report_type == 'maintenance' %}bg-warning
+                                        {% elif report.report_type == 'periodic' %}bg-info
+                                        {% endif %}">
+                                        {{ report.get_report_type_display }}
+                                    </span>
+                                    <small class="text-muted">{{ report.date|date:"Y-m-d H:i" }}</small>
+                                </div>
+                                <div class="card-body py-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0">
+                                            {% if report.reservation %}
+                                            <a href="{% url 'admin_reservation_detail' report.reservation.id %}">
+                                                حجز #{{ report.reservation.reservation_number }}
+                                            </a>
+                                            {% else %}
+                                            {% trans "تقرير منفصل" %}
+                                            {% endif %}
+                                        </h6>
+                                        <span class="badge 
+                                            {% if report.car_condition == 'excellent' %}bg-success
+                                            {% elif report.car_condition == 'good' %}bg-info
+                                            {% elif report.car_condition == 'fair' %}bg-warning
+                                            {% elif report.car_condition == 'poor' %}bg-danger
+                                            {% elif report.car_condition == 'damaged' %}bg-danger text-white
+                                            {% endif %}">
+                                            {{ report.get_car_condition_display }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <p class="mb-1"><strong>{% trans "المسافة المقطوعة:" %}</strong> {{ report.mileage }} كم</p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p class="mb-1">
+                                                <strong>{% trans "الوقود:" %}</strong>
+                                                <div class="d-inline-block ms-2">
+                                                    <div class="progress" style="width: 50px; height: 10px;">
+                                                        <div class="progress-bar bg-success" role="progressbar" style="width: 
+                                                            {% if report.fuel_level == 'empty' %}0%
+                                                            {% elif report.fuel_level == 'quarter' %}25%
+                                                            {% elif report.fuel_level == 'half' %}50%
+                                                            {% elif report.fuel_level == 'three_quarters' %}75%
+                                                            {% elif report.fuel_level == 'full' %}100%
+                                                            {% endif %}" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {{ report.get_fuel_level_display }}
+                                            </p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p class="mb-1">
+                                                <strong>{% trans "بواسطة:" %}</strong> 
+                                                {{ report.created_by.get_full_name|default:report.created_by.username }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if report.defects %}
+                                    <div class="alert alert-warning mt-2 mb-0 p-2">
+                                        <small>
+                                            <strong>{% trans "الأعطال:" %}</strong> 
+                                            {{ report.defects|truncatechars:100 }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="mt-2 text-end">
+                                        <a href="{% url 'car_condition_detail' report.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye me-1"></i> {% trans "التفاصيل" %}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="empty-state">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <h5>{% trans "لا توجد تقارير لهذه السيارة" %}</h5>
+                            <p class="text-muted">{% trans "لم يتم إنشاء أي تقارير لحالة هذه السيارة بعد" %}</p>
+                            <a href="{% url 'car_condition_create' %}?car_id={{ car.id }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> {% trans "إنشاء تقرير جديد" %}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> {% trans "العودة للقائمة" %}
+                </a>
+                <a href="{% url 'car_condition_create' %}?car_id={{ car.id }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> {% trans "إنشاء تقرير جديد" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Timeline styling */
+    .car-condition-timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    
+    .car-condition-timeline:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #f0f0f0;
+        left: 31px;
+        margin-left: -2px;
+        z-index: 0;
+    }
+    
+    .car-condition-timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+        display: flex;
+    }
+    
+    .timeline-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        z-index: 1;
+    }
+    
+    .timeline-icon i {
+        font-size: 1.5rem;
+    }
+    
+    .timeline-content {
+        margin-left: 20px;
+        flex-grow: 1;
+        border-radius: 0.375rem;
+    }
+    
+    /* Card styling for a cleaner view in the timeline */
+    .timeline-content.card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+</style>
+{% endblock %}
