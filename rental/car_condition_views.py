@@ -40,6 +40,17 @@ def car_condition_list(request):
     # الحصول على قائمة بجميع السيارات للفلترة
     cars = Car.objects.all().order_by('make', 'model')
     
+    # البحث عن الحجوزات التي تحتوي على تقارير تسليم واستلام لإضافة زر المقارنة
+    # استخراج الحجوزات التي لها كلا النوعين من التقارير
+    reservation_ids_with_delivery = set(CarConditionReport.objects.filter(
+        report_type='delivery').values_list('reservation_id', flat=True))
+    reservation_ids_with_return = set(CarConditionReport.objects.filter(
+        report_type='return').values_list('reservation_id', flat=True))
+    
+    # الحجوزات التي لها كلا النوعين من التقارير
+    reservation_ids_with_both = reservation_ids_with_delivery.intersection(reservation_ids_with_return)
+    comparable_reservations = list(reservation_ids_with_both)
+    
     context = {
         'reports': reports,
         'cars': cars,
@@ -48,6 +59,7 @@ def car_condition_list(request):
         'date_from': date_from,
         'date_to': date_to,
         'report_types': CarConditionReport.REPORT_TYPE_CHOICES,
+        'comparable_reservations': comparable_reservations,
     }
     
     return render(request, 'admin/car_condition/car_condition_list.html', context)
