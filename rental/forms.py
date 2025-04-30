@@ -311,7 +311,7 @@ class CarConditionReportForm(forms.ModelForm):
     class Meta:
         model = CarConditionReport
         fields = [
-            'reservation', 'car', 'report_type', 'mileage', 'date',
+            'reservation', 'car', 'report_type', 'inspection_type', 'mileage', 'date',
             'notes', 'defects', 'defect_cause', 'car_condition',
             'repair_cost', 'fuel_level', 'maintenance_type'
         ]
