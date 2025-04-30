@@ -856,6 +856,90 @@ class Document(models.Model):
         ordering = ['-created_at']
 
 
+class CarConditionReport(models.Model):
+    """نموذج توثيق حالة السيارة عند التسليم والاستلام"""
+    
+    REPORT_TYPE_CHOICES = [
+        ('delivery', _('تسليم للعميل')),
+        ('return', _('استلام من العميل')),
+        ('maintenance', _('فحص صيانة')),
+        ('periodic', _('فحص دوري')),
+    ]
+    
+    CAR_CONDITION_CHOICES = [
+        ('excellent', _('ممتازة')),
+        ('good', _('جيدة')),
+        ('fair', _('متوسطة')),
+        ('poor', _('سيئة')),
+        ('damaged', _('متضررة')),
+    ]
+    
+    FUEL_LEVEL_CHOICES = [
+        ('empty', _('فارغ')),
+        ('quarter', _('ربع')),
+        ('half', _('نصف')),
+        ('three_quarters', _('ثلاثة أرباع')),
+        ('full', _('ممتلئ')),
+    ]
+    
+    MAINTENANCE_TYPE_CHOICES = [
+        ('regular', _('صيانة دورية')),
+        ('repair', _('إصلاح عطل')),
+        ('inspection', _('فحص فني')),
+        ('other', _('أخرى')),
+    ]
+
+    # معلومات أساسية
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name='condition_reports',
+                                  verbose_name=_('الحجز المرتبط'))
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name='condition_reports',
+                          verbose_name=_('السيارة'))
+    report_type = models.CharField(max_length=20, choices=REPORT_TYPE_CHOICES, 
+                                 verbose_name=_('نوع التقرير'))
+    
+    # معلومات الحالة
+    mileage = models.PositiveIntegerField(verbose_name=_('المسافة المقطوعة (كم)'))
+    date = models.DateTimeField(default=timezone.now, verbose_name=_('تاريخ التقرير'))
+    notes = models.TextField(blank=True, null=True, verbose_name=_('ملاحظات عامة'))
+    
+    # معلومات الأعطال والصيانة
+    defects = models.TextField(blank=True, null=True, verbose_name=_('الأعطال'))
+    defect_cause = models.TextField(blank=True, null=True, verbose_name=_('سبب العطل'))
+    car_condition = models.CharField(max_length=20, choices=CAR_CONDITION_CHOICES, 
+                                   verbose_name=_('حالة السيارة العامة'))
+    repair_cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                    verbose_name=_('تكلفة الإصلاح'))
+    
+    # معلومات إضافية
+    fuel_level = models.CharField(max_length=20, choices=FUEL_LEVEL_CHOICES, 
+                                verbose_name=_('مستوى الوقود'))
+    maintenance_type = models.CharField(max_length=20, choices=MAINTENANCE_TYPE_CHOICES, 
+                                      blank=True, null=True, verbose_name=_('نوع الصيانة'))
+    
+    # الشخص المسؤول عن التوثيق
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, 
+                                 related_name='created_condition_reports',
+                                 verbose_name=_('تم التوثيق بواسطة'))
+    
+    # وقت الإنشاء والتحديث
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاريخ التحديث'))
+    
+    class Meta:
+        verbose_name = _('تقرير حالة السيارة')
+        verbose_name_plural = _('تقارير حالة السيارات')
+        ordering = ['-date']
+    
+    def __str__(self):
+        return f"{self.get_report_type_display()} - {self.car} - {self.date.strftime('%Y-%m-%d')}"
+    
+    def save(self, *args, **kwargs):
+        # التأكد من أن السيارة تطابق السيارة في الحجز
+        if self.reservation and not self.car_id:
+            self.car = self.reservation.car
+        super().save(*args, **kwargs)
+
+
 # تم نقل الإشارات إلى ملف signals.py المنفصل
 # لتجنب تداخلات في Django signals ولتنظيم الكود بشكل أفضل
 # منع المستندات التلقائية مباشرة في النماذج
