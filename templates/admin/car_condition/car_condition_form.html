@@ -327,6 +327,64 @@
                     </div>
                 </div>
                 
+                <!-- قسم تفاصيل الفحص -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-clipboard-check me-2"></i>{% trans "تفاصيل الفحص" %}
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                {% for category in inspection_categories %}
+                                <div class="inspection-category mb-4">
+                                    <h6 class="border-bottom pb-2 mb-3">
+                                        <i class="fas fa-check-circle me-2 text-primary"></i>{{ category.name }}
+                                    </h6>
+                                    <div class="row">
+                                        {% for item in category.inspection_items.all %}
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card h-100 border-light">
+                                                <div class="card-body py-2">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <label class="form-label mb-0 fw-bold">{{ item.name }}</label>
+                                                        {% if item.is_required %}
+                                                        <span class="badge bg-danger">{% trans "إلزامي" %}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    
+                                                    <select name="inspection_item_{{ item.id }}" class="form-select mb-2">
+                                                        <option value="">{% trans "-- اختر الحالة --" %}</option>
+                                                        {% for value, text in item.CONDITION_CHOICES %}
+                                                        <option value="{{ value }}">{{ text }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    
+                                                    <textarea name="notes_item_{{ item.id }}" class="form-control" rows="2" placeholder="{% trans 'ملاحظات خاصة بهذا العنصر' %}"></textarea>
+                                                    
+                                                    <div class="form-check mt-2">
+                                                        <input class="form-check-input" type="checkbox" name="needs_repair_{{ item.id }}" id="needs_repair_{{ item.id }}">
+                                                        <label class="form-check-label" for="needs_repair_{{ item.id }}">
+                                                            {% trans "يحتاج إلى إصلاح" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>{% trans "لا توجد فئات فحص مضافة حتى الآن. يرجى إضافة فئات وعناصر الفحص أولاً." %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="d-flex justify-content-between">
                     <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
                         <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
