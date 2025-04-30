@@ -300,7 +300,19 @@
 {% block extra_scripts %}
 <script>
     $(document).ready(function() {
-        // العلاقة بين الحجز والسيارة
+        // إنشاء عناصر عرض معلومات العميل والسيارة
+        var customerInfoDiv = $('<div class="customer-info mt-3 card bg-light mb-3" style="display:none">')
+            .append('<div class="card-header bg-info text-white"><h6 class="mb-0"><i class="fas fa-user me-2"></i>{% trans "معلومات العميل والحجز" %}</h6></div>')
+            .append('<div class="card-body customer-details"></div>');
+        
+        var carDetailsDiv = $('<div class="car-details-info mt-3 card bg-light" style="display:none">')
+            .append('<div class="card-header bg-primary text-white"><h6 class="mb-0"><i class="fas fa-car me-2"></i>{% trans "معلومات السيارة" %}</h6></div>')
+            .append('<div class="card-body car-details-content"></div>');
+        
+        // إضافة العناصر بعد القسم الأول
+        $("#reservation-select").closest('.card-body').append(customerInfoDiv).append(carDetailsDiv);
+
+        // العلاقة بين الحجز والسيارة وعرض البيانات
         $("#reservation-select").change(function() {
             const reservationId = $(this).val();
             if (reservationId) {
@@ -311,12 +323,54 @@
                     },
                     dataType: 'json',
                     success: function(data) {
+                        // تعيين السيارة المتعلقة بالحجز
                         $("#car-select").val(data.car_id);
+                        
+                        // عرض معلومات العميل والحجز
+                        var customerDetails = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>{% trans "اسم العميل" %}:</strong> ${data.customer_name}</p>
+                                    <p><strong>{% trans "رقم الحجز" %}:</strong> ${data.reservation_number}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>{% trans "تاريخ البداية" %}:</strong> ${data.reservation_start_date}</p>
+                                    <p><strong>{% trans "تاريخ النهاية" %}:</strong> ${data.reservation_end_date}</p>
+                                </div>
+                            </div>
+                        `;
+                        $(".customer-details").html(customerDetails);
+                        $(".customer-info").slideDown();
+                        
+                        // عرض تفاصيل السيارة
+                        var carDetails = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>{% trans "الماركة" %}:</strong> ${data.car_details.make}</p>
+                                    <p><strong>{% trans "الموديل" %}:</strong> ${data.car_details.model}</p>
+                                    <p><strong>{% trans "سنة الصنع" %}:</strong> ${data.car_details.year}</p>
+                                    <p><strong>{% trans "اللون" %}:</strong> ${data.car_details.color}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>{% trans "لوحة الترخيص" %}:</strong> ${data.car_details.license_plate}</p>
+                                    <p><strong>{% trans "الفئة" %}:</strong> ${data.car_details.category}</p>
+                                    <p><strong>{% trans "ناقل الحركة" %}:</strong> ${data.car_details.transmission}</p>
+                                    <p><strong>{% trans "نوع الوقود" %}:</strong> ${data.car_details.fuel_type}</p>
+                                </div>
+                            </div>
+                        `;
+                        $(".car-details-content").html(carDetails);
+                        $(".car-details-info").slideDown();
                     },
                     error: function(error) {
                         console.error("Error fetching car data:", error);
+                        $(".customer-info, .car-details-info").slideUp();
+                        alert("{% trans 'حدث خطأ أثناء جلب بيانات الحجز' %}");
                     }
                 });
+            } else {
+                // إخفاء معلومات العميل والسيارة إذا لم يتم اختيار حجز
+                $(".customer-info, .car-details-info").slideUp();
             }
         });
         
@@ -373,6 +427,11 @@
                 $("#{{ form.maintenance_type.id_for_label }}").closest('.col-12').hide();
             }
         }).trigger('change');
+        
+        // تحقق مما إذا كان هناك حجز مختار بالفعل عند تحميل الصفحة
+        if ($("#reservation-select").val()) {
+            $("#reservation-select").trigger("change");
+        }
     });
 </script>
 {% endblock %}

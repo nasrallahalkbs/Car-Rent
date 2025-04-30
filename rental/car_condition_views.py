@@ -170,7 +170,7 @@ def car_condition_delete(request, report_id):
 
 @login_required
 def get_car_by_reservation(request):
-    """استرجاع معلومات السيارة المرتبطة بالحجز لعرضها في النموذج بتقنية AJAX"""
+    """استرجاع معلومات السيارة والعميل المرتبطة بالحجز لعرضها في النموذج بتقنية AJAX"""
     
     reservation_id = request.GET.get('reservation_id')
     if not reservation_id:
@@ -178,9 +178,26 @@ def get_car_by_reservation(request):
     
     try:
         reservation = Reservation.objects.get(id=reservation_id)
+        
+        # استرجاع معلومات السيارة والعميل
         return JsonResponse({
             'car_id': reservation.car.id,
             'car_info': f'{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})',
+            'customer_name': reservation.user.get_full_name() or reservation.user.username,
+            'customer_id': reservation.user.id,
+            'reservation_number': reservation.reservation_number,
+            'reservation_start_date': reservation.start_date.strftime('%Y-%m-%d'),
+            'reservation_end_date': reservation.end_date.strftime('%Y-%m-%d'),
+            'car_details': {
+                'make': reservation.car.make,
+                'model': reservation.car.model,
+                'year': reservation.car.year,
+                'color': reservation.car.color,
+                'license_plate': reservation.car.license_plate,
+                'category': reservation.car.get_category_display(),
+                'transmission': reservation.car.get_transmission_display(),
+                'fuel_type': reservation.car.get_fuel_type_display(),
+            }
         })
     except Reservation.DoesNotExist:
         return JsonResponse({'error': 'Reservation not found'}, status=404)
