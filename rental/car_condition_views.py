@@ -175,7 +175,36 @@ def car_condition_edit(request, report_id):
         form = CarConditionReportForm(request.POST, instance=report, user=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, _('تم تحديث تقرير حالة السيارة بنجاح'))
+            
+            # حذف تفاصيل الفحص السابقة قبل إضافة البيانات الجديدة
+            CarInspectionDetail.objects.filter(report=report).delete()
+            
+            # حفظ تفاصيل الفحص من النموذج المرسل
+            for key, value in request.POST.items():
+                # معالجة حقول عناصر الفحص
+                if key.startswith('inspection_item_') and value:
+                    item_id = int(key.replace('inspection_item_', ''))
+                    
+                    # البحث عن عنصر الفحص
+                    try:
+                        inspection_item = CarInspectionItem.objects.get(id=item_id)
+                        
+                        # الحصول على الملاحظات واحتياج الإصلاح
+                        notes = request.POST.get(f'notes_item_{item_id}', '')
+                        needs_repair = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
+                        
+                        # إنشاء تفاصيل الفحص
+                        CarInspectionDetail.objects.create(
+                            report=report,
+                            inspection_item=inspection_item,
+                            condition=value,
+                            notes=notes,
+                            needs_repair=needs_repair
+                        )
+                    except CarInspectionItem.DoesNotExist:
+                        pass
+            
+            messages.success(request, _('تم تحديث تقرير حالة السيارة وتفاصيل الفحص بنجاح'))
             return redirect('car_condition_list')
     else:
         form = CarConditionReportForm(instance=report, user=request.user)
