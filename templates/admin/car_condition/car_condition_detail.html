@@ -1,6 +1,7 @@
 {% extends "admin_layout.html" %}
 {% load static %}
 {% load i18n %}
+{% load rental_extras %}
 
 {% block title %}{% trans "تفاصيل تقرير حالة السيارة" %}{% endblock %}
 
@@ -275,6 +276,104 @@
                     </a>
                 </div>
             </div>
+            
+            <!-- قسم تفاصيل الفحص -->
+            {% if inspection_categories %}
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-clipboard-check me-2"></i>{% trans "تفاصيل الفحص" %}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="accordion" id="inspectionAccordion">
+                                {% for cat_id, category in inspection_categories.items %}
+                                <div class="accordion-item mb-3">
+                                    <h2 class="accordion-header" id="heading{{ cat_id }}">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#collapse{{ cat_id }}" aria-expanded="true"
+                                            aria-controls="collapse{{ cat_id }}">
+                                            <i class="fas fa-check-circle me-2 text-primary"></i>{{ category.name }}
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ cat_id }}" class="accordion-collapse collapse show" 
+                                        aria-labelledby="heading{{ cat_id }}" data-bs-parent="#inspectionAccordion">
+                                        <div class="accordion-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover table-bordered">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th style="width: 30%;">{% trans "عنصر الفحص" %}</th>
+                                                            <th style="width: 15%;">{% trans "الحالة" %}</th>
+                                                            <th style="width: 40%;">{% trans "ملاحظات" %}</th>
+                                                            <th style="width: 15%;">{% trans "يحتاج لإصلاح" %}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for detail in category.items %}
+                                                        <tr>
+                                                            <td>
+                                                                {{ detail.inspection_item.name }}
+                                                                {% if detail.inspection_item.is_required %}
+                                                                <span class="badge bg-danger ms-1">{% trans "إلزامي" %}</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge 
+                                                                    {% if detail.condition == 'excellent' %}bg-success
+                                                                    {% elif detail.condition == 'good' %}bg-info
+                                                                    {% elif detail.condition == 'fair' %}bg-warning
+                                                                    {% elif detail.condition == 'poor' %}bg-danger
+                                                                    {% elif detail.condition == 'damaged' %}bg-danger text-white
+                                                                    {% endif %}">
+                                                                    {{ detail.get_condition_display }}
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                {% if detail.notes %}
+                                                                    {{ detail.notes }}
+                                                                {% else %}
+                                                                    <span class="text-muted">{% trans "لا توجد ملاحظات" %}</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-center">
+                                                                {% if detail.needs_repair %}
+                                                                <span class="badge bg-danger">
+                                                                    <i class="fas fa-tools me-1"></i>
+                                                                    {% trans "يحتاج إصلاح" %}
+                                                                </span>
+                                                                {% else %}
+                                                                <span class="badge bg-success">
+                                                                    <i class="fas fa-check me-1"></i>
+                                                                    {% trans "لا يحتاج إصلاح" %}
+                                                                </span>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>{% trans "لا توجد تفاصيل فحص مسجلة لهذا التقرير" %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
