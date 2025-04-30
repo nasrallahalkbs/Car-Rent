@@ -156,4 +156,24 @@ urlpatterns = [
     path('dashboard/car-condition/statistics/', car_condition_views.car_condition_statistics, name='car_condition_statistics'),
     path('dashboard/car-condition/reservation/<int:reservation_id>/comparison/', car_condition_views.car_condition_comparison, name='car_condition_comparison'),
     path('api/get-car-by-reservation/', car_condition_views.get_car_by_reservation, name='get_car_by_reservation'),
+    
+    # مسارات نظام توثيق حالة السيارة المتقدم
+    # إدارة فئات وعناصر الفحص
+    path('dashboard/car-condition/categories/', car_condition_views.inspection_category_list, name='inspection_category_list'),
+    path('dashboard/car-condition/categories/<int:category_id>/edit/', car_condition_views.inspection_category_edit, name='inspection_category_edit'),
+    path('dashboard/car-condition/categories/<int:category_id>/delete/', car_condition_views.inspection_category_delete, name='inspection_category_delete'),
+    path('dashboard/car-condition/items/', car_condition_views.inspection_item_list, name='inspection_item_list'),
+    path('dashboard/car-condition/items/<int:item_id>/edit/', car_condition_views.inspection_item_edit, name='inspection_item_edit'),
+    path('dashboard/car-condition/items/<int:item_id>/delete/', car_condition_views.inspection_item_delete, name='inspection_item_delete'),
+    
+    # إنشاء تقرير فحص تفصيلي
+    path('dashboard/car-condition/inspection/create/', car_condition_views.complete_car_inspection_create, name='complete_car_inspection_create'),
+    path('dashboard/car-condition/inspection/<int:report_id>/', car_condition_views.car_inspection_detail, name='car_inspection_detail'),
+    
+    # إدارة الصور والتوقيعات
+    path('dashboard/car-condition/inspection/<int:report_id>/images/', car_condition_views.add_inspection_images, name='add_inspection_images'),
+    path('dashboard/car-condition/inspection/images/<int:image_id>/delete/', car_condition_views.delete_inspection_image, name='delete_inspection_image'),
+    path('dashboard/car-condition/inspection/<int:report_id>/customer-signature/', car_condition_views.add_customer_signature, name='add_customer_signature'),
+    path('dashboard/car-condition/inspection/<int:report_id>/staff-signature/', car_condition_views.add_staff_signature, name='add_staff_signature'),
+    path('dashboard/car-condition/inspection/<int:report_id>/pdf/', car_condition_views.download_inspection_report_pdf, name='download_inspection_report_pdf'),
 ]

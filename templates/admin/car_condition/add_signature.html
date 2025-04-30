@@ -1,0 +1,205 @@
+{% extends "admin/admin_layout.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ title }}</h5>
+                        <a href="{% url 'car_inspection_detail' report.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i> {% trans "العودة للتقرير" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                {% if form.initial.is_customer %}
+                                    {% trans "يرجى الطلب من العميل التوقيع في المساحة أدناه باستخدام الأصبع أو الماوس. التوقيع يؤكد على صحة المعلومات الواردة في تقرير حالة السيارة." %}
+                                {% else %}
+                                    {% trans "يرجى التوقيع في المساحة أدناه باستخدام الأصبع أو الماوس للمصادقة على تقرير حالة السيارة." %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{% trans "معلومات السيارة" %}</label>
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>{% trans "السيارة:" %}</strong> {{ report.car.year }} {{ report.car.make }} {{ report.car.model }}</p>
+                                            <p class="mb-1"><strong>{% trans "رقم اللوحة:" %}</strong> {{ report.car.license_plate }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>{% trans "نوع التقرير:" %}</strong> {{ report.get_report_type_display }}</p>
+                                            <p class="mb-1"><strong>{% trans "تاريخ التقرير:" %}</strong> {{ report.date|date:"Y-m-d H:i" }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" id="signatureForm">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                {{ form.signed_by_name|as_crispy_field }}
+                                {{ form.is_customer|as_crispy_field }}
+                                {{ form.signature_data|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">{% trans "التوقيع" %}</label>
+                                <div class="signature-pad-container">
+                                    <div class="signature-pad">
+                                        <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+                                    </div>
+                                    <div class="signature-pad-footer">
+                                        <button type="button" id="clearSignature" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-eraser me-1"></i> {% trans "مسح" %}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mb-3">
+                            <div class="signature-disclaimer">
+                                {% if form.initial.is_customer %}
+                                    {% trans "أؤكد أنا الموقع أدناه على صحة المعلومات الواردة في تقرير حالة السيارة وأوافق على تحمل المسؤولية عن أي أضرار جديدة قد تحدث خلال فترة استئجار السيارة وفقًا لشروط وأحكام عقد الإيجار." %}
+                                {% else %}
+                                    {% trans "أؤكد أنا الموقع أدناه على صحة المعلومات الواردة في تقرير حالة السيارة وأتعهد بدقتها واكتمالها." %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 text-center">
+                                <button type="submit" id="submitSignature" class="btn btn-primary" disabled>
+                                    <i class="fas fa-save me-1"></i> {% trans "حفظ التوقيع" %}
+                                </button>
+                                <a href="{% url 'car_inspection_detail' report.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .signature-pad-container {
+        border: 1px dashed #ced4da;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        background-color: #f8f9fa;
+    }
+    
+    .signature-pad {
+        width: 100%;
+        padding: 10px;
+    }
+    
+    .signature-canvas {
+        width: 100%;
+        height: 200px;
+        border: 1px solid #e9ecef;
+        background-color: white;
+        border-radius: 4px;
+    }
+    
+    .signature-pad-footer {
+        padding: 10px;
+        text-align: center;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .signature-disclaimer {
+        font-size: 14px;
+        color: #6c757d;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // إنشاء لوحة التوقيع
+        var canvas = document.getElementById('signatureCanvas');
+        var signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        
+        // ضبط حجم الكانفاس
+        function resizeCanvas() {
+            var ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear(); // يجب مسح اللوحة بعد تغيير الحجم
+        }
+        
+        // تنفيذ ضبط الحجم عند تحميل الصفحة
+        resizeCanvas();
+        
+        // مراقبة تغييرات حجم النافذة
+        window.addEventListener("resize", resizeCanvas);
+        
+        // مسح اللوحة
+        $('#clearSignature').click(function() {
+            signaturePad.clear();
+            $('#id_signature_data').val('');
+            $('#submitSignature').prop('disabled', true);
+        });
+        
+        // تحديث زر الإرسال عندما يكون هناك توقيع
+        signaturePad.addEventListener("endStroke", function() {
+            if (!signaturePad.isEmpty()) {
+                $('#submitSignature').prop('disabled', false);
+            }
+        });
+        
+        // حفظ التوقيع قبل إرسال النموذج
+        $('#signatureForm').submit(function(e) {
+            if (signaturePad.isEmpty()) {
+                e.preventDefault();
+                alert('{% trans "يرجى التوقيع قبل الحفظ" %}');
+                return false;
+            }
+            
+            // تحويل التوقيع إلى صورة
+            var signatureData = signaturePad.toDataURL();
+            $('#id_signature_data').val(signatureData);
+            
+            return true;
+        });
+    });
+</script>
+{% endblock %}

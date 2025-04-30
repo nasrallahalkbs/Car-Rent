@@ -1,0 +1,100 @@
+{% extends "admin/admin_layout.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "فئات فحص السيارات" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header pb-0">
+                    <h6 class="mb-0">{% trans "إضافة فئة جديدة" %}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> {% trans "إضافة فئة" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">{% trans "فئات الفحص" %}</h6>
+                        <a href="{% url 'inspection_item_list' %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-list me-1"></i> {% trans "عناصر الفحص" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if categories %}
+                        <div class="table-responsive">
+                            <table class="table align-items-center mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-2">{% trans "الاسم" %}</th>
+                                        <th>{% trans "الوصف" %}</th>
+                                        <th>{% trans "الترتيب" %}</th>
+                                        <th>{% trans "الحالة" %}</th>
+                                        <th>{% trans "عناصر الفحص" %}</th>
+                                        <th class="text-center">{% trans "إجراءات" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category in categories %}
+                                        <tr>
+                                            <td>
+                                                <p class="text-dark fw-bold mb-0">{{ category.name }}</p>
+                                            </td>
+                                            <td>
+                                                <p class="text-muted mb-0">{{ category.description|truncatechars:50|default:"-" }}</p>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">{{ category.display_order }}</span>
+                                            </td>
+                                            <td>
+                                                {% if category.is_active %}
+                                                    <span class="badge bg-success">{% trans "نشط" %}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{% trans "غير نشط" %}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ category.inspection_items.count }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="{% url 'inspection_category_edit' category.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'inspection_category_delete' category.id %}" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد فئات فحص مضافة حتى الآن" %}</p>
+                            <p class="text-muted">{% trans "استخدم النموذج للبدء بإضافة فئات فحص السيارات" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

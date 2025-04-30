@@ -1,0 +1,262 @@
+{% extends "admin/admin_layout.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ title }}</h5>
+                        <a href="{% url 'car_inspection_detail' report.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i> {% trans "العودة للتقرير" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                {% trans "يمكنك رفع صور متعددة لتوثيق حالة السيارة. حدد عنصر الفحص المرتبط بالصورة (إن وجد) وأضف وصفاً مختصراً يوضح ما تظهره الصورة." %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-cloud-upload-alt me-2"></i> {% trans "رفع صورة جديدة" %}</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" enctype="multipart/form-data" id="imageUploadForm">
+                                        {% csrf_token %}
+                                        
+                                        <div class="mb-3">
+                                            {{ form.image|as_crispy_field }}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            {{ form.description|as_crispy_field }}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">{% trans "عنصر الفحص المرتبط" %}</label>
+                                            <select name="inspection_detail" class="form-select" id="id_inspection_detail">
+                                                <option value="">{% trans "- صورة عامة (غير مرتبطة بعنصر محدد) -" %}</option>
+                                                {% for detail in inspection_details %}
+                                                    <optgroup label="{{ detail.inspection_item.category.name }}">
+                                                        <option value="{{ detail.id }}">{{ detail.inspection_item.name }}</option>
+                                                    </optgroup>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">{% trans "حدد عنصر الفحص المرتبط بالصورة، أو اتركه فارغاً لإضافة صورة عامة للتقرير" %}</div>
+                                        </div>
+                                        
+                                        <div class="mt-4 text-center">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-upload me-1"></i> {% trans "رفع الصورة" %}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-7">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-images me-2"></i> {% trans "الصور المرفوعة" %} ({{ images.count }})</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if images %}
+                                        <div class="row image-gallery">
+                                            {% for image in images %}
+                                                <div class="col-md-4 col-6 mb-3">
+                                                    <div class="image-card">
+                                                        <div class="image-preview">
+                                                            <img src="{{ image.image.url }}" alt="{{ image.description|default:'صورة' }}" class="img-fluid rounded">
+                                                            <div class="image-actions">
+                                                                <a href="{{ image.image.url }}" class="btn btn-sm btn-light" target="_blank" title="{% trans 'عرض' %}">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </a>
+                                                                <a href="{% url 'delete_inspection_image' image.id %}" class="btn btn-sm btn-danger" title="{% trans 'حذف' %}">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="image-details">
+                                                            {% if image.description %}
+                                                                <div class="image-description">{{ image.description }}</div>
+                                                            {% endif %}
+                                                            <div class="image-meta">
+                                                                {% if image.inspection_detail %}
+                                                                    <span class="badge bg-info">{{ image.inspection_detail.inspection_item.name }}</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-secondary">{% trans "صورة عامة" %}</span>
+                                                                {% endif %}
+                                                                <small class="text-muted">{{ image.upload_date|date:"Y-m-d H:i" }}</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-camera fa-3x text-muted mb-3"></i>
+                                            <p>{% trans "لم يتم رفع أي صور لهذا التقرير بعد" %}</p>
+                                            <p class="text-muted">{% trans "استخدم النموذج على اليمين لرفع الصور" %}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-12 text-end">
+                            <a href="{% url 'car_inspection_detail' report.id %}" class="btn btn-primary">
+                                <i class="fas fa-check me-1"></i> {% trans "الانتهاء من إضافة الصور" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .image-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #fff;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    
+    .image-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .image-preview {
+        position: relative;
+        overflow: hidden;
+        padding-top: 75%; /* لضمان نسبة عرض إلى ارتفاع ثابتة */
+    }
+    
+    .image-preview img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .image-actions {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        display: flex;
+        gap: 5px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .image-preview:hover .image-actions {
+        opacity: 1;
+    }
+    
+    .image-details {
+        padding: 10px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .image-description {
+        font-size: 14px;
+        margin-bottom: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        flex: 1;
+    }
+    
+    .image-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+    }
+    
+    .image-meta small {
+        font-size: 12px;
+    }
+    
+    #image-preview-container {
+        text-align: center;
+        margin-top: 15px;
+        padding: 10px;
+        border: 1px dashed #ced4da;
+        border-radius: 4px;
+        display: none;
+    }
+    
+    #image-preview {
+        max-height: 200px;
+        max-width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // عرض معاينة للصورة المختارة
+        $('#id_image').change(function() {
+            if (this.files && this.files[0]) {
+                var reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    if (!$('#image-preview-container').length) {
+                        // إنشاء عنصر معاينة الصورة إذا لم يكن موجوداً
+                        var previewContainer = $('<div id="image-preview-container"></div>');
+                        var previewImage = $('<img id="image-preview" class="img-fluid">');
+                        previewContainer.append(previewImage);
+                        $('#id_image').after(previewContainer);
+                    }
+                    
+                    $('#image-preview').attr('src', e.target.result);
+                    $('#image-preview-container').show();
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // تحقق من التأكيد قبل حذف الصورة
+        $('.btn-danger').click(function(e) {
+            if (!confirm('{% trans "هل أنت متأكد من رغبتك في حذف هذه الصورة؟" %}')) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}
