@@ -343,37 +343,41 @@
                                     <h6 class="border-bottom pb-2 mb-3">
                                         <i class="fas fa-check-circle me-2 text-primary"></i>{{ category.name }}
                                     </h6>
-                                    <div class="row">
-                                        {% for item in category.inspection_items.all %}
-                                        <div class="col-md-6 mb-3">
-                                            <div class="card h-100 border-light">
-                                                <div class="card-body py-2">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                                        <label class="form-label mb-0 fw-bold">{{ item.name }}</label>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th class="col-4">{% trans "العنصر" %}</th>
+                                                    <th class="col-3">{% trans "الحالة" %}</th>
+                                                    <th class="col-1 text-center">{% trans "إصلاح" %}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for item in category.inspection_items.all %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ item.name }}</strong>
                                                         {% if item.is_required %}
-                                                        <span class="badge bg-danger">{% trans "إلزامي" %}</span>
+                                                        <span class="badge bg-danger ms-1">{% trans "إلزامي" %}</span>
                                                         {% endif %}
-                                                    </div>
-                                                    
-                                                    <select name="inspection_item_{{ item.id }}" class="form-select mb-2">
-                                                        <option value="">{% trans "-- اختر الحالة --" %}</option>
-                                                        {% for value, text in item.CONDITION_CHOICES %}
-                                                        <option value="{{ value }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.condition == value %}selected{% endif %}>{{ text }}</option>
-                                                        {% endfor %}
-                                                    </select>
-                                                    
-                                                    <textarea name="notes_item_{{ item.id }}" class="form-control" rows="2" placeholder="{% trans 'ملاحظات خاصة بهذا العنصر' %}">{% if inspection_details and inspection_details|get_item:item.id %}{{ inspection_details|get_item:item.id.notes }}{% endif %}</textarea>
-                                                    
-                                                    <div class="form-check mt-2">
-                                                        <input class="form-check-input" type="checkbox" name="needs_repair_{{ item.id }}" id="needs_repair_{{ item.id }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.needs_repair %}checked{% endif %}>
-                                                        <label class="form-check-label" for="needs_repair_{{ item.id }}">
-                                                            {% trans "يحتاج إلى إصلاح" %}
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endfor %}
+                                                    </td>
+                                                    <td>
+                                                        <select name="inspection_item_{{ item.id }}" class="form-select form-select-sm">
+                                                            <option value="">{% trans "-- اختر --" %}</option>
+                                                            {% for value, text in item.CONDITION_CHOICES %}
+                                                            <option value="{{ value }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.condition == value %}selected{% endif %}>{{ text }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="form-check d-flex justify-content-center align-items-center">
+                                                            <input class="form-check-input" type="checkbox" name="needs_repair_{{ item.id }}" id="needs_repair_{{ item.id }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.needs_repair %}checked{% endif %}>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                                 {% empty %}
@@ -381,6 +385,16 @@
                                     <i class="fas fa-info-circle me-2"></i>{% trans "لا توجد فئات فحص مضافة حتى الآن. يرجى إضافة فئات وعناصر الفحص أولاً." %}
                                 </div>
                                 {% endfor %}
+
+                                <!-- حقل ملاحظات عامة للفحص -->
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">{% trans "ملاحظات عامة حول الفحص" %}</label>
+                                            <textarea name="inspection_notes" class="form-control" rows="2" placeholder="{% trans 'أي ملاحظات إضافية عن الفحص بشكل عام' %}"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
