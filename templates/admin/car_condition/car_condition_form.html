@@ -1,0 +1,378 @@
+{% extends "admin_layout.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .fuel-level-selector {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    
+    .fuel-level-option {
+        text-align: center;
+        cursor: pointer;
+    }
+    
+    .fuel-level-option.selected {
+        font-weight: bold;
+    }
+    
+    .fuel-gauge {
+        width: 100%;
+        background-color: #f5f5f5;
+        border-radius: 5px;
+        overflow: hidden;
+        height: 20px;
+    }
+    
+    .fuel-gauge-fill {
+        height: 100%;
+        background-color: #28a745;
+        transition: width 0.3s;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ title }}</h5>
+                <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> {% trans "العودة للقائمة" %}
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" action="" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <h6 class="mb-0">{% trans "معلومات أساسية" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.reservation.id_for_label }}" class="form-label">{{ form.reservation.label }}</label>
+                                        {{ form.reservation }}
+                                        {% if form.reservation.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.reservation.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="{{ form.car.id_for_label }}" class="form-label">{{ form.car.label }}</label>
+                                        {{ form.car }}
+                                        {% if form.car.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.car.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="{{ form.report_type.id_for_label }}" class="form-label">{{ form.report_type.label }}</label>
+                                        {{ form.report_type }}
+                                        {% if form.report_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.report_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="{{ form.date.id_for_label }}" class="form-label">{{ form.date.label }}</label>
+                                        {{ form.date }}
+                                        {% if form.date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card bg-light h-100">
+                            <div class="card-header">
+                                <h6 class="mb-0">{% trans "حالة السيارة" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.mileage.id_for_label }}" class="form-label">{{ form.mileage.label }}</label>
+                                        {{ form.mileage }}
+                                        {% if form.mileage.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.mileage.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="{{ form.car_condition.id_for_label }}" class="form-label">{{ form.car_condition.label }}</label>
+                                        {{ form.car_condition }}
+                                        {% if form.car_condition.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.car_condition.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label for="{{ form.fuel_level.id_for_label }}" class="form-label">{{ form.fuel_level.label }}</label>
+                                        {{ form.fuel_level }}
+                                        
+                                        <div class="fuel-gauge mt-2">
+                                            <div class="fuel-gauge-fill" id="fuel-gauge-visual"></div>
+                                        </div>
+                                        
+                                        <div class="fuel-level-selector mt-2">
+                                            <div class="fuel-level-option" data-value="empty" data-percentage="0">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "فارغ" %}</div>
+                                            </div>
+                                            <div class="fuel-level-option" data-value="quarter" data-percentage="25">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "ربع" %}</div>
+                                            </div>
+                                            <div class="fuel-level-option" data-value="half" data-percentage="50">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "نصف" %}</div>
+                                            </div>
+                                            <div class="fuel-level-option" data-value="three_quarters" data-percentage="75">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "ثلاثة أرباع" %}</div>
+                                            </div>
+                                            <div class="fuel-level-option" data-value="full" data-percentage="100">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <div>{% trans "ممتلئ" %}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        {% if form.fuel_level.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.fuel_level.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card bg-light h-100">
+                            <div class="card-header">
+                                <h6 class="mb-0">{% trans "معلومات الصيانة والإصلاح" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="{{ form.maintenance_type.id_for_label }}" class="form-label">{{ form.maintenance_type.label }}</label>
+                                        {{ form.maintenance_type }}
+                                        {% if form.maintenance_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.maintenance_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label for="{{ form.defects.id_for_label }}" class="form-label">{{ form.defects.label }}</label>
+                                        {{ form.defects }}
+                                        {% if form.defects.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.defects.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="{{ form.defect_cause.id_for_label }}" class="form-label">{{ form.defect_cause.label }}</label>
+                                        {{ form.defect_cause }}
+                                        {% if form.defect_cause.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.defect_cause.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="{{ form.repair_cost.id_for_label }}" class="form-label">{{ form.repair_cost.label }}</label>
+                                        {{ form.repair_cost }}
+                                        {% if form.repair_cost.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.repair_cost.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <h6 class="mb-0">{% trans "ملاحظات إضافية" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <label for="{{ form.notes.id_for_label }}" class="form-label">{{ form.notes.label }}</label>
+                                        {{ form.notes }}
+                                        {% if form.notes.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.notes.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> {% trans "حفظ التقرير" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    $(document).ready(function() {
+        // العلاقة بين الحجز والسيارة
+        $("#reservation-select").change(function() {
+            const reservationId = $(this).val();
+            if (reservationId) {
+                $.ajax({
+                    url: "{% url 'get_car_by_reservation' %}",
+                    data: {
+                        'reservation_id': reservationId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        $("#car-select").val(data.car_id);
+                    },
+                    error: function(error) {
+                        console.error("Error fetching car data:", error);
+                    }
+                });
+            }
+        });
+        
+        // الرسم التفاعلي لمستوى الوقود
+        function updateFuelGauge() {
+            const selectedValue = $("#{{ form.fuel_level.id_for_label }}").val();
+            let percentage = 0;
+            
+            switch (selectedValue) {
+                case 'empty':
+                    percentage = 0;
+                    break;
+                case 'quarter':
+                    percentage = 25;
+                    break;
+                case 'half':
+                    percentage = 50;
+                    break;
+                case 'three_quarters':
+                    percentage = 75;
+                    break;
+                case 'full':
+                    percentage = 100;
+                    break;
+            }
+            
+            $("#fuel-gauge-visual").css('width', percentage + '%');
+            
+            // تحديث الخيارات المرئية
+            $(".fuel-level-option").removeClass('selected');
+            $(`.fuel-level-option[data-value="${selectedValue}"]`).addClass('selected');
+        }
+        
+        // تحديث الرسم عند تغيير القيمة
+        $("#{{ form.fuel_level.id_for_label }}").change(updateFuelGauge);
+        
+        // النقر على خيارات مستوى الوقود
+        $(".fuel-level-option").click(function() {
+            const value = $(this).data('value');
+            $("#{{ form.fuel_level.id_for_label }}").val(value).trigger('change');
+        });
+        
+        // تحديث الرسم عند تحميل الصفحة
+        updateFuelGauge();
+        
+        // إضافة تأثيرات مرئية عند تغيير نوع التقرير
+        $("#{{ form.report_type.id_for_label }}").change(function() {
+            const reportType = $(this).val();
+            
+            // إذا كان التقرير من نوع صيانة، أظهر حقول الصيانة
+            if (reportType === 'maintenance' || reportType === 'periodic') {
+                $("#{{ form.maintenance_type.id_for_label }}").closest('.col-12').show();
+            } else {
+                $("#{{ form.maintenance_type.id_for_label }}").closest('.col-12').hide();
+            }
+        }).trigger('change');
+    });
+</script>
+{% endblock %}

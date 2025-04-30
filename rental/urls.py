@@ -16,6 +16,7 @@ from . import views, admin_views, payment_views, analytics_views
 from .admin_views_windows import admin_archive_windows_explorer
 from .windows_explorer_view import admin_archive_windows
 from .csrf_debug import csrf_debug_view, csrf_debug_page
+from . import car_condition_views
 
 urlpatterns = [
     path('ar/dashboard/archive/direct_upload/', direct_sql_upload_document, name='direct_sql_upload_document'),
@@ -144,4 +145,14 @@ urlpatterns = [
 
     # تم تعليق هذا المسار لتجنب التضارب - هناك تعريف آخر له في السطر 108
     # path('dashboard/archive/direct-sql-upload/', admin_views.direct_sql_upload, name='direct_sql_upload'),
+    
+    # مسارات تقارير حالة السيارة
+    path('dashboard/car-condition/', car_condition_views.car_condition_list, name='car_condition_list'),
+    path('dashboard/car-condition/create/', car_condition_views.car_condition_create, name='car_condition_create'),
+    path('dashboard/car-condition/<int:report_id>/', car_condition_views.car_condition_detail, name='car_condition_detail'),
+    path('dashboard/car-condition/<int:report_id>/edit/', car_condition_views.car_condition_edit, name='car_condition_edit'),
+    path('dashboard/car-condition/<int:report_id>/delete/', car_condition_views.car_condition_delete, name='car_condition_delete'),
+    path('dashboard/car-condition/car/<int:car_id>/history/', car_condition_views.car_history_reports, name='car_history_reports'),
+    path('dashboard/car-condition/statistics/', car_condition_views.car_condition_statistics, name='car_condition_statistics'),
+    path('api/get-car-by-reservation/', car_condition_views.get_car_by_reservation, name='get_car_by_reservation'),
 ]

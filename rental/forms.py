@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.utils import timezone
 from datetime import date
 
-from .models import User, Car, Review
+from .models import User, Car, Review, CarConditionReport, Reservation
 
 class LoginForm(AuthenticationForm):
     """User login form"""
@@ -299,6 +299,95 @@ class ManualPaymentForm(forms.Form):
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
     )
     
+
+class CarConditionReportForm(forms.ModelForm):
+    """نموذج توثيق حالة السيارة"""
+    
+    class Meta:
+        model = CarConditionReport
+        fields = [
+            'reservation', 'car', 'report_type', 'mileage', 'date',
+            'notes', 'defects', 'defect_cause', 'car_condition',
+            'repair_cost', 'fuel_level', 'maintenance_type'
+        ]
+        widgets = {
+            'reservation': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'reservation-select',
+            }),
+            'car': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'car-select',
+            }),
+            'report_type': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'mileage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'placeholder': 'المسافة المقطوعة بالكيلومتر',
+            }),
+            'date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'ملاحظات عامة حول حالة السيارة',
+            }),
+            'defects': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'وصف الأعطال أو الأضرار إن وجدت',
+            }),
+            'defect_cause': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'سبب العطل أو الضرر',
+            }),
+            'car_condition': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'repair_cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'step': '0.01',
+                'placeholder': 'تكلفة الإصلاح المقدرة',
+            }),
+            'fuel_level': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'maintenance_type': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        current_user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # تحديث الاختيارات للحجوزات
+        active_statuses = ['pending', 'confirmed']
+        self.fields['reservation'].queryset = Reservation.objects.filter(
+            status__in=active_statuses
+        ).order_by('-created_at')
+        
+        # إضافة حقل مخفي لمن قام بإنشاء التقرير
+        if current_user:
+            self.instance.created_by = current_user
+            
+    def clean(self):
+        cleaned_data = super().clean()
+        # التأكد من أن الحجز والسيارة متطابقان
+        reservation = cleaned_data.get('reservation')
+        car = cleaned_data.get('car')
+        
+        if reservation and car and reservation.car.id != car.id:
+            self.add_error('car', 'السيارة المحددة لا تتطابق مع السيارة في الحجز')
+            
+        return cleaned_data
+
 
 class SiteSettingsForm(forms.ModelForm):
     """نموذج تحرير إعدادات الموقع"""
