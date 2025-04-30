@@ -246,9 +246,28 @@ def car_condition_detail(request, report_id):
         id=report.id
     ).order_by('-date')[:5]
     
+    # الحصول على تفاصيل الفحص المتعلقة بالتقرير
+    inspection_details = CarInspectionDetail.objects.filter(
+        report=report
+    ).select_related('inspection_item', 'inspection_item__category').order_by(
+        'inspection_item__category__display_order', 'inspection_item__display_order'
+    )
+    
+    # تنظيم تفاصيل الفحص حسب الفئة
+    inspection_categories = {}
+    for detail in inspection_details:
+        category = detail.inspection_item.category
+        if category.id not in inspection_categories:
+            inspection_categories[category.id] = {
+                'name': category.name,
+                'items': []
+            }
+        inspection_categories[category.id]['items'].append(detail)
+    
     context = {
         'report': report,
         'related_reports': related_reports,
+        'inspection_categories': inspection_categories,
     }
     
     return render(request, 'admin/car_condition/car_condition_detail.html', context)
