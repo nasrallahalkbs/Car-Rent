@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 
@@ -228,7 +228,7 @@ def car_condition_statistics(request):
     
     # السيارات التي تعرضت لأكثر الأعطال
     cars_with_most_defects = Car.objects.annotate(
-        defect_count=models.Count('condition_reports', filter=~Q(condition_reports__defects=''))
+        defect_count=Count('condition_reports', filter=~Q(condition_reports__defects=''))
     ).order_by('-defect_count')[:10]
     
     context = {
