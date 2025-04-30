@@ -1,5 +1,6 @@
 {% extends "admin/layout.html" %}
 {% load i18n %}
+{% load custom_filters %}
 
 {% block title %}{% trans "مقارنة حالة السيارة" %} - {{ car.make }} {{ car.model }}{% endblock %}
 
@@ -763,17 +764,7 @@
                                     <td>
                                         <div class="fuel-container">
                                             <div class="fuel-gauge">
-                                                {% if delivery_report.fuel_level == 'full' %}
-                                                <div class="fuel-gauge-fill" style="width: 100%"></div>
-                                                {% elif delivery_report.fuel_level == 'three_quarters' %}
-                                                <div class="fuel-gauge-fill" style="width: 75%"></div>
-                                                {% elif delivery_report.fuel_level == 'half' %}
-                                                <div class="fuel-gauge-fill" style="width: 50%"></div>
-                                                {% elif delivery_report.fuel_level == 'quarter' %}
-                                                <div class="fuel-gauge-fill" style="width: 25%"></div>
-                                                {% elif delivery_report.fuel_level == 'empty' %}
-                                                <div class="fuel-gauge-fill" style="width: 5%"></div>
-                                                {% endif %}
+                                                <div class="fuel-gauge-fill" style="width: {{ delivery_report.fuel_level|fuel_level_to_percent }}%"></div>
                                                 <span class="fuel-icon"><i class="fas fa-gas-pump"></i></span>
                                             </div>
                                             <div class="fuel-level-markers">
@@ -791,17 +782,7 @@
                                     <td>
                                         <div class="fuel-container">
                                             <div class="fuel-gauge">
-                                                {% if return_report.fuel_level == 'full' %}
-                                                <div class="fuel-gauge-fill" style="width: 100%"></div>
-                                                {% elif return_report.fuel_level == 'three_quarters' %}
-                                                <div class="fuel-gauge-fill" style="width: 75%"></div>
-                                                {% elif return_report.fuel_level == 'half' %}
-                                                <div class="fuel-gauge-fill" style="width: 50%"></div>
-                                                {% elif return_report.fuel_level == 'quarter' %}
-                                                <div class="fuel-gauge-fill" style="width: 25%"></div>
-                                                {% elif return_report.fuel_level == 'empty' %}
-                                                <div class="fuel-gauge-fill" style="width: 5%"></div>
-                                                {% endif %}
+                                                <div class="fuel-gauge-fill" style="width: {{ return_report.fuel_level|fuel_level_to_percent }}%"></div>
                                                 <span class="fuel-icon"><i class="fas fa-gas-pump"></i></span>
                                             </div>
                                             <div class="fuel-level-markers">
@@ -817,27 +798,21 @@
                                         </div>
                                     </td>
                                     <td>
-                                        {% if return_report.fuel_level != delivery_report.fuel_level %}
-                                            {% if return_report.fuel_level == 'full' or return_report.fuel_level == 'three_quarters' %}
-                                                {% if delivery_report.fuel_level != 'full' and delivery_report.fuel_level != 'three_quarters' %}
+                                        {% with return_percent=return_report.fuel_level|fuel_level_to_percent delivery_percent=delivery_report.fuel_level|fuel_level_to_percent %}
+                                            {% if return_percent > delivery_percent %}
                                                 <div class="positive-change">
-                                                    <i class="fas fa-arrow-up"></i> {% trans "ازداد" %}
+                                                    <i class="fas fa-arrow-up"></i> +{{ return_percent|sub:delivery_percent }}%
                                                 </div>
-                                                {% else %}
+                                            {% elif return_percent < delivery_percent %}
+                                                <div class="negative-change">
+                                                    <i class="fas fa-arrow-down"></i> -{{ delivery_percent|sub:return_percent }}%
+                                                </div>
+                                            {% else %}
                                                 <div class="no-change">
                                                     <i class="fas fa-equals"></i> {% trans "لم يتغير" %}
                                                 </div>
-                                                {% endif %}
-                                            {% elif delivery_report.fuel_level == 'full' or delivery_report.fuel_level == 'three_quarters' %}
-                                                <div class="negative-change">
-                                                    <i class="fas fa-arrow-down"></i> {% trans "انخفض" %}
-                                                </div>
                                             {% endif %}
-                                        {% else %}
-                                        <div class="no-change">
-                                            <i class="fas fa-equals"></i> {% trans "لم يتغير" %}
-                                        </div>
-                                        {% endif %}
+                                        {% endwith %}
                                     </td>
                                 </tr>
 
@@ -978,6 +953,111 @@
                 card.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
             });
         });
+        
+        // تأثيرات متحركة للعناصر المكونة
+        const elements = document.querySelectorAll('.info-panel, .mileage-increase, .fuel-gauge-fill, .difference-highlight');
+        elements.forEach((el, index) => {
+            // تأخير ظهور العناصر بشكل متتابع
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            
+            setTimeout(() => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, 100 + (index * 50));
+        });
+        
+        // تأثير متحرك لمؤشرات مستوى الوقود
+        const fuelGauges = document.querySelectorAll('.fuel-gauge-fill');
+        fuelGauges.forEach(gauge => {
+            const originalWidth = gauge.style.width;
+            gauge.style.width = '0%';
+            
+            setTimeout(() => {
+                gauge.style.width = originalWidth;
+            }, 500);
+        });
+        
+        // إضافة تلميح للطباعة
+        const printButton = document.querySelector('.print-button');
+        if (printButton) {
+            printButton.addEventListener('click', function() {
+                // إظهار تنبيه أنيميشن قبل الطباعة
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-info fixed-top m-3 animate__animated animate__fadeIn';
+                alertDiv.innerHTML = '<i class="fas fa-info-circle me-2"></i> جاري تحضير نموذج الطباعة...';
+                alertDiv.style.zIndex = '9999';
+                document.body.appendChild(alertDiv);
+                
+                // إخفاء التنبيه بعد ثانية
+                setTimeout(() => {
+                    alertDiv.classList.replace('animate__fadeIn', 'animate__fadeOut');
+                    setTimeout(() => {
+                        document.body.removeChild(alertDiv);
+                        window.print();
+                    }, 500);
+                }, 1000);
+            });
+        }
+        
+        // تحسين مظهر معلومات المقارنة
+        const highlightDifferences = () => {
+            const rows = document.querySelectorAll('.comparison-table tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 3) {
+                    const deliveryValue = cells[1].textContent.trim();
+                    const returnValue = cells[2].textContent.trim();
+                    
+                    if (deliveryValue !== returnValue) {
+                        cells[1].classList.add('bg-light-hover');
+                        cells[2].classList.add('bg-light-hover');
+                    }
+                }
+            });
+        };
+        
+        highlightDifferences();
     });
 </script>
+
+<style>
+    .bg-light-hover {
+        transition: background-color 0.3s ease;
+    }
+    
+    .bg-light-hover:hover {
+        background-color: rgba(0, 81, 146, 0.05) !important;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .animate__animated {
+        animation-duration: 1s;
+        animation-fill-mode: both;
+    }
+    
+    .animate__fadeIn {
+        animation-name: fadeIn;
+    }
+    
+    .animate__fadeOut {
+        animation-name: fadeOut;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+</style>
 {% endblock %}

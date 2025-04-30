@@ -1,4 +1,7 @@
 from django import template
+from django.utils.translation import gettext as _
+from django.utils.timezone import now
+import datetime
 
 register = template.Library()
 
@@ -32,3 +35,50 @@ def abs(value):
         return __builtins__['abs'](value)
     except (ValueError, TypeError):
         return value
+
+@register.filter(name='sub')
+def sub(value, arg):
+    """
+    طرح قيمة من أخرى
+    
+    Usage: {{ value|sub:arg }}
+    """
+    try:
+        return int(value) - int(arg)
+    except (ValueError, TypeError):
+        return 0
+        
+@register.filter(name='percentage_change')
+def percentage_change(new_value, old_value):
+    """
+    حساب نسبة التغيير بين قيمتين
+    
+    Usage: {{ new_value|percentage_change:old_value }}
+    """
+    try:
+        new_value = float(new_value)
+        old_value = float(old_value)
+        if old_value == 0:
+            return 100  # تغيير من الصفر يعتبر زيادة بنسبة 100%
+        
+        change = ((new_value - old_value) / old_value) * 100
+        return int(change)
+    except (ValueError, TypeError, ZeroDivisionError):
+        return 0
+
+@register.filter(name='fuel_level_to_percent')
+def fuel_level_to_percent(level):
+    """
+    تحويل مستوى الوقود إلى نسبة مئوية
+    
+    Usage: {{ fuel_level|fuel_level_to_percent }}
+    """
+    fuel_levels = {
+        'empty': 5,
+        'quarter': 25,
+        'half': 50, 
+        'three_quarters': 75,
+        'full': 100
+    }
+    
+    return fuel_levels.get(level, 0)
