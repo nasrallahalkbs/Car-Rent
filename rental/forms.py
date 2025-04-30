@@ -327,6 +327,9 @@ class CarConditionReportForm(forms.ModelForm):
             'report_type': forms.Select(attrs={
                 'class': 'form-select',
             }),
+            'inspection_type': forms.Select(attrs={
+                'class': 'form-select',
+            }),
             'mileage': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': 0,
@@ -678,6 +681,13 @@ class CompleteCarInspectionForm(forms.Form):
         label=_('تاريخ ووقت الفحص')
     )
     
+    inspection_type = forms.ChoiceField(
+        choices=CarConditionReport.INSPECTION_TYPE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        initial='manual',
+        label=_('نوع الفحص')
+    )
+    
     fuel_level = forms.ChoiceField(
         choices=CarConditionReport.FUEL_LEVEL_CHOICES,
         widget=forms.Select(attrs={'class': 'form-select'}),
@@ -780,6 +790,7 @@ class CompleteCarInspectionForm(forms.Form):
             reservation=self.cleaned_data.get('reservation'),
             car=self.cleaned_data.get('car'),
             report_type=self.cleaned_data.get('report_type'),
+            inspection_type=self.cleaned_data.get('inspection_type'),
             mileage=self.cleaned_data.get('mileage'),
             date=self.cleaned_data.get('date'),
             fuel_level=self.cleaned_data.get('fuel_level'),
