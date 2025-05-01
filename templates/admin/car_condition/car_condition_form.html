@@ -93,10 +93,11 @@
     .car-image-box {
         width: 100%;
         height: 100px; /* تصغير ارتفاع صندوق الصورة أكثر */
-        max-width: 140px; /* تصغير الحد الأقصى للعرض أكثر */
+        max-width: 130px; /* تصغير الحد الأقصى للعرض أكثر */
         margin: 0 auto; /* توسيط العنصر */
-        border: 1px dashed #ced4da;
+        border: 1px solid #e0e0e0;
         border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         position: relative;
         background-color: #fff;
         overflow: hidden; /* منع تجاوز المحتوى للحدود - هذا مهم جدا */
@@ -129,12 +130,13 @@
         left: 0;
         width: 100%;
         height: 100%;
-        object-fit: contain; /* تغيير إلى contain لمنع تجاوز الصورة للحدود */
+        object-fit: cover; /* تغيير إلى cover لتغطية المساحة بشكل كامل */
         max-height: 100%; /* تأكيد على ألا تتجاوز الصورة حدود الارتفاع */
         max-width: 100%; /* تأكيد على ألا تتجاوز الصورة حدود العرض */
         display: none; /* سيتم تغييره إلى block عبر JavaScript عند تحديد صورة */
         z-index: 2; /* ضمان أن الصورة فوق أيقونة الكاميرا */
-        padding: 5px; /* إضافة هامش داخلي */
+        padding: 3px; /* تقليل الهامش الداخلي */
+        border-radius: 4px; /* إضافة حواف مستديرة للصورة */
     }
     
     /* أنماط النافذة المنبثقة لعرض الصورة بالحجم الكامل */
@@ -154,11 +156,13 @@
         margin: auto;
         display: block;
         width: 80%;
-        max-width: 800px;
+        max-width: 600px;
         max-height: 80vh;
         object-fit: contain;
-        padding: 20px;
+        padding: 10px;
         animation: zoom 0.3s;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
     
     @keyframes zoom {
@@ -763,12 +767,22 @@
                     var width = img.width;
                     var height = img.height;
                     
-                    // حساب النسبة لتقليص الصورة بشكل أكبر
-                    var ratio = Math.min(maxWidth / width, maxHeight / height);
+                    // ضبط نسبة العرض إلى الارتفاع للصورة ١:١ لجعلها مربعة ومتناسبة
+                    var targetAspect = 4/3; // نسبة العرض للارتفاع المستهدفة
                     
-                    // تصغير الصورة للتأكد من أنها تناسب الحاوية تمامًا
-                    width = width * ratio;
-                    height = height * ratio;
+                    // حساب الأبعاد الجديدة بناءً على النسبة المطلوبة
+                    var ratio;
+                    if (width / height > targetAspect) {
+                        // الصورة أوسع من المطلوب، نقص العرض
+                        ratio = maxHeight / height;
+                        height = maxHeight;
+                        width = width * ratio;
+                    } else {
+                        // الصورة أضيق من المطلوب، نقص الارتفاع
+                        ratio = maxWidth / width;
+                        width = maxWidth;
+                        height = height * ratio;
+                    }
                     
                     // إنشاء كانفس لرسم الصورة المضغوطة
                     var canvas = document.createElement('canvas');
