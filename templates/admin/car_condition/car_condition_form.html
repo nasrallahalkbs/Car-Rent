@@ -92,14 +92,14 @@
     
     .car-image-box {
         width: 100%;
-        height: 200px; /* زيادة الارتفاع لإعطاء مساحة أكبر للصورة */
-        max-width: 250px; /* زيادة الحد الأقصى للعرض */
+        height: 200px; /* ارتفاع ثابت للصندوق */
+        max-width: 250px; /* الحد الأقصى للعرض */
         margin: 0 auto; /* توسيط العنصر */
         border: 2px dashed #ced4da;
         border-radius: 8px;
         position: relative;
         background-color: #fff;
-        overflow: hidden; /* منع تجاوز المحتوى للحدود */
+        overflow: hidden; /* منع تجاوز المحتوى للحدود - هذا مهم جدا */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -123,7 +123,9 @@
         left: 0;
         width: 100%;
         height: 100%;
-        object-fit: cover; /* تغيير إلى cover لملء المساحة المتاحة */
+        object-fit: contain; /* تغيير إلى contain لمنع تجاوز الصورة للحدود */
+        max-height: 100%; /* تأكيد على ألا تتجاوز الصورة حدود الارتفاع */
+        max-width: 100%; /* تأكيد على ألا تتجاوز الصورة حدود العرض */
         display: none; /* سيتم تغييره إلى block عبر JavaScript عند تحديد صورة */
         z-index: 2; /* ضمان أن الصورة فوق أيقونة الكاميرا */
         padding: 5px; /* إضافة هامش داخلي */
@@ -622,20 +624,18 @@
                 // ضغط الصورة قبل المعاينة
                 var img = new Image();
                 img.onload = function() {
-                    // تحديد أبعاد للصورة مناسبة للقالب
-                    var maxWidth = 1200; // زيادة العرض الأقصى للحصول على جودة أفضل
-                    var maxHeight = 900; // زيادة الارتفاع الأقصى للحصول على جودة أفضل
+                    // تحديد أبعاد للصورة مناسبة للقالب - تقليل الأبعاد القصوى
+                    var maxWidth = 500; // تقليل العرض الأقصى لضمان حجم مناسب للعرض
+                    var maxHeight = 400; // تقليل الارتفاع الأقصى لضمان حجم مناسب للعرض
                     var width = img.width;
                     var height = img.height;
                     
-                    // حساب النسبة للمحافظة على أبعاد الصورة
+                    // حساب النسبة لتقليص الصورة بشكل أكبر
                     var ratio = Math.min(maxWidth / width, maxHeight / height);
                     
-                    // إذا كانت الصورة أكبر من الأبعاد القصوى، قم بتصغيرها
-                    if (ratio < 1) {
-                        width = width * ratio;
-                        height = height * ratio;
-                    }
+                    // تصغير الصورة للتأكد من أنها تناسب الحاوية تمامًا
+                    width = width * ratio;
+                    height = height * ratio;
                     
                     // إنشاء كانفس لرسم الصورة المضغوطة
                     var canvas = document.createElement('canvas');
@@ -650,14 +650,19 @@
                     // رسم الصورة على الكانفس
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // تحويل الكانفس إلى صورة مضغوطة - زيادة جودة الضغط
-                    var compressedImageSrc = canvas.toDataURL('image/jpeg', 0.85); // تحسين نسبة ضغط الصورة إلى 85%
+                    // تحويل الكانفس إلى صورة مضغوطة مع تحسين نسبة الضغط
+                    var compressedImageSrc = canvas.toDataURL('image/jpeg', 0.8);
                     
                     // عرض الصورة المضغوطة
                     var preview = document.getElementById(previewId);
                     preview.src = compressedImageSrc;
                     preview.style.display = 'block';
                     preview.classList.add('show');
+                    
+                    // تطبيق نمط إضافي للتأكد من ضبط الصورة داخل الصندوق
+                    preview.style.objectFit = 'contain';
+                    preview.style.maxWidth = '100%';
+                    preview.style.maxHeight = '100%';
                     
                     // إضافة فئة has-image إلى العنصر الأساسي
                     preview.closest('.car-image-box').classList.add('has-image');
@@ -673,6 +678,8 @@
                     if (imageBox) {
                         imageBox.style.backgroundColor = '#f8f9fa'; // تغيير لون الخلفية لتحسين ظهور الصورة
                     }
+                    
+                    console.log("تم تحميل الصورة بنجاح، الأبعاد النهائية:", width, "×", height);
                 };
                 
                 img.src = e.target.result;
