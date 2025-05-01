@@ -284,15 +284,18 @@ def car_condition_edit(request, report_id):
                             existing_image = img
                             break
                     
+                    # ضغط الصورة قبل الحفظ
+                    compressed_image = compress_image(image_file, max_size=(800, 600), quality=80)
+                    
                     if existing_image:
-                        existing_image.image = image_file
+                        existing_image.image = compressed_image
                         existing_image.description = description
                         existing_image.save()
                     else:
                         # إنشاء صورة جديدة
                         CarInspectionImage.objects.create(
                             report=report,
-                            image=image_file,
+                            image=compressed_image,
                             description=description,
                             inspection_detail=None
                         )
