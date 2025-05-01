@@ -10,6 +10,8 @@ from django.views.decorators.http import require_POST
 from django.conf import settings
 import json
 import base64
+import io
+from PIL import Image
 from django.core.files.base import ContentFile
 
 from .models import (
@@ -22,6 +24,38 @@ from .forms import (
     CarInspectionDetailForm, CarInspectionImageForm, CustomerSignatureForm,
     CompleteCarInspectionForm, CarRepairForm
 )
+
+def compress_image(image_file, max_size=(800, 600), quality=85):
+    """
+    ضغط الصورة وتقليل حجمها
+    
+    Parameters:
+    - image_file: ملف الصورة المرفوع
+    - max_size: الحجم الأقصى للصورة (العرض، الارتفاع)
+    - quality: جودة الصورة (1-100)
+    
+    Returns:
+    - ملف الصورة المضغوطة
+    """
+    # فتح الصورة باستخدام PIL
+    img = Image.open(image_file)
+    
+    # تغيير حجم الصورة إذا كانت أكبر من الحجم الأقصى
+    if img.width > max_size[0] or img.height > max_size[1]:
+        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+    
+    # حفظ الصورة المضغوطة إلى ذاكرة مؤقتة
+    output = io.BytesIO()
+    
+    # حفظ الصورة بتنسيق JPEG مع جودة محددة
+    if img.mode == 'RGBA':
+        img = img.convert('RGB')
+    
+    img.save(output, format='JPEG', quality=quality, optimize=True)
+    output.seek(0)
+    
+    # إرجاع الصورة المضغوطة
+    return ContentFile(output.getvalue(), name=image_file.name)
 
 @login_required
 def car_condition_list(request):
@@ -132,10 +166,13 @@ def car_condition_create(request):
                     if notes:
                         description = f"{description} - {notes}"
                     
+                    # ضغط الصورة قبل الحفظ
+                    compressed_image = compress_image(image_file, max_size=(800, 600), quality=80)
+                    
                     # إنشاء سجل لصورة الفحص
                     CarInspectionImage.objects.create(
                         report=report,
-                        image=image_file,
+                        image=compressed_image,
                         description=description,
                         inspection_detail=None  # صورة عامة للهيكل الخارجي
                     )

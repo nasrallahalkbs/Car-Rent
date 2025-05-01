@@ -596,26 +596,64 @@
     // دالة عامة لمعاينة الصور
     function previewImage(input, previewId) {
         if (input.files && input.files[0]) {
+            var file = input.files[0];
             var reader = new FileReader();
             
             reader.onload = function(e) {
-                console.log("معاينة الصورة:", previewId);
-                var preview = document.getElementById(previewId);
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-                preview.classList.add('show');
+                console.log("معالجة الصورة:", previewId);
                 
-                // إضافة فئة has-image إلى العنصر الأساسي
-                preview.closest('.car-image-box').classList.add('has-image');
+                // ضغط الصورة قبل المعاينة
+                var img = new Image();
+                img.onload = function() {
+                    // تحديد أبعاد متوسطة للصورة
+                    var maxWidth = 800;
+                    var maxHeight = 600;
+                    var width = img.width;
+                    var height = img.height;
+                    
+                    // حساب النسبة للمحافظة على أبعاد الصورة
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height = height * (maxWidth / width);
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width = width * (maxHeight / height);
+                            height = maxHeight;
+                        }
+                    }
+                    
+                    // إنشاء كانفس لرسم الصورة المضغوطة
+                    var canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // تحويل الكانفس إلى صورة مضغوطة
+                    var compressedImageSrc = canvas.toDataURL('image/jpeg', 0.7); // ضغط الصورة بنسبة 70%
+                    
+                    // عرض الصورة المضغوطة
+                    var preview = document.getElementById(previewId);
+                    preview.src = compressedImageSrc;
+                    preview.style.display = 'block';
+                    preview.classList.add('show');
+                    
+                    // إضافة فئة has-image إلى العنصر الأساسي
+                    preview.closest('.car-image-box').classList.add('has-image');
+                    
+                    // إخفاء أيقونة الكاميرا
+                    var cameraIcon = preview.parentNode.querySelector('i.fa-camera');
+                    if (cameraIcon) {
+                        cameraIcon.style.display = 'none';
+                    }
+                };
                 
-                // إخفاء أيقونة الكاميرا
-                var cameraIcon = preview.parentNode.querySelector('i.fa-camera');
-                if (cameraIcon) {
-                    cameraIcon.style.display = 'none';
-                }
-            }
+                img.src = e.target.result;
+            };
             
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
         }
     }
 
