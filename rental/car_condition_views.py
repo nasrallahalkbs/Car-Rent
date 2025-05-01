@@ -194,6 +194,7 @@ def car_condition_create(request):
         'form': form,
         'title': _('إنشاء تقرير حالة سيارة جديد'),
         'inspection_categories': inspection_categories,
+        'exterior_images': [],  # قائمة فارغة لصور الهيكل الخارجي في حالة الإنشاء
     }
     
     return render(request, 'admin/car_condition/car_condition_form.html', context)
