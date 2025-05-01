@@ -92,8 +92,9 @@
     
     .car-image-box {
         width: 100%;
-        height: 100px; /* تصغير ارتفاع صندوق الصورة أكثر */
-        max-width: 130px; /* تصغير الحد الأقصى للعرض أكثر */
+        height: 100px; /* ارتفاع ثابت */
+        max-width: 120px; /* تقليل العرض أكثر */
+        min-width: 120px; /* عرض أدنى ثابت */
         margin: 0 auto; /* توسيط العنصر */
         border: 1px solid #e0e0e0;
         border-radius: 6px;
@@ -130,13 +131,13 @@
         left: 0;
         width: 100%;
         height: 100%;
-        object-fit: cover; /* تغيير إلى cover لتغطية المساحة بشكل كامل */
-        max-height: 100%; /* تأكيد على ألا تتجاوز الصورة حدود الارتفاع */
-        max-width: 100%; /* تأكيد على ألا تتجاوز الصورة حدود العرض */
+        object-fit: cover; /* تغطية المساحة بشكل كامل */
+        max-height: 100px; /* ارتفاع ثابت مطابق لارتفاع الإطار */
+        max-width: 120px; /* عرض ثابت مطابق لعرض الإطار */
         display: none; /* سيتم تغييره إلى block عبر JavaScript عند تحديد صورة */
         z-index: 2; /* ضمان أن الصورة فوق أيقونة الكاميرا */
-        padding: 3px; /* تقليل الهامش الداخلي */
-        border-radius: 4px; /* إضافة حواف مستديرة للصورة */
+        padding: 2px; /* تقليل الهامش الداخلي أكثر */
+        border-radius: 4px; /* حواف مستديرة للصورة */
     }
     
     /* أنماط النافذة المنبثقة لعرض الصورة بالحجم الكامل */
@@ -767,22 +768,29 @@
                     var width = img.width;
                     var height = img.height;
                     
-                    // ضبط نسبة العرض إلى الارتفاع للصورة ١:١ لجعلها مربعة ومتناسبة
-                    var targetAspect = 4/3; // نسبة العرض للارتفاع المستهدفة
+                    // قطع الصور بنسبة 1:1 (مربعة) لضمان التناسب الكامل
+                    var targetSize = 120; // الحجم المستهدف بالبكسل (متوافق مع أبعاد .car-image-box)
                     
-                    // حساب الأبعاد الجديدة بناءً على النسبة المطلوبة
-                    var ratio;
-                    if (width / height > targetAspect) {
-                        // الصورة أوسع من المطلوب، نقص العرض
-                        ratio = maxHeight / height;
-                        height = maxHeight;
-                        width = width * ratio;
-                    } else {
-                        // الصورة أضيق من المطلوب، نقص الارتفاع
-                        ratio = maxWidth / width;
-                        width = maxWidth;
-                        height = height * ratio;
-                    }
+                    // حساب مركز الصورة
+                    var centerX = width / 2;
+                    var centerY = height / 2;
+                    
+                    // قياسات قطع الصورة
+                    var cropSize = Math.min(width, height);
+                    var cropX = centerX - (cropSize / 2);
+                    var cropY = centerY - (cropSize / 2);
+                    
+                    // التأكد من عدم تجاوز الحدود السلبية
+                    cropX = Math.max(0, cropX);
+                    cropY = Math.max(0, cropY);
+                    
+                    // ضبط أبعاد القطع إذا تجاوزت حدود الصورة
+                    if (cropX + cropSize > width) cropSize = width - cropX;
+                    if (cropY + cropSize > height) cropSize = height - cropY;
+                    
+                    // ضبط الأبعاد النهائية
+                    width = targetSize;
+                    height = targetSize;
                     
                     // إنشاء كانفس لرسم الصورة المضغوطة
                     var canvas = document.createElement('canvas');
@@ -794,8 +802,14 @@
                     ctx.imageSmoothingEnabled = true;
                     ctx.imageSmoothingQuality = 'high';
                     
-                    // رسم الصورة على الكانفس
-                    ctx.drawImage(img, 0, 0, width, height);
+                    // رسم الصورة على الكانفس مع تطبيق القطع من المنتصف
+                    ctx.drawImage(
+                        img,                   // الصورة المصدر
+                        cropX, cropY,          // نقطة البداية في الصورة الأصلية
+                        cropSize, cropSize,    // الأبعاد في الصورة الأصلية
+                        0, 0,                  // نقطة البداية في الكانفاس
+                        width, height          // الأبعاد في الكانفاس
+                    );
                     
                     // تحويل الكانفس إلى صورة مضغوطة مع تحسين نسبة الضغط
                     var compressedImageSrc = canvas.toDataURL('image/jpeg', 0.8);
