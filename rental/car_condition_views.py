@@ -204,10 +204,60 @@ def car_condition_edit(request, report_id):
     
     report = get_object_or_404(CarConditionReport, id=report_id)
     
+    # الحصول على صور الهيكل الخارجي الحالية
+    exterior_images = CarInspectionImage.objects.filter(
+        report=report,
+        inspection_detail__isnull=True  # صور عامة للهيكل الخارجي
+    )
+    
     if request.method == 'POST':
-        form = CarConditionReportForm(request.POST, instance=report, user=request.user)
+        form = CarConditionReportForm(request.POST, request.FILES, instance=report, user=request.user)
         if form.is_valid():
             form.save()
+            
+            # معالجة صور الهيكل الخارجي الجديدة
+            image_types = ['front_image', 'rear_image', 'side_image', 'interior_image']
+            
+            for image_type in image_types:
+                if image_type in request.FILES:
+                    image_file = request.FILES[image_type]
+                    notes = request.POST.get(f'{image_type}_notes', '')
+                    
+                    description = ''
+                    if image_type == 'front_image':
+                        description = 'صورة أمامية'
+                    elif image_type == 'rear_image':
+                        description = 'صورة خلفية'
+                    elif image_type == 'side_image':
+                        description = 'صورة جانبية'
+                    elif image_type == 'interior_image':
+                        description = 'صورة داخلية'
+                    
+                    if notes:
+                        description = f"{description} - {notes}"
+                    
+                    # البحث عن الصورة الحالية وتحديثها أو إنشاء صورة جديدة
+                    existing_image = None
+                    for img in exterior_images:
+                        if (image_type == 'front_image' and 'صورة أمامية' in img.description) or \
+                           (image_type == 'rear_image' and 'صورة خلفية' in img.description) or \
+                           (image_type == 'side_image' and 'صورة جانبية' in img.description) or \
+                           (image_type == 'interior_image' and 'صورة داخلية' in img.description):
+                            existing_image = img
+                            break
+                    
+                    if existing_image:
+                        existing_image.image = image_file
+                        existing_image.description = description
+                        existing_image.save()
+                    else:
+                        # إنشاء صورة جديدة
+                        CarInspectionImage.objects.create(
+                            report=report,
+                            image=image_file,
+                            description=description,
+                            inspection_detail=None
+                        )
             
             # حذف تفاصيل الفحص السابقة قبل إضافة البيانات الجديدة
             CarInspectionDetail.objects.filter(report=report).delete()
@@ -221,6 +271,10 @@ def car_condition_edit(request, report_id):
                     # البحث عن عنصر الفحص
                     try:
                         inspection_item = CarInspectionItem.objects.get(id=item_id)
+                        
+                        # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
+                        if inspection_item.category.name == 'الهيكل الخارجي':
+                            continue
                         
                         # الحصول على الملاحظات واحتياج الإصلاح
                         notes = request.POST.get(f'notes_item_{item_id}', '')
@@ -262,6 +316,7 @@ def car_condition_edit(request, report_id):
         'title': _('تعديل تقرير حالة السيارة'),
         'inspection_categories': inspection_categories,
         'inspection_details': inspection_details,
+        'exterior_images': exterior_images,
     }
     
     return render(request, 'admin/car_condition/car_condition_form.html', context)
@@ -279,6 +334,12 @@ def car_condition_detail(request, report_id):
         id=report.id
     ).order_by('-date')[:5]
     
+    # الحصول على صور الهيكل الخارجي
+    exterior_images = CarInspectionImage.objects.filter(
+        report=report,
+        inspection_detail__isnull=True  # صور عامة للهيكل الخارجي ليست مرتبطة بتفاصيل فحص محددة
+    ).order_by('upload_date')
+    
     # الحصول على تفاصيل الفحص المتعلقة بالتقرير
     inspection_details = CarInspectionDetail.objects.filter(
         report=report
@@ -289,6 +350,10 @@ def car_condition_detail(request, report_id):
     # تنظيم تفاصيل الفحص حسب الفئة
     inspection_categories = {}
     for detail in inspection_details:
+        # تخطي عناصر "الهيكل الخارجي" لأننا نعرضها كصور
+        if detail.inspection_item.category.name == 'الهيكل الخارجي':
+            continue
+        
         category = detail.inspection_item.category
         if category.id not in inspection_categories:
             inspection_categories[category.id] = {
@@ -301,6 +366,7 @@ def car_condition_detail(request, report_id):
         'report': report,
         'related_reports': related_reports,
         'inspection_categories': inspection_categories,
+        'exterior_images': exterior_images,
     }
     
     return render(request, 'admin/car_condition/car_condition_detail.html', context)
