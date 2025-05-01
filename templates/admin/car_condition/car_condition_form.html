@@ -131,6 +131,11 @@
         display: block;
     }
     
+    /* عند تحميل صورة، إخفاء أيقونة الكاميرا */
+    .car-image-box.has-image i.fa-camera {
+        display: none;
+    }
+    
     .car-image-notes {
         font-size: 0.9rem;
     }
@@ -600,6 +605,9 @@
                 preview.style.display = 'block';
                 preview.classList.add('show');
                 
+                // إضافة فئة has-image إلى العنصر الأساسي
+                preview.closest('.car-image-box').classList.add('has-image');
+                
                 // إخفاء أيقونة الكاميرا
                 var cameraIcon = preview.parentNode.querySelector('i.fa-camera');
                 if (cameraIcon) {
@@ -625,62 +633,8 @@
             }
         });
         
-        // معالجة تحميل ومعاينة صور الهيكل الخارجي للسيارة
-        // صورة أمامية
-        $("#frontImage").change(function() {
-            readURL(this, "#frontImagePreview");
-        });
-        
-        // صورة خلفية
-        $("#rearImage").change(function() {
-            readURL(this, "#rearImagePreview");
-        });
-        
-        // صورة جانبية
-        $("#sideImage").change(function() {
-            readURL(this, "#sideImagePreview");
-        });
-        
-        // صورة داخلية
-        $("#interiorImage").change(function() {
-            readURL(this, "#interiorImagePreview");
-        });
-        
-        // ربط النقر على مربعات الصور بفتح مربع اختيار الملفات
-        $("#frontImageBox").click(function() {
-            $("#frontImage").click();
-        });
-        
-        $("#rearImageBox").click(function() {
-            $("#rearImage").click();
-        });
-        
-        $("#sideImageBox").click(function() {
-            $("#sideImage").click();
-        });
-        
-        $("#interiorImageBox").click(function() {
-            $("#interiorImage").click();
-        });
-        
-        // وظيفة معالجة تحميل الصور ومعاينتها
-        function readURL(input, previewId) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    console.log("معاينة الصورة:", previewId);
-                    $(previewId).attr('src', e.target.result);
-                    $(previewId).css('display', 'block'); // إظهار الصورة
-                    $(previewId).addClass('show');
-                    
-                    // إخفاء أيقونة الكاميرا
-                    $(previewId).siblings('i.fa-camera').hide();
-                }
-                
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
+        // استخدام وظيفة previewImage المحددة في بداية الصفحة بدلاً من تكرار الكود
+        // تم تحديث كل عناصر الصور بمعالجات onclick مباشرة ولن نحتاج للكثير من كود التوصيل هنا
         
         // تفعيل النقر على مربعات الصور
         $(".image-input-container").click(function() {

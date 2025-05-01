@@ -27,7 +27,7 @@
     
     .car-image-box {
         width: 100%;
-        padding-top: 75%; /* Aspect ratio 4:3 */
+        height: 150px; /* ارتفاع ثابت بدلاً من النسبة */
         border: 2px dashed #ced4da;
         border-radius: 8px;
         position: relative;
@@ -47,21 +47,22 @@
         transform: translate(-50%, -50%);
         font-size: 2rem;
         color: #adb5bd;
+        z-index: 1;
     }
     
-    .car-image-box img {
+    .car-image-box img,
+    .car-image-preview {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain; /* تغيير من cover إلى contain للحفاظ على نسب الصورة */
         display: none;
+        z-index: 2; /* أعلى من أيقونة الكاميرا */
     }
     
-    .car-image-preview {
-        display: none;
-    }
+    /* تعديل سابق: تم نقل خصائص car-image-preview إلى بيان CSS أعلى */
     
     .car-image-notes {
         width: 100%;
@@ -377,6 +378,9 @@
                 preview.style.display = 'block';
                 preview.classList.add('show');
                 
+                // إضافة فئة has-image إلى العنصر الأساسي
+                preview.closest('.car-image-box').classList.add('has-image');
+                
                 // إخفاء أيقونة الكاميرا
                 var cameraIcon = preview.parentNode.querySelector('i.fa-camera');
                 if (cameraIcon) {
@@ -389,33 +393,8 @@
     }
 
     $(document).ready(function() {
-        // وظائف إدارة صور السيارة
-        function setupImagePreview(boxId, inputId, previewId) {
-            // النقر على مربع الصورة
-            $(boxId).click(function() {
-                $(inputId).click();
-            });
-            
-            // عند اختيار ملف
-            $(inputId).change(function() {
-                if (this.files && this.files[0]) {
-                    var reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        $(previewId).attr('src', e.target.result);
-                        $(previewId).show();
-                    }
-                    
-                    reader.readAsDataURL(this.files[0]);
-                }
-            });
-        }
-        
-        // إعداد كل مربعات الصور
-        setupImagePreview('#frontImageBox', '#frontImage', '#frontImagePreview');
-        setupImagePreview('#rearImageBox', '#rearImage', '#rearImagePreview');
-        setupImagePreview('#sideImageBox', '#sideImage', '#sideImagePreview');
-        setupImagePreview('#interiorImageBox', '#interiorImage', '#interiorImagePreview');
+        // سنستخدم وظيفة previewImage العامة من الخارج
+        // ولن نحتاج إلى وظيفة setupImagePreview المكررة
         
         // إدارة مستوى الوقود
         $('.fuel-level-option').click(function() {
