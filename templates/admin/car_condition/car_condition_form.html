@@ -912,33 +912,47 @@
             $("#reservation-select").trigger("change");
         }
         
-        // دعم تحميل الصور الجديدة في قسم "الهيكل الخارجي"
-        function setupImagePreview(boxId, inputId, previewId) {
-            // النقر على مربع الصورة
-            $(boxId).click(function() {
-                $(inputId).click();
-            });
-            
-            // عند اختيار ملف
-            $(inputId).change(function() {
-                if (this.files && this.files[0]) {
-                    var reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        $(previewId).attr('src', e.target.result);
-                        $(previewId).show();
-                    }
-                    
-                    reader.readAsDataURL(this.files[0]);
+        // إضافة نظام رفع الصور المباشر
+        document.addEventListener('DOMContentLoaded', function() {
+            // دالة لإعداد معاينة الصور
+            function setupDirectImagePreview(boxId, inputId, previewId) {
+                const box = document.getElementById(boxId);
+                const input = document.getElementById(inputId);
+                const preview = document.getElementById(previewId);
+                
+                if (!box || !input || !preview) {
+                    console.error('عناصر غير موجودة:', boxId, inputId, previewId);
+                    return;
                 }
-            });
-        }
-        
-        // إعداد كل مربعات الصور
-        setupImagePreview('#frontImageBox', '#frontImage', '#frontImagePreview');
-        setupImagePreview('#rearImageBox', '#rearImage', '#rearImagePreview');
-        setupImagePreview('#sideImageBox', '#sideImage', '#sideImagePreview');
-        setupImagePreview('#interiorImageBox', '#interiorImage', '#interiorImagePreview');
+                
+                // النقر على المربع لاختيار ملف
+                box.addEventListener('click', function(e) {
+                    input.click();
+                });
+                
+                // عند تغيير الملف
+                input.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            preview.src = e.target.result;
+                            preview.style.display = 'block';
+                        };
+                        
+                        reader.readAsDataURL(this.files[0]);
+                    }
+                });
+            }
+            
+            // إعداد كل حقول الصور
+            setupDirectImagePreview('frontImageBox', 'frontImage', 'frontImagePreview');
+            setupDirectImagePreview('rearImageBox', 'rearImage', 'rearImagePreview');
+            setupDirectImagePreview('sideImageBox', 'sideImage', 'sideImagePreview');
+            setupDirectImagePreview('interiorImageBox', 'interiorImage', 'interiorImagePreview');
+            
+            console.log('تم إعداد مربعات اختيار الصور');
+        });
     });
 </script>
 {% endblock %}
