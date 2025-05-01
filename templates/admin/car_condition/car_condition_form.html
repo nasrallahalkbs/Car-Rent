@@ -121,7 +121,12 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        display: none;
+        display: none; /* سيتم تغييره إلى block عبر JavaScript عند تحديد صورة */
+    }
+    
+    /* عند تحميل الصورة سيظهر كود المعاينة */
+    .car-image-preview.show {
+        display: block;
     }
     
     .car-image-notes {
@@ -759,6 +764,23 @@
             readURL(this, "#interior_image_preview");
         });
         
+        // ربط النقر على مربعات الصور بفتح مربع اختيار الملفات
+        $("#frontImageBox").click(function() {
+            $("#frontImage").click();
+        });
+        
+        $("#rearImageBox").click(function() {
+            $("#rearImage").click();
+        });
+        
+        $("#sideImageBox").click(function() {
+            $("#sideImage").click();
+        });
+        
+        $("#interiorImageBox").click(function() {
+            $("#interiorImage").click();
+        });
+        
         // وظيفة معالجة تحميل الصور ومعاينتها
         function readURL(input, previewId) {
             if (input.files && input.files[0]) {
@@ -766,8 +788,11 @@
                 
                 reader.onload = function(e) {
                     $(previewId).attr('src', e.target.result);
-                    $(previewId).removeClass('d-none');
-                    $(previewId).siblings('.upload-placeholder').addClass('d-none');
+                    $(previewId).css('display', 'block'); // إظهار الصورة
+                    $(previewId).addClass('show');
+                    
+                    // إخفاء أيقونة الكاميرا
+                    $(previewId).siblings('i.fa-camera').hide();
                 }
                 
                 reader.readAsDataURL(input.files[0]);
