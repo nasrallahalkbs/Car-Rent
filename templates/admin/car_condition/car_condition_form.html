@@ -92,8 +92,8 @@
     
     .car-image-box {
         width: 100%;
-        height: 200px; /* ارتفاع ثابت للصندوق */
-        max-width: 250px; /* الحد الأقصى للعرض */
+        height: 150px; /* تصغير ارتفاع صندوق الصورة */
+        max-width: 180px; /* تصغير الحد الأقصى للعرض */
         margin: 0 auto; /* توسيط العنصر */
         border: 2px dashed #ced4da;
         border-radius: 8px;
@@ -105,6 +105,12 @@
         justify-content: center;
         margin-bottom: 10px;
         cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .car-image-box:hover {
+        border-color: #6c757d;
+        box-shadow: 0 0 5px rgba(0,0,0,0.2);
     }
     
     .car-image-box i {
@@ -129,6 +135,75 @@
         display: none; /* سيتم تغييره إلى block عبر JavaScript عند تحديد صورة */
         z-index: 2; /* ضمان أن الصورة فوق أيقونة الكاميرا */
         padding: 5px; /* إضافة هامش داخلي */
+    }
+    
+    /* أنماط النافذة المنبثقة لعرض الصورة بالحجم الكامل */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.8);
+        overflow: auto;
+    }
+    
+    .image-modal-content {
+        margin: auto;
+        display: block;
+        width: 80%;
+        max-width: 800px;
+        max-height: 80vh;
+        object-fit: contain;
+        padding: 20px;
+        animation: zoom 0.3s;
+    }
+    
+    @keyframes zoom {
+        from {transform: scale(0.1)} 
+        to {transform: scale(1)}
+    }
+    
+    .image-modal-close {
+        position: absolute;
+        top: 20px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+    
+    .image-modal-close:hover {
+        color: #bbb;
+    }
+    
+    .image-preview-container {
+        position: relative;
+    }
+    
+    .fullscreen-hint {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background-color: rgba(0,0,0,0.6);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .car-image-box:hover .fullscreen-hint {
+        opacity: 1;
     }
     
     /* عند تحميل الصورة سيظهر كود المعاينة */
@@ -459,10 +534,16 @@
                                             <h6 class="text-primary">
                                                 <i class="fas fa-car-side me-1"></i> {% trans "صورة أمامية" %}
                                             </h6>
-                                            <div class="car-image-box" id="frontImageBox" onclick="document.getElementById('frontImage').click();">
+                                            <div class="car-image-box" id="frontImageBox" onclick="document.getElementById('frontImage').click()">
                                                 <i class="fas fa-camera"></i>
-                                                <img src="" id="frontImagePreview" class="car-image-preview">
+                                                <img src="" id="frontImagePreview" class="car-image-preview" onclick="openImageModal(this); event.stopPropagation();">
+                                                <div class="fullscreen-hint" title="{% trans 'انقر لعرض الصورة بالحجم الكامل' %}">
+                                                    <i class="fas fa-expand-arrows-alt fa-sm"></i>
+                                                </div>
                                                 <input type="file" name="front_image" id="frontImage" class="d-none" accept="image/*" onchange="previewImage(this, 'frontImagePreview')">
+                                            </div>
+                                            <div class="mt-1 text-center">
+                                                <small class="text-muted">{% trans "انقر لتحميل صورة" %}</small>
                                             </div>
                                             <textarea name="front_image_notes" class="form-control car-image-notes mt-2" rows="2" placeholder="{% trans 'ملاحظات عن الصورة الأمامية' %}"></textarea>
                                         </div>
@@ -474,10 +555,16 @@
                                             <h6 class="text-primary">
                                                 <i class="fas fa-car-side fa-flip-horizontal me-1"></i> {% trans "صورة خلفية" %}
                                             </h6>
-                                            <div class="car-image-box" id="rearImageBox" onclick="document.getElementById('rearImage').click();">
+                                            <div class="car-image-box" id="rearImageBox" onclick="document.getElementById('rearImage').click()">
                                                 <i class="fas fa-camera"></i>
-                                                <img src="" id="rearImagePreview" class="car-image-preview">
+                                                <img src="" id="rearImagePreview" class="car-image-preview" onclick="openImageModal(this); event.stopPropagation();">
+                                                <div class="fullscreen-hint" title="{% trans 'انقر لعرض الصورة بالحجم الكامل' %}">
+                                                    <i class="fas fa-expand-arrows-alt fa-sm"></i>
+                                                </div>
                                                 <input type="file" name="rear_image" id="rearImage" class="d-none" accept="image/*" onchange="previewImage(this, 'rearImagePreview')">
+                                            </div>
+                                            <div class="mt-1 text-center">
+                                                <small class="text-muted">{% trans "انقر لتحميل صورة" %}</small>
                                             </div>
                                             <textarea name="rear_image_notes" class="form-control car-image-notes mt-2" rows="2" placeholder="{% trans 'ملاحظات عن الصورة الخلفية' %}"></textarea>
                                         </div>
@@ -489,10 +576,16 @@
                                             <h6 class="text-primary">
                                                 <i class="fas fa-car me-1"></i> {% trans "صورة جانبية" %}
                                             </h6>
-                                            <div class="car-image-box" id="sideImageBox" onclick="document.getElementById('sideImage').click();">
+                                            <div class="car-image-box" id="sideImageBox" onclick="document.getElementById('sideImage').click()">
                                                 <i class="fas fa-camera"></i>
-                                                <img src="" id="sideImagePreview" class="car-image-preview">
+                                                <img src="" id="sideImagePreview" class="car-image-preview" onclick="openImageModal(this); event.stopPropagation();">
+                                                <div class="fullscreen-hint" title="{% trans 'انقر لعرض الصورة بالحجم الكامل' %}">
+                                                    <i class="fas fa-expand-arrows-alt fa-sm"></i>
+                                                </div>
                                                 <input type="file" name="side_image" id="sideImage" class="d-none" accept="image/*" onchange="previewImage(this, 'sideImagePreview')">
+                                            </div>
+                                            <div class="mt-1 text-center">
+                                                <small class="text-muted">{% trans "انقر لتحميل صورة" %}</small>
                                             </div>
                                             <textarea name="side_image_notes" class="form-control car-image-notes mt-2" rows="2" placeholder="{% trans 'ملاحظات عن الصورة الجانبية' %}"></textarea>
                                         </div>
@@ -504,13 +597,25 @@
                                             <h6 class="text-primary">
                                                 <i class="fas fa-car-alt me-1"></i> {% trans "صورة داخلية" %}
                                             </h6>
-                                            <div class="car-image-box" id="interiorImageBox" onclick="document.getElementById('interiorImage').click();">
+                                            <div class="car-image-box" id="interiorImageBox" onclick="document.getElementById('interiorImage').click()">
                                                 <i class="fas fa-camera"></i>
-                                                <img src="" id="interiorImagePreview" class="car-image-preview">
+                                                <img src="" id="interiorImagePreview" class="car-image-preview" onclick="openImageModal(this); event.stopPropagation();">
+                                                <div class="fullscreen-hint" title="{% trans 'انقر لعرض الصورة بالحجم الكامل' %}">
+                                                    <i class="fas fa-expand-arrows-alt fa-sm"></i>
+                                                </div>
                                                 <input type="file" name="interior_image" id="interiorImage" class="d-none" accept="image/*" onchange="previewImage(this, 'interiorImagePreview')">
+                                            </div>
+                                            <div class="mt-1 text-center">
+                                                <small class="text-muted">{% trans "انقر لتحميل صورة" %}</small>
                                             </div>
                                             <textarea name="interior_image_notes" class="form-control car-image-notes mt-2" rows="2" placeholder="{% trans 'ملاحظات عن الصورة الداخلية' %}"></textarea>
                                         </div>
+                                    </div>
+                                    
+                                    <!-- النافذة المنبثقة لعرض الصور بالحجم الكامل -->
+                                    <div id="imageModal" class="image-modal">
+                                        <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
+                                        <img class="image-modal-content" id="modalImage">
                                     </div>
                                 </div>
                             </div>
@@ -613,6 +718,45 @@
 {% block extra_scripts %}
 <script>
     // دالة عامة لمعاينة الصور
+    // دالة فتح النافذة المنبثقة لعرض الصورة بحجمها الكامل
+    function openImageModal(img) {
+        // فحص ما إذا كانت الصورة تحتوي على src حقيقي وليست فارغة
+        if (img.src && img.src !== "" && img.classList.contains('show')) {
+            var modal = document.getElementById("imageModal");
+            var modalImg = document.getElementById("modalImage");
+            
+            // عرض النافذة المنبثقة
+            modal.style.display = "flex";
+            
+            // نسخ الصورة إلى النافذة المنبثقة
+            modalImg.src = img.src;
+            
+            // وقف النقرة من الوصول إلى عناصر أخرى (مثل input file)
+            event.stopPropagation();
+        } else {
+            // إذا لم تكن هناك صورة، نسمح بالنقر للتحميل
+            var input = img.closest('.car-image-box').querySelector('input[type="file"]');
+            if (input) {
+                input.click();
+            }
+        }
+    }
+    
+    // دالة إغلاق النافذة المنبثقة
+    function closeImageModal() {
+        var modal = document.getElementById("imageModal");
+        modal.style.display = "none";
+    }
+    
+    // إغلاق النافذة المنبثقة عند النقر خارج الصورة
+    window.onclick = function(event) {
+        var modal = document.getElementById("imageModal");
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+    
+    // دالة معاينة الصورة المحسنة
     function previewImage(input, previewId) {
         if (input.files && input.files[0]) {
             var file = input.files[0];
@@ -625,8 +769,8 @@
                 var img = new Image();
                 img.onload = function() {
                     // تحديد أبعاد للصورة مناسبة للقالب - تقليل الأبعاد القصوى
-                    var maxWidth = 500; // تقليل العرض الأقصى لضمان حجم مناسب للعرض
-                    var maxHeight = 400; // تقليل الارتفاع الأقصى لضمان حجم مناسب للعرض
+                    var maxWidth = 400; // تقليل العرض الأقصى لضمان حجم مناسب للعرض
+                    var maxHeight = 300; // تقليل الارتفاع الأقصى لضمان حجم مناسب للعرض
                     var width = img.width;
                     var height = img.height;
                     
@@ -665,19 +809,23 @@
                     preview.style.maxHeight = '100%';
                     
                     // إضافة فئة has-image إلى العنصر الأساسي
-                    preview.closest('.car-image-box').classList.add('has-image');
+                    var imageBox = preview.closest('.car-image-box');
+                    imageBox.classList.add('has-image');
+                    
+                    // إظهار أيقونة التكبير
+                    var fullscreenHint = imageBox.querySelector('.fullscreen-hint');
+                    if (fullscreenHint) {
+                        fullscreenHint.style.display = 'flex';
+                    }
                     
                     // إخفاء أيقونة الكاميرا
-                    var cameraIcon = preview.parentNode.querySelector('i.fa-camera');
+                    var cameraIcon = imageBox.querySelector('i.fa-camera');
                     if (cameraIcon) {
                         cameraIcon.style.display = 'none';
                     }
                     
-                    // تحسين عرض صندوق الصورة للتأكد من أن الصورة تظهر بشكل صحيح
-                    var imageBox = preview.closest('.car-image-box');
-                    if (imageBox) {
-                        imageBox.style.backgroundColor = '#f8f9fa'; // تغيير لون الخلفية لتحسين ظهور الصورة
-                    }
+                    // تحسين عرض صندوق الصورة
+                    imageBox.style.backgroundColor = '#f8f9fa';
                     
                     console.log("تم تحميل الصورة بنجاح، الأبعاد النهائية:", width, "×", height);
                 };
