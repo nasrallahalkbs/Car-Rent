@@ -105,11 +105,40 @@ def car_condition_create(request):
             pass
     
     if request.method == 'POST':
-        form = CarConditionReportForm(request.POST, user=request.user, initial=initial_data)
+        form = CarConditionReportForm(request.POST, request.FILES, user=request.user, initial=initial_data)
         if form.is_valid():
             report = form.save(commit=False)
             report.created_by = request.user
             report.save()
+            
+            # معالجة صور الهيكل الخارجي
+            image_types = ['front_image', 'rear_image', 'side_image', 'interior_image']
+            
+            for image_type in image_types:
+                if image_type in request.FILES:
+                    image_file = request.FILES[image_type]
+                    notes = request.POST.get(f'{image_type}_notes', '')
+                    
+                    description = ''
+                    if image_type == 'front_image':
+                        description = 'صورة أمامية'
+                    elif image_type == 'rear_image':
+                        description = 'صورة خلفية'
+                    elif image_type == 'side_image':
+                        description = 'صورة جانبية'
+                    elif image_type == 'interior_image':
+                        description = 'صورة داخلية'
+                    
+                    if notes:
+                        description = f"{description} - {notes}"
+                    
+                    # إنشاء سجل لصورة الفحص
+                    CarInspectionImage.objects.create(
+                        report=report,
+                        image=image_file,
+                        description=description,
+                        inspection_detail=None  # صورة عامة للهيكل الخارجي
+                    )
             
             # حفظ تفاصيل الفحص من النموذج المرسل
             for key, value in request.POST.items():
@@ -120,6 +149,10 @@ def car_condition_create(request):
                     # البحث عن عنصر الفحص
                     try:
                         inspection_item = CarInspectionItem.objects.get(id=item_id)
+                        
+                        # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
+                        if inspection_item.category.name == 'الهيكل الخارجي':
+                            continue
                         
                         # الحصول على الملاحظات واحتياج الإصلاح
                         notes = request.POST.get(f'notes_item_{item_id}', '')
