@@ -598,6 +598,14 @@ def car_condition_comparison(request, reservation_id):
         report_type='return'
     ).order_by('-date').first()
     
+    # تحميل تفاصيل الفحص لتقرير الإرجاع
+    if return_report:
+        return_report.inspection_details_list = CarInspectionDetail.objects.filter(
+            report=return_report
+        ).select_related('inspection_item', 'inspection_item__category').order_by(
+            'inspection_item__category__display_order', 'inspection_item__display_order'
+        )
+    
     # التحقق من وجود كلا التقريرين
     if not delivery_report or not return_report:
         messages.error(request, _('لا يمكن عرض المقارنة. يجب وجود تقرير تسليم وتقرير استلام للحجز.'))
