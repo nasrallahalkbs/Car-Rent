@@ -139,10 +139,28 @@ def car_condition_create(request):
             pass
     
     if request.method == 'POST':
+        # طباعة بيانات الطلب للتصحيح
+        print("Form submitted with data:", request.POST)
+        print("Files:", request.FILES)
+        
         form = CarConditionReportForm(request.POST, request.FILES, user=request.user, initial=initial_data)
         if form.is_valid():
             report = form.save(commit=False)
             report.created_by = request.user
+            
+            # إضافة معالجة ملف PDF للفحص الإلكتروني
+            inspection_type = request.POST.get('inspection_type', 'manual')
+            if inspection_type == 'electronic':
+                # حفظ ملخص الفحص في ملاحظات التقرير
+                inspection_summary = request.POST.get('inspection_summary', '')
+                if inspection_summary:
+                    report.notes = inspection_summary
+                
+                # معالجة ملف PDF المرفق
+                if 'inspection_pdf_file' in request.FILES:
+                    # يمكن حفظ PDF كمرفق هنا إذا لزم الأمر
+                    pass
+            
             report.save()
             
             # معالجة صور الهيكل الخارجي
@@ -177,34 +195,35 @@ def car_condition_create(request):
                         inspection_detail=None  # صورة عامة للهيكل الخارجي
                     )
             
-            # حفظ تفاصيل الفحص من النموذج المرسل
-            for key, value in request.POST.items():
-                # معالجة حقول عناصر الفحص
-                if key.startswith('inspection_item_') and value:
-                    item_id = int(key.replace('inspection_item_', ''))
-                    
-                    # البحث عن عنصر الفحص
-                    try:
-                        inspection_item = CarInspectionItem.objects.get(id=item_id)
+            # حفظ تفاصيل الفحص من النموذج المرسل (فقط للفحص اليدوي)
+            if inspection_type == 'manual':
+                for key, value in request.POST.items():
+                    # معالجة حقول عناصر الفحص
+                    if key.startswith('inspection_item_') and value:
+                        item_id = int(key.replace('inspection_item_', ''))
                         
-                        # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
-                        if inspection_item.category.name == 'الهيكل الخارجي':
-                            continue
-                        
-                        # الحصول على الملاحظات واحتياج الإصلاح
-                        notes = request.POST.get(f'notes_item_{item_id}', '')
-                        needs_repair = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
-                        
-                        # إنشاء تفاصيل الفحص
-                        CarInspectionDetail.objects.create(
-                            report=report,
-                            inspection_item=inspection_item,
-                            condition=value,
-                            notes=notes,
-                            needs_repair=needs_repair
-                        )
-                    except CarInspectionItem.DoesNotExist:
-                        pass
+                        # البحث عن عنصر الفحص
+                        try:
+                            inspection_item = CarInspectionItem.objects.get(id=item_id)
+                            
+                            # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
+                            if inspection_item.category.name == 'الهيكل الخارجي':
+                                continue
+                            
+                            # الحصول على الملاحظات واحتياج الإصلاح
+                            notes = request.POST.get(f'notes_item_{item_id}', '')
+                            needs_repair = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
+                            
+                            # إنشاء تفاصيل الفحص
+                            CarInspectionDetail.objects.create(
+                                report=report,
+                                inspection_item=inspection_item,
+                                condition=value,
+                                notes=notes,
+                                needs_repair=needs_repair
+                            )
+                        except CarInspectionItem.DoesNotExist:
+                            pass
             
             messages.success(request, _('تم إنشاء تقرير حالة السيارة وتفاصيل الفحص بنجاح'))
             
@@ -219,6 +238,9 @@ def car_condition_create(request):
             
             # الرجوع إلى صفحة قائمة التقارير
             return redirect('car_condition_list')
+        else:
+            # طباعة أخطاء النموذج للتصحيح
+            print("Form errors:", form.errors)
     else:
         form = CarConditionReportForm(user=request.user, initial=initial_data)
     
@@ -249,9 +271,28 @@ def car_condition_edit(request, report_id):
     )
     
     if request.method == 'POST':
+        # طباعة بيانات الطلب للتصحيح
+        print("Form submitted with data:", request.POST)
+        print("Files:", request.FILES)
+        
         form = CarConditionReportForm(request.POST, request.FILES, instance=report, user=request.user)
         if form.is_valid():
-            form.save()
+            updated_report = form.save(commit=False)
+            
+            # إضافة معالجة ملف PDF للفحص الإلكتروني
+            inspection_type = request.POST.get('inspection_type', 'manual')
+            if inspection_type == 'electronic':
+                # حفظ ملخص الفحص في ملاحظات التقرير
+                inspection_summary = request.POST.get('inspection_summary', '')
+                if inspection_summary:
+                    updated_report.notes = inspection_summary
+                
+                # معالجة ملف PDF المرفق
+                if 'inspection_pdf_file' in request.FILES:
+                    # يمكن حفظ PDF كمرفق هنا إذا لزم الأمر
+                    pass
+            
+            updated_report.save()
             
             # معالجة صور الهيكل الخارجي الجديدة
             image_types = ['front_image', 'rear_image', 'side_image', 'interior_image']
@@ -300,40 +341,45 @@ def car_condition_edit(request, report_id):
                             inspection_detail=None
                         )
             
-            # حذف تفاصيل الفحص السابقة قبل إضافة البيانات الجديدة
-            CarInspectionDetail.objects.filter(report=report).delete()
-            
-            # حفظ تفاصيل الفحص من النموذج المرسل
-            for key, value in request.POST.items():
-                # معالجة حقول عناصر الفحص
-                if key.startswith('inspection_item_') and value:
-                    item_id = int(key.replace('inspection_item_', ''))
-                    
-                    # البحث عن عنصر الفحص
-                    try:
-                        inspection_item = CarInspectionItem.objects.get(id=item_id)
+            # حذف تفاصيل الفحص السابقة قبل إضافة البيانات الجديدة (للفحص اليدوي فقط)
+            # إذا كان يتم التحويل من فحص إلكتروني إلى يدوي، نحذف أي تفاصيل سابقة
+            if inspection_type == 'manual':
+                CarInspectionDetail.objects.filter(report=report).delete()
+                
+                # حفظ تفاصيل الفحص من النموذج المرسل (للفحص اليدوي فقط)
+                for key, value in request.POST.items():
+                    # معالجة حقول عناصر الفحص
+                    if key.startswith('inspection_item_') and value:
+                        item_id = int(key.replace('inspection_item_', ''))
                         
-                        # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
-                        if inspection_item.category.name == 'الهيكل الخارجي':
-                            continue
-                        
-                        # الحصول على الملاحظات واحتياج الإصلاح
-                        notes = request.POST.get(f'notes_item_{item_id}', '')
-                        needs_repair = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
-                        
-                        # إنشاء تفاصيل الفحص
-                        CarInspectionDetail.objects.create(
-                            report=report,
-                            inspection_item=inspection_item,
-                            condition=value,
-                            notes=notes,
-                            needs_repair=needs_repair
-                        )
-                    except CarInspectionItem.DoesNotExist:
-                        pass
+                        # البحث عن عنصر الفحص
+                        try:
+                            inspection_item = CarInspectionItem.objects.get(id=item_id)
+                            
+                            # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
+                            if inspection_item.category.name == 'الهيكل الخارجي':
+                                continue
+                            
+                            # الحصول على الملاحظات واحتياج الإصلاح
+                            notes = request.POST.get(f'notes_item_{item_id}', '')
+                            needs_repair = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
+                            
+                            # إنشاء تفاصيل الفحص
+                            CarInspectionDetail.objects.create(
+                                report=report,
+                                inspection_item=inspection_item,
+                                condition=value,
+                                notes=notes,
+                                needs_repair=needs_repair
+                            )
+                        except CarInspectionItem.DoesNotExist:
+                            pass
             
             messages.success(request, _('تم تحديث تقرير حالة السيارة وتفاصيل الفحص بنجاح'))
             return redirect('car_condition_list')
+        else:
+            # طباعة أخطاء النموذج للتصحيح
+            print("Form errors:", form.errors)
     else:
         form = CarConditionReportForm(instance=report, user=request.user)
     
