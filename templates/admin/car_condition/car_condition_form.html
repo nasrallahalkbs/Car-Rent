@@ -386,6 +386,30 @@
                                         </div>
                                         {% endif %}
                                     </div>
+                                        
+                                    <div class="col-md-6">
+                                        <label for="{{ form.fuel_level.id_for_label }}" class="form-label">{{ form.fuel_level.label }}</label>
+                                        {{ form.fuel_level }}
+                                        {% if form.fuel_level.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.fuel_level.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <div class="fuel-gauge mt-2">
+                                            <div class="fuel-gauge-fill" id="fuel-gauge-visual"></div>
+                                        </div>
+                                        
+                                        <div class="fuel-level-selector">
+                                            <div class="fuel-level-option" data-value="empty">{% trans "فارغ" %}</div>
+                                            <div class="fuel-level-option" data-value="quarter">{% trans "ربع" %}</div>
+                                            <div class="fuel-level-option" data-value="half">{% trans "نصف" %}</div>
+                                            <div class="fuel-level-option" data-value="three_quarters">{% trans "ثلاثة أرباع" %}</div>
+                                            <div class="fuel-level-option" data-value="full">{% trans "ممتلئ" %}</div>
+                                        </div>
+                                    </div>
                                     
                                     <!-- تم إزالة حقل "نوع الفحص" من هنا لمنع التكرار، حيث أنه موجود بالفعل في قسم "معلومات أساسية" -->
                                     <!-- بدلاً من ذلك، نضيف حقل غير مرئي يحتوي على تعليمات -->
@@ -527,13 +551,21 @@
                                 
                                 <div class="mb-3">
                                     <label for="inspection_pdf_file" class="form-label fw-bold">{% trans "ملف الفحص الإلكتروني" %}</label>
-                                    <input type="file" class="form-control" id="inspection_pdf_file" name="inspection_pdf_file" accept="application/pdf" required>
+                                    {% if report and report.electronic_report_pdf %}
+                                        <div class="mb-2">
+                                            <a href="{{ report.electronic_report_pdf.url }}" class="btn btn-sm btn-outline-success" target="_blank">
+                                                <i class="fas fa-file-pdf me-1"></i> {% trans "عرض الملف الحالي" %}
+                                            </a>
+                                            <div class="form-text text-success">{% trans "ملف موجود بالفعل، رفع ملف جديد سيستبدل القديم" %}</div>
+                                        </div>
+                                    {% endif %}
+                                    <input type="file" class="form-control" id="inspection_pdf_file" name="inspection_pdf_file" accept="application/pdf" {% if not report.electronic_report_pdf %}required{% endif %}>
                                     <div class="form-text">{% trans "يجب أن يكون الملف بصيغة PDF، وحجمه أقل من 10 ميجابايت" %}</div>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="inspection_summary" class="form-label fw-bold">{% trans "ملخص نتائج الفحص" %}</label>
-                                    <textarea class="form-control" id="inspection_summary" name="inspection_summary" rows="3" placeholder="{% trans 'أدخل ملخصاً لنتائج الفحص الإلكتروني' %}"></textarea>
+                                    <textarea class="form-control" id="inspection_summary" name="inspection_summary" rows="3" placeholder="{% trans 'أدخل ملخصاً لنتائج الفحص الإلكتروني' %}">{% if report.is_electronic_inspection and report.notes %}{{ report.notes }}{% endif %}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -838,6 +870,12 @@
         // تنفيذ دالة التبديل عند تحميل الصفحة
         var initialInspectionType = $("#{{ form.inspection_type.id_for_label }}").val();
         toggleInspectionSections(initialInspectionType);
+        
+        {% if report and report.is_electronic_inspection %}
+        // إذا كان التقرير الحالي هو فحص إلكتروني، تأكد من عرض قسم الفحص الإلكتروني
+        $("#{{ form.inspection_type.id_for_label }}").val('electronic');
+        toggleInspectionSections('electronic');
+        {% endif %}
         
         // استخدام وظيفة previewImage المحددة في بداية الصفحة بدلاً من تكرار الكود
         // تم تحديث كل عناصر الصور بمعالجات onclick مباشرة ولن نحتاج للكثير من كود التوصيل هنا
