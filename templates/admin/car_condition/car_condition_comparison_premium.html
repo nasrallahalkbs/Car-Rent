@@ -991,6 +991,126 @@
                                         {% endif %}
                                     </td>
                                 </tr>
+
+                                <!-- حقول الإصلاح والتكاليف الإضافية -->
+                                {% if return_report.inspection_details_list %}
+                                <tr class="table-separator">
+                                    <td colspan="4" class="bg-light text-center py-3">
+                                        <h5 class="m-0">{% trans "تفاصيل الإصلاحات والأعطال" %}</h5>
+                                    </td>
+                                </tr>
+                                
+                                <!-- العناصر التي تحتاج إصلاح -->
+                                {% for detail in return_report.inspection_details_list %}
+                                    {% if detail.needs_repair %}
+                                    <tr>
+                                        <td>
+                                            <div class="item-label">
+                                                <i class="fas fa-tools"></i>
+                                                {{ detail.inspection_item.name }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <span class="status-indicator 
+                                                    {% if detail.condition == 'excellent' or detail.condition == 'good' %}status-good
+                                                    {% elif detail.condition == 'fair' %}status-warning
+                                                    {% else %}status-bad{% endif %}"></span>
+                                                {{ detail.get_condition_display }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="repair-details">
+                                                <div class="repair-status mb-2">
+                                                    <span class="badge {% if detail.repair_status == 'completed' %}bg-success{% elif detail.repair_status == 'in_progress' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                        {{ detail.get_repair_status_display }}
+                                                    </span>
+                                                </div>
+                                                {% if detail.repair_description %}
+                                                <div class="repair-description">
+                                                    <small class="text-muted">{% trans "وصف الإصلاح:" %}</small>
+                                                    <p class="mb-1">{{ detail.repair_description }}</p>
+                                                </div>
+                                                {% endif %}
+                                                {% if detail.repair_parts %}
+                                                <div class="repair-parts">
+                                                    <small class="text-muted">{% trans "قطع الغيار:" %}</small>
+                                                    <p class="mb-1">{{ detail.repair_parts }}</p>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="repair-costs">
+                                                {% if detail.repair_cost %}
+                                                <div class="repair-cost mb-1">
+                                                    <small class="text-muted">{% trans "تكلفة الإصلاح:" %}</small>
+                                                    <p class="mb-0 fw-bold">{{ detail.repair_cost }} {% trans "ريال" %}</p>
+                                                </div>
+                                                {% endif %}
+                                                {% if detail.labor_cost %}
+                                                <div class="labor-cost mb-1">
+                                                    <small class="text-muted">{% trans "تكلفة العمالة:" %}</small>
+                                                    <p class="mb-0">{{ detail.labor_cost }} {% trans "ريال" %}</p>
+                                                </div>
+                                                {% endif %}
+                                                {% if detail.repair_cost or detail.labor_cost %}
+                                                <div class="total-cost">
+                                                    <small class="text-muted">{% trans "الإجمالي:" %}</small>
+                                                    <p class="mb-0 text-danger fw-bold">{{ detail.total_repair_cost }} {% trans "ريال" %}</p>
+                                                </div>
+                                                {% endif %}
+                                                {% if detail.repair_date %}
+                                                <div class="repair-date mt-2">
+                                                    <small class="text-muted">{% trans "تاريخ الإصلاح:" %}</small>
+                                                    <p class="mb-0">{{ detail.repair_date|date:"Y/m/d" }}</p>
+                                                </div>
+                                                {% endif %}
+                                                {% if detail.repair_workshop %}
+                                                <div class="repair-workshop">
+                                                    <small class="text-muted">{% trans "الورشة:" %}</small>
+                                                    <p class="mb-0">{{ detail.repair_workshop }}</p>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                <!-- إجمالي تكاليف الإصلاح -->
+                                <tr class="table-light">
+                                    <td>
+                                        <div class="item-label">
+                                            <i class="fas fa-calculator"></i>
+                                            {% trans "إجمالي تكاليف الإصلاح" %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        -
+                                    </td>
+                                    <td>
+                                        {% if return_report.inspection_details_list|needs_repair_count > 0 %}
+                                        <div class="text-center">
+                                            <span class="badge bg-danger">
+                                                {{ return_report.inspection_details_list|needs_repair_count }} {% trans "عنصر يحتاج إصلاح" %}
+                                            </span>
+                                        </div>
+                                        {% else %}
+                                        <div class="text-center">
+                                            <span class="badge bg-success">
+                                                {% trans "لا توجد عناصر تحتاج إصلاح" %}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="total-all-repairs fw-bold fs-5 text-danger">
+                                            {{ return_report.inspection_details_list|total_repair_costs }} {% trans "ريال" %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
