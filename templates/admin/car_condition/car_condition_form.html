@@ -498,27 +498,51 @@
                                             </thead>
                                             <tbody>
                                                 {% for item in category.inspection_items.all %}
-                                                {% if item.is_required %}
-                                                <!-- عرض فقط العناصر الإلزامية من الفئات المهمة لتبسيط النموذج أكثر -->
-                                                <tr>
-                                                    <td>
-                                                        <strong>{{ item.name }}</strong>
-                                                        <span class="badge bg-danger ms-1">{% trans "إلزامي" %}</span>
-                                                    </td>
-                                                    <td>
-                                                        <select name="inspection_item_{{ item.id }}" class="form-select form-select-sm">
-                                                            <option value="">{% trans "-- اختر --" %}</option>
-                                                            {% for value, text in item.CONDITION_CHOICES %}
-                                                            <option value="{{ value }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.condition == value %}selected{% endif %}>{{ text }}</option>
-                                                            {% endfor %}
-                                                        </select>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="form-check d-flex justify-content-center">
-                                                            <input class="form-check-input" type="checkbox" name="needs_repair_{{ item.id }}" id="needs_repair_{{ item.id }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.needs_repair %}checked{% endif %}>
-                                                        </div>
-                                                    </td>
-                                                </tr>
+                                                <!-- عرض فقط العناصر المهمة والسوائل الأهم -->
+                                                {% if category.name == "المحرك ومكونات أسفل غطاء المحرك" %}
+                                                    <!-- بالنسبة لقسم المحرك، عرض العناصر المختارة فقط -->
+                                                    {% if item.name == "المحرك (التشغيل)" or item.name == "زيت المحرك (المستوى)" or item.name == "البطارية (الحالة والأطراف)" or item.name == "تسريبات الزيت أو السوائل" %}
+                                                        <tr>
+                                                            <td>
+                                                                <strong>{{ item.name }}</strong>
+                                                                <span class="badge bg-danger ms-1">{% trans "إلزامي" %}</span>
+                                                            </td>
+                                                            <td>
+                                                                <select name="inspection_item_{{ item.id }}" class="form-select form-select-sm">
+                                                                    <option value="">{% trans "-- اختر --" %}</option>
+                                                                    {% for value, text in item.CONDITION_CHOICES %}
+                                                                    <option value="{{ value }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.condition == value %}selected{% endif %}>{{ text }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                <div class="form-check d-flex justify-content-center">
+                                                                    <input class="form-check-input" type="checkbox" name="needs_repair_{{ item.id }}" id="needs_repair_{{ item.id }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.needs_repair %}checked{% endif %}>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    {% endif %}
+                                                {% elif item.is_required %}
+                                                    <!-- بالنسبة للأقسام الأخرى، عرض العناصر الإلزامية فقط -->
+                                                    <tr>
+                                                        <td>
+                                                            <strong>{{ item.name }}</strong>
+                                                            <span class="badge bg-danger ms-1">{% trans "إلزامي" %}</span>
+                                                        </td>
+                                                        <td>
+                                                            <select name="inspection_item_{{ item.id }}" class="form-select form-select-sm">
+                                                                <option value="">{% trans "-- اختر --" %}</option>
+                                                                {% for value, text in item.CONDITION_CHOICES %}
+                                                                <option value="{{ value }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.condition == value %}selected{% endif %}>{{ text }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <div class="form-check d-flex justify-content-center">
+                                                                <input class="form-check-input" type="checkbox" name="needs_repair_{{ item.id }}" id="needs_repair_{{ item.id }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.needs_repair %}checked{% endif %}>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
                                                 {% endif %}
                                                 {% endfor %}
                                             </tbody>
