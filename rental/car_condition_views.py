@@ -158,8 +158,11 @@ def car_condition_create(request):
                 
                 # معالجة ملف PDF المرفق
                 if 'inspection_pdf_file' in request.FILES:
-                    # يمكن حفظ PDF كمرفق هنا إذا لزم الأمر
-                    pass
+                    # حفظ ملف PDF كمستند مرفق
+                    pdf_file = request.FILES['inspection_pdf_file']
+                    report.electronic_report_pdf = pdf_file
+                    # إضافة علامة لتوضيح أن هذا فحص إلكتروني
+                    report.is_electronic_inspection = True
             
             report.save()
             
@@ -289,8 +292,11 @@ def car_condition_edit(request, report_id):
                 
                 # معالجة ملف PDF المرفق
                 if 'inspection_pdf_file' in request.FILES:
-                    # يمكن حفظ PDF كمرفق هنا إذا لزم الأمر
-                    pass
+                    # حفظ ملف PDF كمستند مرفق
+                    pdf_file = request.FILES['inspection_pdf_file']
+                    updated_report.electronic_report_pdf = pdf_file
+                    # إضافة علامة لتوضيح أن هذا فحص إلكتروني
+                    updated_report.is_electronic_inspection = True
             
             updated_report.save()
             

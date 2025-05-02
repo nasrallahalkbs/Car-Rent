@@ -924,6 +924,11 @@ class CarConditionReport(models.Model):
     inspection_type = models.CharField(max_length=20, choices=INSPECTION_TYPE_CHOICES, 
                                      default='manual', verbose_name=_('نوع الفحص'))
     
+    # حقول خاصة بالفحص الإلكتروني
+    electronic_report_pdf = models.FileField(upload_to='car_reports/electronic_reports/', 
+                                          blank=True, null=True, verbose_name=_('ملف تقرير الفحص الإلكتروني'))
+    is_electronic_inspection = models.BooleanField(default=False, verbose_name=_('فحص إلكتروني'))
+    
     # الشخص المسؤول عن التوثيق
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, 
                                  related_name='created_condition_reports',
