@@ -82,3 +82,20 @@ def fuel_level_to_percent(level):
     }
     
     return fuel_levels.get(level, 0)
+    
+@register.filter(name='condition_value')
+def condition_value(condition):
+    """
+    تحويل حالة السيارة إلى قيمة رقمية للمقارنة
+    
+    Usage: {{ car_condition|condition_value }}
+    """
+    condition_values = {
+        'excellent': 5,
+        'good': 4,
+        'fair': 3,
+        'poor': 2,
+        'damaged': 1
+    }
+    
+    return condition_values.get(condition, 0)
