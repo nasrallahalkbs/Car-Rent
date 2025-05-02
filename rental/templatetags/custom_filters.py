@@ -99,3 +99,38 @@ def condition_value(condition):
     }
     
     return condition_values.get(condition, 0)
+    
+@register.filter(name='needs_repair_count')
+def needs_repair_count(inspection_details_list):
+    """
+    حساب عدد العناصر التي تحتاج إلى إصلاح في قائمة تفاصيل الفحص
+    
+    Usage: {{ inspection_details_list|needs_repair_count }}
+    """
+    if not inspection_details_list:
+        return 0
+    
+    return sum(1 for detail in inspection_details_list if detail.needs_repair)
+    
+@register.filter(name='total_repair_costs')
+def total_repair_costs(inspection_details_list):
+    """
+    حساب إجمالي تكاليف الإصلاح لجميع العناصر في قائمة تفاصيل الفحص
+    
+    Usage: {{ inspection_details_list|total_repair_costs }}
+    """
+    if not inspection_details_list:
+        return 0
+    
+    total = 0
+    for detail in inspection_details_list:
+        if detail.needs_repair:
+            # إضافة تكلفة القطع إذا كانت موجودة
+            if detail.repair_cost:
+                total += float(detail.repair_cost)
+                
+            # إضافة تكلفة العمالة إذا كانت موجودة
+            if detail.labor_cost:
+                total += float(detail.labor_cost)
+    
+    return total
