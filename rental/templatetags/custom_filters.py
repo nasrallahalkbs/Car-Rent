@@ -134,3 +134,51 @@ def total_repair_costs(inspection_details_list):
                 total += float(detail.labor_cost)
     
     return total
+    
+@register.filter(name='filter_by_item')
+def filter_by_item(inspection_details_list, item_id):
+    """
+    فلترة قائمة تفاصيل الفحص للحصول على عنصر محدد بواسطة معرف العنصر
+    
+    Usage: {% with delivery_item=delivery_details|filter_by_item:return_detail.inspection_item.id %}
+    """
+    if not inspection_details_list:
+        return None
+    
+    # البحث عن العنصر المطابق في القائمة
+    for detail in inspection_details_list:
+        if detail.inspection_item.id == item_id:
+            return detail
+            
+    return None
+    
+@register.filter(name='has_item')
+def has_item(inspection_details_list, item_id):
+    """
+    التحقق مما إذا كانت قائمة تفاصيل الفحص تحتوي على عنصر محدد بواسطة معرف العنصر
+    
+    Usage: {% with has_return=return_details|has_item:delivery_detail.inspection_item.id %}
+    """
+    if not inspection_details_list:
+        return False
+    
+    # البحث عن العنصر المطابق في القائمة
+    for detail in inspection_details_list:
+        if detail.inspection_item.id == item_id:
+            return True
+            
+    return False
+    
+@register.filter(name='add')
+def add_lists(list1, list2):
+    """
+    دمج قائمتين معًا
+    
+    Usage: {% with all_items=list1|add:list2 %}
+    """
+    result = []
+    if list1:
+        result.extend(list1)
+    if list2:
+        result.extend(list2)
+    return result

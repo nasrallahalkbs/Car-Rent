@@ -992,90 +992,240 @@
                                     </td>
                                 </tr>
 
-                                <!-- تفاصيل الفحص والإصلاحات -->
+                                <!-- تفاصيل الفحص والإصلاحات للمقارنة -->
                                 {% if return_report.inspection_details_list %}
                                 <tr class="table-separator">
                                     <td colspan="4" class="bg-light text-center py-3">
-                                        <h5 class="m-0">{% trans "تفاصيل عناصر الفحص والإصلاحات" %}</h5>
+                                        <h5 class="m-0">{% trans "مقارنة عناصر الفحص عند التسليم والاستلام" %}</h5>
                                     </td>
                                 </tr>
                                 
-                                <!-- جميع العناصر -->
-                                {% for detail in return_report.inspection_details_list %}
-                                    <!-- نعرض جميع العناصر التي تمت إضافتها في التقرير -->
-                                    <tr>
+                                <!-- رؤوس جدول المقارنة -->
+                                <tr class="bg-secondary text-white">
+                                    <th style="width: 25%;">{% trans "عنصر الفحص" %}</th>
+                                    <th style="width: 25%;">{% trans "حالة العنصر عند التسليم" %}</th>
+                                    <th style="width: 25%;">{% trans "حالة العنصر عند الاستلام" %}</th>
+                                    <th style="width: 25%;">{% trans "تفاصيل الإصلاح" %}</th>
+                                </tr>
+                                
+                                <!-- تنظيم البيانات للتسهيل -->
+                                {% with delivery_details=delivery_report.inspection_details_list %}
+                                {% with return_details=return_report.inspection_details_list %}
+                                
+                                <!-- إنشاء قاموس لكل العناصر المتوفرة في كلا التقريرين -->
+                                {% with all_items=return_details|add:delivery_details %}
+                                
+                                <!-- المرور على جميع عناصر تقرير الاستلام -->
+                                {% for return_detail in return_details %}
+                                    <tr class="comparison-row">
+                                        <!-- اسم العنصر -->
                                         <td>
-                                            <div class="item-label">
-                                                <i class="fas fa-tools"></i>
-                                                {{ detail.inspection_item.name }}
+                                            <div class="item-label fw-bold">
+                                                <i class="fas fa-tools me-1"></i>
+                                                {{ return_detail.inspection_item.name }}
                                             </div>
+                                            <!-- الفئة -->
+                                            <small class="text-muted d-block">
+                                                {{ return_detail.inspection_item.category.name }}
+                                            </small>
                                         </td>
+
+                                        <!-- عرض حالة العنصر عند التسليم -->
+                                        <td>
+                                            {% with delivery_item=delivery_details|filter_by_item:return_detail.inspection_item.id %}
+                                                {% if delivery_item %}
+                                                    <div class="d-flex align-items-center justify-content-center">
+                                                        <span class="status-indicator 
+                                                            {% if delivery_item.condition == 'excellent' or delivery_item.condition == 'good' %}status-good
+                                                            {% elif delivery_item.condition == 'fair' %}status-warning
+                                                            {% else %}status-bad{% endif %}"></span>
+                                                        {{ delivery_item.get_condition_display }}
+                                                    </div>
+                                                    {% if delivery_item.notes %}
+                                                    <div class="small mt-2 border-top pt-1">
+                                                        <small class="text-muted">{% trans "ملاحظات:" %}</small>
+                                                        <p class="mb-0">{{ delivery_item.notes }}</p>
+                                                    </div>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <div class="text-center text-muted">
+                                                        <small>{% trans "لا توجد معلومات" %}</small>
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                        
+                                        <!-- عرض حالة العنصر عند الاستلام -->
                                         <td>
                                             <div class="d-flex align-items-center justify-content-center">
                                                 <span class="status-indicator 
-                                                    {% if detail.condition == 'excellent' or detail.condition == 'good' %}status-good
-                                                    {% elif detail.condition == 'fair' %}status-warning
+                                                    {% if return_detail.condition == 'excellent' or return_detail.condition == 'good' %}status-good
+                                                    {% elif return_detail.condition == 'fair' %}status-warning
                                                     {% else %}status-bad{% endif %}"></span>
-                                                {{ detail.get_condition_display }}
+                                                {{ return_detail.get_condition_display }}
                                             </div>
+                                            {% if return_detail.notes %}
+                                            <div class="small mt-2 border-top pt-1">
+                                                <small class="text-muted">{% trans "ملاحظات:" %}</small>
+                                                <p class="mb-0">{{ return_detail.notes }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- علامة تغير الحالة -->
+                                            {% with delivery_item=delivery_details|filter_by_item:return_detail.inspection_item.id %}
+                                                {% if delivery_item %}
+                                                    {% with delivery_value=delivery_item.condition|condition_value %}
+                                                    {% with return_value=return_detail.condition|condition_value %}
+                                                        {% if delivery_value > return_value %}
+                                                            <div class="mt-2 text-center">
+                                                                <span class="badge bg-danger">
+                                                                    <i class="fas fa-arrow-down"></i> {% trans "تدهور" %}
+                                                                </span>
+                                                            </div>
+                                                        {% elif delivery_value < return_value %}
+                                                            <div class="mt-2 text-center">
+                                                                <span class="badge bg-success">
+                                                                    <i class="fas fa-arrow-up"></i> {% trans "تحسن" %}
+                                                                </span>
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="mt-2 text-center">
+                                                                <span class="badge bg-secondary">
+                                                                    <i class="fas fa-equals"></i> {% trans "لم يتغير" %}
+                                                                </span>
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                    {% endwith %}
+                                                {% endif %}
+                                            {% endwith %}
                                         </td>
+                                        
+                                        <!-- تفاصيل الإصلاح -->
                                         <td>
-                                            <div class="repair-details">
-                                                <div class="repair-status mb-2">
-                                                    <span class="badge {% if detail.repair_status == 'completed' %}bg-success{% elif detail.repair_status == 'in_progress' %}bg-warning{% else %}bg-danger{% endif %}">
-                                                        {{ detail.get_repair_status_display }}
-                                                    </span>
+                                            {% if return_detail.needs_repair %}
+                                                <div class="repair-details">
+                                                    <div class="repair-status mb-2">
+                                                        <span class="badge {% if return_detail.repair_status == 'completed' %}bg-success{% elif return_detail.repair_status == 'in_progress' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                            {{ return_detail.get_repair_status_display }}
+                                                        </span>
+                                                    </div>
+                                                    {% if return_detail.repair_description %}
+                                                    <div class="repair-description">
+                                                        <small class="text-muted">{% trans "وصف الإصلاح:" %}</small>
+                                                        <p class="mb-1">{{ return_detail.repair_description }}</p>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if return_detail.repair_parts %}
+                                                    <div class="repair-parts">
+                                                        <small class="text-muted">{% trans "قطع الغيار:" %}</small>
+                                                        <p class="mb-1">{{ return_detail.repair_parts }}</p>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if return_detail.repair_cost or return_detail.labor_cost %}
+                                                    <div class="repair-costs mt-2 pt-1 border-top">
+                                                        {% if return_detail.repair_cost %}
+                                                        <div class="repair-cost mb-1">
+                                                            <small class="text-muted">{% trans "تكلفة الإصلاح:" %}</small>
+                                                            <p class="mb-0">{{ return_detail.repair_cost }} {% trans "ريال" %}</p>
+                                                        </div>
+                                                        {% endif %}
+                                                        {% if return_detail.labor_cost %}
+                                                        <div class="labor-cost mb-1">
+                                                            <small class="text-muted">{% trans "تكلفة العمالة:" %}</small>
+                                                            <p class="mb-0">{{ return_detail.labor_cost }} {% trans "ريال" %}</p>
+                                                        </div>
+                                                        {% endif %}
+                                                        <div class="total-cost">
+                                                            <small class="text-muted">{% trans "الإجمالي:" %}</small>
+                                                            <p class="mb-0 text-danger fw-bold">{{ return_detail.total_repair_cost }} {% trans "ريال" %}</p>
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if return_detail.repair_date or return_detail.repair_workshop %}
+                                                    <div class="repair-info mt-2 pt-1 border-top">
+                                                        {% if return_detail.repair_date %}
+                                                        <div class="repair-date mb-1">
+                                                            <small class="text-muted">{% trans "تاريخ الإصلاح:" %}</small>
+                                                            <p class="mb-0">{{ return_detail.repair_date|date:"Y/m/d" }}</p>
+                                                        </div>
+                                                        {% endif %}
+                                                        {% if return_detail.repair_workshop %}
+                                                        <div class="repair-workshop">
+                                                            <small class="text-muted">{% trans "الورشة:" %}</small>
+                                                            <p class="mb-0">{{ return_detail.repair_workshop }}</p>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% endif %}
                                                 </div>
-                                                {% if detail.repair_description %}
-                                                <div class="repair-description">
-                                                    <small class="text-muted">{% trans "وصف الإصلاح:" %}</small>
-                                                    <p class="mb-1">{{ detail.repair_description }}</p>
+                                            {% else %}
+                                                <div class="text-center text-success">
+                                                    <i class="fas fa-check-circle fa-lg"></i>
+                                                    <p class="mb-0 mt-1">{% trans "لا يحتاج إصلاح" %}</p>
                                                 </div>
-                                                {% endif %}
-                                                {% if detail.repair_parts %}
-                                                <div class="repair-parts">
-                                                    <small class="text-muted">{% trans "قطع الغيار:" %}</small>
-                                                    <p class="mb-1">{{ detail.repair_parts }}</p>
-                                                </div>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="repair-costs">
-                                                {% if detail.repair_cost %}
-                                                <div class="repair-cost mb-1">
-                                                    <small class="text-muted">{% trans "تكلفة الإصلاح:" %}</small>
-                                                    <p class="mb-0 fw-bold">{{ detail.repair_cost }} {% trans "ريال" %}</p>
-                                                </div>
-                                                {% endif %}
-                                                {% if detail.labor_cost %}
-                                                <div class="labor-cost mb-1">
-                                                    <small class="text-muted">{% trans "تكلفة العمالة:" %}</small>
-                                                    <p class="mb-0">{{ detail.labor_cost }} {% trans "ريال" %}</p>
-                                                </div>
-                                                {% endif %}
-                                                {% if detail.repair_cost or detail.labor_cost %}
-                                                <div class="total-cost">
-                                                    <small class="text-muted">{% trans "الإجمالي:" %}</small>
-                                                    <p class="mb-0 text-danger fw-bold">{{ detail.total_repair_cost }} {% trans "ريال" %}</p>
-                                                </div>
-                                                {% endif %}
-                                                {% if detail.repair_date %}
-                                                <div class="repair-date mt-2">
-                                                    <small class="text-muted">{% trans "تاريخ الإصلاح:" %}</small>
-                                                    <p class="mb-0">{{ detail.repair_date|date:"Y/m/d" }}</p>
-                                                </div>
-                                                {% endif %}
-                                                {% if detail.repair_workshop %}
-                                                <div class="repair-workshop">
-                                                    <small class="text-muted">{% trans "الورشة:" %}</small>
-                                                    <p class="mb-0">{{ detail.repair_workshop }}</p>
-                                                </div>
-                                                {% endif %}
-                                            </div>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                 {% endfor %}
+                                
+                                <!-- عرض العناصر الموجودة في تقرير التسليم وغير موجودة في تقرير الاستلام -->
+                                {% for delivery_detail in delivery_details %}
+                                    {% with has_return=return_details|has_item:delivery_detail.inspection_item.id %}
+                                        {% if not has_return %}
+                                            <tr class="comparison-row bg-light">
+                                                <!-- اسم العنصر -->
+                                                <td>
+                                                    <div class="item-label fw-bold">
+                                                        <i class="fas fa-tools me-1"></i>
+                                                        {{ delivery_detail.inspection_item.name }}
+                                                    </div>
+                                                    <!-- الفئة -->
+                                                    <small class="text-muted d-block">
+                                                        {{ delivery_detail.inspection_item.category.name }}
+                                                    </small>
+                                                </td>
+                                                
+                                                <!-- عرض حالة العنصر عند التسليم -->
+                                                <td>
+                                                    <div class="d-flex align-items-center justify-content-center">
+                                                        <span class="status-indicator 
+                                                            {% if delivery_detail.condition == 'excellent' or delivery_detail.condition == 'good' %}status-good
+                                                            {% elif delivery_detail.condition == 'fair' %}status-warning
+                                                            {% else %}status-bad{% endif %}"></span>
+                                                        {{ delivery_detail.get_condition_display }}
+                                                    </div>
+                                                    {% if delivery_detail.notes %}
+                                                    <div class="small mt-2 border-top pt-1">
+                                                        <small class="text-muted">{% trans "ملاحظات:" %}</small>
+                                                        <p class="mb-0">{{ delivery_detail.notes }}</p>
+                                                    </div>
+                                                    {% endif %}
+                                                </td>
+                                                
+                                                <!-- حالة العنصر عند الاستلام - غير موجود -->
+                                                <td>
+                                                    <div class="text-center text-muted">
+                                                        <i class="fas fa-question-circle"></i>
+                                                        <p class="mb-0 mt-1">{% trans "لم يتم فحصه" %}</p>
+                                                    </div>
+                                                </td>
+                                                
+                                                <!-- تفاصيل الإصلاح - غير موجود -->
+                                                <td>
+                                                    <div class="text-center text-muted">
+                                                        <i class="fas fa-ban"></i>
+                                                        <p class="mb-0 mt-1">{% trans "لا توجد معلومات" %}</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endfor %}
+                                
+                                {% endwith %}
+                                {% endwith %}
+                                {% endwith %}
                                 
                                 <!-- إجمالي تكاليف الإصلاح -->
                                 <tr class="table-light">
@@ -1086,9 +1236,15 @@
                                         </div>
                                     </td>
                                     <td>
-                                        -
+                                        <!-- معلومات الفحص عند التسليم -->
+                                        <div class="text-center">
+                                            <span class="badge bg-info">
+                                                {{ delivery_report.inspection_details_list|length }} {% trans "عنصر تم فحصه" %}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
+                                        <!-- معلومات الفحص عند الاستلام -->
                                         {% if return_report.inspection_details_list|needs_repair_count > 0 %}
                                         <div class="text-center">
                                             <span class="badge bg-danger">
@@ -1104,7 +1260,8 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <div class="total-all-repairs fw-bold fs-5 text-danger">
+                                        <!-- إجمالي تكاليف الإصلاح -->
+                                        <div class="total-all-repairs fw-bold fs-5 text-danger text-center">
                                             {{ return_report.inspection_details_list|total_repair_costs }} {% trans "ريال" %}
                                         </div>
                                     </td>
