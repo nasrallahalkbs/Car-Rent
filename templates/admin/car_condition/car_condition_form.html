@@ -480,20 +480,21 @@
                     </div>
                 </div>
                 
-                <!-- قسم تفاصيل الفحص -->
+                <!-- قسم عناصر الفحص المهمة والمكلفة فقط -->
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header bg-primary text-white">
                                 <h6 class="mb-0">
-                                    <i class="fas fa-clipboard-check me-2"></i>{% trans "تفاصيل الفحص" %}
+                                    <i class="fas fa-clipboard-check me-2"></i>{% trans "العناصر المهمة والمكلفة" %}
                                 </h6>
                             </div>
                             <div class="card-body">
                                 {% for category in inspection_categories %}
                                 {% if category.name == "الهيكل الخارجي" %}
                                 <!-- تم نقل قسم الهيكل الخارجي إلى قسم منفصل في أعلى الصفحة -->
-                                {% else %}
+                                {% elif category.name == "المحرك" or category.name == "نظام التعليق" or category.name == "الفرامل" or category.name == "ناقل الحركة" %}
+                                <!-- عرض فقط الفئات المهمة والمكلفة -->
                                 <div class="inspection-category mb-4">
                                     <h6 class="border-bottom pb-2 mb-3">
                                         <i class="fas fa-check-circle me-2 text-primary"></i>{{ category.name }}
@@ -502,13 +503,15 @@
                                         <table class="table table-bordered">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th class="col-4">{% trans "العنصر" %}</th>
-                                                    <th class="col-3">{% trans "الحالة" %}</th>
-                                                    <th class="col-1 text-center">{% trans "إصلاح" %}</th>
+                                                    <th class="col-5">{% trans "العنصر" %}</th>
+                                                    <th class="col-5">{% trans "الحالة" %}</th>
+                                                    <th class="col-2 text-center">{% trans "إصلاح" %}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {% for item in category.inspection_items.all %}
+                                                {% if item.is_required or item.estimated_repair_cost > 500 %}
+                                                <!-- عرض فقط العناصر الإلزامية أو المكلفة -->
                                                 <tr>
                                                     <td>
                                                         <strong>{{ item.name }}</strong>
@@ -525,11 +528,12 @@
                                                         </select>
                                                     </td>
                                                     <td class="text-center">
-                                                        <div class="form-check d-flex justify-content-center align-items-center">
+                                                        <div class="form-check d-flex justify-content-center">
                                                             <input class="form-check-input" type="checkbox" name="needs_repair_{{ item.id }}" id="needs_repair_{{ item.id }}" {% if inspection_details and inspection_details|get_item:item.id and inspection_details|get_item:item.id.needs_repair %}checked{% endif %}>
                                                         </div>
                                                     </td>
                                                 </tr>
+                                                {% endif %}
                                                 {% endfor %}
                                             </tbody>
                                         </table>
@@ -541,16 +545,6 @@
                                     <i class="fas fa-info-circle me-2"></i>{% trans "لا توجد فئات فحص مضافة حتى الآن. يرجى إضافة فئات وعناصر الفحص أولاً." %}
                                 </div>
                                 {% endfor %}
-
-                                <!-- حقل ملاحظات عامة للفحص -->
-                                <div class="row mt-3">
-                                    <div class="col-12">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold">{% trans "ملاحظات عامة حول الفحص" %}</label>
-                                            <textarea name="inspection_notes" class="form-control" rows="2" placeholder="{% trans 'أي ملاحظات إضافية عن الفحص بشكل عام' %}"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
