@@ -331,11 +331,11 @@
                     <div class="col-md-12">
                         <div class="card bg-light">
                             <div class="card-header">
-                                <h6 class="mb-0">{% trans "حالة السيارة" %}</h6>
+                                <h6 class="mb-0">{% trans "حالة السيارة (العناصر الرئيسية فقط)" %}</h6>
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label for="{{ form.mileage.id_for_label }}" class="form-label">{{ form.mileage.label }}</label>
                                         {{ form.mileage }}
                                         {% if form.mileage.errors %}
@@ -347,24 +347,12 @@
                                         {% endif %}
                                     </div>
                                     
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label for="{{ form.car_condition.id_for_label }}" class="form-label">{{ form.car_condition.label }}</label>
                                         {{ form.car_condition }}
                                         {% if form.car_condition.errors %}
                                         <div class="invalid-feedback d-block">
                                             {% for error in form.car_condition.errors %}
-                                                {{ error }}
-                                            {% endfor %}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <label for="{{ form.fuel_level.id_for_label }}" class="form-label">{{ form.fuel_level.label }}</label>
-                                        {{ form.fuel_level }}
-                                        {% if form.fuel_level.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {% for error in form.fuel_level.errors %}
                                                 {{ error }}
                                             {% endfor %}
                                         </div>
@@ -510,13 +498,12 @@
                                             </thead>
                                             <tbody>
                                                 {% for item in category.inspection_items.all %}
-                                                <!-- عرض جميع العناصر للفئات المهمة -->
+                                                {% if item.is_required %}
+                                                <!-- عرض فقط العناصر الإلزامية من الفئات المهمة لتبسيط النموذج أكثر -->
                                                 <tr>
                                                     <td>
                                                         <strong>{{ item.name }}</strong>
-                                                        {% if item.is_required %}
                                                         <span class="badge bg-danger ms-1">{% trans "إلزامي" %}</span>
-                                                        {% endif %}
                                                     </td>
                                                     <td>
                                                         <select name="inspection_item_{{ item.id }}" class="form-select form-select-sm">
@@ -532,6 +519,7 @@
                                                         </div>
                                                     </td>
                                                 </tr>
+                                                {% endif %}
                                                 {% endfor %}
                                             </tbody>
                                         </table>
