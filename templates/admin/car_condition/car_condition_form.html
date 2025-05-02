@@ -613,7 +613,7 @@
         }
     }
     
-    // دالة معاينة الصورة المحسنة
+    // دالة معاينة الصورة المحسنة للأبعاد 40×60 بكسل
     function previewImage(input, previewId) {
         if (input.files && input.files[0]) {
             var file = input.files[0];
@@ -625,70 +625,59 @@
                 // ضغط الصورة قبل المعاينة
                 var img = new Image();
                 img.onload = function() {
-                    // تحديد أبعاد للصورة مناسبة للقالب - تقليل الأبعاد القصوى
-                    var maxWidth = 400; // تقليل العرض الأقصى لضمان حجم مناسب للعرض
-                    var maxHeight = 300; // تقليل الارتفاع الأقصى لضمان حجم مناسب للعرض
-                    var width = img.width;
-                    var height = img.height;
+                    // قياسات الصورة بالضبط - 40×60 بكسل (4×6 سم)
+                    var targetWidth = 40;   // عرض 4 سم
+                    var targetHeight = 60;  // ارتفاع 6 سم
                     
-                    // قطع الصور بنسبة 1:1 (مربعة) لضمان التناسب الكامل
-                    var targetSize = 40; // الحجم المستهدف بالبكسل (متوافق مع أبعاد .car-image-box الجديدة - 4 سم)
+                    // حساب نسبة الأبعاد للصورة الأصلية والمستهدفة
+                    var origRatio = img.width / img.height;
+                    var targetRatio = targetWidth / targetHeight;
                     
-                    // حساب مركز الصورة
-                    var centerX = width / 2;
-                    var centerY = height / 2;
+                    // متغيرات لعملية القطع
+                    var cropWidth, cropHeight, cropX, cropY;
                     
-                    // قياسات قطع الصورة
-                    var cropSize = Math.min(width, height);
-                    var cropX = centerX - (cropSize / 2);
-                    var cropY = centerY - (cropSize / 2);
+                    // تحديد مناطق القطع بناءً على نسبة الأبعاد
+                    if (origRatio > targetRatio) {
+                        // الصورة الأصلية أعرض نسبياً، نقطع من العرض
+                        cropHeight = img.height;
+                        cropWidth = img.height * targetRatio;
+                        cropX = (img.width - cropWidth) / 2;
+                        cropY = 0;
+                    } else {
+                        // الصورة الأصلية أطول نسبياً، نقطع من الارتفاع
+                        cropWidth = img.width;
+                        cropHeight = img.width / targetRatio;
+                        cropX = 0;
+                        cropY = (img.height - cropHeight) / 2;
+                    }
                     
-                    // التأكد من عدم تجاوز الحدود السلبية
-                    cropX = Math.max(0, cropX);
-                    cropY = Math.max(0, cropY);
-                    
-                    // ضبط أبعاد القطع إذا تجاوزت حدود الصورة
-                    if (cropX + cropSize > width) cropSize = width - cropX;
-                    if (cropY + cropSize > height) cropSize = height - cropY;
-                    
-                    // ضبط الأبعاد النهائية
-                    width = targetSize;
-                    height = targetSize;
-                    
-                    // إنشاء كانفس لرسم الصورة المضغوطة
+                    // إنشاء كانفس بأبعاد الصورة المستهدفة
                     var canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
                     var ctx = canvas.getContext('2d');
                     
                     // تطبيق تقنية التنعيم لتحسين جودة الصورة
                     ctx.imageSmoothingEnabled = true;
                     ctx.imageSmoothingQuality = 'high';
                     
-                    // رسم الصورة على الكانفس مع تطبيق القطع من المنتصف
+                    // رسم الصورة على الكانفس مع تطبيق القياسات المحسوبة
                     ctx.drawImage(
-                        img,                   // الصورة المصدر
-                        cropX, cropY,          // نقطة البداية في الصورة الأصلية
-                        cropSize, cropSize,    // الأبعاد في الصورة الأصلية
-                        0, 0,                  // نقطة البداية في الكانفاس
-                        width, height          // الأبعاد في الكانفاس
+                        img,                // الصورة المصدر
+                        cropX, cropY,       // نقطة البداية في الصورة الأصلية (المركز)
+                        cropWidth, cropHeight, // الأبعاد للقطع من الصورة الأصلية
+                        0, 0,               // نقطة البداية في الكانفاس
+                        targetWidth, targetHeight // الأبعاد النهائية في الكانفاس
                     );
                     
-                    // تحويل الكانفس إلى صورة مضغوطة مع تحسين نسبة الضغط
-                    var compressedImageSrc = canvas.toDataURL('image/jpeg', 0.8);
+                    // تحويل الكانفس إلى صورة jpg مضغوطة
+                    var compressedImageSrc = canvas.toDataURL('image/jpeg', 0.9);
                     
                     // عرض الصورة المضغوطة
                     var preview = document.getElementById(previewId);
                     preview.src = compressedImageSrc;
                     preview.style.display = 'block';
                     preview.classList.add('show');
-                    
-                    // تطبيق نمط إضافي للتأكد من ضبط الصورة داخل الصندوق
-                    preview.style.objectFit = 'cover';
-                    preview.style.maxWidth = '100%';
-                    preview.style.maxHeight = '100%';
-                    preview.style.width = '100%';
-                    preview.style.height = '100%';
                     
                     // إضافة فئة has-image إلى العنصر الأساسي
                     var imageBox = preview.closest('.car-image-box');
@@ -706,10 +695,7 @@
                         cameraIcon.style.display = 'none';
                     }
                     
-                    // تحسين عرض صندوق الصورة
-                    imageBox.style.backgroundColor = '#f8f9fa';
-                    
-                    console.log("تم تحميل الصورة بنجاح، الأبعاد النهائية:", width, "×", height);
+                    console.log("تم معالجة الصورة بنجاح، الأبعاد النهائية:", targetWidth, "×", targetHeight);
                 };
                 
                 img.src = e.target.result;
