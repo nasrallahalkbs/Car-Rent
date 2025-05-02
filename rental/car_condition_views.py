@@ -634,7 +634,7 @@ def car_condition_comparison(request, reservation_id):
         'current_date': timezone.now()
     }
     
-    return render(request, 'admin/car_condition/car_condition_comparison_modern.html', context)
+    return render(request, 'admin/car_condition/car_condition_comparison_premium.html', context)
 
 
 # وظائف العرض الجديدة لنظام توثيق حالة السيارة المتقدم
