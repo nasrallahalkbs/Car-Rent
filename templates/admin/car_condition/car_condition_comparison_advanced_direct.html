@@ -482,6 +482,10 @@
                     <i class="fas fa-calendar-alt"></i>
                     {% trans "فترة الإيجار:" %} {{ reservation.days }} {% trans "يوم" %}
                 </div>
+                <div class="tech-meta-item">
+                    <i class="fas fa-calendar-check"></i>
+                    {% trans "تاريخ التقرير:" %} {{ current_date|date:"Y-m-d" }}
+                </div>
             </div>
         </div>
 
@@ -853,6 +857,47 @@
                     </td>
                 </tr>
 
+                <!-- نوع الفحص -->
+                <tr>
+                    <td>
+                        <div class="feature-name">
+                            <i class="fas fa-clipboard-list"></i>
+                            {% trans "نوع الفحص" %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if delivery_report.inspection_type == 'regular' %}badge-info
+                            {% elif delivery_report.inspection_type == 'detailed' %}badge-success
+                            {% elif delivery_report.inspection_type == 'special' %}badge-warning
+                            {% else %}badge-neutral{% endif %}">
+                            {{ delivery_report.get_inspection_type_display|default:"فحص عادي" }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if return_report.inspection_type == 'regular' %}badge-info
+                            {% elif return_report.inspection_type == 'detailed' %}badge-success
+                            {% elif return_report.inspection_type == 'special' %}badge-warning
+                            {% else %}badge-neutral{% endif %}">
+                            {{ return_report.get_inspection_type_display|default:"فحص عادي" }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if delivery_report.inspection_type != return_report.inspection_type %}
+                        <div class="change-indicator change-neutral">
+                            <i class="fas fa-info-circle"></i>
+                            {% trans "اختلاف في نوع الفحص بين التقريرين" %}
+                        </div>
+                        {% else %}
+                        <div class="change-indicator change-neutral">
+                            <i class="fas fa-check-circle"></i>
+                            {% trans "نوع الفحص متطابق في التقريرين" %}
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+
                 <!-- نوع التقرير -->
                 <tr>
                     <td>
@@ -957,7 +1002,7 @@
         </table>
 
         <!-- ملخص النتائج -->
-        {% if has_damages or return_report.repair_cost %}
+        {% if has_damages or return_report.repair_cost or return_report.defects or delivery_report.car_condition != return_report.car_condition %}
         <div class="result-box result-warning">
             <div class="result-title">
                 <i class="fas fa-exclamation-triangle"></i>
@@ -971,12 +1016,29 @@
             </div>
             {% endif %}
 
+            {% if return_report.defects %}
+            <div class="alert alert-danger mt-3">
+                <strong>{% trans "الأضرار المكتشفة:" %}</strong> {{ return_report.defects }}
+            </div>
+            {% endif %}
+
+            {% with delivery_val=delivery_report.car_condition|condition_value return_val=return_report.car_condition|condition_value %}
+                {% if delivery_val > return_val %}
+                <div class="alert alert-danger mt-3">
+                    <strong>{% trans "تغير حالة السيارة:" %}</strong> 
+                    {% trans "من" %} <strong>{{ delivery_report.get_car_condition_display }}</strong> 
+                    {% trans "إلى" %} <strong>{{ return_report.get_car_condition_display }}</strong>
+                </div>
+                {% endif %}
+            {% endwith %}
+
             <div class="alert alert-warning mt-3">
                 <strong>{% trans "توصيات الإجراء:" %}</strong>
                 <ul class="mt-2 mb-0">
                     <li>{% trans "التحقق من سياسة التأمين والتغطية للأضرار المكتشفة" %}</li>
                     <li>{% trans "مراجعة اتفاقية الإيجار ومسؤوليات العميل" %}</li>
                     <li>{% trans "إبلاغ العميل بالتكاليف والإجراءات المطلوبة" %}</li>
+                    <li>{% trans "إجراء فحص فني متخصص إذا لزم الأمر" %}</li>
                 </ul>
             </div>
         </div>
