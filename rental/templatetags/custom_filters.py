@@ -187,15 +187,36 @@ def has_item(inspection_details_list, item_id):
     return False
     
 @register.filter(name='add')
-def add_lists(list1, list2):
+def add_lists(value, arg):
     """
-    دمج قائمتين معًا
+    دمج قائمتين أو إضافة رقمين معًا
     
-    Usage: {% with all_items=list1|add:list2 %}
+    Usage: 
+    - للقوائم: {% with all_items=list1|add:list2 %}
+    - للأرقام: {% with total=number1|add:number2 %}
     """
-    result = []
-    if list1:
-        result.extend(list1)
-    if list2:
-        result.extend(list2)
-    return result
+    try:
+        # إذا كانت القيم أرقام، قم بإضافتها
+        if isinstance(value, (int, float)) and isinstance(arg, (int, float)):
+            return value + arg
+        
+        # للقوائم، قم بدمجها
+        result = []
+        
+        # تحقق من النوع والمعالجة المناسبة
+        if hasattr(value, '__iter__') and not isinstance(value, (str, bytes)):
+            result.extend(value)
+        elif value is not None:
+            result.append(value)
+            
+        if hasattr(arg, '__iter__') and not isinstance(arg, (str, bytes)):
+            result.extend(arg)
+        elif arg is not None:
+            result.append(arg)
+            
+        return result
+    except Exception as e:
+        # في حال حدوث أي خطأ، عد إلى السلوك الافتراضي
+        if value is None:
+            return arg
+        return value
