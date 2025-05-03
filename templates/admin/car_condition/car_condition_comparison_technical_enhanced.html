@@ -1,0 +1,925 @@
+{% extends "admin_layout.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "مقارنة حالة السيارة" %} - {{ car.make }} {{ car.model }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --primary-color: #005192;
+        --primary-dark: #003e70;
+        --primary-light: #0078d7;
+        --secondary-color: #212529;
+        --accent-color: #f3a712;
+        --light-bg: #f8f9fa;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --gray-color: #6b7280;
+        --light-border: #e5e7eb;
+    }
+
+    /* تصميم حديث للصفحة */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f9fafb;
+    }
+
+    .content-wrapper {
+        background-color: #f9fafb;
+    }
+
+    /* العنوان الرئيسي */
+    .page-header {
+        padding: 1.5rem 0;
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 81, 146, 0.1);
+    }
+
+    .report-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .report-title i {
+        margin-left: 0.5rem;
+        font-size: 1.5rem;
+    }
+
+    /* بطاقات المعلومات */
+    .info-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .info-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .info-card .card-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+    }
+
+    .info-card .card-header i {
+        margin-left: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .info-card .card-body {
+        padding: 1.5rem;
+    }
+
+    /* جدول المقارنة التقني */
+    .tech-comparison-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+    }
+
+    .tech-comparison-table thead th {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 1rem;
+        font-weight: 600;
+        text-align: center;
+        border: none;
+    }
+
+    .tech-comparison-table tbody tr:nth-child(odd) {
+        background-color: white;
+    }
+
+    .tech-comparison-table tbody tr:nth-child(even) {
+        background-color: rgba(0, 81, 146, 0.03);
+    }
+
+    .tech-comparison-table tbody tr:hover {
+        background-color: rgba(0, 81, 146, 0.06);
+    }
+
+    .tech-comparison-table td {
+        padding: 0.8rem 1rem;
+        border: 1px solid var(--light-border);
+        vertical-align: middle;
+    }
+
+    .tech-comparison-table .item-name {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        color: var(--primary-dark);
+    }
+
+    .tech-comparison-table .item-name i {
+        margin-left: 0.5rem;
+        font-size: 1rem;
+        color: var(--primary-color);
+    }
+
+    .tech-comparison-table .item-category {
+        background-color: rgba(0, 81, 146, 0.1);
+        padding: 0.8rem 1rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+    }
+
+    /* مؤشرات الحالة */
+    .condition-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.8rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .condition-excellent {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #065f46;
+    }
+
+    .condition-good {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #1e40af;
+    }
+
+    .condition-fair {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #b45309;
+    }
+
+    .condition-poor, .condition-damaged {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+    }
+
+    .condition-not-applicable {
+        background-color: rgba(107, 114, 128, 0.1);
+        color: #4b5563;
+    }
+
+    /* مؤشرات التغيير */
+    .diff-highlight {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.8rem;
+        border-radius: 50px;
+        font-weight: 600;
+    }
+
+    .diff-negative {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+    }
+
+    .diff-positive {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #065f46;
+    }
+
+    .diff-unchanged {
+        background-color: rgba(107, 114, 128, 0.1);
+        color: #4b5563;
+    }
+
+    .diff-highlight i {
+        margin-left: 0.3rem;
+    }
+
+    /* أيقونات الإصلاح والتكلفة */
+    .repair-indicator {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 0.8rem;
+    }
+
+    .repair-needed {
+        color: var(--danger-color);
+    }
+
+    .repair-not-needed {
+        color: var(--success-color);
+    }
+
+    .repair-cost {
+        display: inline-flex;
+        align-items: center;
+        background-color: rgba(243, 167, 18, 0.1);
+        color: #92400e;
+        padding: 0.3rem 0.6rem;
+        border-radius: 4px;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+
+    .repair-cost i {
+        margin-left: 0.3rem;
+    }
+
+    /* عناصر الجدول المهمة والمكلفة */
+    .important-item {
+        position: relative;
+    }
+
+    .important-item td {
+        border-left: 3px solid var(--primary-color);
+    }
+
+    .expensive-item {
+        position: relative;
+    }
+
+    .expensive-item td {
+        border-left: 3px solid var(--warning-color);
+    }
+
+    .critical-item {
+        position: relative;
+    }
+
+    .critical-item td {
+        border-left: 3px solid var(--danger-color);
+    }
+
+    /* مؤشرات العناصر */
+    .item-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+
+    .tag-important {
+        background-color: rgba(0, 81, 146, 0.1);
+        color: var(--primary-dark);
+    }
+
+    .tag-expensive {
+        background-color: rgba(243, 167, 18, 0.1);
+        color: #92400e;
+    }
+
+    .tag-critical {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+    }
+
+    /* تصميم مؤشر الحالة العامة */
+    .overall-status {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    .status-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .status-circle-excellent, .status-circle-good {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .status-circle-fair {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
+
+    .status-circle-poor, .status-circle-damaged {
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        color: white;
+    }
+
+    .status-icon {
+        font-size: 2.5rem;
+    }
+
+    .status-text {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
+    }
+
+    /* مؤشر المسافة */
+    .mileage-diff {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 1rem 0;
+    }
+
+    .mileage-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .mileage-increase {
+        color: var(--danger-color);
+    }
+
+    .mileage-icon {
+        font-size: 1.5rem;
+        margin: 0 1rem;
+    }
+
+    /* أزرار الطباعة والعودة */
+    .action-button {
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .action-button i {
+        margin-left: 0.5rem;
+    }
+
+    .print-btn {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border: none;
+    }
+
+    .print-btn:hover {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+        box-shadow: 0 4px 12px rgba(0, 81, 146, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .back-btn {
+        background-color: var(--secondary-color);
+        color: white;
+        border: none;
+    }
+
+    .back-btn:hover {
+        background-color: #111827;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    /* تصميم التقرير الرسمي */
+    .official-report {
+        border: 3px solid var(--primary-color);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-top: 2rem;
+        background-color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .official-report::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 50 L0 50 L0 0 Z' fill='%23005192' fill-opacity='0.03'/%3E%3C/svg%3E");
+        z-index: 0;
+    }
+
+    .signatures {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 3rem;
+    }
+
+    .signature-box {
+        width: 45%;
+        text-align: center;
+    }
+
+    .signature-line {
+        border-top: 2px solid var(--light-border);
+        padding-top: 0.5rem;
+        font-weight: 600;
+        color: var(--secondary-color);
+    }
+
+    /* ضبط الطباعة */
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        body, .content-wrapper {
+            background-color: white !important;
+        }
+        
+        .tech-comparison-table {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        
+        .tech-comparison-table thead th {
+            background: var(--primary-color) !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .status-circle-excellent, .status-circle-good,
+        .status-circle-fair, .status-circle-poor, .status-circle-damaged {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رأس التقرير -->    
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header mb-4">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="report-title">                            
+                            <i class="fas fa-clipboard-check"></i>
+                            {% trans "مقارنة فنية لحالة السيارة" %}
+                        </h1>
+                        <div>
+                            <a href="{% url 'car_condition_list' %}" class="btn back-btn action-button no-print">
+                                <i class="fas fa-arrow-right"></i> {% trans "العودة للقائمة" %}
+                            </a>
+                            <button onclick="window.print()" class="btn print-btn action-button no-print ms-2">
+                                <i class="fas fa-print"></i> {% trans "طباعة التقرير" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات السيارة والحجز -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="info-card">
+                <div class="card-header">
+                    <i class="fas fa-car"></i>
+                    {% trans "معلومات السيارة" %}
+                    <span class="badge bg-light text-dark ms-auto">{{ car.license_plate }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "الماركة والموديل" %}</div>
+                            <div class="fs-5">{{ car.make }} {{ car.model }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "سنة الصنع" %}</div>
+                            <div class="fs-5">{{ car.year }}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "اللون" %}</div>
+                            <div>{{ car.color }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "نوع الوقود" %}</div>
+                            <div>{{ car.get_fuel_type_display }}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "ناقل الحركة" %}</div>
+                            <div>{{ car.get_transmission_display }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "الفئة" %}</div>
+                            <div>{{ car.get_category_display }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="info-card">
+                <div class="card-header">
+                    <i class="fas fa-calendar-alt"></i>
+                    {% trans "معلومات الحجز" %}
+                    <span class="badge bg-primary ms-auto">{{ reservation.reservation_number }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "العميل" %}</div>
+                            <div class="fs-5">{{ reservation.user.get_full_name }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "رقم الهاتف" %}</div>
+                            <div>{{ reservation.user.phone }}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "تاريخ البداية" %}</div>
+                            <div>{{ reservation.start_date|date:"d/m/Y" }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "تاريخ النهاية" %}</div>
+                            <div>{{ reservation.end_date|date:"d/m/Y" }}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "مدة الإيجار" %}</div>
+                            <div>{{ reservation.days }} {% trans "يوم" %}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="fw-bold text-muted">{% trans "حالة الحجز" %}</div>
+                            <div>
+                                <span class="badge {% if reservation.status == 'completed' %}bg-success{% else %}bg-primary{% endif %}">
+                                    {{ reservation.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مؤشرات الحالة العامة والمسافة -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="overall-status">
+                        <h5 class="mb-3">{% trans "حالة السيارة عند التسليم" %}</h5>
+                        <div class="status-circle status-circle-{{ delivery_report.car_condition }}">
+                            <i class="status-icon fas {% if delivery_report.car_condition == 'excellent' or delivery_report.car_condition == 'good' %}fa-check-circle{% elif delivery_report.car_condition == 'fair' %}fa-exclamation-circle{% else %}fa-times-circle{% endif %}"></i>
+                        </div>
+                        <div class="status-text">
+                            {{ delivery_report.get_car_condition_display }}
+                        </div>
+                        <div class="mt-2 text-muted">
+                            {{ delivery_report.date|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="overall-status">
+                        <h5 class="mb-3">{% trans "حالة السيارة عند الإعادة" %}</h5>
+                        <div class="status-circle status-circle-{{ return_report.car_condition }}">
+                            <i class="status-icon fas {% if return_report.car_condition == 'excellent' or return_report.car_condition == 'good' %}fa-check-circle{% elif return_report.car_condition == 'fair' %}fa-exclamation-circle{% else %}fa-times-circle{% endif %}"></i>
+                        </div>
+                        <div class="status-text">
+                            {{ return_report.get_car_condition_display }}
+                        </div>
+                        <div class="mt-2 text-muted">
+                            {{ return_report.date|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="info-card">
+                <div class="card-header">
+                    <i class="fas fa-tachometer-alt"></i>
+                    {% trans "المسافة المقطوعة (كم)" %}
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center">
+                            <div class="text-muted mb-2">{% trans "عند التسليم" %}</div>
+                            <div class="fs-3 fw-bold">{{ delivery_report.mileage }}</div>
+                            <div class="text-muted small">{% trans "كم" %}</div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="mileage-diff">
+                                <div class="mileage-value">
+                                    {% with diff=return_report.mileage|add:'-'|add:delivery_report.mileage %}
+                                    <i class="fas fa-arrow-circle-right mileage-icon mileage-increase"></i>
+                                    <span class="mileage-increase">+{{ diff }} {% trans "كم" %}</span>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="text-muted mb-2">{% trans "عند الإعادة" %}</div>
+                            <div class="fs-3 fw-bold">{{ return_report.mileage }}</div>
+                            <div class="text-muted small">{% trans "كم" %}</div>
+                        </div>
+                    </div>
+
+                    <!-- وقود السيارة -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5 class="mb-3">{% trans "مستوى الوقود" %}</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted mb-2">{% trans "عند التسليم" %}</div>
+                            <div class="fuel-container">
+                                <div class="fuel-gauge">
+                                    <div class="fuel-gauge-fill" style="width: {% if delivery_report.fuel_level == 'empty' %}5%{% elif delivery_report.fuel_level == 'quarter' %}25%{% elif delivery_report.fuel_level == 'half' %}50%{% elif delivery_report.fuel_level == 'three_quarters' %}75%{% else %}100%{% endif %};"></div>
+                                </div>
+                                <div class="mt-2 text-center fw-bold">
+                                    {{ delivery_report.get_fuel_level_display }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-muted mb-2">{% trans "عند الإعادة" %}</div>
+                            <div class="fuel-container">
+                                <div class="fuel-gauge">
+                                    <div class="fuel-gauge-fill" style="width: {% if return_report.fuel_level == 'empty' %}5%{% elif return_report.fuel_level == 'quarter' %}25%{% elif return_report.fuel_level == 'half' %}50%{% elif return_report.fuel_level == 'three_quarters' %}75%{% else %}100%{% endif %};"></div>
+                                </div>
+                                <div class="mt-2 text-center fw-bold">
+                                    {{ return_report.get_fuel_level_display }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- جدول مقارنة العناصر المهمة والمكلفة -->
+    <div class="row">
+        <div class="col-12">
+            <div class="info-card">
+                <div class="card-header">
+                    <i class="fas fa-clipboard-list"></i>
+                    {% trans "المقارنة الفنية لعناصر الفحص المهمة والمكلفة" %}
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="tech-comparison-table">
+                            <thead>
+                                <tr>
+                                    <th width="25%">{% trans "عنصر الفحص" %}</th>
+                                    <th width="25%">{% trans "حالة عند التسليم" %}</th>
+                                    <th width="25%">{% trans "حالة عند الإعادة" %}</th>
+                                    <th width="25%">{% trans "الفرق والتكلفة" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in categories %}
+                                <tr>
+                                    <td colspan="4" class="item-category">
+                                        <i class="fas {% if category.name == 'المحرك' %}fa-cogs{% elif category.name == 'الكهرباء' %}fa-bolt{% elif category.name == 'الفرامل' %}fa-brake-system{% elif category.name == 'نظام التعليق' %}fa-car-suspension{% elif category.name == 'الإطارات' %}fa-tire{% else %}fa-tools{% endif %} me-2"></i>
+                                        {{ category.name }}
+                                    </td>
+                                </tr>
+                                    {% for item in category.items %}
+                                    {% with 
+                                        delivery_detail=delivery_details|get_item:item.id
+                                        return_detail=return_details|get_item:item.id
+                                        is_important=item.is_important
+                                        is_expensive=item.is_expensive
+                                        is_critical=item.is_critical
+                                    %}
+                                    <tr class="{% if is_critical %}critical-item{% elif is_expensive %}expensive-item{% elif is_important %}important-item{% endif %}">
+                                        <td class="item-name">
+                                            <i class="fas {% if 'محرك' in item.name %}fa-engine{% elif 'زيت' in item.name %}fa-oil-can{% elif 'مكيف' in item.name %}fa-snowflake{% elif 'فرامل' in item.name %}fa-brake-system{% elif 'بطارية' in item.name %}fa-car-battery{% elif 'إطار' in item.name %}fa-tire{% elif 'مصابيح' in item.name %}fa-lightbulb{% elif 'ناقل الحركة' in item.name %}fa-cogs{% else %}fa-check-circle{% endif %}"></i>
+                                            {{ item.name }}
+                                            {% if is_critical %}
+                                            <span class="item-tag tag-critical">{% trans "حساس" %}</span>
+                                            {% elif is_expensive %}
+                                            <span class="item-tag tag-expensive">{% trans "مكلف" %}</span>
+                                            {% elif is_important %}
+                                            <span class="item-tag tag-important">{% trans "مهم" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="condition-indicator condition-{{ delivery_detail.condition }}">
+                                                {% if delivery_detail.condition == 'excellent' %}
+                                                <i class="fas fa-check-circle me-1"></i> {{ delivery_detail.get_condition_display }}
+                                                {% elif delivery_detail.condition == 'good' %}
+                                                <i class="fas fa-check me-1"></i> {{ delivery_detail.get_condition_display }}
+                                                {% elif delivery_detail.condition == 'fair' %}
+                                                <i class="fas fa-exclamation-circle me-1"></i> {{ delivery_detail.get_condition_display }}
+                                                {% elif delivery_detail.condition == 'poor' %}
+                                                <i class="fas fa-exclamation-triangle me-1"></i> {{ delivery_detail.get_condition_display }}
+                                                {% elif delivery_detail.condition == 'damaged' %}
+                                                <i class="fas fa-times-circle me-1"></i> {{ delivery_detail.get_condition_display }}
+                                                {% else %}
+                                                <i class="fas fa-minus-circle me-1"></i> {{ delivery_detail.get_condition_display }}
+                                                {% endif %}
+                                            </div>
+                                            {% if delivery_detail.notes %}
+                                            <div class="mt-2 text-muted small">{{ delivery_detail.notes }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="condition-indicator condition-{{ return_detail.condition }}">
+                                                {% if return_detail.condition == 'excellent' %}
+                                                <i class="fas fa-check-circle me-1"></i> {{ return_detail.get_condition_display }}
+                                                {% elif return_detail.condition == 'good' %}
+                                                <i class="fas fa-check me-1"></i> {{ return_detail.get_condition_display }}
+                                                {% elif return_detail.condition == 'fair' %}
+                                                <i class="fas fa-exclamation-circle me-1"></i> {{ return_detail.get_condition_display }}
+                                                {% elif return_detail.condition == 'poor' %}
+                                                <i class="fas fa-exclamation-triangle me-1"></i> {{ return_detail.get_condition_display }}
+                                                {% elif return_detail.condition == 'damaged' %}
+                                                <i class="fas fa-times-circle me-1"></i> {{ return_detail.get_condition_display }}
+                                                {% else %}
+                                                <i class="fas fa-minus-circle me-1"></i> {{ return_detail.get_condition_display }}
+                                                {% endif %}
+                                            </div>
+                                            {% if return_detail.notes %}
+                                            <div class="mt-2 text-muted small">{{ return_detail.notes }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if delivery_detail.condition != return_detail.condition %}
+                                                {% if delivery_detail.condition == 'excellent' and return_detail.condition != 'excellent' or
+                                                   delivery_detail.condition == 'good' and return_detail.condition not in 'excellent,good' or
+                                                   delivery_detail.condition == 'fair' and return_detail.condition in 'poor,damaged' %}
+                                                    <div class="diff-highlight diff-negative">
+                                                        <i class="fas fa-arrow-down"></i>
+                                                        {% trans "تدهور الحالة" %}
+                                                    </div>
+                                                {% elif delivery_detail.condition == 'poor' and return_detail.condition != 'poor,damaged' or
+                                                      delivery_detail.condition == 'fair' and return_detail.condition in 'excellent,good' or
+                                                      delivery_detail.condition == 'damaged' and return_detail.condition != 'damaged' %}
+                                                    <div class="diff-highlight diff-positive">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                        {% trans "تحسن الحالة" %}
+                                                    </div>
+                                                {% endif %}
+                                            {% else %}
+                                                <div class="diff-highlight diff-unchanged">
+                                                    <i class="fas fa-equals"></i>
+                                                    {% trans "لا تغيير" %}
+                                                </div>
+                                            {% endif %}
+
+                                            {% if return_detail.needs_repair %}
+                                            <div class="mt-2">
+                                                <div class="repair-indicator repair-needed">
+                                                    <i class="fas fa-tools me-1"></i> {% trans "يحتاج إصلاح" %}
+                                                </div>
+                                            </div>
+                                            {% endif %}
+
+                                            {% if return_detail.repair_cost %}
+                                            <div class="mt-2">
+                                                <div class="repair-cost">
+                                                    <i class="fas fa-money-bill-wave"></i> {{ return_detail.repair_cost|floatformat:2 }} {% trans "ريال" %}
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endwith %}
+                                    {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ملخص ومجموع التكاليف -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="info-card">
+                <div class="card-header">
+                    <i class="fas fa-file-alt"></i>
+                    {% trans "ملاحظات" %}
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">{% trans "ملاحظات عند التسليم" %}</h6>
+                            <p>{{ delivery_report.notes|default:_('لا توجد ملاحظات') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">{% trans "ملاحظات عند الإعادة" %}</h6>
+                            <p>{{ return_report.notes|default:_('لا توجد ملاحظات') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="info-card">
+                <div class="card-header">
+                    <i class="fas fa-coins"></i>
+                    {% trans "مجموع تكاليف الإصلاح" %}
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted">{% trans "إجمالي تكلفة قطع الغيار" %}</div>
+                        <div class="fw-bold">{{ total_parts_cost|floatformat:2 }} {% trans "ريال" %}</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div class="text-muted">{% trans "إجمالي تكلفة اليد العاملة" %}</div>
+                        <div class="fw-bold">{{ total_labor_cost|floatformat:2 }} {% trans "ريال" %}</div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted fw-bold">{% trans "المجموع الكلي" %}</div>
+                        <div class="fs-4 fw-bold text-primary">{{ total_repair_cost|floatformat:2 }} {% trans "ريال" %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- التوقيعات والختم الرسمي -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="official-report">
+                <h5 class="text-center mb-4">{% trans "تقرير رسمي لحالة السيارة" %}</h5>
+                <p class="text-center">
+                    {% trans "نقر نحن الموقعون أدناه بأن هذا التقرير يعكس الحالة الحقيقية للسيارة عند التسليم والاستلام، وأن جميع المعلومات الواردة فيه صحيحة وكاملة." %}
+                </p>
+
+                <div class="signatures">
+                    <div class="signature-box">
+                        {% if delivery_report.signatures.customer_signature %}
+                        <img src="{{ delivery_report.signatures.customer_signature.signature.url }}" alt="توقيع العميل" height="70">
+                        {% endif %}
+                        <div class="signature-line">{% trans "توقيع العميل" %}</div>
+                        <div class="mt-2">{{ reservation.user.get_full_name }}</div>
+                    </div>
+
+                    <div class="signature-box">
+                        {% if delivery_report.signatures.staff_signature %}
+                        <img src="{{ delivery_report.signatures.staff_signature.signature.url }}" alt="توقيع الشركة" height="70">
+                        {% endif %}
+                        <div class="signature-line">{% trans "توقيع ممثل الشركة" %}</div>
+                        <div class="mt-2">{{ delivery_report.created_by.get_full_name }}</div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <div class="text-muted small">
+                        {% trans "صدر هذا التقرير في" %} {{ return_report.date|date:"d/m/Y H:i" }}
+                    </div>
+                    <div class="text-muted small">
+                        {% trans "رقم مرجعي" %}: CR-{{ reservation.reservation_number }}-{{ return_report.id }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // طباعة التقرير
+        document.querySelector('.print-btn').addEventListener('click', function() {
+            window.print();
+        });
+    });
+</script>
+{% endblock %}

@@ -633,17 +633,121 @@ def car_condition_comparison(request, reservation_id):
     if return_condition < delivery_condition:
         has_damages = True
     
-    context = {
-        'reservation': reservation,
-        'car': car,
-        'delivery_report': delivery_report,
-        'return_report': return_report,
-        'has_damages': has_damages,
-        'current_date': timezone.now()
-    }
+    # التحقق من معلمة format في عنوان URL
+    format_type = request.GET.get('format', 'standard')
     
-    # استخدام النموذج الإبداعي المتقدم القائم على الجدول مع التنسيقات المدمجة
-    template_name = 'admin/car_condition/car_condition_comparison_advanced_direct.html'
+    if format_type == 'technical':
+        # استخدام القالب التقني المحسن
+        template_name = 'admin/car_condition/car_condition_comparison_technical_enhanced.html'
+        
+        # إنشاء قائمة بفئات الفحص وعناصرها مع تجميع البيانات بطريقة أفضل
+        categories = []
+        important_items = set()  # مجموعة العناصر المهمة
+        expensive_items = set() # مجموعة العناصر المكلفة
+        critical_items = set()  # مجموعة العناصر الحساسة
+        
+        # تكوين قاموس لتخزين تفاصيل التقارير بشكل أسرع للوصول
+        delivery_details = {detail.inspection_item_id: detail for detail in CarInspectionDetail.objects.filter(report=delivery_report)}
+        return_details = {detail.inspection_item_id: detail for detail in CarInspectionDetail.objects.filter(report=return_report)}
+        
+        # حساب إجمالي تكاليف الإصلاح
+        total_parts_cost = 0
+        total_labor_cost = 0
+        
+        # الحصول على جميع فئات الفحص النشطة
+        inspection_categories = CarInspectionCategory.objects.filter(is_active=True).order_by('display_order')
+        
+        for category in inspection_categories:
+            category_items = []
+            
+            # الحصول على عناصر الفحص النشطة لهذه الفئة
+            inspection_items = CarInspectionItem.objects.filter(category=category, is_active=True).order_by('display_order')
+            
+            for item in inspection_items:
+                # تحديد العناصر المهمة والمكلفة والحساسة بناءً على خصائصها
+                # مثال: العناصر المتعلقة بالمحرك أو ناقل الحركة تعتبر مهمة ومكلفة
+                item_name_lower = item.name.lower()
+                
+                is_important = False
+                is_expensive = False
+                is_critical = False
+                
+                # تحديد العناصر المهمة
+                important_keywords = ['محرك', 'فرامل', 'نظام التعليق', 'ناقل الحركة', 'توجيه', 'كهرباء رئيسية']
+                for keyword in important_keywords:
+                    if keyword in item_name_lower:
+                        is_important = True
+                        important_items.add(item.id)
+                        break
+                
+                # تحديد العناصر المكلفة
+                expensive_keywords = ['محرك', 'ناقل الحركة', 'نظام التعليق', 'كمبيوتر', 'مكيف', 'رادييتر']
+                for keyword in expensive_keywords:
+                    if keyword in item_name_lower:
+                        is_expensive = True
+                        expensive_items.add(item.id)
+                        break
+                
+                # تحديد العناصر الحساسة (الحرجة)
+                critical_keywords = ['فرامل', 'توجيه', 'وسائد هوائية', 'سلامة', 'أمان']
+                for keyword in critical_keywords:
+                    if keyword in item_name_lower:
+                        is_critical = True
+                        critical_items.add(item.id)
+                        break
+                
+                # إضافة معلومات إضافية للعنصر
+                item.is_important = is_important
+                item.is_expensive = is_expensive
+                item.is_critical = is_critical
+                
+                # حساب تكاليف الإصلاح
+                if item.id in return_details and return_details[item.id].repair_cost:
+                    total_parts_cost += return_details[item.id].repair_cost or 0
+                    
+                if item.id in return_details and return_details[item.id].labor_cost:
+                    total_labor_cost += return_details[item.id].labor_cost or 0
+                
+                category_items.append(item)
+            
+            # إضافة الفئة وعناصرها للقائمة
+            if category_items:  # فقط إضافة الفئات التي تحتوي على عناصر
+                category.items = category_items
+                categories.append(category)
+        
+        # إجمالي تكلفة الإصلاح
+        total_repair_cost = total_parts_cost + total_labor_cost
+        
+        context = {
+            'reservation': reservation,
+            'car': car,
+            'delivery_report': delivery_report,
+            'return_report': return_report,
+            'has_damages': has_damages,
+            'current_date': timezone.now(),
+            'categories': categories,
+            'delivery_details': delivery_details,
+            'return_details': return_details,
+            'important_items': important_items,
+            'expensive_items': expensive_items,
+            'critical_items': critical_items,
+            'total_parts_cost': total_parts_cost,
+            'total_labor_cost': total_labor_cost,
+            'total_repair_cost': total_repair_cost
+        }
+    else:
+        # استخدام النموذج الإبداعي المتقدم القائم على الجدول مع التنسيقات المدمجة
+        template_name = 'admin/car_condition/car_condition_comparison_advanced_direct.html'
+        
+        context = {
+            'reservation': reservation,
+            'car': car,
+            'delivery_report': delivery_report,
+            'return_report': return_report,
+            'has_damages': has_damages,
+            'current_date': timezone.now()
+        }
+    
     return render(request, template_name, context)
 
 

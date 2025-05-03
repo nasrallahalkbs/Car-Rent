@@ -1,1 +1,1 @@
-# تحميل حزمة الـ template tags
+# هذا الملف يحدد أن templatetags هي حزمة (package)
