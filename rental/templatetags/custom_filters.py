@@ -99,6 +99,18 @@ def fuel_to_percent(fuel_level):
     }
     
     return levels.get(fuel_level, 0)
+
+@register.filter(name='div')
+def div(value, arg):
+    """
+    قسمة قيمة على قيمة أخرى
+    
+    Usage: {{ value|div:divisor }}
+    """
+    try:
+        return float(value) / float(arg)
+    except (ValueError, ZeroDivisionError):
+        return 0
     
 @register.filter(name='condition_value')
 def condition_value(condition):
