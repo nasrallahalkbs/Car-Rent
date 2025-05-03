@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.openssh
     pkgs.iproute2
     pkgs.gettext
     pkgs.zlib
