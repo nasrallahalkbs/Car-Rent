@@ -11,7 +11,21 @@
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">{% trans "تفاصيل تقرير حالة السيارة" %} #{{ report.id }}</h5>
-                <div>
+                <div class="d-flex gap-2">
+                    {% if report.reservation_id and report.reservation_id in comparable_reservations %}
+                    <div class="dropdown">
+                        <button class="btn btn-success dropdown-toggle" type="button" id="compareDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-exchange-alt me-1"></i> {% trans "مقارنة حالة السيارة" %}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="compareDropdown">
+                            <li><a class="dropdown-item" href="{% url 'car_condition_comparison' report.reservation_id %}">{% trans 'عرض المقارنة العادي' %}</a></li>
+                            <li><a class="dropdown-item" href="{% url 'car_condition_comparison' report.reservation_id %}?format=technical">{% trans 'عرض المقارنة التقني المحسن' %}</a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'car_condition_edit' report.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> {% trans "تعديل التقرير" %}
+                    </a>
                     <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-1"></i> {% trans "العودة للقائمة" %}
                     </a>
