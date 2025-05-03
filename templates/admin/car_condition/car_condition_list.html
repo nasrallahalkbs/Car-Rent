@@ -147,9 +147,15 @@
                                         <i class="fas fa-trash"></i>
                                     </a>
                                     {% if report.reservation_id in comparable_reservations %}
-                                    <a href="{% url 'car_condition_comparison' report.reservation_id %}" class="btn btn-sm btn-success" title="{% trans 'مقارنة حالة السيارة' %}">
-                                        <i class="fas fa-exchange-alt"></i>
-                                    </a>
+                                    <div class="dropdown d-inline">
+                                        <button class="btn btn-sm btn-success dropdown-toggle" type="button" id="compareDropdown{{ report.id }}" data-bs-toggle="dropdown" aria-expanded="false" title="{% trans 'مقارنة حالة السيارة' %}">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="compareDropdown{{ report.id }}">
+                                            <li><a class="dropdown-item" href="{% url 'car_condition_comparison' report.reservation_id %}">{% trans 'عرض المقارنة العادي' %}</a></li>
+                                            <li><a class="dropdown-item" href="{% url 'car_condition_comparison' report.reservation_id %}?format=technical">{% trans 'عرض المقارنة التقني المحسن' %}</a></li>
+                                        </ul>
+                                    </div>
                                     {% endif %}
                                 </div>
                             </td>
@@ -185,6 +191,19 @@
                                 <a href="{% url 'car_condition_statistics' %}" class="btn btn-sm btn-info">
                                     <i class="fas fa-chart-bar me-1"></i> {% trans "الإحصائيات" %}
                                 </a>
+                                <div class="dropdown d-inline">
+                                    <button class="btn btn-sm btn-success dropdown-toggle" type="button" id="compareToolsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-exchange-alt me-1"></i> {% trans "أدوات المقارنة" %}
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="compareToolsDropdown">
+                                        <li><span class="dropdown-header">{% trans "نماذج المقارنة" %}</span></li>
+                                        <li><a class="dropdown-item" href="{% url 'car_condition_list' %}?show_comparison=1">{% trans "عرض الحجوزات القابلة للمقارنة" %}</a></li>
+                                        <li><div class="dropdown-divider"></div></li>
+                                        <li><span class="dropdown-header">{% trans "النماذج المتاحة" %}</span></li>
+                                        <li><a class="dropdown-item" href="#" onclick="showTemplateInfo('standard')">{% trans "نموذج المقارنة القياسي" %}</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="showTemplateInfo('technical')">{% trans "نموذج المقارنة التقني المحسن" %}</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -201,4 +220,73 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- نافذة معلومات قوالب المقارنة -->
+<div class="modal fade" id="templateInfoModal" tabindex="-1" aria-labelledby="templateInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="templateInfoModalLabel">{% trans "معلومات النموذج" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="templateInfoBody">
+                <!-- سيتم تحديث المحتوى ديناميكياً -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إغلاق" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTemplateInfo(templateType) {
+        const modalBody = document.getElementById('templateInfoBody');
+        const modalTitle = document.getElementById('templateInfoModalLabel');
+        let title = '';
+        let content = '';
+        
+        // تحديد العنوان والمحتوى حسب نوع النموذج
+        if (templateType === 'standard') {
+            title = '{% trans "نموذج المقارنة القياسي" %}';
+            content = `
+                <div class="p-3">
+                    <p>{% trans "نموذج المقارنة القياسي يعرض:" %}</p>
+                    <ul>
+                        <li>{% trans "معلومات السيارة والحجز الأساسية" %}</li>
+                        <li>{% trans "مقارنة المسافة المقطوعة ومستوى الوقود" %}</li>
+                        <li>{% trans "مقارنة الحالة العامة للسيارة" %}</li>
+                        <li>{% trans "قائمة بالعناصر التي تم فحصها" %}</li>
+                    </ul>
+                    <p class="text-muted">{% trans "هذا النموذج مناسب للاستخدام اليومي وعرض المعلومات الأساسية." %}</p>
+                </div>
+            `;
+        } else if (templateType === 'technical') {
+            title = '{% trans "نموذج المقارنة التقني المحسن" %}';
+            content = `
+                <div class="p-3">
+                    <p>{% trans "نموذج المقارنة التقني المحسن يعرض:" %}</p>
+                    <ul>
+                        <li>{% trans "جدول تقني متطور لمقارنة العناصر" %}</li>
+                        <li>{% trans "تمييز العناصر المهمة والمكلفة" %}</li>
+                        <li>{% trans "تفاصيل تكاليف الإصلاح لكل عنصر" %}</li>
+                        <li>{% trans "مؤشرات مرئية لفهم الاختلافات" %}</li>
+                        <li>{% trans "إجمالي تكاليف الإصلاح" %}</li>
+                    </ul>
+                    <p class="text-muted">{% trans "هذا النموذج مناسب للفنيين ومديري الصيانة وللتقارير الرسمية." %}</p>
+                </div>
+            `;
+        }
+        
+        // تحديث محتوى النافذة المنبثقة
+        modalTitle.textContent = title;
+        modalBody.innerHTML = content;
+        
+        // عرض النافذة المنبثقة
+        const modal = new bootstrap.Modal(document.getElementById('templateInfoModal'));
+        modal.show();
+    }
+</script>
 {% endblock %}
