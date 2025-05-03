@@ -647,8 +647,15 @@ def car_condition_comparison(request, reservation_id):
     if return_condition < delivery_condition:
         has_damages = True
     
-    # استخدام القالب الجدولي الرسمي لعرض المقارنة
-    template_name = 'admin/car_condition/car_condition_comparison_table.html'
+    # التحقق من وجود معلمة تنسيق في الطلب لتحديد نوع العرض
+    format_type = request.GET.get('format', 'table')
+    
+    # تحديد القالب المناسب بناءً على نوع العرض
+    if format_type == 'technical':
+        template_name = 'admin/car_condition/car_condition_comparison_technical.html'
+    else:
+        # استخدام القالب الجدولي الرسمي لعرض المقارنة
+        template_name = 'admin/car_condition/car_condition_comparison_table.html'
     
     # إنشاء قائمة بفئات الفحص وعناصرها مع تجميع البيانات بطريقة أفضل
     categories = []
