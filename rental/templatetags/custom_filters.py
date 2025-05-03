@@ -82,6 +82,23 @@ def fuel_level_to_percent(level):
     }
     
     return fuel_levels.get(level, 0)
+
+@register.filter(name='fuel_to_percent')
+def fuel_to_percent(fuel_level):
+    """
+    تحويل مستوى الوقود إلى نسبة مئوية (للاستخدام في النموذج الرسمي)
+    
+    Usage: {{ fuel_level|fuel_to_percent }}
+    """
+    levels = {
+        'empty': 0,
+        'quarter': 25,
+        'half': 50, 
+        'three_quarters': 75,
+        'full': 100
+    }
+    
+    return levels.get(fuel_level, 0)
     
 @register.filter(name='condition_value')
 def condition_value(condition):
