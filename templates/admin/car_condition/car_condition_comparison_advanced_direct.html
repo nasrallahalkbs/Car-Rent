@@ -854,8 +854,124 @@
                             </div>
                             {% endif %}
                         {% endif %}
+
+                        {% if return_report.defect_cause %}
+                        <div class="mt-2">
+                            <strong>{% trans "سبب العطل:" %}</strong>
+                            <p class="mb-0 mt-1 p-2 bg-light rounded">{{ return_report.defect_cause }}</p>
+                        </div>
+                        {% endif %}
                     </td>
                 </tr>
+                
+                <!-- تفاصيل الإصلاح -->
+                {% if return_report.inspection_details.filter(needs_repair=True).exists or delivery_report.inspection_details.filter(needs_repair=True).exists %}
+                <tr>
+                    <td>
+                        <div class="feature-name">
+                            <i class="fas fa-tools"></i>
+                            {% trans "تفاصيل الإصلاح" %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if delivery_report.inspection_details.filter(needs_repair=True).exists %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "العنصر" %}</th>
+                                        <th>{% trans "التكلفة" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for detail in delivery_report.inspection_details.filter(needs_repair=True) %}
+                                    <tr>
+                                        <td>{{ detail.inspection_item.name }}</td>
+                                        <td>{{ detail.total_repair_cost|default:"0.00" }} {% trans "ريال" %}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <strong>{% trans "الإجمالي:" %}</strong> 
+                            {{ delivery_report.inspection_details.filter(needs_repair=True)|total_repair_costs }} {% trans "ريال" %}
+                        </div>
+                        {% else %}
+                        <span class="text-muted">{% trans "لا توجد عناصر تحتاج إصلاح" %}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if return_report.inspection_details.filter(needs_repair=True).exists %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "العنصر" %}</th>
+                                        <th>{% trans "التكلفة" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for detail in return_report.inspection_details.filter(needs_repair=True) %}
+                                    <tr>
+                                        <td>{{ detail.inspection_item.name }}</td>
+                                        <td>{{ detail.total_repair_cost|default:"0.00" }} {% trans "ريال" %}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <strong>{% trans "الإجمالي:" %}</strong> 
+                            {{ return_report.inspection_details.filter(needs_repair=True)|total_repair_costs }} {% trans "ريال" %}
+                        </div>
+                        {% else %}
+                        <span class="text-muted">{% trans "لا توجد عناصر تحتاج إصلاح" %}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% with delivery_count=delivery_report.inspection_details.filter(needs_repair=True).count return_count=return_report.inspection_details.filter(needs_repair=True).count %}
+                            {% with delivery_cost=delivery_report.inspection_details.filter(needs_repair=True)|total_repair_costs return_cost=return_report.inspection_details.filter(needs_repair=True)|total_repair_costs %}
+                                {% if return_count > delivery_count %}
+                                <div class="change-indicator change-up">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    {% trans "زيادة في عدد العناصر التي تحتاج إصلاح:" %}
+                                    <span class="badge badge-danger ms-2">
+                                        +{{ return_count|sub:delivery_count }} {% trans "عنصر" %}
+                                    </span>
+                                </div>
+                                {% elif return_count < delivery_count %}
+                                <div class="change-indicator change-down">
+                                    <i class="fas fa-check-circle"></i>
+                                    {% trans "انخفاض في عدد العناصر التي تحتاج إصلاح:" %}
+                                    <span class="badge badge-success ms-2">
+                                        -{{ delivery_count|sub:return_count }} {% trans "عنصر" %}
+                                    </span>
+                                </div>
+                                {% endif %}
+
+                                {% if return_cost > delivery_cost %}
+                                <div class="change-indicator change-up mt-2">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    {% trans "زيادة في تكلفة الإصلاح التفصيلية:" %}
+                                    <span class="badge badge-danger ms-2">
+                                        +{{ return_cost|sub:delivery_cost }} {% trans "ريال" %}
+                                    </span>
+                                </div>
+                                {% elif return_cost < delivery_cost %}
+                                <div class="change-indicator change-down mt-2">
+                                    <i class="fas fa-check-circle"></i>
+                                    {% trans "انخفاض في تكلفة الإصلاح التفصيلية:" %}
+                                    <span class="badge badge-success ms-2">
+                                        -{{ delivery_cost|sub:return_cost }} {% trans "ريال" %}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                    </td>
+                </tr>
+                {% endif %}
 
                 <!-- نوع الفحص -->
                 <tr>
