@@ -642,7 +642,17 @@ def car_condition_comparison(request, reservation_id):
         'current_date': timezone.now()
     }
     
-    return render(request, 'admin/car_condition/car_condition_comparison_premium.html', context)
+    # استخدام القالب المحدد بناءً على إعدادات أو تفضيلات النظام
+    template_name = 'admin/car_condition/car_condition_comparison_enhanced.html'
+    
+    # يمكن تغيير القالب بناء على معلمة في عنوان URL
+    view_type = request.GET.get('view', 'enhanced')
+    if view_type == 'premium':
+        template_name = 'admin/car_condition/car_condition_comparison_premium.html'
+    elif view_type == 'basic':
+        template_name = 'admin/car_condition/car_condition_comparison.html'
+    
+    return render(request, template_name, context)
 
 
 # وظائف العرض الجديدة لنظام توثيق حالة السيارة المتقدم
