@@ -642,8 +642,8 @@ def car_condition_comparison(request, reservation_id):
         'current_date': timezone.now()
     }
     
-    # استخدام النموذج الإبداعي المتقدم القائم على الجدول
-    template_name = 'admin/car_condition/car_condition_comparison_advanced.html'
+    # استخدام النموذج الإبداعي المتقدم القائم على الجدول مع التنسيقات المدمجة
+    template_name = 'admin/car_condition/car_condition_comparison_advanced_direct.html'
     return render(request, template_name, context)
 
 
