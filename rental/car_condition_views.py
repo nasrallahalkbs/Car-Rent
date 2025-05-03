@@ -653,6 +653,8 @@ def car_condition_comparison(request, reservation_id):
     # تحديد القالب المناسب بناءً على نوع العرض
     if format_type == 'technical':
         template_name = 'admin/car_condition/car_condition_comparison_technical.html'
+    elif format_type == 'enhanced':
+        template_name = 'admin/car_condition/car_condition_comparison_enhanced.html'
     else:
         # استخدام القالب الجدولي الرسمي لعرض المقارنة
         template_name = 'admin/car_condition/car_condition_comparison_table.html'
