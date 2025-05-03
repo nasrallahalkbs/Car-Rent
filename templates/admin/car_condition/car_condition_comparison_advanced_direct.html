@@ -874,64 +874,172 @@
                         </div>
                     </td>
                     <td>
-                        {% if delivery_report.inspection_details.filter(needs_repair=True).exists %}
+                        {% if delivery_report.inspection_details.all|needs_repair_count > 0 %}
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered">
                                 <thead>
                                     <tr>
                                         <th>{% trans "العنصر" %}</th>
-                                        <th>{% trans "التكلفة" %}</th>
+                                        <th>{% trans "قطع الغيار" %}</th>
+                                        <th>{% trans "الأيدي العاملة" %}</th>
+                                        <th>{% trans "الإجمالي" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                {% for detail in delivery_report.inspection_details.filter(needs_repair=True) %}
+                                {% for detail in delivery_report.inspection_details.all %}
+                                    {% if detail.needs_repair %}
                                     <tr>
                                         <td>{{ detail.inspection_item.name }}</td>
+                                        <td>{{ detail.repair_cost|default:"0.00" }} {% trans "ريال" %}</td>
+                                        <td>{{ detail.labor_cost|default:"0.00" }} {% trans "ريال" %}</td>
                                         <td>{{ detail.total_repair_cost|default:"0.00" }} {% trans "ريال" %}</td>
                                     </tr>
+                                    {% endif %}
                                 {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                         <div>
                             <strong>{% trans "الإجمالي:" %}</strong> 
-                            {{ delivery_report.inspection_details.filter(needs_repair=True)|total_repair_costs }} {% trans "ريال" %}
+                            {{ delivery_report.inspection_details.all|total_repair_costs }} {% trans "ريال" %}
                         </div>
+                        
+                        {% for detail in delivery_report.inspection_details.all %}
+                            {% if detail.needs_repair and detail.repair_description %}
+                            <div class="mt-2 border-top pt-2">
+                                <strong>{% trans "وصف إصلاح" %} {{ detail.inspection_item.name }}:</strong>
+                                <p class="mb-1 mt-1 small">{{ detail.repair_description }}</p>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% for detail in delivery_report.inspection_details.all %}
+                            {% if detail.needs_repair and detail.repair_parts %}
+                            <div class="mt-2 border-top pt-2">
+                                <strong>{% trans "قطع غيار" %} {{ detail.inspection_item.name }}:</strong>
+                                <p class="mb-1 mt-1 small">{{ detail.repair_parts }}</p>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% for detail in delivery_report.inspection_details.all %}
+                            {% if detail.needs_repair and detail.repair_workshop %}
+                            <div class="mt-2 border-top pt-2">
+                                <strong>{% trans "ورشة إصلاح" %} {{ detail.inspection_item.name }}:</strong>
+                                <p class="mb-1 mt-1 small">{{ detail.repair_workshop }}</p>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% for detail in delivery_report.inspection_details.all %}
+                            {% if detail.needs_repair and detail.repair_status != 'not_needed' %}
+                            <div class="mt-2">
+                                <strong>{% trans "حالة إصلاح" %} {{ detail.inspection_item.name }}:</strong>
+                                <span class="badge 
+                                    {% if detail.repair_status == 'needed' %}badge-danger
+                                    {% elif detail.repair_status == 'in_progress' %}badge-warning
+                                    {% elif detail.repair_status == 'completed' %}badge-success
+                                    {% else %}badge-secondary{% endif %}">
+                                    {{ detail.get_repair_status_display }}
+                                </span>
+                                {% if detail.repair_date %}
+                                <span class="small text-muted ms-2">
+                                    {{ detail.repair_date|date:"Y-m-d" }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        
                         {% else %}
                         <span class="text-muted">{% trans "لا توجد عناصر تحتاج إصلاح" %}</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if return_report.inspection_details.filter(needs_repair=True).exists %}
+                        {% if return_report.inspection_details.all|needs_repair_count > 0 %}
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered">
                                 <thead>
                                     <tr>
                                         <th>{% trans "العنصر" %}</th>
-                                        <th>{% trans "التكلفة" %}</th>
+                                        <th>{% trans "قطع الغيار" %}</th>
+                                        <th>{% trans "الأيدي العاملة" %}</th>
+                                        <th>{% trans "الإجمالي" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                {% for detail in return_report.inspection_details.filter(needs_repair=True) %}
+                                {% for detail in return_report.inspection_details.all %}
+                                    {% if detail.needs_repair %}
                                     <tr>
                                         <td>{{ detail.inspection_item.name }}</td>
+                                        <td>{{ detail.repair_cost|default:"0.00" }} {% trans "ريال" %}</td>
+                                        <td>{{ detail.labor_cost|default:"0.00" }} {% trans "ريال" %}</td>
                                         <td>{{ detail.total_repair_cost|default:"0.00" }} {% trans "ريال" %}</td>
                                     </tr>
+                                    {% endif %}
                                 {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                         <div>
                             <strong>{% trans "الإجمالي:" %}</strong> 
-                            {{ return_report.inspection_details.filter(needs_repair=True)|total_repair_costs }} {% trans "ريال" %}
+                            {{ return_report.inspection_details.all|total_repair_costs }} {% trans "ريال" %}
                         </div>
+                        
+                        {% for detail in return_report.inspection_details.all %}
+                            {% if detail.needs_repair and detail.repair_description %}
+                            <div class="mt-2 border-top pt-2">
+                                <strong>{% trans "وصف إصلاح" %} {{ detail.inspection_item.name }}:</strong>
+                                <p class="mb-1 mt-1 small">{{ detail.repair_description }}</p>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% for detail in return_report.inspection_details.all %}
+                            {% if detail.needs_repair and detail.repair_parts %}
+                            <div class="mt-2 border-top pt-2">
+                                <strong>{% trans "قطع غيار" %} {{ detail.inspection_item.name }}:</strong>
+                                <p class="mb-1 mt-1 small">{{ detail.repair_parts }}</p>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% for detail in return_report.inspection_details.all %}
+                            {% if detail.needs_repair and detail.repair_workshop %}
+                            <div class="mt-2 border-top pt-2">
+                                <strong>{% trans "ورشة إصلاح" %} {{ detail.inspection_item.name }}:</strong>
+                                <p class="mb-1 mt-1 small">{{ detail.repair_workshop }}</p>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% for detail in return_report.inspection_details.all %}
+                            {% if detail.needs_repair and detail.repair_status != 'not_needed' %}
+                            <div class="mt-2">
+                                <strong>{% trans "حالة إصلاح" %} {{ detail.inspection_item.name }}:</strong>
+                                <span class="badge 
+                                    {% if detail.repair_status == 'needed' %}badge-danger
+                                    {% elif detail.repair_status == 'in_progress' %}badge-warning
+                                    {% elif detail.repair_status == 'completed' %}badge-success
+                                    {% else %}badge-secondary{% endif %}">
+                                    {{ detail.get_repair_status_display }}
+                                </span>
+                                {% if detail.repair_date %}
+                                <span class="small text-muted ms-2">
+                                    {{ detail.repair_date|date:"Y-m-d" }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        
                         {% else %}
                         <span class="text-muted">{% trans "لا توجد عناصر تحتاج إصلاح" %}</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% with delivery_count=delivery_report.inspection_details.filter(needs_repair=True).count return_count=return_report.inspection_details.filter(needs_repair=True).count %}
-                            {% with delivery_cost=delivery_report.inspection_details.filter(needs_repair=True)|total_repair_costs return_cost=return_report.inspection_details.filter(needs_repair=True)|total_repair_costs %}
+                        {% with delivery_count=delivery_report.inspection_details.all|needs_repair_count return_count=return_report.inspection_details.all|needs_repair_count %}
+                            {% with delivery_cost=delivery_report.inspection_details.all|total_repair_costs return_cost=return_report.inspection_details.all|total_repair_costs %}
                                 {% if return_count > delivery_count %}
                                 <div class="change-indicator change-up">
                                     <i class="fas fa-exclamation-triangle"></i>
@@ -967,6 +1075,36 @@
                                     </span>
                                 </div>
                                 {% endif %}
+                                
+                                <!-- عناصر مشتركة بينهما -->
+                                {% for detail_return in return_report.inspection_details.all %}
+                                    {% if detail_return.needs_repair %}
+                                        {% with detail_delivery=delivery_report.inspection_details.all|filter_by_item:detail_return.inspection_item.id %}
+                                            {% if detail_delivery and detail_delivery.needs_repair %}
+                                                {% if detail_return.repair_status != detail_delivery.repair_status %}
+                                                <div class="mt-3 p-2 bg-light rounded">
+                                                    <strong>{{ detail_return.inspection_item.name }}:</strong>
+                                                    <div class="d-flex mt-1">
+                                                        <div class="me-2">
+                                                            <span class="badge {% if detail_delivery.repair_status == 'needed' %}badge-danger{% elif detail_delivery.repair_status == 'in_progress' %}badge-warning{% elif detail_delivery.repair_status == 'completed' %}badge-success{% else %}badge-secondary{% endif %}">
+                                                                {{ detail_delivery.get_repair_status_display }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="mx-2">
+                                                            <i class="fas fa-long-arrow-alt-right"></i>
+                                                        </div>
+                                                        <div>
+                                                            <span class="badge {% if detail_return.repair_status == 'needed' %}badge-danger{% elif detail_return.repair_status == 'in_progress' %}badge-warning{% elif detail_return.repair_status == 'completed' %}badge-success{% else %}badge-secondary{% endif %}">
+                                                                {{ detail_return.get_repair_status_display }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endfor %}
                             {% endwith %}
                         {% endwith %}
                     </td>
@@ -982,22 +1120,84 @@
                         </div>
                     </td>
                     <td>
-                        <span class="badge 
-                            {% if delivery_report.inspection_type == 'regular' %}badge-info
-                            {% elif delivery_report.inspection_type == 'detailed' %}badge-success
-                            {% elif delivery_report.inspection_type == 'special' %}badge-warning
-                            {% else %}badge-neutral{% endif %}">
-                            {{ delivery_report.get_inspection_type_display|default:"فحص عادي" }}
-                        </span>
+                        <div>
+                            <span class="badge 
+                                {% if delivery_report.inspection_type == 'regular' %}badge-info
+                                {% elif delivery_report.inspection_type == 'detailed' %}badge-success
+                                {% elif delivery_report.inspection_type == 'special' %}badge-warning
+                                {% else %}badge-neutral{% endif %}">
+                                {{ delivery_report.get_inspection_type_display|default:"فحص عادي" }}
+                            </span>
+                            
+                            {% if delivery_report.is_electronic_inspection %}
+                            <span class="badge badge-primary ms-1">
+                                <i class="fas fa-microchip me-1"></i>
+                                {% trans "فحص إلكتروني" %}
+                            </span>
+                            
+                            {% if delivery_report.electronic_report_pdf %}
+                            <div class="mt-2">
+                                <a href="{{ delivery_report.electronic_report_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-file-pdf me-1"></i>
+                                    {% trans "عرض التقرير الإلكتروني" %}
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% endif %}
+                            
+                            {% if delivery_report.maintenance_type %}
+                            <div class="mt-2">
+                                <span class="badge 
+                                    {% if delivery_report.maintenance_type == 'regular' %}badge-info
+                                    {% elif delivery_report.maintenance_type == 'repair' %}badge-warning
+                                    {% elif delivery_report.maintenance_type == 'inspection' %}badge-primary
+                                    {% else %}badge-secondary{% endif %}">
+                                    <i class="fas fa-tools me-1"></i>
+                                    {{ delivery_report.get_maintenance_type_display }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
                     </td>
                     <td>
-                        <span class="badge 
-                            {% if return_report.inspection_type == 'regular' %}badge-info
-                            {% elif return_report.inspection_type == 'detailed' %}badge-success
-                            {% elif return_report.inspection_type == 'special' %}badge-warning
-                            {% else %}badge-neutral{% endif %}">
-                            {{ return_report.get_inspection_type_display|default:"فحص عادي" }}
-                        </span>
+                        <div>
+                            <span class="badge 
+                                {% if return_report.inspection_type == 'regular' %}badge-info
+                                {% elif return_report.inspection_type == 'detailed' %}badge-success
+                                {% elif return_report.inspection_type == 'special' %}badge-warning
+                                {% else %}badge-neutral{% endif %}">
+                                {{ return_report.get_inspection_type_display|default:"فحص عادي" }}
+                            </span>
+                            
+                            {% if return_report.is_electronic_inspection %}
+                            <span class="badge badge-primary ms-1">
+                                <i class="fas fa-microchip me-1"></i>
+                                {% trans "فحص إلكتروني" %}
+                            </span>
+                            
+                            {% if return_report.electronic_report_pdf %}
+                            <div class="mt-2">
+                                <a href="{{ return_report.electronic_report_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-file-pdf me-1"></i>
+                                    {% trans "عرض التقرير الإلكتروني" %}
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% endif %}
+                            
+                            {% if return_report.maintenance_type %}
+                            <div class="mt-2">
+                                <span class="badge 
+                                    {% if return_report.maintenance_type == 'regular' %}badge-info
+                                    {% elif return_report.maintenance_type == 'repair' %}badge-warning
+                                    {% elif return_report.maintenance_type == 'inspection' %}badge-primary
+                                    {% else %}badge-secondary{% endif %}">
+                                    <i class="fas fa-tools me-1"></i>
+                                    {{ return_report.get_maintenance_type_display }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
                     </td>
                     <td>
                         {% if delivery_report.inspection_type != return_report.inspection_type %}
@@ -1009,6 +1209,20 @@
                         <div class="change-indicator change-neutral">
                             <i class="fas fa-check-circle"></i>
                             {% trans "نوع الفحص متطابق في التقريرين" %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if delivery_report.is_electronic_inspection != return_report.is_electronic_inspection %}
+                        <div class="change-indicator change-neutral mt-2">
+                            <i class="fas fa-info-circle"></i>
+                            {% trans "اختلاف في طريقة الفحص (يدوي/إلكتروني)" %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if delivery_report.maintenance_type != return_report.maintenance_type and delivery_report.maintenance_type and return_report.maintenance_type %}
+                        <div class="change-indicator change-neutral mt-2">
+                            <i class="fas fa-info-circle"></i>
+                            {% trans "اختلاف في نوع الصيانة بين التقريرين" %}
                         </div>
                         {% endif %}
                     </td>
