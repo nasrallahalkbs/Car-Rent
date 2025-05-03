@@ -651,8 +651,8 @@ def car_condition_comparison(request, reservation_id):
     format_type = request.GET.get('format', 'standard')
     
     if format_type == 'technical':
-        # استخدام القالب التقني المحسن
-        template_name = 'admin/car_condition/car_condition_comparison_technical_enhanced.html'
+        # استخدام القالب التقني المحسن بتنسيق الجدول الرسمي
+        template_name = 'admin/car_condition/car_condition_comparison_table.html'
         
         # إنشاء قائمة بفئات الفحص وعناصرها مع تجميع البيانات بطريقة أفضل
         categories = []
