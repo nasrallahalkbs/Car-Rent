@@ -440,26 +440,40 @@ def car_condition_detail(request, report_id):
         'inspection_item__category__display_order', 'inspection_item__display_order'
     )
     
+    # الحصول على قائمة الحجوزات التي يمكن مقارنتها
+    comparable_reservations = []
+    if report.reservation_id:
+        # البحث عن الحجوزات التي لها كل من تقرير تسليم وتقرير استلام
+        reservation_ids_with_delivery = set(CarConditionReport.objects.filter(
+            report_type='delivery').values_list('reservation_id', flat=True))
+        reservation_ids_with_return = set(CarConditionReport.objects.filter(
+            report_type='return').values_list('reservation_id', flat=True))
+        
+        # الحجوزات التي لها كلا النوعين من التقارير
+        comparable_reservations = list(reservation_ids_with_delivery.intersection(reservation_ids_with_return))
+    
     # تنظيم تفاصيل الفحص حسب الفئة
     inspection_categories = {}
-    for detail in inspection_details:
-        # تخطي عناصر "الهيكل الخارجي" لأننا نعرضها كصور
-        if detail.inspection_item.category.name == 'الهيكل الخارجي':
-            continue
-        
-        category = detail.inspection_item.category
-        if category.id not in inspection_categories:
-            inspection_categories[category.id] = {
-                'name': category.name,
-                'items': []
-            }
-        inspection_categories[category.id]['items'].append(detail)
+    if inspection_details:
+        for detail in inspection_details:
+            # تخطي عناصر "الهيكل الخارجي" لأننا نعرضها كصور
+            if detail.inspection_item.category.name == 'الهيكل الخارجي':
+                continue
+            
+            category = detail.inspection_item.category
+            if category.id not in inspection_categories:
+                inspection_categories[category.id] = {
+                    'name': category.name,
+                    'items': []
+                }
+            inspection_categories[category.id]['items'].append(detail)
     
     context = {
         'report': report,
         'related_reports': related_reports,
         'inspection_categories': inspection_categories,
         'exterior_images': exterior_images,
+        'comparable_reservations': comparable_reservations,
     }
     
     return render(request, 'admin/car_condition/car_condition_detail.html', context)
