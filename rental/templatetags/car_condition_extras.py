@@ -12,3 +12,14 @@ def get_item(dictionary, key):
         return dictionary.get(key)
     except (KeyError, AttributeError):
         return None
+
+@register.filter
+def subtract(value, arg):
+    """
+    مرشح قالب لحساب الفرق بين قيمتين
+    مثال الاستخدام: {{ value|subtract:arg }}
+    """
+    try:
+        return int(value) - int(arg)
+    except (ValueError, TypeError):
+        return 0
