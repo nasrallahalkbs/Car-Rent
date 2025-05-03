@@ -1,6 +1,10 @@
 {pkgs}: {
   deps = [
+<<<<<<< HEAD
     pkgs.openssh
+=======
+    pkgs.cairo
+>>>>>>> 2ffbf25 (Improved receipt downloads)
     pkgs.pango
     pkgs.harfbuzz
     pkgs.glib
