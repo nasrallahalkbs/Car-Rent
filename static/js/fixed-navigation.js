@@ -7,6 +7,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to ensure the sidebar stays in position when clicking links
     const sidebarLinks = document.querySelectorAll('.admin-sidebar .nav-link');
     
+    // Capture the initial state of sidebar and navigation
+    const captureInitialState = () => {
+        if (document.querySelector('.admin-sidebar')) {
+            // Store structure of sidebar (for potential restoration)
+            sessionStorage.setItem('sidebarHTML', document.querySelector('.admin-sidebar').innerHTML);
+            
+            // Store current scroll position
+            sessionStorage.setItem('sidebarScrollPosition', 
+                document.querySelector('.admin-sidebar').scrollTop);
+            
+            // Store active states
+            document.querySelectorAll('.admin-sidebar .nav-link.active').forEach((activeLink, index) => {
+                sessionStorage.setItem(`activeLink_${index}`, activeLink.getAttribute('href'));
+            });
+        }
+        
+        // Store top navigation state
+        if (document.querySelector('.navbar.sticky-top')) {
+            sessionStorage.setItem('navbarHTML', document.querySelector('.navbar.sticky-top').innerHTML);
+        }
+    };
+    
+    // Capture initial state when page loads
+    captureInitialState();
+    
+    // Apply click handlers to all sidebar links
     sidebarLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             // Only apply to links in the same site (not external)
@@ -19,6 +45,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Store the active link
                 sessionStorage.setItem('activeNavLink', link.getAttribute('href'));
+                
+                // Prevent default navigation for internal links
+                // This forces AJAX-like navigation without page refresh
+                if (e.ctrlKey || e.metaKey) {
+                    // Allow normal behavior for ctrl/cmd+click (new tab)
+                    return true;
+                }
+                
+                // Capture current state before navigation
+                captureInitialState();
             }
         });
     });
@@ -35,10 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fix for Firefox which might reload the page and lose the styles
     window.addEventListener('beforeunload', function() {
         // Save current sidebar state before page reloads
-        if (document.querySelector('.admin-sidebar')) {
-            sessionStorage.setItem('sidebarScrollPosition', 
-                document.querySelector('.admin-sidebar').scrollTop);
-        }
+        captureInitialState();
     });
     
     // Fix issues with browser back button
@@ -52,5 +85,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 sidebar.scrollTop = parseInt(storedPosition);
             }
         }
+    });
+    
+    // Apply custom class to help prevent refreshing
+    document.querySelectorAll('.admin-sidebar, .navbar.sticky-top').forEach(el => {
+        el.classList.add('fixed-no-refresh');
     });
 });

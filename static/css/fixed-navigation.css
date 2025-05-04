@@ -13,6 +13,9 @@
     bottom: 0;
     transition: none !important; /* Prevent transition animations */
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    will-change: transform; /* Hardware acceleration */
+    backface-visibility: hidden; /* Prevent flickering */
+    -webkit-font-smoothing: subpixel-antialiased;
 }
 
 /* Fixed Top Navigation */
@@ -23,6 +26,8 @@
     z-index: 1049; /* Below sidebar but above content */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     transition: none !important; /* Prevent transition animations */
+    will-change: transform; /* Hardware acceleration */
+    backface-visibility: hidden; /* Prevent flickering */
 }
 
 /* Adjust content positioning to account for fixed navbar */
@@ -38,6 +43,27 @@
     animation: none !important;
 }
 
+/* Disabling hover effects that might cause repainting */
+.admin-sidebar .nav-link:hover {
+    transition: none !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Forcing hardware acceleration for smoother rendering */
+.admin-sidebar,
+.navbar.sticky-top,
+.admin-content {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
+
+/* Fix for sidebar links to prevent jittering */
+.admin-sidebar .nav-link {
+    position: relative;
+    z-index: 1;
+    backface-visibility: hidden;
+}
+
 /* Ensuring content doesn't overlap with fixed elements */
 @media (max-width: 992px) {
     .admin-content {
@@ -46,4 +72,23 @@
         margin-right: 0;
         padding-top: 56px; /* Adjust based on navbar height */
     }
+}
+
+/* Fix for Firefox which sometimes needs explicit height definition */
+html, body {
+    height: 100%;
+    overflow-x: hidden;
+}
+
+/* Special class for elements that should never refresh */
+.fixed-no-refresh {
+    will-change: transform, position;
+    position: fixed !important;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+    -webkit-font-smoothing: antialiased;
 }
