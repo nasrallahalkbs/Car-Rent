@@ -37,12 +37,9 @@ class CustomerGuaranteeForm(forms.ModelForm):
             'placeholder': _('أدخل فئة العهدة مثل: وثيقة تأمين شامل، رخصة قيادة دولية، إلخ')
         })
         
-        # ملء حقل اسم العهدة تلقائيًا عند اختيار النوع والحجز
-        self.fields['guarantee_type'].widget.attrs.update({
-            'onchange': 'updateGuaranteeName()'
-        })
+        # تحديث سلوك الحقول عند التغيير
         self.fields['reservation'].widget.attrs.update({
-            'onchange': 'updateGuaranteeName(); updateReservationData()'
+            'onchange': 'updateReservationData()'
         })
     
     def clean(self):
