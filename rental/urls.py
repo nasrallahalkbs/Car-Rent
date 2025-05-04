@@ -17,6 +17,7 @@ from .admin_views_windows import admin_archive_windows_explorer
 from .windows_explorer_view import admin_archive_windows
 from .csrf_debug import csrf_debug_view, csrf_debug_page
 from . import car_condition_views
+from . import views_custody
 
 urlpatterns = [
     path('ar/dashboard/archive/direct_upload/', direct_sql_upload_document, name='direct_sql_upload_document'),
@@ -156,6 +157,16 @@ urlpatterns = [
     path('dashboard/car-condition/statistics/', car_condition_views.car_condition_statistics, name='car_condition_statistics'),
     path('dashboard/car-condition/reservation/<int:reservation_id>/comparison/', car_condition_views.car_condition_comparison, name='car_condition_comparison'),
     path('api/get-car-by-reservation/', car_condition_views.get_car_by_reservation, name='get_car_by_reservation'),
+    
+    # مسارات إدارة العهدة
+    path('dashboard/custody/', views_custody.custody_dashboard, name='custody_dashboard'),
+    path('dashboard/custody/list/', views_custody.custody_list, name='custody_list'),
+    path('dashboard/custody/create/', views_custody.custody_create, name='custody_create'),
+    path('dashboard/custody/<int:guarantee_id>/', views_custody.custody_detail, name='custody_detail'),
+    path('dashboard/custody/<int:guarantee_id>/edit/', views_custody.custody_edit, name='custody_edit'),
+    path('dashboard/custody/<int:guarantee_id>/return/', views_custody.custody_return, name='custody_return'),
+    path('dashboard/custody/<int:guarantee_id>/print/', views_custody.custody_print, name='custody_print'),
+    path('dashboard/custody/export/', views_custody.custody_export, name='custody_export'),
     
     # مسارات نظام توثيق حالة السيارة المتقدم
     # إدارة فئات وعناصر الفحص
