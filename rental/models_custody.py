@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
-from .models import Reservation, Car
+from django.utils import timezone
 
 class CustomerGuarantee(models.Model):
     """نموذج ضمانة/عهدة العميل"""
@@ -23,23 +23,86 @@ class CustomerGuarantee(models.Model):
         ('claimed', _('مطالب بها')),
     ]
     
-    # العلاقات الأساسية
+    # بيانات أساسية
+    name = models.CharField(
+        max_length=255,
+        verbose_name=_('اسم العهدة')
+    )
+    
+    guarantee_type = models.CharField(
+        max_length=50,
+        choices=GUARANTEE_TYPE_CHOICES,
+        verbose_name=_('نوع العهدة')
+    )
+    
+    category = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True, 
+        verbose_name=_('فئة العهدة')
+    )
+    
+    handover_date = models.DateField(
+        default=timezone.now,
+        verbose_name=_('تاريخ تسليم العهدة')
+    )
+    
+    return_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_('تاريخ استرداد العهدة')
+    )
+    
+    description = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name=_('وصف العهدة')
+    )
+    
+    notes = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name=_('ملاحظات')
+    )
+    
+    identifier = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_('معرف العهدة')
+    )
+    
+    value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name=_('قيمة العهدة')
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=GUARANTEE_STATUS_CHOICES,
+        default='active',
+        verbose_name=_('حالة العهدة')
+    )
+    
+    # العلاقات
+    reservation = models.ForeignKey(
+        'Reservation',
+        on_delete=models.PROTECT,
+        related_name='guarantees',
+        verbose_name=_('رقم الحجز')
+    )
+    
     customer = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='guarantees',
         verbose_name=_('العميل')
     )
     
-    reservation = models.ForeignKey(
-        Reservation, 
-        on_delete=models.PROTECT,
-        related_name='guarantees',
-        verbose_name=_('الحجز')
-    )
-    
     car = models.ForeignKey(
-        Car, 
+        'Car',
         on_delete=models.PROTECT,
         related_name='guarantees',
         null=True,
@@ -47,167 +110,45 @@ class CustomerGuarantee(models.Model):
         verbose_name=_('السيارة')
     )
     
-    # بيانات العهدة الأساسية
-    guarantee_type = models.CharField(
-        max_length=50,
-        choices=GUARANTEE_TYPE_CHOICES,
-        verbose_name=_('نوع الضمانة')
-    )
-    
-    guarantee_identifier = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name=_('معرف الضمانة')
-    )
-    
-    amount = models.DecimalField(
+    # تفاصيل استرداد العهدة
+    deductions = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        blank=True,
+        default=0,
+        verbose_name=_('مبلغ الخصومات')
+    )
+    
+    deduction_reason = models.TextField(
+        blank=True, 
         null=True,
-        verbose_name=_('قيمة الضمانة')
+        verbose_name=_('سبب الخصم')
     )
     
-    currency = models.CharField(
-        max_length=10,
-        default='SAR',
-        verbose_name=_('العملة')
-    )
-    
-    # تفاصيل حسب نوع الضمانة
-    # للضمانة المالية
-    payment_method = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name=_('طريقة الدفع')
-    )
-    
-    # للمستند العقاري
-    property_document_type = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name=_('نوع المستند العقاري')
-    )
-    
-    property_document_number = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name=_('رقم المستند العقاري')
-    )
-    
-    # للوديعة البنكية
-    bank_name = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name=_('اسم البنك')
-    )
-    
-    bank_account_number = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name=_('رقم الحساب البنكي')
-    )
-    
-    # لبطاقة التأمين
-    insurance_company = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name=_('شركة التأمين')
-    )
-    
-    insurance_policy_number = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name=_('رقم بوليصة التأمين')
-    )
-    
-    insurance_expiry_date = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name=_('تاريخ انتهاء التأمين')
-    )
-    
-    # للضمانات الأخرى
-    other_guarantee_description = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name=_('وصف الضمانة الأخرى')
-    )
-    
-    # تواريخ وحالة
-    issue_date = models.DateField(
-        verbose_name=_('تاريخ الإصدار')
-    )
-    
-    return_date = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name=_('تاريخ الاسترداد')
-    )
-    
-    status = models.CharField(
-        max_length=20,
-        choices=GUARANTEE_STATUS_CHOICES,
-        default='active',
-        verbose_name=_('حالة الضمانة')
-    )
-    
-    # تفاصيل المطالبة (إن وجدت)
-    claim_amount = models.DecimalField(
+    returned_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        blank=True,
         null=True,
-        verbose_name=_('قيمة المطالبة')
-    )
-    
-    claim_reason = models.TextField(
         blank=True,
-        null=True,
-        verbose_name=_('سبب المطالبة')
-    )
-    
-    claim_date = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name=_('تاريخ المطالبة')
-    )
-    
-    # الموظفين المسؤولين
-    staff_received = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.PROTECT,
-        related_name='guarantees_received',
-        blank=True,
-        null=True,
-        verbose_name=_('موظف الاستلام')
-    )
-    
-    staff_returned = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.PROTECT,
-        related_name='guarantees_returned',
-        blank=True,
-        null=True,
-        verbose_name=_('موظف الإرجاع')
-    )
-    
-    # ملاحظات
-    notes = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name=_('ملاحظات')
+        verbose_name=_('المبلغ المسترد')
     )
     
     # بيانات النظام
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='guarantees_created',
+        verbose_name=_('تم الإنشاء بواسطة')
+    )
+    
+    returned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='guarantees_returned',
+        null=True,
+        blank=True,
+        verbose_name=_('تم الاسترداد بواسطة')
+    )
+    
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('تاريخ الإنشاء')
@@ -219,9 +160,16 @@ class CustomerGuarantee(models.Model):
     )
     
     def __str__(self):
-        return f"{self.get_guarantee_type_display()} - {self.customer.get_full_name()} - {self.reservation.reservation_number}"
+        return f"{self.name} - {self.customer.get_full_name()} ({self.reservation.reservation_number})"
     
     class Meta:
-        verbose_name = _('ضمانة العميل')
-        verbose_name_plural = _('ضمانات العملاء')
+        verbose_name = _('عهدة العميل')
+        verbose_name_plural = _('عهدات العملاء')
         ordering = ['-created_at']
+        
+    def save(self, *args, **kwargs):
+        # حساب المبلغ المسترد عند الاسترداد
+        if self.status in ['returned', 'partially_returned'] and self.return_date:
+            self.returned_amount = self.value - self.deductions
+        
+        super().save(*args, **kwargs)

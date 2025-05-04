@@ -6,6 +6,9 @@ import os
 import uuid
 from django.conf import settings
 
+# استيراد نموذج العهدة
+from .models_custody import CustomerGuarantee
+
 class User(AbstractUser):
     """Extended User model for car rental app"""
     phone = models.CharField(max_length=20, blank=True)
