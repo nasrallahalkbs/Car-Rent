@@ -1,0 +1,323 @@
+{% extends "admin_layout.html" %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if is_add %}
+        {% trans "إضافة عهدة جديدة" %}
+    {% else %}
+        {% trans "تعديل العهدة" %}
+    {% endif %} - {% trans "كاررنتال" %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    /* أنماط خاصة بصفحة نموذج العهدة */
+    .custody-form-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background: #fff;
+        margin-bottom: 1.5rem;
+    }
+    
+    .custody-form-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .custody-form-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+        color: #1f2937;
+    }
+    
+    .custody-form-body {
+        padding: 1.5rem;
+    }
+    
+    .custody-form-footer {
+        padding: 1.25rem 1.5rem;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+    
+    /* تخصيص نموذج Crispy */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .asteriskField {
+        color: #ef4444;
+        margin-right: 0.25rem;
+    }
+    
+    /* تنسيق الحقول */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+    
+    /* مساعدة للحقول */
+    .help-block {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+    
+    /* Flatpickr custom styles */
+    .flatpickr-day.selected, 
+    .flatpickr-day.startRange, 
+    .flatpickr-day.endRange, 
+    .flatpickr-day.selected.inRange, 
+    .flatpickr-day.startRange.inRange, 
+    .flatpickr-day.endRange.inRange, 
+    .flatpickr-day.selected:focus, 
+    .flatpickr-day.startRange:focus, 
+    .flatpickr-day.endRange:focus, 
+    .flatpickr-day.selected:hover, 
+    .flatpickr-day.startRange:hover, 
+    .flatpickr-day.endRange:hover, 
+    .flatpickr-day.selected.prevMonthDay, 
+    .flatpickr-day.startRange.prevMonthDay, 
+    .flatpickr-day.endRange.prevMonthDay, 
+    .flatpickr-day.selected.nextMonthDay, 
+    .flatpickr-day.startRange.nextMonthDay, 
+    .flatpickr-day.endRange.nextMonthDay {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    /* إظهار/إخفاء حقول حسب نوع العهدة */
+    #div_id_credit_card_info {
+        display: none;
+    }
+    
+    #div_id_property_description {
+        display: none;
+    }
+    
+    #div_id_insurance_policy_number {
+        display: none;
+    }
+    
+    #div_id_expiry_date {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                {% if is_add %}
+                    {% trans "إضافة عهدة جديدة" %}
+                {% else %}
+                    {% trans "تعديل العهدة" %}
+                {% endif %}
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'custody_dashboard' %}">{% trans "إدارة العهدة" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'custody_list' %}">{% trans "قائمة العهدات" %}</a></li>
+                    <li class="breadcrumb-item active">
+                        {% if is_add %}
+                            {% trans "إضافة عهدة جديدة" %}
+                        {% else %}
+                            {% trans "تعديل العهدة" %} #{{ guarantee.id }}
+                        {% endif %}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <form method="post" id="custodyForm">
+                {% csrf_token %}
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+                
+                <div class="custody-form-card">
+                    <div class="custody-form-header">
+                        <h5 class="custody-form-title">{% trans "معلومات العهدة الأساسية" %}</h5>
+                    </div>
+                    <div class="custody-form-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.guarantee_type|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.category|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.value|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.customer|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.car|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.reservation|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.handover_date|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <!-- حقول إضافية حسب نوع العهدة -->
+                        {{ form.credit_card_info|as_crispy_field }}
+                        {{ form.property_description|as_crispy_field }}
+                        {{ form.insurance_policy_number|as_crispy_field }}
+                        {{ form.expiry_date|as_crispy_field }}
+                        
+                        <!-- رقم المعرف الإضافي (مثل رقم البطاقة) -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.identifier|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <!-- الملاحظات -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.notes|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="custody-form-footer">
+                        <a href="{% if next %}{{ next }}{% else %}{% url 'custody_list' %}{% endif %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>{% trans "إلغاء" %}
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            {% if is_add %}
+                                {% trans "إضافة العهدة" %}
+                            {% else %}
+                                {% trans "حفظ التغييرات" %}
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // تهيئة منتقي التاريخ
+        flatpickr("#id_handover_date", {
+            dateFormat: "Y-m-d",
+            locale: {
+                firstDayOfWeek: 6, // السبت كأول يوم في الأسبوع
+                weekdays: {
+                    shorthand: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
+                    longhand: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+                },
+                months: {
+                    shorthand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+                    longhand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+                }
+            },
+            defaultDate: "{% if form.handover_date.value %}{{ form.handover_date.value|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}"
+        });
+        
+        flatpickr("#id_expiry_date", {
+            dateFormat: "Y-m-d",
+            locale: {
+                firstDayOfWeek: 6,
+                weekdays: {
+                    shorthand: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
+                    longhand: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+                },
+                months: {
+                    shorthand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+                    longhand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+                }
+            },
+            defaultDate: "{% if form.expiry_date.value %}{{ form.expiry_date.value|date:'Y-m-d' }}{% endif %}"
+        });
+        
+        // إظهار/إخفاء الحقول حسب نوع العهدة
+        function toggleFields() {
+            var guaranteeType = document.getElementById('id_guarantee_type').value;
+            
+            // إخفاء جميع الحقول الخاصة
+            document.getElementById('div_id_credit_card_info').style.display = 'none';
+            document.getElementById('div_id_property_description').style.display = 'none';
+            document.getElementById('div_id_insurance_policy_number').style.display = 'none';
+            document.getElementById('div_id_expiry_date').style.display = 'none';
+            
+            // تحديث عنوان حقل المعرف
+            var identifierLabel = document.querySelector('label[for="id_identifier"]');
+            identifierLabel.textContent = "{% trans 'المعرف' %}";
+            
+            // إظهار الحقول حسب نوع العهدة
+            if (guaranteeType === 'cash') {
+                // لا حقول إضافية لعهدة النقد
+                identifierLabel.textContent = "{% trans 'رقم الإيصال' %}";
+            } else if (guaranteeType === 'credit_card') {
+                document.getElementById('div_id_credit_card_info').style.display = 'block';
+                document.getElementById('div_id_expiry_date').style.display = 'block';
+                identifierLabel.textContent = "{% trans 'رقم البطاقة (آخر 4 أرقام)' %}";
+            } else if (guaranteeType === 'property') {
+                document.getElementById('div_id_property_description').style.display = 'block';
+                identifierLabel.textContent = "{% trans 'رقم المستند/الوثيقة' %}";
+            } else if (guaranteeType === 'insurance') {
+                document.getElementById('div_id_insurance_policy_number').style.display = 'block';
+                document.getElementById('div_id_expiry_date').style.display = 'block';
+                identifierLabel.textContent = "{% trans 'رقم بوليصة التأمين' %}";
+            }
+        }
+        
+        // تشغيل الدالة عند تحميل الصفحة
+        toggleFields();
+        
+        // تشغيل الدالة عند تغيير نوع العهدة
+        document.getElementById('id_guarantee_type').addEventListener('change', toggleFields);
+        
+        // ربط الحجز بالعميل والسيارة
+        document.getElementById('id_reservation').addEventListener('change', function() {
+            var reservationId = this.value;
+            if (reservationId) {
+                fetch('/api/get-car-by-reservation/?reservation_id=' + reservationId)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('id_customer').value = data.user_id;
+                            document.getElementById('id_car').value = data.car_id;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching reservation data:', error);
+                    });
+            }
+        });
+    });
+</script>
+{% endblock %}

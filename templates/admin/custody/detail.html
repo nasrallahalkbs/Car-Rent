@@ -1,0 +1,476 @@
+{% extends "admin_layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "تفاصيل العهدة" %} - {% trans "كاررنتال" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* أنماط خاصة بصفحة تفاصيل العهدة */
+    .custody-detail-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background: #fff;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    
+    .custody-detail-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .custody-detail-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+        color: #1f2937;
+    }
+    
+    .custody-detail-body {
+        padding: 1.5rem;
+    }
+    
+    .custody-detail-footer {
+        padding: 1.25rem 1.5rem;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+    
+    .custody-info-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .custody-info-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+    }
+    
+    .custody-info-value {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .custody-value-amount {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e40af;
+    }
+    
+    .custody-dates {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #f8fafc;
+        border-radius: 8px;
+    }
+    
+    .custody-date-item {
+        flex: 1;
+    }
+    
+    .custody-date-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+    }
+    
+    .custody-date-value {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .custody-type-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background-color: #dbeafe;
+        color: #2563eb;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-active {
+        background-color: #dcfce7;
+        color: #16a34a;
+    }
+    
+    .status-returned {
+        background-color: #dbeafe;
+        color: #2563eb;
+    }
+    
+    .status-partially {
+        background-color: #fef3c7;
+        color: #d97706;
+    }
+    
+    .status-withheld {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .custody-return-summary {
+        background-color: #f8fafc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    
+    .custody-return-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #1e293b;
+    }
+    
+    .custody-return-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+    
+    .custody-return-label {
+        color: #64748b;
+    }
+    
+    .custody-return-value {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .custody-return-total {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px dashed #e2e8f0;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    
+    .custody-notes {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #fffbeb;
+        border-radius: 8px;
+        border-left: 4px solid #f59e0b;
+    }
+    
+    .custody-audit-info {
+        margin-top: 1.5rem;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    
+    .custody-audit-item {
+        margin-bottom: 0.5rem;
+    }
+    
+    .custody-audit-name {
+        font-weight: 600;
+        color: #475569;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">{% trans "تفاصيل العهدة" %} #{{ guarantee.id }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'custody_dashboard' %}">{% trans "إدارة العهدة" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'custody_list' %}">{% trans "قائمة العهدات" %}</a></li>
+                    <li class="breadcrumb-item active">{% trans "تفاصيل العهدة" %} #{{ guarantee.id }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- معلومات العهدة الرئيسية -->
+            <div class="custody-detail-card">
+                <div class="custody-detail-header">
+                    <h5 class="custody-detail-title">{% trans "معلومات العهدة الأساسية" %}</h5>
+                    <div>
+                        <span class="custody-type-badge">{{ guarantee.get_guarantee_type_display }}</span>
+                        {% if guarantee.status == 'active' %}
+                            <span class="status-badge status-active">{% trans "نشطة" %}</span>
+                        {% elif guarantee.status == 'returned' %}
+                            <span class="status-badge status-returned">{% trans "مستردة" %}</span>
+                        {% elif guarantee.status == 'partially_returned' %}
+                            <span class="status-badge status-partially">{% trans "مستردة جزئياً" %}</span>
+                        {% elif guarantee.status == 'withheld' %}
+                            <span class="status-badge status-withheld">{% trans "محتجزة" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="custody-detail-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "اسم العهدة" %}</div>
+                                <div class="custody-info-value">{{ guarantee.name }}</div>
+                            </div>
+                            
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "فئة العهدة" %}</div>
+                                <div class="custody-info-value">{{ guarantee.category|default:"-" }}</div>
+                            </div>
+                            
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "المعرف" %}</div>
+                                <div class="custody-info-value">{{ guarantee.identifier|default:"-" }}</div>
+                            </div>
+                            
+                            {% if guarantee.guarantee_type == 'credit_card' and guarantee.credit_card_info %}
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "معلومات البطاقة الائتمانية" %}</div>
+                                <div class="custody-info-value">{{ guarantee.credit_card_info }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if guarantee.guarantee_type == 'property' and guarantee.property_description %}
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "وصف الممتلكات" %}</div>
+                                <div class="custody-info-value">{{ guarantee.property_description }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if guarantee.guarantee_type == 'insurance' and guarantee.insurance_policy_number %}
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "رقم بوليصة التأمين" %}</div>
+                                <div class="custody-info-value">{{ guarantee.insurance_policy_number }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if guarantee.expiry_date %}
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "تاريخ انتهاء الصلاحية" %}</div>
+                                <div class="custody-info-value">{{ guarantee.expiry_date|date:"d/m/Y" }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "قيمة العهدة" %}</div>
+                                <div class="custody-value-amount">{{ guarantee.value }} {% trans "د.ك" %}</div>
+                            </div>
+                            
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "العميل" %}</div>
+                                <div class="custody-info-value">{{ guarantee.customer.get_full_name }}</div>
+                            </div>
+                            
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "السيارة" %}</div>
+                                <div class="custody-info-value">
+                                    {% if guarantee.car %}
+                                        {{ guarantee.car.make }} {{ guarantee.car.model }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="custody-info-group">
+                                <div class="custody-info-label">{% trans "رقم الحجز" %}</div>
+                                <div class="custody-info-value">
+                                    {% if guarantee.reservation %}
+                                        <a href="{% url 'admin_reservation_detail' guarantee.reservation.id %}">{{ guarantee.reservation.reservation_number }}</a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- تواريخ العهدة -->
+                    <div class="custody-dates">
+                        <div class="custody-date-item">
+                            <div class="custody-date-label">{% trans "تاريخ التسليم" %}</div>
+                            <div class="custody-date-value">{{ guarantee.handover_date|date:"d/m/Y" }}</div>
+                        </div>
+                        
+                        <div class="custody-date-item">
+                            <div class="custody-date-label">{% trans "المدة" %}</div>
+                            <div class="custody-date-value">{{ days_since_handover }} {% trans "يوم" %}</div>
+                        </div>
+                        
+                        <div class="custody-date-item">
+                            <div class="custody-date-label">{% trans "تاريخ الاسترداد" %}</div>
+                            <div class="custody-date-value">
+                                {% if guarantee.return_date %}
+                                    {{ guarantee.return_date|date:"d/m/Y" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ملاحظات العهدة -->
+                    {% if guarantee.notes %}
+                    <div class="custody-notes">
+                        <div class="custody-info-label">{% trans "ملاحظات العهدة" %}</div>
+                        <div class="mt-2">{{ guarantee.notes|linebreaks }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- معلومات استرداد العهدة إذا كانت مستردة -->
+                    {% if guarantee.status in 'returned,partially_returned' %}
+                    <div class="custody-return-summary">
+                        <h6 class="custody-return-title">{% trans "ملخص استرداد العهدة" %}</h6>
+                        
+                        <div class="custody-return-row">
+                            <div class="custody-return-label">{% trans "القيمة الأصلية" %}</div>
+                            <div class="custody-return-value">{{ guarantee.value }} {% trans "د.ك" %}</div>
+                        </div>
+                        
+                        <div class="custody-return-row">
+                            <div class="custody-return-label">{% trans "الخصومات" %}</div>
+                            <div class="custody-return-value">{{ guarantee.deductions|default:"0" }} {% trans "د.ك" %}</div>
+                        </div>
+                        
+                        <div class="custody-return-row custody-return-total">
+                            <div class="custody-return-label">{% trans "المبلغ المسترد" %}</div>
+                            <div class="custody-return-value">{{ guarantee.returned_amount|default:"0" }} {% trans "د.ك" %}</div>
+                        </div>
+                        
+                        {% if guarantee.return_notes %}
+                        <div class="mt-3">
+                            <div class="custody-info-label">{% trans "ملاحظات الاسترداد" %}</div>
+                            <div class="mt-2">{{ guarantee.return_notes|linebreaks }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- معلومات التدقيق -->
+                    <div class="custody-audit-info">
+                        <div class="custody-audit-item">
+                            <span>{% trans "تم إنشاؤها بواسطة" %}</span>
+                            <span class="custody-audit-name">{{ guarantee.created_by.get_full_name|default:guarantee.created_by.username }}</span>
+                            <span>{% trans "في" %} {{ guarantee.created_at|date:"d/m/Y - h:i A" }}</span>
+                        </div>
+                        
+                        {% if guarantee.return_date %}
+                        <div class="custody-audit-item">
+                            <span>{% trans "تم استردادها بواسطة" %}</span>
+                            <span class="custody-audit-name">{{ guarantee.returned_by.get_full_name|default:guarantee.returned_by.username }}</span>
+                            <span>{% trans "في" %} {{ guarantee.return_date|date:"d/m/Y" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="custody-detail-footer">
+                    <a href="{% url 'custody_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-right me-2"></i>{% trans "العودة للقائمة" %}
+                    </a>
+                    
+                    {% if guarantee.status == 'active' %}
+                        <a href="{% url 'custody_edit' guarantee.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>{% trans "تعديل العهدة" %}
+                        </a>
+                        <a href="{% url 'custody_return' guarantee.id %}" class="btn btn-warning">
+                            <i class="fas fa-undo-alt me-2"></i>{% trans "استرداد العهدة" %}
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'custody_print' guarantee.id %}?type=receipt" class="btn btn-secondary">
+                        <i class="fas fa-print me-2"></i>{% trans "طباعة إيصال استلام" %}
+                    </a>
+                    
+                    {% if guarantee.status in 'returned,partially_returned' %}
+                        <a href="{% url 'custody_print' guarantee.id %}?type=return" class="btn btn-success">
+                            <i class="fas fa-file-invoice me-2"></i>{% trans "طباعة إيصال استرداد" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- العهدات الأخرى للعميل -->
+            <div class="custody-detail-card">
+                <div class="custody-detail-header">
+                    <h5 class="custody-detail-title">{% trans "عهدات أخرى للعميل" %}</h5>
+                </div>
+                
+                {% with other_guarantees=guarantee.customer.customerguarantee_set.all %}
+                    {% if other_guarantees.count > 1 %} <!-- أكثر من العهدة الحالية -->
+                        <ul class="list-group list-group-flush">
+                            {% for other in other_guarantees %}
+                                {% if other.id != guarantee.id %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <a href="{% url 'custody_detail' other.id %}">{{ other.name }}</a>
+                                            <small class="d-block text-muted">{{ other.get_guarantee_type_display }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div>{{ other.value }} {% trans "د.ك" %}</div>
+                                            {% if other.status == 'active' %}
+                                                <span class="status-badge status-active">{% trans "نشطة" %}</span>
+                                            {% elif other.status == 'returned' %}
+                                                <span class="status-badge status-returned">{% trans "مستردة" %}</span>
+                                            {% elif other.status == 'partially_returned' %}
+                                                <span class="status-badge status-partially">{% trans "مستردة جزئياً" %}</span>
+                                            {% elif other.status == 'withheld' %}
+                                                <span class="status-badge status-withheld">{% trans "محتجزة" %}</span>
+                                            {% endif %}
+                                        </div>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="p-4 text-center">
+                            <p class="text-muted">{% trans "لا توجد عهدات أخرى لهذا العميل" %}</p>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+            
+            <!-- إضافة عهدة جديدة للعميل -->
+            <div class="custody-detail-card">
+                <div class="custody-detail-header">
+                    <h5 class="custody-detail-title">{% trans "إجراءات سريعة" %}</h5>
+                </div>
+                <div class="p-4">
+                    <a href="{% url 'custody_create' %}?customer={{ guarantee.customer.id }}" class="btn btn-primary w-100 mb-3">
+                        <i class="fas fa-plus me-2"></i>{% trans "إضافة عهدة جديدة لنفس العميل" %}
+                    </a>
+                    
+                    {% if guarantee.reservation %}
+                        <a href="{% url 'custody_create' %}?reservation={{ guarantee.reservation.id }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-plus me-2"></i>{% trans "إضافة عهدة جديدة لنفس الحجز" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

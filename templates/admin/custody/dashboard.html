@@ -1,0 +1,379 @@
+{% extends "admin_layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "لوحة إدارة العهدة" %} - {% trans "كاررنتال" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* أنماط خاصة بصفحة لوحة القيادة للعهدة */
+    .custody-stats-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s;
+        background: #fff;
+        height: 100%;
+    }
+    
+    .custody-stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    .custody-stats-header {
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .custody-stats-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 15px;
+        color: white;
+    }
+    
+    .bg-green {
+        background: linear-gradient(135deg, #4ade80, #22c55e);
+    }
+    
+    .bg-primary {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+    
+    .bg-warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    
+    .bg-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+    
+    .custody-stats-title {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin: 0;
+    }
+    
+    .custody-stats-body {
+        padding: 20px;
+    }
+    
+    .custody-stats-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: #1f2937;
+    }
+    
+    .custody-stats-subtext {
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+    
+    .custody-table-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background: #fff;
+        overflow: hidden;
+    }
+    
+    .custody-table-header {
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .custody-table-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #1f2937;
+    }
+    
+    .custody-table-link {
+        font-size: 0.9rem;
+        color: #3b82f6;
+        font-weight: 500;
+    }
+    
+    .custody-table th {
+        font-weight: 600;
+        color: #4b5563;
+        padding: 12px 20px;
+        border-bottom: 2px solid #f3f4f6;
+    }
+    
+    .custody-table td {
+        padding: 15px 20px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+    }
+    
+    .custody-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+    
+    .custody-name {
+        font-weight: 600;
+        color: #1f2937;
+        display: block;
+    }
+    
+    .custody-type {
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-active {
+        background-color: #dcfce7;
+        color: #16a34a;
+    }
+    
+    .status-returned {
+        background-color: #dbeafe;
+        color: #2563eb;
+    }
+    
+    .status-partially {
+        background-color: #fef3c7;
+        color: #d97706;
+    }
+    
+    .status-withheld {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">{% trans "لوحة إدارة العهدة" %}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item active">{% trans "إدارة العهدة" %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- إحصائيات العهدة -->
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="custody-stats-card">
+                <div class="custody-stats-header">
+                    <div class="custody-stats-icon bg-primary">
+                        <i class="fas fa-money-check-alt"></i>
+                    </div>
+                    <h6 class="custody-stats-title">{% trans "إجمالي العهدات" %}</h6>
+                </div>
+                <div class="custody-stats-body">
+                    <div class="custody-stats-value">{{ total_guarantees }}</div>
+                    <div class="custody-stats-subtext">
+                        <i class="fas fa-layer-group me-1"></i> {% trans "الكلي" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="custody-stats-card">
+                <div class="custody-stats-header">
+                    <div class="custody-stats-icon bg-green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h6 class="custody-stats-title">{% trans "العهدات النشطة" %}</h6>
+                </div>
+                <div class="custody-stats-body">
+                    <div class="custody-stats-value">{{ active_guarantees }}</div>
+                    <div class="custody-stats-subtext">
+                        <i class="fas fa-toggle-on me-1"></i> {% trans "قيد التسليم" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="custody-stats-card">
+                <div class="custody-stats-header">
+                    <div class="custody-stats-icon bg-warning">
+                        <i class="fas fa-undo-alt"></i>
+                    </div>
+                    <h6 class="custody-stats-title">{% trans "العهدات المستردة" %}</h6>
+                </div>
+                <div class="custody-stats-body">
+                    <div class="custody-stats-value">{{ returned_guarantees }}</div>
+                    <div class="custody-stats-subtext">
+                        <i class="fas fa-exchange-alt me-1"></i> {% trans "تم استردادها" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="custody-stats-card">
+                <div class="custody-stats-header">
+                    <div class="custody-stats-icon bg-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h6 class="custody-stats-title">{% trans "العهدات المحتجزة" %}</h6>
+                </div>
+                <div class="custody-stats-body">
+                    <div class="custody-stats-value">{{ withheld_guarantees }}</div>
+                    <div class="custody-stats-subtext">
+                        <i class="fas fa-ban me-1"></i> {% trans "محتجزة" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- إجمالي قيمة العهدة -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="custody-stats-card">
+                <div class="custody-stats-header">
+                    <div class="custody-stats-icon bg-primary">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <h6 class="custody-stats-title">{% trans "إجمالي قيمة العهدات النشطة" %}</h6>
+                </div>
+                <div class="custody-stats-body">
+                    <div class="custody-stats-value">{{ total_active_value_sum }} {% trans "د.ك" %}</div>
+                    <div class="custody-stats-subtext">
+                        <i class="fas fa-calculator me-1"></i> {% trans "القيمة الإجمالية للعهدات النشطة" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جداول العهدة -->
+    <div class="row">
+        <!-- العهدات النشطة الأخيرة -->
+        <div class="col-md-6 mb-4">
+            <div class="custody-table-card">
+                <div class="custody-table-header">
+                    <h5 class="custody-table-title">{% trans "العهدات النشطة الأخيرة" %}</h5>
+                    <a href="{% url 'custody_list' %}" class="custody-table-link">
+                        {% trans "عرض الكل" %} <i class="fas fa-arrow-left me-1"></i>
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table custody-table">
+                        <thead>
+                            <tr>
+                                <th>{% trans "العهدة" %}</th>
+                                <th>{% trans "العميل" %}</th>
+                                <th>{% trans "القيمة" %}</th>
+                                <th>{% trans "تاريخ التسليم" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_guarantees %}
+                                {% for guarantee in recent_guarantees %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'custody_detail' guarantee.id %}" class="custody-name">{{ guarantee.name }}</a>
+                                        <span class="custody-type">{{ guarantee.get_guarantee_type_display }}</span>
+                                    </td>
+                                    <td>{{ guarantee.customer.get_full_name }}</td>
+                                    <td>{{ guarantee.value }} {% trans "د.ك" %}</td>
+                                    <td>{{ guarantee.handover_date|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <i class="fas fa-info-circle text-muted me-2"></i>
+                                        {% trans "لا توجد عهدات نشطة حالياً" %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- العهدات المستردة مؤخراً -->
+        <div class="col-md-6 mb-4">
+            <div class="custody-table-card">
+                <div class="custody-table-header">
+                    <h5 class="custody-table-title">{% trans "العهدات المستردة مؤخراً" %}</h5>
+                    <a href="{% url 'custody_list' %}" class="custody-table-link">
+                        {% trans "عرض الكل" %} <i class="fas fa-arrow-left me-1"></i>
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table custody-table">
+                        <thead>
+                            <tr>
+                                <th>{% trans "العهدة" %}</th>
+                                <th>{% trans "العميل" %}</th>
+                                <th>{% trans "القيمة" %}</th>
+                                <th>{% trans "تاريخ الاسترداد" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_returned %}
+                                {% for guarantee in recent_returned %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'custody_detail' guarantee.id %}" class="custody-name">{{ guarantee.name }}</a>
+                                        <span class="custody-type">{{ guarantee.get_guarantee_type_display }}</span>
+                                    </td>
+                                    <td>{{ guarantee.customer.get_full_name }}</td>
+                                    <td>{{ guarantee.value }} {% trans "د.ك" %}</td>
+                                    <td>{{ guarantee.return_date|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <i class="fas fa-info-circle text-muted me-2"></i>
+                                        {% trans "لا توجد عهدات مستردة مؤخراً" %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- زر إضافة عهدة جديدة -->
+    <div class="row mt-3">
+        <div class="col-12 text-center">
+            <a href="{% url 'custody_create' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i> {% trans "إضافة عهدة جديدة" %}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("تم تحميل صفحة لوحة القيادة للعهدة");
+    });
+</script>
+{% endblock %}

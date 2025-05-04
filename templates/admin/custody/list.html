@@ -1,0 +1,418 @@
+{% extends "admin_layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "قائمة العهدات" %} - {% trans "كاررنتال" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    /* أنماط خاصة بصفحة قائمة العهدات */
+    .custody-filter-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background: #fff;
+        margin-bottom: 1.5rem;
+    }
+    
+    .custody-filter-body {
+        padding: 1.5rem;
+    }
+    
+    .custody-table-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background: #fff;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    
+    .custody-table-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .custody-table-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #1f2937;
+    }
+    
+    .custody-table-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .custody-table {
+        margin-bottom: 0;
+    }
+    
+    .custody-table th {
+        font-weight: 600;
+        color: #4b5563;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 2px solid #f3f4f6;
+        white-space: nowrap;
+    }
+    
+    .custody-table td {
+        padding: 0.75rem 1.25rem;
+        border-top: none;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+    }
+    
+    .custody-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+    
+    .custody-name {
+        font-weight: 600;
+        color: #1f2937;
+        display: block;
+    }
+    
+    .custody-type {
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-active {
+        background-color: #dcfce7;
+        color: #16a34a;
+    }
+    
+    .status-returned {
+        background-color: #dbeafe;
+        color: #2563eb;
+    }
+    
+    .status-partially {
+        background-color: #fef3c7;
+        color: #d97706;
+    }
+    
+    .status-withheld {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .custody-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .pagination {
+        margin-bottom: 0;
+        justify-content: center;
+    }
+    
+    /* Flatpickr custom styles */
+    .flatpickr-day.selected, 
+    .flatpickr-day.startRange, 
+    .flatpickr-day.endRange, 
+    .flatpickr-day.selected.inRange, 
+    .flatpickr-day.startRange.inRange, 
+    .flatpickr-day.endRange.inRange, 
+    .flatpickr-day.selected:focus, 
+    .flatpickr-day.startRange:focus, 
+    .flatpickr-day.endRange:focus, 
+    .flatpickr-day.selected:hover, 
+    .flatpickr-day.startRange:hover, 
+    .flatpickr-day.endRange:hover, 
+    .flatpickr-day.selected.prevMonthDay, 
+    .flatpickr-day.startRange.prevMonthDay, 
+    .flatpickr-day.endRange.prevMonthDay, 
+    .flatpickr-day.selected.nextMonthDay, 
+    .flatpickr-day.startRange.nextMonthDay, 
+    .flatpickr-day.endRange.nextMonthDay {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">{% trans "قائمة العهدات" %}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'custody_dashboard' %}">{% trans "إدارة العهدة" %}</a></li>
+                    <li class="breadcrumb-item active">{% trans "قائمة العهدات" %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- فلاتر البحث -->
+    <div class="row">
+        <div class="col-12">
+            <div class="custody-filter-card">
+                <div class="custody-filter-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="search">{% trans "بحث" %}</label>
+                                <input type="text" class="form-control" id="search" name="search" placeholder="{% trans 'اسم العهدة، اسم العميل، رقم الحجز...' %}" value="{{ filter_form.search.value|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="status">{% trans "الحالة" %}</label>
+                                {{ filter_form.status }}
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="guarantee_type">{% trans "نوع العهدة" %}</label>
+                                {{ filter_form.guarantee_type }}
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="date_from">{% trans "من تاريخ" %}</label>
+                                <input type="text" class="form-control datepicker" id="date_from" name="date_from" placeholder="{% trans 'اختر تاريخ...' %}" value="{{ filter_form.date_from.value|date:'Y-m-d'|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="date_to">{% trans "إلى تاريخ" %}</label>
+                                <input type="text" class="form-control datepicker" id="date_to" name="date_to" placeholder="{% trans 'اختر تاريخ...' %}" value="{{ filter_form.date_to.value|date:'Y-m-d'|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-12 d-flex justify-content-between align-items-end">
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>{% trans "بحث" %}
+                                </button>
+                                <a href="{% url 'custody_list' %}" class="btn btn-outline-secondary ms-2">
+                                    <i class="fas fa-times me-2"></i>{% trans "إعادة ضبط" %}
+                                </a>
+                            </div>
+                            <div>
+                                <a href="{% url 'custody_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
+                                    <i class="fas fa-file-export me-2"></i>{% trans "تصدير CSV" %}
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول العهدات -->
+    <div class="row">
+        <div class="col-12">
+            <div class="custody-table-card">
+                <div class="custody-table-header">
+                    <h5 class="custody-table-title">{% trans "العهدات" %}</h5>
+                    <div class="custody-table-actions">
+                        <a href="{% url 'custody_create' %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-2"></i>{% trans "إضافة عهدة" %}
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table custody-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>{% trans "العهدة" %}</th>
+                                <th>{% trans "العميل" %}</th>
+                                <th>{% trans "الحجز" %}</th>
+                                <th>{% trans "تاريخ التسليم" %}</th>
+                                <th>{% trans "القيمة" %}</th>
+                                <th>{% trans "الحالة" %}</th>
+                                <th>{% trans "الإجراءات" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if guarantees %}
+                                {% for guarantee in guarantees %}
+                                <tr>
+                                    <td>{{ guarantee.id }}</td>
+                                    <td>
+                                        <a href="{% url 'custody_detail' guarantee.id %}" class="custody-name">{{ guarantee.name }}</a>
+                                        <span class="custody-type">{{ guarantee.get_guarantee_type_display }}</span>
+                                    </td>
+                                    <td>{{ guarantee.customer.get_full_name }}</td>
+                                    <td>
+                                        {% if guarantee.reservation %}
+                                            <a href="{% url 'admin_reservation_detail' guarantee.reservation.id %}">{{ guarantee.reservation.reservation_number }}</a>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ guarantee.handover_date|date:"d/m/Y" }}</td>
+                                    <td>{{ guarantee.value }} {% trans "د.ك" %}</td>
+                                    <td>
+                                        {% if guarantee.status == 'active' %}
+                                            <span class="status-badge status-active">{% trans "نشطة" %}</span>
+                                        {% elif guarantee.status == 'returned' %}
+                                            <span class="status-badge status-returned">{% trans "مستردة" %}</span>
+                                        {% elif guarantee.status == 'partially_returned' %}
+                                            <span class="status-badge status-partially">{% trans "مستردة جزئياً" %}</span>
+                                        {% elif guarantee.status == 'withheld' %}
+                                            <span class="status-badge status-withheld">{% trans "محتجزة" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="custody-actions">
+                                            <a href="{% url 'custody_detail' guarantee.id %}" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="{% trans 'عرض التفاصيل' %}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if guarantee.status == 'active' %}
+                                                <a href="{% url 'custody_edit' guarantee.id %}" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="{% trans 'تعديل' %}">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'custody_return' guarantee.id %}" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="{% trans 'استرداد' %}">
+                                                    <i class="fas fa-undo-alt"></i>
+                                                </a>
+                                            {% endif %}
+                                            <a href="{% url 'custody_print' guarantee.id %}?type=receipt" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="{% trans 'طباعة إيصال استلام' %}">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                            {% if guarantee.status in 'returned,partially_returned' %}
+                                                <a href="{% url 'custody_print' guarantee.id %}?type=return" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="{% trans 'طباعة إيصال استرداد' %}">
+                                                    <i class="fas fa-file-invoice"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-5">
+                                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                                        <h5>{% trans "لا توجد عهدات مسجلة" %}</h5>
+                                        <p class="text-muted">{% trans "يمكنك إضافة عهدة جديدة بالنقر على زر 'إضافة عهدة'" %}</p>
+                                        <a href="{% url 'custody_create' %}" class="btn btn-primary mt-2">
+                                            <i class="fas fa-plus me-2"></i>{% trans "إضافة عهدة جديدة" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if guarantees.paginator.num_pages > 1 %}
+                <div class="p-3">
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            {% if guarantees.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="{% trans 'الأولى' %}">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ guarantees.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="{% trans 'السابقة' %}">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="{% trans 'الأولى' %}">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="{% trans 'السابقة' %}">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for i in guarantees.paginator.page_range %}
+                                {% if guarantees.number == i %}
+                                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                                {% elif i > guarantees.number|add:'-3' and i < guarantees.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if guarantees.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ guarantees.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="{% trans 'التالية' %}">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ guarantees.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="{% trans 'الأخيرة' %}">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="{% trans 'التالية' %}">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="{% trans 'الأخيرة' %}">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // تهيئة منتقي التاريخ
+        document.querySelectorAll('.datepicker').forEach(function(elem) {
+            flatpickr(elem, {
+                dateFormat: "Y-m-d",
+                locale: {
+                    firstDayOfWeek: 6, // السبت كأول يوم في الأسبوع
+                    weekdays: {
+                        shorthand: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
+                        longhand: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+                    },
+                    months: {
+                        shorthand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+                        longhand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+                    }
+                },
+                allowInput: true
+            });
+        });
+        
+        // تهيئة التلميحات
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %}

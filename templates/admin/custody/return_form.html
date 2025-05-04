@@ -1,0 +1,300 @@
+{% extends "admin_layout.html" %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "استرداد العهدة" %} - {% trans "كاررنتال" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    /* أنماط خاصة بصفحة نموذج استرداد العهدة */
+    .custody-form-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background: #fff;
+        margin-bottom: 1.5rem;
+    }
+    
+    .custody-form-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .custody-form-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+        color: #1f2937;
+    }
+    
+    .custody-form-body {
+        padding: 1.5rem;
+    }
+    
+    .custody-form-footer {
+        padding: 1.25rem 1.5rem;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+    
+    .custody-info-card {
+        margin-bottom: 1.5rem;
+        border-radius: 10px;
+        background-color: #f8fafc;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .custody-info-item {
+        margin-bottom: 1rem;
+    }
+    
+    .custody-info-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+    }
+    
+    .custody-info-value {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .custody-info-value.large {
+        font-size: 1.5rem;
+    }
+    
+    .custody-type-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background-color: #dbeafe;
+        color: #2563eb;
+    }
+    
+    /* تنسيق الحقول */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+    
+    /* مساعدة للحقول */
+    .help-block {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+    
+    /* Flatpickr custom styles */
+    .flatpickr-day.selected, 
+    .flatpickr-day.startRange, 
+    .flatpickr-day.endRange, 
+    .flatpickr-day.selected.inRange, 
+    .flatpickr-day.startRange.inRange, 
+    .flatpickr-day.endRange.inRange, 
+    .flatpickr-day.selected:focus, 
+    .flatpickr-day.startRange:focus, 
+    .flatpickr-day.endRange:focus, 
+    .flatpickr-day.selected:hover, 
+    .flatpickr-day.startRange:hover, 
+    .flatpickr-day.endRange:hover, 
+    .flatpickr-day.selected.prevMonthDay, 
+    .flatpickr-day.startRange.prevMonthDay, 
+    .flatpickr-day.endRange.prevMonthDay, 
+    .flatpickr-day.selected.nextMonthDay, 
+    .flatpickr-day.startRange.nextMonthDay, 
+    .flatpickr-day.endRange.nextMonthDay {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    /* عرض/إخفاء حقول للمبلغ المسترد */
+    #div_id_returned_amount {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">{% trans "استرداد العهدة" %}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'custody_dashboard' %}">{% trans "إدارة العهدة" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'custody_list' %}">{% trans "قائمة العهدات" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'custody_detail' guarantee.id %}">{% trans "تفاصيل العهدة" %} #{{ guarantee.id }}</a></li>
+                    <li class="breadcrumb-item active">{% trans "استرداد العهدة" %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="custody-info-card">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="custody-info-item">
+                            <div class="custody-info-label">{% trans "اسم العهدة" %}</div>
+                            <div class="custody-info-value large">{{ guarantee.name }}</div>
+                            <div class="mt-1">
+                                <span class="custody-type-badge">{{ guarantee.get_guarantee_type_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="custody-info-item">
+                            <div class="custody-info-label">{% trans "العميل" %}</div>
+                            <div class="custody-info-value">{{ guarantee.customer.get_full_name }}</div>
+                        </div>
+                        {% if guarantee.reservation %}
+                        <div class="custody-info-item">
+                            <div class="custody-info-label">{% trans "رقم الحجز" %}</div>
+                            <div class="custody-info-value">{{ guarantee.reservation.reservation_number }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="custody-info-item">
+                            <div class="custody-info-label">{% trans "قيمة العهدة" %}</div>
+                            <div class="custody-info-value">{{ guarantee.value }} {% trans "د.ك" %}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="custody-info-item">
+                            <div class="custody-info-label">{% trans "تاريخ التسليم" %}</div>
+                            <div class="custody-info-value">{{ guarantee.handover_date|date:"d/m/Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post" id="returnForm">
+                {% csrf_token %}
+                
+                <div class="custody-form-card">
+                    <div class="custody-form-header">
+                        <h5 class="custody-form-title">{% trans "معلومات استرداد العهدة" %}</h5>
+                    </div>
+                    <div class="custody-form-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.return_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.status|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.deductions|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.returned_amount|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.return_notes|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="custody-form-footer">
+                        <a href="{% url 'custody_detail' guarantee.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>{% trans "إلغاء" %}
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check me-2"></i>{% trans "تأكيد استرداد العهدة" %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // تهيئة منتقي التاريخ
+        flatpickr("#id_return_date", {
+            dateFormat: "Y-m-d",
+            locale: {
+                firstDayOfWeek: 6, // السبت كأول يوم في الأسبوع
+                weekdays: {
+                    shorthand: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
+                    longhand: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+                },
+                months: {
+                    shorthand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+                    longhand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+                }
+            },
+            defaultDate: "{% if form.return_date.value %}{{ form.return_date.value|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}"
+        });
+        
+        // حساب المبلغ المسترد تلقائياً
+        var originalValue = {{ guarantee.value }};
+        var deductionsInput = document.getElementById('id_deductions');
+        var returnedAmountInput = document.getElementById('id_returned_amount');
+        
+        function calculateReturnedAmount() {
+            var deductions = parseFloat(deductionsInput.value) || 0;
+            var returnedAmount = originalValue - deductions;
+            
+            // التأكد من أن المبلغ المسترد لا يقل عن صفر
+            returnedAmount = Math.max(0, returnedAmount);
+            
+            returnedAmountInput.value = returnedAmount.toFixed(3);
+        }
+        
+        // حساب المبلغ المسترد مبدئياً
+        calculateReturnedAmount();
+        
+        // حساب المبلغ المسترد عند تغيير الخصومات
+        deductionsInput.addEventListener('input', calculateReturnedAmount);
+        
+        // منطق التحكم بعرض الحقول حسب حالة الاسترداد
+        var statusSelect = document.getElementById('id_status');
+        
+        function toggleFields() {
+            var status = statusSelect.value;
+            var deductionsContainer = document.getElementById('div_id_deductions');
+            var returnedAmountContainer = document.getElementById('div_id_returned_amount');
+            
+            if (status === 'withheld') {
+                // إذا كانت الحالة "محتجزة" لا يتم عرض حقول المبلغ المسترد والخصومات
+                deductionsContainer.style.display = 'none';
+                returnedAmountContainer.style.display = 'none';
+            } else {
+                // إذا كانت الحالة "مستردة" أو "مستردة جزئياً" يتم عرض حقول المبلغ المسترد والخصومات
+                deductionsContainer.style.display = 'block';
+                
+                // لا داعي لعرض حقل المبلغ المسترد حيث سيتم حسابه تلقائياً
+                returnedAmountContainer.style.display = 'none';
+            }
+        }
+        
+        // تنفيذ دالة التبديل عند تحميل الصفحة
+        toggleFields();
+        
+        // تنفيذ دالة التبديل عند تغيير الحالة
+        statusSelect.addEventListener('change', toggleFields);
+    });
+</script>
+{% endblock %}
