@@ -108,6 +108,12 @@
         // إظهار مؤشر التحميل
         loadingIndicator.addClass('show');
         
+        // قبل بدء التحميل، تأكد من تثبيت القائمة الجانبية والشريط العلوي
+        $('.admin-sidebar, .navbar.sticky-top').addClass('fixed-no-refresh');
+        
+        // حفظ موضع التمرير الحالي للقائمة الجانبية
+        const sidebarScrollTop = $('.admin-sidebar').scrollTop();
+        
         // تحميل المحتوى بواسطة AJAX
         $.ajax({
             url: url,
@@ -116,37 +122,73 @@
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             },
+            beforeSend: function() {
+                // تعطيل الروابط في القائمة الجانبية أثناء التحميل
+                $('.admin-sidebar .nav-link').addClass('disabled');
+                
+                // تعطيل الانتقال للصفحة
+                $('body').css('pointer-events', 'none');
+            },
             success: function(data) {
                 // استخراج المحتوى الرئيسي فقط
                 const $data = $(data);
-                const content = $data.find(contentSelector).html();
+                let content = $data.find(contentSelector).html();
                 
-                // تحديث المحتوى الرئيسي
-                $(contentSelector).html(content);
-                
-                // تحديث عنوان الصفحة
-                const newTitle = $data.filter('title').text();
-                if (newTitle) {
-                    document.title = newTitle;
+                if (!content) {
+                    // البديل: استخراج جسم الصفحة الرئيسي
+                    content = $data.find('main.py-4').html();
                 }
                 
-                // تنفيذ أي سكريبتات في المحتوى الجديد
-                executeScripts(content);
+                if (!content) {
+                    // البديل الثاني: استخراج محتوى الصفحة كاملاً
+                    content = $data.find('.admin-content').html();
+                }
                 
-                // إعادة تهيئة عناصر واجهة المستخدم
-                reinitializeUIComponents();
-                
-                // إخفاء مؤشر التحميل بعد الانتهاء
-                loadingIndicator.removeClass('show');
-                
-                // إعادة تهيئة روابط القائمة في المحتوى الجديد
-                setupContentLinks();
+                if (content) {
+                    // تحديث المحتوى الرئيسي
+                    $(contentSelector).html(content);
+                    
+                    // تحديث عنوان الصفحة
+                    const newTitle = $data.filter('title').text();
+                    if (newTitle) {
+                        document.title = newTitle;
+                    }
+                    
+                    // تنفيذ أي سكريبتات في المحتوى الجديد
+                    executeScripts(content);
+                    
+                    // إعادة تهيئة عناصر واجهة المستخدم
+                    reinitializeUIComponents();
+                    
+                    // إعادة تهيئة روابط القائمة في المحتوى الجديد
+                    setupContentLinks();
+                    
+                    // تحديث حالة القائمة الجانبية (العناصر النشطة)
+                    updateSidebarActiveState(url);
+                } else {
+                    console.warn('Could not extract content from the page, doing full page load');
+                    window.location.href = url;
+                    return;
+                }
             },
             error: function(xhr, status, error) {
                 console.error('Failed to load page content:', error);
                 
                 // في حالة حدوث خطأ، إعادة توجيه المتصفح إلى الرابط المطلوب
                 window.location.href = url;
+            },
+            complete: function() {
+                // إخفاء مؤشر التحميل بعد الانتهاء
+                loadingIndicator.removeClass('show');
+                
+                // إعادة تمكين الروابط في القائمة الجانبية
+                $('.admin-sidebar .nav-link').removeClass('disabled');
+                
+                // إعادة تمكين الانتقال في الصفحة
+                $('body').css('pointer-events', 'auto');
+                
+                // استعادة موضع التمرير للقائمة الجانبية
+                $('.admin-sidebar').scrollTop(sidebarScrollTop);
             }
         });
     }
@@ -183,6 +225,41 @@
         }
         
         // أي مكونات إضافية يجب إعادة تهيئتها
+    }
+    
+    // تحديث حالة العناصر النشطة في القائمة الجانبية
+    function updateSidebarActiveState(url) {
+        // تحويل URL إلى مسار نسبي
+        let path = url;
+        if (url.indexOf('://') > -1) {
+            const urlObj = new URL(url);
+            path = urlObj.pathname;
+        }
+        
+        // إزالة الحالة النشطة من جميع الروابط
+        $('.admin-sidebar .nav-link').removeClass('active');
+        
+        // تحديد الرابط المناسب في القائمة الجانبية وتنشيطه
+        $('.admin-sidebar .nav-link').each(function() {
+            const linkUrl = $(this).attr('href');
+            if (linkUrl) {
+                // تحويل رابط القائمة إلى مسار نسبي
+                let linkPath = linkUrl;
+                if (linkUrl.indexOf('://') > -1) {
+                    const linkUrlObj = new URL(linkUrl);
+                    linkPath = linkUrlObj.pathname;
+                }
+                
+                // التحقق من تطابق المسارات (بعدة طرق)
+                if (
+                    path === linkPath || 
+                    path.indexOf(linkPath) === 0 || 
+                    (linkPath !== '/' && path.indexOf(linkPath) !== -1)
+                ) {
+                    $(this).addClass('active');
+                }
+            }
+        });
     }
     
     // إعادة تهيئة الروابط في المحتوى الجديد
