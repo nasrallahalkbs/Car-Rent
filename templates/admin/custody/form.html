@@ -224,11 +224,11 @@
         function updateGuaranteeName() {
             var guaranteeType = document.getElementById('id_guarantee_type').value;
             var reservation = document.getElementById('id_reservation');
-            var reservationText = reservation.options[reservation.selectedIndex] ? reservation.options[reservation.selectedIndex].text : '';
+            var reservationId = reservation.value;
             
             var nameField = document.getElementById('id_name');
             
-            if (guaranteeType && reservationText) {
+            if (guaranteeType && reservationId) {
                 // الحصول على نوع العهدة كنص
                 var guaranteeTypeText = '';
                 var options = document.getElementById('id_guarantee_type').options;
@@ -239,8 +239,18 @@
                     }
                 }
                 
-                // إنشاء اسم تلقائي للعهدة
-                nameField.value = guaranteeTypeText + ' - ' + reservationText;
+                // الحصول على رقم الحجز من النص المختار
+                var reservationText = reservation.options[reservation.selectedIndex] ? reservation.options[reservation.selectedIndex].text : '';
+                
+                // استخراج رقم الحجز من النص باستخدام تعبير منتظم
+                var reservationNumber = '';
+                var match = reservationText.match(/(#[0-9]+)/);
+                if (match) {
+                    reservationNumber = match[0];
+                }
+                
+                // إنشاء اسم تلقائي للعهدة مع رقم الحجز
+                nameField.value = guaranteeTypeText + ' - ' + (reservationNumber ? reservationNumber : reservationText);
             }
         }
         
