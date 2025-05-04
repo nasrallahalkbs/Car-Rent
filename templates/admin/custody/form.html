@@ -156,14 +156,6 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                {{ form.customer|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.car|as_crispy_field }}
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
                                 {{ form.reservation|as_crispy_field }}
                             </div>
                             <div class="col-md-6">
@@ -171,13 +163,10 @@
                             </div>
                         </div>
                         
-                        <!-- حقول إضافية حسب نوع العهدة -->
-                        <!-- هذه الحقول ستظهر ديناميكيًا عبر JavaScript حسب نوع العهدة -->
-                        
-                        <!-- رقم المعرف الإضافي (مثل رقم البطاقة) -->
+                        <!-- وصف العهدة -->
                         <div class="row">
                             <div class="col-md-12">
-                                {{ form.identifier|as_crispy_field }}
+                                {{ form.description|as_crispy_field }}
                             </div>
                         </div>
                         
@@ -231,51 +220,44 @@
         
         // حذفنا تهيئة حقل تاريخ انتهاء الصلاحية حيث أنه غير موجود في النموذج
         
-        // تخصيص سلوك الحقول حسب نوع العهدة
-        function customizeFields() {
+        // تحديث اسم العهدة حسب النوع والحجز
+        function updateGuaranteeName() {
             var guaranteeType = document.getElementById('id_guarantee_type').value;
+            var reservation = document.getElementById('id_reservation');
+            var reservationText = reservation.options[reservation.selectedIndex] ? reservation.options[reservation.selectedIndex].text : '';
             
-            // تحديث عنوان حقل المعرف حسب نوع العهدة
-            var identifierLabel = document.querySelector('label[for="id_identifier"]');
-            if (identifierLabel) {
-                identifierLabel.textContent = "{% trans 'المعرف' %}";
-                
-                // تخصيص عنوان المعرف حسب نوع العهدة
-                if (guaranteeType === 'cash') {
-                    identifierLabel.textContent = "{% trans 'رقم الإيصال' %}";
-                } else if (guaranteeType === 'credit_card') {
-                    identifierLabel.textContent = "{% trans 'رقم البطاقة (آخر 4 أرقام)' %}";
-                } else if (guaranteeType === 'property') {
-                    identifierLabel.textContent = "{% trans 'رقم المستند/الوثيقة' %}";
-                } else if (guaranteeType === 'insurance') {
-                    identifierLabel.textContent = "{% trans 'رقم بوليصة التأمين' %}";
+            var nameField = document.getElementById('id_name');
+            
+            if (guaranteeType && reservationText) {
+                // الحصول على نوع العهدة كنص
+                var guaranteeTypeText = '';
+                var options = document.getElementById('id_guarantee_type').options;
+                for (var i = 0; i < options.length; i++) {
+                    if (options[i].value === guaranteeType) {
+                        guaranteeTypeText = options[i].text;
+                        break;
+                    }
                 }
+                
+                // إنشاء اسم تلقائي للعهدة
+                nameField.value = guaranteeTypeText + ' - ' + reservationText;
             }
         }
         
-        // تشغيل الدالة عند تحميل الصفحة
-        customizeFields();
-        
-        // تشغيل الدالة عند تغيير نوع العهدة
-        document.getElementById('id_guarantee_type').addEventListener('change', customizeFields);
-        
-        // ربط الحجز بالعميل والسيارة
-        document.getElementById('id_reservation').addEventListener('change', function() {
-            var reservationId = this.value;
+        // تحديث تفاصيل الحجز
+        function updateReservationData() {
+            var reservationId = document.getElementById('id_reservation').value;
             if (reservationId) {
-                fetch('/api/get-car-by-reservation/?reservation_id=' + reservationId)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            document.getElementById('id_customer').value = data.user_id;
-                            document.getElementById('id_car').value = data.car_id;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching reservation data:', error);
-                    });
+                // تحديث اسم العهدة تلقائيًا
+                updateGuaranteeName();
             }
-        });
+        }
+        
+        // تشغيل دالة تحديث الاسم عند تغيير نوع العهدة
+        document.getElementById('id_guarantee_type').addEventListener('change', updateGuaranteeName);
+        
+        // تشغيل دالة تحديث البيانات عند تغيير الحجز
+        document.getElementById('id_reservation').addEventListener('change', updateReservationData);
     });
 </script>
 {% endblock %}

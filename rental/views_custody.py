@@ -131,15 +131,8 @@ def custody_create(request):
         try:
             reservation = Reservation.objects.get(id=reservation_id)
             initial_data['reservation'] = reservation
-            initial_data['customer'] = reservation.user
-            initial_data['car'] = reservation.car
+            # تم إزالة الحقول المتعلقة بالعميل والسيارة حيث سيتم ملؤها تلقائيًا في طريقة clean للنموذج
         except Reservation.DoesNotExist:
-            pass
-    elif customer_id:
-        try:
-            customer = User.objects.get(id=customer_id)
-            initial_data['customer'] = customer
-        except User.DoesNotExist:
             pass
     
     # دالة لإنشاء وعرض نموذج العهدة

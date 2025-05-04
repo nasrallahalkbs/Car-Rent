@@ -11,8 +11,7 @@ class CustomerGuaranteeForm(forms.ModelForm):
         model = CustomerGuarantee
         fields = [
             'name', 'guarantee_type', 'category', 'handover_date', 
-            'description', 'notes', 'identifier', 'value',
-            'reservation', 'customer', 'car'
+            'description', 'value', 'notes', 'reservation'
         ]
         widgets = {
             'handover_date': forms.DateInput(attrs={'type': 'date'}),
@@ -24,8 +23,8 @@ class CustomerGuaranteeForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # تعديل الحقول لتكون أكثر سهولة في الاستخدام
         
-        # اختيار العميل
-        self.fields['customer'].widget.attrs.update({'class': 'select2'})
+        # حقل الوصف مطلوب الآن
+        self.fields['description'].required = True
         
         # اختيار الحجز
         self.fields['reservation'].widget.attrs.update({'class': 'select2'})
@@ -33,24 +32,17 @@ class CustomerGuaranteeForm(forms.ModelForm):
             status__in=['confirmed', 'completed']
         ).order_by('-created_at')
         
-        # اختيار السيارة
-        self.fields['car'].widget.attrs.update({'class': 'select2'})
-        self.fields['car'].required = False
-        
         # إضافة فئات فرعية لكل نوع عهدة
         self.fields['category'].widget.attrs.update({
             'placeholder': _('أدخل فئة العهدة مثل: وثيقة تأمين شامل، رخصة قيادة دولية، إلخ')
         })
         
-        # ملء حقل اسم العهدة تلقائيًا عند اختيار النوع والعميل والحجز
+        # ملء حقل اسم العهدة تلقائيًا عند اختيار النوع والحجز
         self.fields['guarantee_type'].widget.attrs.update({
             'onchange': 'updateGuaranteeName()'
         })
-        self.fields['customer'].widget.attrs.update({
-            'onchange': 'updateGuaranteeName()'
-        })
         self.fields['reservation'].widget.attrs.update({
-            'onchange': 'updateGuaranteeName(); updateCarField()'
+            'onchange': 'updateGuaranteeName(); updateReservationData()'
         })
     
     def clean(self):
@@ -66,10 +58,12 @@ class CustomerGuaranteeForm(forms.ModelForm):
         if value and value < 0:
             self.add_error('value', _('يجب أن تكون قيمة العهدة أكبر من أو تساوي الصفر'))
             
-        # التحقق من ربط العهدة بالسيارة تلقائيًا إذا كانت مرتبطة بالحجز
+        # تعبئة بيانات العميل والسيارة تلقائيًا من الحجز
         reservation = cleaned_data.get('reservation')
-        car = cleaned_data.get('car')
-        if reservation and not car:
+        if reservation:
+            # تعيين العميل تلقائيًا من الحجز
+            cleaned_data['customer'] = reservation.user
+            # تعيين السيارة تلقائيًا من الحجز
             cleaned_data['car'] = reservation.car
         
         return cleaned_data
