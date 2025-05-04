@@ -187,10 +187,7 @@
                         </div>
                         
                         <!-- حقول إضافية حسب نوع العهدة -->
-                        {{ form.credit_card_info|as_crispy_field }}
-                        {{ form.property_description|as_crispy_field }}
-                        {{ form.insurance_policy_number|as_crispy_field }}
-                        {{ form.expiry_date|as_crispy_field }}
+                        <!-- هذه الحقول ستظهر ديناميكيًا عبر JavaScript حسب نوع العهدة -->
                         
                         <!-- رقم المعرف الإضافي (مثل رقم البطاقة) -->
                         <div class="row">
@@ -247,59 +244,35 @@
             defaultDate: "{% if form.handover_date.value %}{{ form.handover_date.value|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}"
         });
         
-        flatpickr("#id_expiry_date", {
-            dateFormat: "Y-m-d",
-            locale: {
-                firstDayOfWeek: 6,
-                weekdays: {
-                    shorthand: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
-                    longhand: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
-                },
-                months: {
-                    shorthand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
-                    longhand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
-                }
-            },
-            defaultDate: "{% if form.expiry_date.value %}{{ form.expiry_date.value|date:'Y-m-d' }}{% endif %}"
-        });
+        // حذفنا تهيئة حقل تاريخ انتهاء الصلاحية حيث أنه غير موجود في النموذج
         
-        // إظهار/إخفاء الحقول حسب نوع العهدة
-        function toggleFields() {
+        // تخصيص سلوك الحقول حسب نوع العهدة
+        function customizeFields() {
             var guaranteeType = document.getElementById('id_guarantee_type').value;
             
-            // إخفاء جميع الحقول الخاصة
-            document.getElementById('div_id_credit_card_info').style.display = 'none';
-            document.getElementById('div_id_property_description').style.display = 'none';
-            document.getElementById('div_id_insurance_policy_number').style.display = 'none';
-            document.getElementById('div_id_expiry_date').style.display = 'none';
-            
-            // تحديث عنوان حقل المعرف
+            // تحديث عنوان حقل المعرف حسب نوع العهدة
             var identifierLabel = document.querySelector('label[for="id_identifier"]');
-            identifierLabel.textContent = "{% trans 'المعرف' %}";
-            
-            // إظهار الحقول حسب نوع العهدة
-            if (guaranteeType === 'cash') {
-                // لا حقول إضافية لعهدة النقد
-                identifierLabel.textContent = "{% trans 'رقم الإيصال' %}";
-            } else if (guaranteeType === 'credit_card') {
-                document.getElementById('div_id_credit_card_info').style.display = 'block';
-                document.getElementById('div_id_expiry_date').style.display = 'block';
-                identifierLabel.textContent = "{% trans 'رقم البطاقة (آخر 4 أرقام)' %}";
-            } else if (guaranteeType === 'property') {
-                document.getElementById('div_id_property_description').style.display = 'block';
-                identifierLabel.textContent = "{% trans 'رقم المستند/الوثيقة' %}";
-            } else if (guaranteeType === 'insurance') {
-                document.getElementById('div_id_insurance_policy_number').style.display = 'block';
-                document.getElementById('div_id_expiry_date').style.display = 'block';
-                identifierLabel.textContent = "{% trans 'رقم بوليصة التأمين' %}";
+            if (identifierLabel) {
+                identifierLabel.textContent = "{% trans 'المعرف' %}";
+                
+                // تخصيص عنوان المعرف حسب نوع العهدة
+                if (guaranteeType === 'cash') {
+                    identifierLabel.textContent = "{% trans 'رقم الإيصال' %}";
+                } else if (guaranteeType === 'credit_card') {
+                    identifierLabel.textContent = "{% trans 'رقم البطاقة (آخر 4 أرقام)' %}";
+                } else if (guaranteeType === 'property') {
+                    identifierLabel.textContent = "{% trans 'رقم المستند/الوثيقة' %}";
+                } else if (guaranteeType === 'insurance') {
+                    identifierLabel.textContent = "{% trans 'رقم بوليصة التأمين' %}";
+                }
             }
         }
         
         // تشغيل الدالة عند تحميل الصفحة
-        toggleFields();
+        customizeFields();
         
         // تشغيل الدالة عند تغيير نوع العهدة
-        document.getElementById('id_guarantee_type').addEventListener('change', toggleFields);
+        document.getElementById('id_guarantee_type').addEventListener('change', customizeFields);
         
         // ربط الحجز بالعميل والسيارة
         document.getElementById('id_reservation').addEventListener('change', function() {
