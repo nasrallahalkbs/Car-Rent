@@ -61,26 +61,25 @@ def superadmin_required(function):
         return function(request, *args, **kwargs)
     return wrapper
 
-def superadmin_login(request):
-    """Super Admin login view"""
-    # إذا كان المستخدم مسجل الدخول بالفعل، نتحقق إذا كان سوبر أدمن
+def unified_login(request):
+    """صفحة تسجيل الدخول الموحدة للجميع (المستخدمين، المسؤولين، والمسؤولين الأعلى)"""
+    
+    # إذا كان المستخدم مسجل الدخول بالفعل، نوجهه للصفحة المناسبة
     if request.user.is_authenticated:
+        # التحقق إذا كان المستخدم سوبر أدمن
         try:
             admin_profile = AdminUser.objects.get(user=request.user)
             if admin_profile.is_superadmin:
                 return redirect('superadmin_dashboard')
-            else:
-                # إذا كان المستخدم ليس سوبر أدمن، نقوم بتسجيل خروجه
-                logout(request)
-                messages.warning(request, _("ليس لديك صلاحيات المسؤول الأعلى. تم تسجيل خروجك."))
+            elif request.user.is_staff or request.user.is_admin:
+                return redirect('admin_index')  # توجيه للوحة تحكم المسؤول العادي
         except AdminUser.DoesNotExist:
-            # إذا لم يكن له ملف سوبر أدمن، نقوم بتسجيل خروجه
-            logout(request)
-            messages.warning(request, _("ليس لديك حساب مسؤول أعلى. تم تسجيل خروجك."))
-        
-        # في كلتا الحالتين نعيد توجيهه لصفحة تسجيل دخول السوبر أدمن
-        return redirect('superadmin_login')
-
+            # المستخدم ليس لديه ملف مسؤول
+            if request.user.is_staff:
+                return redirect('admin_index')  # توجيه للوحة تحكم المسؤول العادي
+            else:
+                return redirect('profile')  # توجيه لصفحة الملف الشخصي للمستخدم العادي
+    
     # معالجة تسجيل الدخول
     if request.method == 'POST':
         form = SuperAdminLoginForm(request.POST)
@@ -92,17 +91,13 @@ def superadmin_login(request):
             user = authenticate(username=username, password=password)
 
             if user is not None:
-                # التحقق من أن المستخدم لديه ملف سوبر أدمن
+                # تسجيل دخول المستخدم
+                login(request, user)
+                
+                # التحقق من نوع المستخدم وتوجيهه للصفحة المناسبة
                 try:
                     admin_profile = AdminUser.objects.get(user=user)
                     if admin_profile.is_superadmin:
-                        # تأكد من تسجيل الخروج قبل تسجيل الدخول الجديد
-                        if request.user.is_authenticated:
-                            logout(request)
-                        
-                        # تسجيل دخول السوبر أدمن
-                        login(request, user)
-                        
                         # تحديث معلومات آخر تسجيل دخول
                         admin_profile.last_login_ip = get_client_ip(request)
                         admin_profile.save()
@@ -116,13 +111,19 @@ def superadmin_login(request):
                         )
                         
                         messages.success(request, _("تم تسجيل الدخول بنجاح كمسؤول أعلى"))
-                        
-                        # إعادة التوجيه للوحة التحكم
                         return redirect('superadmin_dashboard')
-                    else:
-                        messages.error(request, _("هذا الحساب ليس لديه صلاحيات المسؤول الأعلى"))
                 except AdminUser.DoesNotExist:
-                    messages.error(request, _("المستخدم ليس لديه ملف مسؤول أعلى"))
+                    # المستخدم ليس لديه ملف مسؤول أعلى
+                    pass
+                
+                # التحقق إذا كان مسؤول عادي
+                if user.is_staff or getattr(user, 'is_admin', False):
+                    messages.success(request, _("تم تسجيل الدخول بنجاح كمسؤول"))
+                    return redirect('admin_index')
+                
+                # المستخدم العادي
+                messages.success(request, _("تم تسجيل الدخول بنجاح"))
+                return redirect('profile')
             else:
                 messages.error(request, _("اسم المستخدم أو كلمة المرور غير صحيحة"))
     else:
@@ -131,9 +132,14 @@ def superadmin_login(request):
     # عند عرض صفحة تسجيل الدخول
     context = {
         'form': form,
-        'hide_layout': True  # لمنع عرض شريط التنقل الجانبي قبل تسجيل الدخول
+        'hide_layout': True,  # لمنع عرض شريط التنقل الجانبي قبل تسجيل الدخول
+        'unified_login': True  # إضافة علامة لتوضيح أنها صفحة تسجيل دخول موحدة
     }
     return render(request, 'superadmin/login.html', context)
+
+def superadmin_login(request):
+    """توجيه لصفحة تسجيل الدخول الموحدة"""
+    return unified_login(request)
 
 def superadmin_logout(request):
     """Super Admin logout view"""

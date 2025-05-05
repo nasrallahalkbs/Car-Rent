@@ -1,11 +1,15 @@
 from django.urls import path
 from . import superadmin_views
+from django.views.generic.base import RedirectView
 
 # مسارات URL للوحة تحكم المسؤول الأعلى
 urlpatterns = [
     # تسجيل الدخول والخروج
     path('login/', superadmin_views.superadmin_login, name='superadmin_login'),
     path('logout/', superadmin_views.superadmin_logout, name='superadmin_logout'),
+    
+    # مسار تسجيل الدخول الموحد
+    path('unified-login/', superadmin_views.unified_login, name='unified_login'),
     
     # لوحة المعلومات الرئيسية
     path('', superadmin_views.superadmin_dashboard, name='superadmin_dashboard'),

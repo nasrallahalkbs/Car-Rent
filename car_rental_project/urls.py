@@ -9,7 +9,13 @@ from django.utils.translation import gettext_lazy as _
 urlpatterns = [
     # إضافة مسار العرض الخاص بتبديل اللغة من Django
     path('i18n/', include('django.conf.urls.i18n')),
+    
+    # مسار تسجيل الدخول الموحد الرئيسي
+    path('login/', lambda request: redirect('unified_login'), name='main_login'),
 ]
+
+# استيراد redirect للتوجيه
+from django.shortcuts import redirect
 
 # المسارات مع بادئة اللغة (مثل /ar/، /en/)
 urlpatterns += i18n_patterns(
