@@ -14,6 +14,7 @@ urlpatterns = [
 # المسارات مع بادئة اللغة (مثل /ar/، /en/)
 urlpatterns += i18n_patterns(
     path(_('admin/'), admin.site.urls),  # يمكن ترجمة المسارات أيضًا
+    path(_('superadmin/'), include('rental.superadmin_urls')),  # مسارات لوحة تحكم المسؤول الأعلى
     path('', include('rental.urls')),
     prefix_default_language=True,  # تضمين بادئة اللغة الافتراضية أيضًا
 )

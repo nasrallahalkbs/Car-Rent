@@ -1,0 +1,90 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "تسجيل دخول المسؤول الأعلى" %}{% endblock %}
+
+{# استخدام قالب مخصص لصفحة تسجيل الدخول بدون لوحة جانبية #}
+{% block full_content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-logo">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h1 class="login-title">{% trans "تسجيل دخول المسؤول الأعلى" %}</h1>
+            <p class="login-subtitle">{% trans "قم بتسجيل الدخول للوصول إلى لوحة تحكم المسؤول الأعلى" %}</p>
+        </div>
+        
+        {% if messages %}
+        <div class="messages-container mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <form method="post" action="{% url 'superadmin_login' %}" class="login-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="id_username" class="form-label">{% trans "اسم المستخدم" %}</label>
+                <div class="input-group">
+                    <span class="input-icon"><i class="fas fa-user"></i></span>
+                    {{ form.username }}
+                </div>
+                {% if form.username.errors %}
+                <div class="invalid-feedback d-block">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="id_password" class="form-label">{% trans "كلمة المرور" %}</label>
+                <div class="input-group">
+                    <span class="input-icon"><i class="fas fa-lock"></i></span>
+                    {{ form.password }}
+                    <span class="password-toggle"><i class="fas fa-eye"></i></span>
+                </div>
+                {% if form.password.errors %}
+                <div class="invalid-feedback d-block">{{ form.password.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <div class="form-check">
+                    {{ form.remember_me }}
+                    <label class="form-check-label" for="id_remember_me">{% trans "تذكرني" %}</label>
+                </div>
+            </div>
+            
+            <div class="form-group mb-0">
+                <button type="submit" class="btn btn-primary-custom">{% trans "تسجيل الدخول" %} <i class="fas fa-sign-in-alt ms-1"></i></button>
+            </div>
+        </form>
+        
+        <div class="divider">{% trans "أو" %}</div>
+        
+        <div class="text-center">
+            <a href="{% url 'index' %}" class="btn btn-outline-primary-custom">
+                <i class="fas fa-home me-2"></i> {% trans "العودة للصفحة الرئيسية" %}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // تعديل محاذاة حقول الإدخال حسب اللغة
+    $(document).ready(function() {
+        {% if LANGUAGE_CODE == 'ar' %}
+        $('.login-form .form-control').css('padding', '0.75rem 2.5rem 0.75rem 1rem');
+        $('.input-icon').css({'right': '1rem', 'left': 'auto'});
+        $('.password-toggle').css({'left': '1rem', 'right': 'auto'});
+        {% endif %}
+    });
+</script>
+{% endblock %}
