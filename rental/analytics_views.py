@@ -388,6 +388,7 @@ def admin_payment_analytics(request):
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
     
+    # تجهيز السياق بنفس البيانات
     context = {
         "is_english": is_english,
         "is_rtl": is_rtl,
@@ -417,5 +418,5 @@ def admin_payment_analytics(request):
         'cache_buster': int(datetime.now().timestamp()),
     }
     
-    # استخدام القالب المطلوب مباشرة
-    return render(request, 'admin/payment_analytics_django.html', context)
+    # استخدام القالب الجديد الذي تم إنشاؤه بشكل مباشر - وهو نسخة من القالب الأصلي ولكن بتعديلات بسيطة
+    return render(request, 'admin/analytics_reports_fixed.html', context)
