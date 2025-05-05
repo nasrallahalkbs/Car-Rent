@@ -3,74 +3,57 @@
  * This CSS ensures that the sidebar and top navigation remain fixed and don't refresh
  */
 
-/* Fixed Sidebar */
+/* تنسيق القائمة الجانبية والشريط العلوي */
 .admin-sidebar {
     position: fixed !important;
-    height: 100vh !important;
-    overflow-y: auto;
-    z-index: 1050 !important; /* Higher z-index to ensure it stays on top */
     top: 0;
-    bottom: 0;
-    transition: none !important; /* Prevent transition animations */
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    will-change: transform; /* Hardware acceleration */
-    backface-visibility: hidden; /* Prevent flickering */
-    -webkit-font-smoothing: subpixel-antialiased;
+    right: 0;
+    height: 100vh !important;
+    width: 250px !important;
+    overflow-y: auto;
+    z-index: 1050;
+    background-color: var(--sidebar-bg);
 }
 
-/* Fixed Top Navigation */
+/* الشريط العلوي الثابت */
 .navbar.sticky-top {
     position: fixed !important;
-    width: 100%;
     top: 0;
-    z-index: 1049; /* Below sidebar but above content */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: none !important; /* Prevent transition animations */
-    will-change: transform; /* Hardware acceleration */
-    backface-visibility: hidden; /* Prevent flickering */
+    right: 250px !important; /* محاذاة مع القائمة الجانبية */
+    left: 0 !important;
+    height: 60px;
+    z-index: 1040;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Adjust content positioning to account for fixed navbar */
-.admin-content {
-    padding-top: 60px; /* Height of the navbar */
-    transition: none !important; /* Prevent transition effects */
+/* تنسيق المحتوى الرئيسي */
+.admin-main {
+    margin-right: 250px !important;
+    margin-top: 60px !important; /* مسافة للشريط العلوي */
+    padding: 20px;
+    min-height: calc(100vh - 60px);
+    background-color: #f8f9fa;
 }
 
-/* Preventing animations and transitions that might cause flickering */
-.admin-sidebar *,
-.navbar.sticky-top * {
-    transition: none !important;
-    animation: none !important;
-}
+/* تعديلات للشاشات الصغيرة */
+@media (max-width: 991px) {
+    .navbar.sticky-top {
+        right: 0 !important;
+        width: 100% !important;
+    }
 
-/* Disabling hover effects that might cause repainting */
-.admin-sidebar .nav-link:hover {
-    transition: none !important;
-    background-color: rgba(255, 255, 255, 0.1) !important;
-}
+    .admin-main {
+        margin-right: 0 !important;
+    }
 
-/* Forcing hardware acceleration for smoother rendering */
-.admin-sidebar,
-.navbar.sticky-top,
-.admin-content {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-}
+    .admin-sidebar {
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    }
 
-/* Fix for sidebar links to prevent jittering */
-.admin-sidebar .nav-link {
-    position: relative;
-    z-index: 1;
-    backface-visibility: hidden;
-}
-
-/* Ensuring content doesn't overlap with fixed elements */
-@media (max-width: 992px) {
-    .admin-content {
-        width: 100%;
-        margin-left: 0;
-        margin-right: 0;
-        padding-top: 56px; /* Adjust based on navbar height */
+    .admin-sidebar.show {
+        transform: translateX(0);
     }
 }
 
