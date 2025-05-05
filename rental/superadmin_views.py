@@ -89,30 +89,10 @@ def superadmin_login(request):
                 try:
                     admin_profile = AdminUser.objects.get(user=user)
                     if admin_profile.is_superadmin:
-                        # First logout any existing session
+                        # تسجيل الخروج من أي جلسة موجودة
                         logout(request)
-                        # Then login the superadmin user
-                        login(request, user)
-                        # Log activity
-                        log_admin_activity(
-                            admin_profile,
-                            _("تسجيل دخول"),
-                            _("تم تسجيل الدخول للوحة تحكم المسؤول الأعلى"),
-                            request
-                        )
-                        messages.success(request, _("تم تسجيل الدخول بنجاح كمسؤول أعلى"))
-                        return redirect('superadmin_dashboard')
-                    else:
-                        messages.error(request, _("هذا الحساب ليس لديه صلاحيات المسؤول الأعلى"))
-                except AdminUser.DoesNotExist:
-                    messages.error(request, _("ليس لديك حساب مسؤول أعلى"))
-            else:
-                messages.error(request, _("اسم المستخدم أو كلمة المرور غير صحيحة"))
-            
-            if user is not None:
-                try:
-                    admin_profile = AdminUser.objects.get(user=user)
-                    if admin_profile.is_superadmin:
+                        
+                        # تسجيل الدخول للسوبر ادمن
                         login(request, user)
                         
                         # تحديث معلومات الدخول
@@ -127,12 +107,14 @@ def superadmin_login(request):
                             request
                         )
                         
-                        messages.success(request, _("تم تسجيل الدخول بنجاح"))
+                        messages.success(request, _("تم تسجيل الدخول بنجاح كمسؤول أعلى"))
+                        
+                        # توجيه المستخدم إلى لوحة تحكم السوبر ادمن
                         return redirect('superadmin_dashboard')
                     else:
-                        messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
+                        messages.error(request, _("هذا الحساب ليس لديه صلاحيات المسؤول الأعلى"))
                 except AdminUser.DoesNotExist:
-                    messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
+                    messages.error(request, _("ليس لديك حساب مسؤول أعلى"))
             else:
                 messages.error(request, _("اسم المستخدم أو كلمة المرور غير صحيحة"))
     else:
