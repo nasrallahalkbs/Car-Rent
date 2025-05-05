@@ -63,14 +63,14 @@ def superadmin_required(function):
 
 def superadmin_login(request):
     """Super Admin login view"""
+    # First check if user is already logged in
     if request.user.is_authenticated:
         try:
-            # Check if user has superadmin profile
             admin_profile = AdminUser.objects.get(user=request.user)
             if admin_profile.is_superadmin:
                 return redirect('superadmin_dashboard')
             else:
-                # If user is not superadmin, logout and show error
+                # If logged in user is not superadmin, log them out
                 logout(request)
                 messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
         except AdminUser.DoesNotExist:
@@ -89,17 +89,21 @@ def superadmin_login(request):
                 try:
                     admin_profile = AdminUser.objects.get(user=user)
                     if admin_profile.is_superadmin:
+                        # First logout any existing session
+                        logout(request)
+                        # Then login the superadmin user
                         login(request, user)
-                        # Log superadmin login activity
+                        # Log activity
                         log_admin_activity(
                             admin_profile,
                             _("تسجيل دخول"),
                             _("تم تسجيل الدخول للوحة تحكم المسؤول الأعلى"),
                             request
                         )
+                        messages.success(request, _("تم تسجيل الدخول بنجاح كمسؤول أعلى"))
                         return redirect('superadmin_dashboard')
                     else:
-                        messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
+                        messages.error(request, _("هذا الحساب ليس لديه صلاحيات المسؤول الأعلى"))
                 except AdminUser.DoesNotExist:
                     messages.error(request, _("ليس لديك حساب مسؤول أعلى"))
             else:
