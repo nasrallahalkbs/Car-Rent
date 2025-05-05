@@ -65,19 +65,45 @@ def superadmin_login(request):
     """Super Admin login view"""
     if request.user.is_authenticated:
         try:
-            # إذا كان المستخدم مسجل الدخول ولديه حساب مسؤول أعلى
-            admin_profile = request.user.admin_profile
+            # Check if user has superadmin profile
+            admin_profile = AdminUser.objects.get(user=request.user)
             if admin_profile.is_superadmin:
                 return redirect('superadmin_dashboard')
-        except:
-            pass
-    
+            else:
+                # If user is not superadmin, logout and show error
+                logout(request)
+                messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
+        except AdminUser.DoesNotExist:
+            logout(request)
+            messages.error(request, _("ليس لديك حساب مسؤول أعلى"))
+        return redirect('superadmin_login')
+
     if request.method == 'POST':
         form = SuperAdminLoginForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
             user = authenticate(username=username, password=password)
+
+            if user is not None:
+                try:
+                    admin_profile = AdminUser.objects.get(user=user)
+                    if admin_profile.is_superadmin:
+                        login(request, user)
+                        # Log superadmin login activity
+                        log_admin_activity(
+                            admin_profile,
+                            _("تسجيل دخول"),
+                            _("تم تسجيل الدخول للوحة تحكم المسؤول الأعلى"),
+                            request
+                        )
+                        return redirect('superadmin_dashboard')
+                    else:
+                        messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
+                except AdminUser.DoesNotExist:
+                    messages.error(request, _("ليس لديك حساب مسؤول أعلى"))
+            else:
+                messages.error(request, _("اسم المستخدم أو كلمة المرور غير صحيحة"))
             
             if user is not None:
                 try:
