@@ -201,6 +201,10 @@ def admin_required(function):
 @admin_required
 def admin_index(request):
     """Admin dashboard home page"""
+    # Import Review model at the top of the function to ensure it's available
+    from .models import Review
+    from django.db.models import Count, Avg
+    
     # Get summary statistics
     total_cars = Car.objects.count()
     available_cars = Car.objects.filter(is_available=True).count()
@@ -226,7 +230,6 @@ def admin_index(request):
     pending_reservations_list = Reservation.objects.filter(status='pending').order_by('-created_at')[:5]
     
     # Review stats
-    from django.db.models import Count, Avg
     total_reviews = Review.objects.count()
     pending_reviews = Review.objects.filter(is_approved=False, is_rejected=False).count()
     approved_reviews = Review.objects.filter(is_approved=True).count()
@@ -300,8 +303,7 @@ def admin_index(request):
             category_labels.append(category)
             category_data.append(count)
 
-    # Fix: Import Review model at the function level to avoid import errors
-    from .models import Review
+    # هذا الاستيراد سيتم تجاهله لأننا قمنا بالاستيراد بالفعل في الأعلى
     
     context = {
         'total_cars': total_cars,
