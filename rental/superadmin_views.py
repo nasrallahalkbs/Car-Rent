@@ -63,43 +63,51 @@ def superadmin_required(function):
 
 def superadmin_login(request):
     """Super Admin login view"""
-    # First check if user is already logged in
+    # إذا كان المستخدم مسجل الدخول بالفعل، نتحقق إذا كان سوبر أدمن
     if request.user.is_authenticated:
         try:
             admin_profile = AdminUser.objects.get(user=request.user)
             if admin_profile.is_superadmin:
                 return redirect('superadmin_dashboard')
             else:
-                # If logged in user is not superadmin, log them out
+                # إذا كان المستخدم ليس سوبر أدمن، نقوم بتسجيل خروجه
                 logout(request)
-                messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
+                messages.warning(request, _("ليس لديك صلاحيات المسؤول الأعلى. تم تسجيل خروجك."))
         except AdminUser.DoesNotExist:
+            # إذا لم يكن له ملف سوبر أدمن، نقوم بتسجيل خروجه
             logout(request)
-            messages.error(request, _("ليس لديك حساب مسؤول أعلى"))
+            messages.warning(request, _("ليس لديك حساب مسؤول أعلى. تم تسجيل خروجك."))
+        
+        # في كلتا الحالتين نعيد توجيهه لصفحة تسجيل دخول السوبر أدمن
         return redirect('superadmin_login')
 
+    # معالجة تسجيل الدخول
     if request.method == 'POST':
         form = SuperAdminLoginForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
+            
+            # محاولة المصادقة
             user = authenticate(username=username, password=password)
 
             if user is not None:
+                # التحقق من أن المستخدم لديه ملف سوبر أدمن
                 try:
                     admin_profile = AdminUser.objects.get(user=user)
                     if admin_profile.is_superadmin:
-                        # تسجيل الخروج من أي جلسة موجودة
-                        logout(request)
+                        # تأكد من تسجيل الخروج قبل تسجيل الدخول الجديد
+                        if request.user.is_authenticated:
+                            logout(request)
                         
-                        # تسجيل الدخول للسوبر ادمن
+                        # تسجيل دخول السوبر أدمن
                         login(request, user)
                         
-                        # تحديث معلومات الدخول
+                        # تحديث معلومات آخر تسجيل دخول
                         admin_profile.last_login_ip = get_client_ip(request)
                         admin_profile.save()
                         
-                        # تسجيل نشاط الدخول
+                        # تسجيل النشاط
                         log_admin_activity(
                             admin_profile,
                             _("تسجيل دخول"),
@@ -109,18 +117,23 @@ def superadmin_login(request):
                         
                         messages.success(request, _("تم تسجيل الدخول بنجاح كمسؤول أعلى"))
                         
-                        # توجيه المستخدم إلى لوحة تحكم السوبر ادمن
+                        # إعادة التوجيه للوحة التحكم
                         return redirect('superadmin_dashboard')
                     else:
                         messages.error(request, _("هذا الحساب ليس لديه صلاحيات المسؤول الأعلى"))
                 except AdminUser.DoesNotExist:
-                    messages.error(request, _("ليس لديك حساب مسؤول أعلى"))
+                    messages.error(request, _("المستخدم ليس لديه ملف مسؤول أعلى"))
             else:
                 messages.error(request, _("اسم المستخدم أو كلمة المرور غير صحيحة"))
     else:
         form = SuperAdminLoginForm()
     
-    return render(request, 'superadmin/login.html', {'form': form})
+    # عند عرض صفحة تسجيل الدخول
+    context = {
+        'form': form,
+        'hide_layout': True  # لمنع عرض شريط التنقل الجانبي قبل تسجيل الدخول
+    }
+    return render(request, 'superadmin/login.html', context)
 
 def superadmin_logout(request):
     """Super Admin logout view"""
@@ -144,6 +157,9 @@ def superadmin_logout(request):
 @superadmin_required
 def superadmin_dashboard(request):
     """Super Admin dashboard"""
+    # طباعة معلومات تصحيحية لتتبع المشكلة
+    print(f"Admin check for superadmin, authenticated: {request.user.is_authenticated}")
+    
     # إحصائيات للوحة المعلومات
     total_admins = AdminUser.objects.count()
     total_roles = Role.objects.count()

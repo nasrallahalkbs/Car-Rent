@@ -1,3 +1,4 @@
+
 """
 المزخرفات المستخدمة في التطبيق
 """
@@ -11,20 +12,25 @@ from .models_superadmin import AdminUser
 def superadmin_required(function):
     @wraps(function)
     def wrapper(request, *args, **kwargs):
+        # التحقق من تسجيل الدخول
         if not request.user.is_authenticated:
             messages.error(request, _("يجب تسجيل الدخول للوصول إلى لوحة تحكم المسؤول الأعلى"))
             return redirect('superadmin_login')
 
+        # التحقق من وجود بروفايل مسؤول أعلى صالح
         try:
             admin_profile = AdminUser.objects.get(user=request.user)
             if not admin_profile.is_superadmin:
                 messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
                 return redirect('index')
+                
+            # إضافة معلومات المسؤول للطلب حتى تكون متاحة في القوالب
+            request.admin_profile = admin_profile
+            return function(request, *args, **kwargs)
         except AdminUser.DoesNotExist:
             messages.error(request, _("ليس لديك حساب مسؤول أعلى"))
             return redirect('index')
-
-        return function(request, *args, **kwargs)
+    
     return wrapper
 
 def admin_required(view_func):
