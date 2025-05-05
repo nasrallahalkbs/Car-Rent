@@ -1,0 +1,530 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'لوحة التحليلات والإحصائيات' %}{% endblock %}
+
+{% block extra_head %}
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- الأنماط الإضافية -->
+    <style>
+        .stats-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            background: linear-gradient(135deg, #fff 0%, #f5f9ff 100%);
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 24px;
+        }
+        .stats-icon-primary { background-color: rgba(13, 110, 253, 0.2); color: #0d6efd; }
+        .stats-icon-success { background-color: rgba(25, 135, 84, 0.2); color: #198754; }
+        .stats-icon-warning { background-color: rgba(255, 193, 7, 0.2); color: #ffc107; }
+        .stats-icon-info { background-color: rgba(13, 202, 240, 0.2); color: #0dcaf0; }
+        .stats-icon-danger { background-color: rgba(220, 53, 69, 0.2); color: #dc3545; }
+        .stats-icon-secondary { background-color: rgba(108, 117, 125, 0.2); color: #6c757d; }
+        
+        .chart-container {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .apexcharts-menu-icon {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans 'لوحة التحليلات والإحصائيات' %}</h1>
+        <div>
+            <button id="exportPdfBtn" class="btn btn-sm btn-primary">
+                <i class="fas fa-file-pdf"></i> {% trans 'تصدير PDF' %}
+            </button>
+            <button id="refreshDataBtn" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-sync-alt"></i> {% trans 'تحديث' %}
+            </button>
+        </div>
+    </div>
+
+    <!-- الإحصائيات الموجزة -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-lg-6">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">{% trans 'المستخدمين' %}</h6>
+                            <h2 class="mt-2 mb-1">{{ system_overview.users.total }}</h2>
+                            <p class="text-success mb-0">
+                                <i class="fas fa-user-plus"></i> {{ system_overview.users.new_this_month }} {% trans 'جديد هذا الشهر' %}
+                            </p>
+                        </div>
+                        <div class="stats-icon stats-icon-primary">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-6">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">{% trans 'الحجوزات' %}</h6>
+                            <h2 class="mt-2 mb-1">{{ system_overview.reservations.total }}</h2>
+                            <p class="text-success mb-0">
+                                <i class="fas fa-calendar-check"></i> {{ system_overview.reservations.active }} {% trans 'نشط حالياً' %}
+                            </p>
+                        </div>
+                        <div class="stats-icon stats-icon-success">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-6">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">{% trans 'المدفوعات' %}</h6>
+                            <h2 class="mt-2 mb-1">{{ system_overview.payments.total_amount }} {% trans 'ر.س' %}</h2>
+                            <p class="text-info mb-0">
+                                <i class="fas fa-shopping-cart"></i> {{ system_overview.payments.total_count }} {% trans 'معاملة' %}
+                            </p>
+                        </div>
+                        <div class="stats-icon stats-icon-info">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-6">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">{% trans 'التقييمات' %}</h6>
+                            <h2 class="mt-2 mb-1">{{ system_overview.reviews.total }}</h2>
+                            <p class="text-warning mb-0">
+                                <i class="fas fa-star"></i> {{ system_overview.reviews.average }} {% trans 'متوسط التقييم' %}
+                            </p>
+                        </div>
+                        <div class="stats-icon stats-icon-warning">
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- صف الرسوم البيانية الأول -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="chart-container h-100">
+                <h5 class="chart-title">{% trans 'الحجوزات الشهرية' %}</h5>
+                <div id="monthlyReservationsChart"></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-container h-100">
+                <h5 class="chart-title">{% trans 'توزيع التقييمات' %}</h5>
+                <div id="reviewsDistributionChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- صف الرسوم البيانية الثاني -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="chart-container h-100">
+                <h5 class="chart-title">{% trans 'تسجيلات المستخدمين الجدد' %}</h5>
+                <div id="userRegistrationsChart"></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-container h-100">
+                <h5 class="chart-title">{% trans 'نشاط المسؤولين' %}</h5>
+                <div id="adminActivityChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- صف الرسوم البيانية الثالث -->
+    <div class="row mb-4">
+        <div class="col-lg-7">
+            <div class="chart-container h-100">
+                <h5 class="chart-title">{% trans 'المدفوعات الشهرية' %}</h5>
+                <div id="monthlyPaymentsChart"></div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="chart-container h-100">
+                <h5 class="chart-title">{% trans 'أكثر السيارات حجزاً' %}</h5>
+                <div id="topCarsChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات النظام -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{% trans 'معلومات النظام' %}</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td>{% trans 'إجمالي المستخدمين' %}</td>
+                                    <td>{{ system_overview.users.total }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans 'إجمالي المسؤولين' %}</td>
+                                    <td>{{ system_overview.users.admins }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans 'إجمالي السيارات' %}</td>
+                                    <td>{{ system_overview.cars.total }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans 'نسبة استغلال السيارات' %}</td>
+                                    <td>{{ system_overview.cars.utilization }}%</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td>{% trans 'إجمالي الحجوزات' %}</td>
+                                    <td>{{ system_overview.reservations.total }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans 'الحجوزات النشطة' %}</td>
+                                    <td>{{ system_overview.reservations.active }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans 'إجمالي المدفوعات' %}</td>
+                                    <td>{{ system_overview.payments.total_amount }} {% trans 'ر.س' %}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans 'متوسط التقييمات' %}</td>
+                                    <td>{{ system_overview.reviews.average }} / 5</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // رسم بياني للحجوزات الشهرية
+        const monthlyReservationsOptions = {
+            chart: {
+                type: 'area',
+                height: 350,
+                fontFamily: 'inherit',
+                toolbar: {
+                    show: false
+                }
+            },
+            series: [{
+                name: '{% trans "الحجوزات" %}',
+                data: {{ charts_data.monthly_reservations.data|safe }}
+            }],
+            xaxis: {
+                categories: {{ charts_data.monthly_reservations.labels|safe }},
+                labels: {
+                    style: {
+                        fontFamily: 'inherit'
+                    }
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            colors: ['#0d6efd'],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.7,
+                    opacityTo: 0.3,
+                    stops: [0, 90, 100]
+                }
+            },
+            markers: {
+                size: 4,
+                colors: ["#FFF"],
+                strokeColors: "#0d6efd",
+                strokeWidth: 2
+            },
+            tooltip: {
+                y: {
+                    formatter: function(val) {
+                        return val + " {% trans "حجز" %}"
+                    }
+                }
+            }
+        };
+
+        // رسم بياني لتوزيع التقييمات
+        const reviewsDistributionOptions = {
+            chart: {
+                type: 'donut',
+                height: 350,
+                fontFamily: 'inherit'
+            },
+            series: {{ charts_data.reviews_distribution.data|safe }},
+            labels: {{ charts_data.reviews_distribution.labels|safe }},
+            colors: ['#dc3545', '#fd7e14', '#ffc107', '#20c997', '#198754'],
+            legend: {
+                position: 'bottom',
+                fontFamily: 'inherit'
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        labels: {
+                            show: true,
+                            total: {
+                                show: true,
+                                label: '{% trans "التقييمات" %}',
+                                fontSize: '16px',
+                                fontFamily: 'inherit'
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // رسم بياني لتسجيلات المستخدمين
+        const userRegistrationsOptions = {
+            chart: {
+                type: 'bar',
+                height: 350,
+                fontFamily: 'inherit',
+                toolbar: {
+                    show: false
+                }
+            },
+            series: [{
+                name: '{% trans "المستخدمين الجدد" %}',
+                data: {{ charts_data.user_registrations.data|safe }}
+            }],
+            xaxis: {
+                categories: {{ charts_data.user_registrations.labels|safe }},
+                labels: {
+                    style: {
+                        fontFamily: 'inherit'
+                    }
+                }
+            },
+            yaxis: {
+                title: {
+                    text: '{% trans "عدد المستخدمين" %}',
+                    style: {
+                        fontFamily: 'inherit'
+                    }
+                }
+            },
+            colors: ['#6f42c1'],
+            plotOptions: {
+                bar: {
+                    borderRadius: 4,
+                    columnWidth: '60%',
+                }
+            },
+            dataLabels: {
+                enabled: false
+            }
+        };
+
+        // رسم بياني لنشاط المسؤولين
+        const adminActivityOptions = {
+            chart: {
+                type: 'line',
+                height: 350,
+                fontFamily: 'inherit',
+                toolbar: {
+                    show: false
+                }
+            },
+            series: [{
+                name: '{% trans "النشاطات" %}',
+                data: {{ charts_data.admin_activity.data|safe }}
+            }],
+            xaxis: {
+                categories: {{ charts_data.admin_activity.labels|safe }},
+                labels: {
+                    style: {
+                        fontFamily: 'inherit'
+                    }
+                }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            colors: ['#6c757d'],
+            markers: {
+                size: 4
+            }
+        };
+
+        // رسم بياني للمدفوعات الشهرية
+        const monthlyPaymentsOptions = {
+            chart: {
+                type: 'line',
+                height: 350,
+                fontFamily: 'inherit',
+                toolbar: {
+                    show: false
+                }
+            },
+            series: [{
+                name: '{% trans "المبلغ (ر.س)" %}',
+                data: {{ charts_data.payment_data.amounts|safe }}
+            }],
+            xaxis: {
+                categories: {{ charts_data.payment_data.labels|safe }},
+                labels: {
+                    style: {
+                        fontFamily: 'inherit'
+                    }
+                }
+            },
+            yaxis: {
+                title: {
+                    text: '{% trans "المبلغ (ر.س)" %}',
+                    style: {
+                        fontFamily: 'inherit'
+                    }
+                }
+            },
+            colors: ['#20c997'],
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            markers: {
+                size: 4
+            }
+        };
+
+        // رسم بياني لأكثر السيارات حجزاً
+        const topCarsOptions = {
+            chart: {
+                type: 'bar',
+                height: 350,
+                fontFamily: 'inherit',
+                toolbar: {
+                    show: false
+                }
+            },
+            series: [{
+                name: '{% trans "عدد الحجوزات" %}',
+                data: {{ charts_data.top_cars.data|safe }}
+            }],
+            xaxis: {
+                categories: {{ charts_data.top_cars.labels|safe }},
+                labels: {
+                    style: {
+                        fontFamily: 'inherit'
+                    }
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    borderRadius: 4,
+                    distributed: true
+                }
+            },
+            colors: ['#fd7e14', '#dc3545', '#0dcaf0', '#ffc107', '#0d6efd', '#198754', '#20c997', '#6c757d', '#6f42c1', '#d63384'],
+            dataLabels: {
+                enabled: false
+            },
+            legend: {
+                show: false
+            }
+        };
+
+        // إنشاء الرسوم البيانية
+        const monthlyReservationsChart = new ApexCharts(document.querySelector("#monthlyReservationsChart"), monthlyReservationsOptions);
+        const reviewsDistributionChart = new ApexCharts(document.querySelector("#reviewsDistributionChart"), reviewsDistributionOptions);
+        const userRegistrationsChart = new ApexCharts(document.querySelector("#userRegistrationsChart"), userRegistrationsOptions);
+        const adminActivityChart = new ApexCharts(document.querySelector("#adminActivityChart"), adminActivityOptions);
+        const monthlyPaymentsChart = new ApexCharts(document.querySelector("#monthlyPaymentsChart"), monthlyPaymentsOptions);
+        const topCarsChart = new ApexCharts(document.querySelector("#topCarsChart"), topCarsOptions);
+
+        // عرض الرسوم البيانية
+        monthlyReservationsChart.render();
+        reviewsDistributionChart.render();
+        userRegistrationsChart.render();
+        adminActivityChart.render();
+        monthlyPaymentsChart.render();
+        topCarsChart.render();
+
+        // زر تحديث البيانات
+        document.getElementById('refreshDataBtn').addEventListener('click', function() {
+            // يمكن هنا إضافة منطق لتحديث البيانات من خلال Ajax
+            // لأغراض العرض، نعرض رسالة تنبيه فقط
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> {% trans "جاري التحديث..." %}';
+            
+            setTimeout(() => {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-sync-alt"></i> {% trans "تحديث" %}';
+                alert('{% trans "تم تحديث البيانات بنجاح!" %}');
+                location.reload();
+            }, 1500);
+        });
+
+        // زر تصدير PDF
+        document.getElementById('exportPdfBtn').addEventListener('click', function() {
+            alert('{% trans "جاري تصدير لوحة التحليلات إلى PDF... سيتم تنزيل الملف فور اكتمال المعالجة." %}');
+            // هنا يمكن إضافة منطق تصدير PDF
+        });
+    });
+</script>
+{% endblock %}

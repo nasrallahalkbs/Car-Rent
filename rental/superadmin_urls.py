@@ -36,4 +36,7 @@ urlpatterns = [
     
     # سجلات النظام
     path('logs/', superadmin_views.system_logs, name='superadmin_system_logs'),
+    
+    # التحليلات والإحصائيات
+    path('analytics/', superadmin_views.superadmin_analytics, name='superadmin_analytics'),
 ]

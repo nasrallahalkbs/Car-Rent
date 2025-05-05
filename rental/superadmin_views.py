@@ -14,6 +14,8 @@ from django.contrib.auth.hashers import make_password
 from .models import User, Review
 from .models_superadmin import Permission, Role, AdminUser, AdminActivity, ReviewManagement
 from .forms_superadmin import PermissionForm, RoleForm, AdminUserForm, ReviewManagementForm, SuperAdminLoginForm
+# دوال التحليلات
+from .analytics_superadmin import *
 
 def get_client_ip(request):
     """Get the client IP address"""
