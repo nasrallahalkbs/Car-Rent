@@ -8,6 +8,7 @@ from working_upload_solution import guaranteed_upload_view
 from direct_sql_solution import direct_sql_upload
 from final_direct_upload import final_direct_upload
 from .direct_archive_upload import super_direct_upload
+from .fixed_analytics_view import direct_payment_analytics
 
 
 from django.urls import path
@@ -96,6 +97,9 @@ urlpatterns = [
     # Analytics Routes
     path('dashboard/analytics/', analytics_views.admin_dashboard_analytics, name='admin_dashboard_analytics'),
     path('dashboard/analytics/reports/', analytics_views.admin_payment_analytics, name='admin_payment_analytics'),
+    # مسار تقارير جديد يستخدم دالة مخصصة لتجاوز مشكلة القوالب
+    path('dashboard/analytics/fixed-reports/', direct_payment_analytics, name='direct_payment_analytics'),
+    path('ar/dashboard/analytics/fixed-reports/', direct_payment_analytics, name='direct_payment_analytics_ar'),
 
     # مسار الأرشيف الإلكتروني - الصفحة الرئيسية فقط
     path('dashboard/archive/', admin_archive_windows, name='admin_archive'),
