@@ -28,8 +28,11 @@ def get_template_by_language(request, template_name):
     if template_name.endswith('.html'):
         template_name = template_name[:-5]
     
-    # تعديل لدعم القالب المبسط
+    # تعديل لدعم القوالب الخاصة
     if template_name == 'admin/analytics_dashboard_simplified':
+        return f"{template_name}_django.html", {"is_english": is_english, "is_rtl": is_rtl}
+    elif template_name == 'admin/payment_analytics':
+        # استخدام أحدث قالب مع تخطيط لوحة التحكم الكامل
         return f"{template_name}_django.html", {"is_english": is_english, "is_rtl": is_rtl}
     
     return f"{template_name}_django.html", {"is_english": is_english, "is_rtl": is_rtl}
