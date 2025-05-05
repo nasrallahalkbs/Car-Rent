@@ -1,0 +1,144 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "سجلات النظام" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "سجلات النظام" %}</h1>
+        <p class="text-muted">{% trans "مراقبة أنشطة المسؤولين والتغييرات في النظام" %}</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{% url 'superadmin_system_logs' %}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="search" class="form-label">{% trans "بحث" %}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}" placeholder="{% trans 'بحث في التفاصيل' %}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="admin" class="form-label">{% trans "المسؤول" %}</label>
+                <select class="form-select" id="admin" name="admin">
+                    <option value="">{% trans "الكل" %}</option>
+                    {% for admin in admins %}
+                    <option value="{{ admin.id }}" {% if admin_filter == admin.id|stringformat:"i" %}selected{% endif %}>
+                        {{ admin.user.get_full_name|default:admin.user.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="action" class="form-label">{% trans "الإجراء" %}</label>
+                <select class="form-select" id="action" name="action">
+                    <option value="">{% trans "الكل" %}</option>
+                    {% for action in actions %}
+                    <option value="{{ action }}" {% if action_filter == action %}selected{% endif %}>
+                        {{ action }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date" class="form-label">{% trans "التاريخ" %}</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{ date_filter }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> {% trans "تصفية" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- System Logs Table -->
+<div class="card shadow">
+    <div class="card-header bg-white">
+        <h5 class="card-title mb-0">{% trans "سجلات النظام" %}</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover data-table align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>{% trans "الوقت" %}</th>
+                        <th>{% trans "المسؤول" %}</th>
+                        <th>{% trans "الإجراء" %}</th>
+                        <th>{% trans "التفاصيل" %}</th>
+                        <th>{% trans "عنوان IP" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span>{{ log.created_at|date:"Y-m-d" }}</span>
+                                <small class="text-muted">{{ log.created_at|time:"H:i:s" }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="avatar avatar-sm">
+                                    {{ log.admin.user.username|first|upper }}
+                                </div>
+                                <div class="user-cell-info">
+                                    <div class="user-cell-name">{{ log.admin.user.get_full_name|default:log.admin.user.username }}</div>
+                                    {% if log.admin.is_superadmin %}
+                                    <span class="badge bg-danger">{% trans "مسؤول أعلى" %}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ log.action }}</span>
+                        </td>
+                        <td>
+                            {{ log.details|truncatechars:80 }}
+                        </td>
+                        <td>
+                            <code>{{ log.ip_address }}</code>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-history fa-2x mb-3"></i>
+                                <p>{% trans "لم يتم العثور على سجلات" %}</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('.data-table').DataTable({
+            paging: true,
+            ordering: true,
+            info: true,
+            responsive: true,
+            order: [[0, 'desc']], // ترتيب حسب التاريخ تنازلياً
+            language: {
+                {% if LANGUAGE_CODE == 'ar' %}
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ar.json',
+                {% endif %}
+            }
+        });
+    });
+</script>
+{% endblock %}

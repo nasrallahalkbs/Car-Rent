@@ -1,0 +1,198 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة التقييمات" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rating-stars {
+        color: #f59e0b;
+        font-size: 1rem;
+    }
+    
+    .review-card {
+        transition: transform 0.2s;
+    }
+    
+    .review-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .review-image {
+        height: 60px;
+        width: 100px;
+        object-fit: cover;
+        border-radius: var(--border-radius);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "إدارة التقييمات" %}</h1>
+        <p class="text-muted">{% trans "إدارة ومراجعة تقييمات المستخدمين" %}</p>
+    </div>
+</div>
+
+<!-- Review Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card h-100">
+            <div class="card-body text-center py-4">
+                <div class="h2 mb-2">{{ stats.total }}</div>
+                <div class="text-muted">{% trans "إجمالي التقييمات" %}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card h-100 border-start border-warning border-4">
+            <div class="card-body text-center py-4">
+                <div class="h2 mb-2">{{ stats.pending }}</div>
+                <div class="text-muted">{% trans "قيد المراجعة" %}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card h-100 border-start border-success border-4">
+            <div class="card-body text-center py-4">
+                <div class="h2 mb-2">{{ stats.approved }}</div>
+                <div class="text-muted">{% trans "معتمدة" %}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card h-100 border-start border-danger border-4">
+            <div class="card-body text-center py-4">
+                <div class="h2 mb-2">{{ stats.rejected }}</div>
+                <div class="text-muted">{% trans "مرفوضة" %}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{% url 'superadmin_manage_reviews' %}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="search" class="form-label">{% trans "بحث" %}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}" placeholder="{% trans 'بحث في التعليقات والمستخدمين' %}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">{% trans "الحالة" %}</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">{% trans "جميع الحالات" %}</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>{% trans "قيد المراجعة" %}</option>
+                    <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>{% trans "معتمدة" %}</option>
+                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>{% trans "مرفوضة" %}</option>
+                    <option value="flagged" {% if status_filter == 'flagged' %}selected{% endif %}>{% trans "تم تمييزها" %}</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="rating" class="form-label">{% trans "التقييم" %}</label>
+                <select class="form-select" id="rating" name="rating">
+                    <option value="">{% trans "جميع التقييمات" %}</option>
+                    <option value="5" {% if rating_filter == '5' %}selected{% endif %}>5 {% trans "نجوم" %}</option>
+                    <option value="4" {% if rating_filter == '4' %}selected{% endif %}>4 {% trans "نجوم" %}</option>
+                    <option value="3" {% if rating_filter == '3' %}selected{% endif %}>3 {% trans "نجوم" %}</option>
+                    <option value="2" {% if rating_filter == '2' %}selected{% endif %}>2 {% trans "نجمة" %}</option>
+                    <option value="1" {% if rating_filter == '1' %}selected{% endif %}>1 {% trans "نجمة" %}</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> {% trans "تصفية" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reviews Cards -->
+<div class="row g-4">
+    {% for review in reviews %}
+    <div class="col-xl-4 col-md-6">
+        <div class="card review-card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="avatar me-2">
+                        {{ review.user.username|first|upper }}
+                    </div>
+                    <div>
+                        <div class="fw-medium">{{ review.user.get_full_name|default:review.user.username }}</div>
+                        <div class="small text-muted">{{ review.created_at|date:"Y-m-d H:i" }}</div>
+                    </div>
+                </div>
+                {% with review_management=review.reviewmanagement_set.first %}
+                {% if review_management %}
+                    {% if review_management.status == 'pending' %}
+                    <span class="status-badge status-pending">{% trans "قيد المراجعة" %}</span>
+                    {% elif review_management.status == 'approved' %}
+                    <span class="status-badge status-active">{% trans "معتمدة" %}</span>
+                    {% elif review_management.status == 'rejected' %}
+                    <span class="status-badge status-rejected">{% trans "مرفوضة" %}</span>
+                    {% elif review_management.status == 'flagged' %}
+                    <span class="status-badge" style="background-color: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                        {% trans "تم تمييزها" %}
+                    </span>
+                    {% endif %}
+                {% else %}
+                <span class="status-badge status-pending">{% trans "لم تتم المراجعة" %}</span>
+                {% endif %}
+                {% endwith %}
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="rating-stars">
+                        {% for i in "12345"|make_list %}
+                        <i class="fas fa-star{% if forloop.counter > review.rating %}-o text-muted{% endif %}"></i>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex align-items-center">
+                        {% if review.car.image %}
+                        <img src="{{ review.car.image.url }}" alt="{{ review.car.make }} {{ review.car.model }}" class="review-image">
+                        {% elif review.car.image_url %}
+                        <img src="{{ review.car.image_url }}" alt="{{ review.car.make }} {{ review.car.model }}" class="review-image">
+                        {% else %}
+                        <div class="review-image bg-light d-flex align-items-center justify-content-center">
+                            <i class="fas fa-car text-muted"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-2">
+                    <span class="fw-medium">{{ review.car.make }} {{ review.car.model }}</span>
+                    <span class="text-muted">({{ review.car.year }})</span>
+                </div>
+                
+                <p class="mb-0">{{ review.comment|truncatechars:150 }}</p>
+            </div>
+            <div class="card-footer bg-white">
+                <a href="{% url 'superadmin_review_details' review.id %}" class="btn btn-primary btn-sm w-100">
+                    <i class="fas fa-clipboard-check me-1"></i> {% trans "مراجعة وإدارة" %}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                <h5>{% trans "لا توجد تقييمات" %}</h5>
+                <p class="text-muted">{% trans "لم يتم العثور على تقييمات بناءً على معايير البحث الحالية" %}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,1 +1,1 @@
-# هذا الملف يحدد أن templatetags هي حزمة (package)
+# This file is needed to make Python treat the directory as a package

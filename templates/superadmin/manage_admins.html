@@ -1,0 +1,176 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة المسؤولين" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "إدارة المسؤولين" %}</h1>
+        <p class="text-muted">{% trans "إدارة المسؤولين وصلاحياتهم" %}</p>
+    </div>
+    <div>
+        <a href="{% url 'superadmin_add_admin' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i> {% trans "إضافة مسؤول جديد" %}
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{% url 'superadmin_manage_admins' %}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="search" class="form-label">{% trans "بحث" %}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}" placeholder="{% trans 'بحث بالاسم أو البريد الإلكتروني' %}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="role" class="form-label">{% trans "الدور" %}</label>
+                <select class="form-select" id="role" name="role">
+                    <option value="">{% trans "جميع الأدوار" %}</option>
+                    {% for role in roles %}
+                    <option value="{{ role.id }}" {% if role_filter == role.id|stringformat:"i" %}selected{% endif %}>
+                        {{ role.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">{% trans "الحالة" %}</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">{% trans "جميع الحالات" %}</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>
+                        {% trans "نشط" %}
+                    </option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>
+                        {% trans "غير نشط" %}
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> {% trans "تصفية" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Admins List -->
+<div class="card shadow">
+    <div class="card-header bg-white">
+        <h5 class="card-title mb-0">{% trans "قائمة المسؤولين" %}</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover data-table align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>{% trans "المسؤول" %}</th>
+                        <th>{% trans "الدور" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                        <th>{% trans "مسؤول أعلى" %}</th>
+                        <th>{% trans "الإجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for admin in admins %}
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                <div class="avatar">
+                                    {{ admin.user.username|first|upper }}
+                                </div>
+                                <div class="user-cell-info">
+                                    <div class="user-cell-name">{{ admin.user.get_full_name|default:admin.user.username }}</div>
+                                    <div class="text-muted small">{{ admin.user.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if admin.role %}
+                                <span class="badge bg-primary">{{ admin.role.name }}</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">{% trans "غير محدد" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if admin.user.is_active %}
+                                <span class="status-badge status-active">
+                                    <i class="fas fa-check-circle me-1"></i> {% trans "نشط" %}
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-inactive">
+                                    <i class="fas fa-times-circle me-1"></i> {% trans "غير نشط" %}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if admin.is_superadmin %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-shield-alt me-1"></i> {% trans "نعم" %}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">{% trans "لا" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'superadmin_admin_details' admin.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'superadmin_edit_admin' admin.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'superadmin_toggle_admin_status' admin.id %}" class="btn btn-sm {% if admin.user.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" 
+                                   onclick="return confirm('{% trans "هل أنت متأكد من تغيير حالة هذا المسؤول؟" %}')">
+                                    {% if admin.user.is_active %}
+                                    <i class="fas fa-ban"></i>
+                                    {% else %}
+                                    <i class="fas fa-check"></i>
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-user-slash fa-2x mb-3"></i>
+                                <p>{% trans "لم يتم العثور على مسؤولين" %}</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('.data-table').DataTable({
+            paging: true,
+            ordering: true,
+            info: true,
+            responsive: true,
+            language: {
+                {% if LANGUAGE_CODE == 'ar' %}
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ar.json',
+                {% endif %}
+            },
+            columnDefs: [
+                { orderable: false, targets: [4] }
+            ]
+        });
+    });
+</script>
+{% endblock %}

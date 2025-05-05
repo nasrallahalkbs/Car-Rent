@@ -1,0 +1,109 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة الصلاحيات" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "إدارة الصلاحيات" %}</h1>
+        <p class="text-muted">{% trans "إدارة صلاحيات النظام التي يمكن تعيينها للأدوار" %}</p>
+    </div>
+    <div>
+        <a href="{% url 'superadmin_add_permission' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i> {% trans "إضافة صلاحية جديدة" %}
+        </a>
+    </div>
+</div>
+
+<!-- Permissions Table -->
+<div class="card shadow">
+    <div class="card-header bg-white">
+        <h5 class="card-title mb-0">{% trans "قائمة الصلاحيات" %}</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover data-table align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>{% trans "الاسم" %}</th>
+                        <th>{% trans "رمز الصلاحية" %}</th>
+                        <th>{% trans "الوصف" %}</th>
+                        <th>{% trans "عدد الأدوار" %}</th>
+                        <th>{% trans "الإجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for permission in permissions %}
+                    <tr>
+                        <td>
+                            <span class="fw-medium">{{ permission.name }}</span>
+                        </td>
+                        <td>
+                            <code>{{ permission.codename }}</code>
+                        </td>
+                        <td>
+                            {{ permission.description|truncatechars:100 }}
+                        </td>
+                        <td>
+                            {% with role_count=permission.role_set.count %}
+                            <span class="badge bg-primary">{{ role_count }}</span>
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'superadmin_edit_permission' permission.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% with role_count=permission.role_set.count %}
+                                {% if role_count == 0 %}
+                                <a href="{% url 'superadmin_delete_permission' permission.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('{% trans "هل أنت متأكد من حذف هذه الصلاحية؟" %}')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-sm btn-outline-danger" disabled title="{% trans "لا يمكن حذف صلاحية مستخدمة في أدوار" %}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-key fa-2x mb-3"></i>
+                                <p>{% trans "لم يتم العثور على صلاحيات" %}</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('.data-table').DataTable({
+            paging: true,
+            ordering: true,
+            info: true,
+            responsive: true,
+            language: {
+                {% if LANGUAGE_CODE == 'ar' %}
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ar.json',
+                {% endif %}
+            },
+            columnDefs: [
+                { orderable: false, targets: [4] }
+            ]
+        });
+    });
+</script>
+{% endblock %}
