@@ -268,7 +268,7 @@ def admin_dashboard_analytics(request):
         'reservation_growth': reservation_growth,
     })
     
-    return render(request, template_name, context)
+    return render(request, 'admin/payment_analytics_django.html', context)
 
 @login_required
 @admin_required
@@ -383,9 +383,14 @@ def admin_payment_analytics(request):
         ).count()
         reservation_growth = ((current_month_count - previous_month_count) / previous_month_count) * 100
     
-    template_name, context = get_template_by_language(request, 'admin/payment_analytics')
+    # استخدام الطريقة المباشرة لتحديد القالب وتجاوز دالة get_template_by_language
+    current_language = get_language()
+    is_english = current_language == 'en'
+    is_rtl = current_language == 'ar'
     
-    context.update({
+    context = {
+        "is_english": is_english,
+        "is_rtl": is_rtl,
         'title': _('Payment Analytics'),
         'total_revenue': total_revenue,
         'pending_revenue': pending_revenue,
@@ -410,6 +415,7 @@ def admin_payment_analytics(request):
         'revenue_growth': revenue_growth,
         'reservation_growth': reservation_growth,
         'cache_buster': int(datetime.now().timestamp()),
-    })
+    }
     
-    return render(request, template_name, context)
+    # استخدام القالب المطلوب مباشرة
+    return render(request, 'admin/payment_analytics_django.html', context)
