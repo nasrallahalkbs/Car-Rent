@@ -17,6 +17,35 @@ Payment Analytics - Admin Panel
 
 {% block extra_css %}
 <style>
+    /* أنماط لتثبيت القائمة الجانبية */
+    .admin-sidebar {
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 1000;
+        top: 0;
+        {% if is_english %}left: 0;{% else %}right: 0;{% endif %}
+    }
+    
+    .admin-content {
+        {% if is_english %}margin-left: 250px;{% else %}margin-right: 250px;{% endif %}
+        width: calc(100% - 250px);
+    }
+    
+    @media (max-width: 992px) {
+        .admin-sidebar {
+            {% if is_english %}left: -250px;{% else %}right: -250px;{% endif %}
+        }
+        
+        .admin-content {
+            {% if is_english %}margin-left: 0;{% else %}margin-right: 0;{% endif %}
+            width: 100%;
+        }
+        
+        .admin-sidebar.show {
+            {% if is_english %}left: 0;{% else %}right: 0;{% endif %}
+        }
+    }
     .analytics-card {
         background-color: #fff;
         border-radius: 8px;
@@ -168,6 +197,9 @@ Payment Analytics - Admin Panel
 {% endblock %}
 
 {% block content %}
+<!-- عنصر التغطية للقائمة على الأجهزة المحمولة -->
+<div class="page-overlay"></div>
+
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
@@ -719,5 +751,27 @@ Payment Analytics - Admin Panel
             window.location.reload();
         });
     });
+
+    // تفعيل زر القائمة الجانبية للأجهزة المحمولة
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    var sidebar = document.getElementById('admin-sidebar');
+    var pageOverlay = document.querySelector('.page-overlay');
+    
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+            if (pageOverlay) {
+                pageOverlay.classList.toggle('show');
+            }
+        });
+    }
+    
+    // إغلاق القائمة الجانبية عند النقر خارجها على الأجهزة المحمولة
+    if (pageOverlay) {
+        pageOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            pageOverlay.classList.remove('show');
+        });
+    }
 </script>
 {% endblock extra_scripts %}
