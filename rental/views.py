@@ -165,7 +165,24 @@ def register_view(request):
     return render(request, template, {'form': form})
 
 def login_view(request):
-    """User login view"""
+    """User login view with redirection based on user type"""
+    # إذا كان المستخدم مسجل الدخول بالفعل، نوجهه للصفحة المناسبة
+    if request.user.is_authenticated:
+        # التحقق إذا كان المستخدم سوبر أدمن
+        from .models_superadmin import AdminUser
+        try:
+            admin_profile = AdminUser.objects.get(user=request.user)
+            if admin_profile.is_superadmin:
+                return redirect('superadmin_dashboard')
+            elif request.user.is_staff or request.user.is_admin:
+                return redirect('admin_index')  # توجيه للوحة تحكم المسؤول العادي
+        except (AdminUser.DoesNotExist, ImportError):
+            # المستخدم ليس لديه ملف مسؤول
+            if request.user.is_staff:
+                return redirect('admin_index')  # توجيه للوحة تحكم المسؤول العادي
+            else:
+                return redirect('profile')  # توجيه لصفحة الملف الشخصي للمستخدم العادي
+
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
@@ -174,8 +191,34 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
+                
+                # التحقق من نوع المستخدم وتوجيهه للصفحة المناسبة
+                from .models_superadmin import AdminUser
+                try:
+                    admin_profile = AdminUser.objects.get(user=user)
+                    if admin_profile.is_superadmin:
+                        messages.success(request, "تم تسجيل الدخول بنجاح كمسؤول أعلى!")
+                        return redirect('superadmin_dashboard')
+                except (AdminUser.DoesNotExist, ImportError):
+                    # المستخدم ليس لديه ملف مسؤول أعلى
+                    pass
+                
+                # التحقق إذا كان مسؤول عادي
+                if user.is_staff or getattr(user, 'is_admin', False):
+                    messages.success(request, "تم تسجيل الدخول بنجاح كمسؤول!")
+                    return redirect('admin_index')
+                
+                # المستخدم العادي
                 messages.success(request, "تم تسجيل الدخول بنجاح!")
-                return redirect('index')
+                
+                # التحقق إذا كان هناك مسار إعادة توجيه محدد في الطلب
+                next_url = request.GET.get('next')
+                if next_url and next_url.strip():
+                    return redirect(next_url)
+                
+                return redirect('profile')
+            else:
+                messages.error(request, "خطأ في اسم المستخدم أو كلمة المرور!")
         else:
             messages.error(request, "خطأ في اسم المستخدم أو كلمة المرور!")
     else:
