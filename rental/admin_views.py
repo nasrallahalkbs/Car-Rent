@@ -229,21 +229,25 @@ def admin_index(request):
     # Pending reservations list for display in dashboard
     pending_reservations_list = Reservation.objects.filter(status='pending').order_by('-created_at')[:5]
     
-    # Review stats
+    # Review stats - استخدام قيم افتراضية بسبب عدم وجود حقول is_approved و is_rejected في نموذج Review
     total_reviews = Review.objects.count()
-    pending_reviews = Review.objects.filter(is_approved=False, is_rejected=False).count()
-    approved_reviews = Review.objects.filter(is_approved=True).count()
-    rejected_reviews = Review.objects.filter(is_rejected=True).count()
     
-    # Ratings breakdown
+    # تحليل تقسيم التقييمات حسب عدد النجوم
     five_star_count = Review.objects.filter(rating=5).count()
     four_star_count = Review.objects.filter(rating=4).count()
     three_star_count = Review.objects.filter(rating=3).count()
+    two_star_count = Review.objects.filter(rating=2).count()
+    one_star_count = Review.objects.filter(rating=1).count()
     
-    # Calculate percentages
+    # حساب النسب المئوية
     five_star_percentage = (five_star_count / total_reviews * 100) if total_reviews > 0 else 0
     four_star_percentage = (four_star_count / total_reviews * 100) if total_reviews > 0 else 0
     three_star_percentage = (three_star_count / total_reviews * 100) if total_reviews > 0 else 0
+    
+    # استخدام قيم افتراضية للتقييمات المعلقة والموافق عليها والمرفوضة
+    pending_reviews = 0
+    approved_reviews = total_reviews
+    rejected_reviews = 0
     
     # Generate recent activities (sample data)
     # در واقع، باید این داده ها از یک مدل فعالیت سیستم گرفته شوند
