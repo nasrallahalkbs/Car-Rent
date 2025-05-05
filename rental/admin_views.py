@@ -204,10 +204,12 @@ def admin_index(request):
     # Get summary statistics
     total_cars = Car.objects.count()
     available_cars = Car.objects.filter(is_available=True).count()
-    total_users = User.objects.filter(is_admin=False).count()
+    total_customers = User.objects.filter(is_staff=False).count()
+    new_customers = User.objects.filter(is_staff=False, date_joined__gte=timezone.now() - timedelta(days=30)).count()
 
     # Reservation stats
     total_reservations = Reservation.objects.count()
+    active_reservations = Reservation.objects.filter(status__in=['pending', 'confirmed']).count()
     pending_reservations = Reservation.objects.filter(status='pending').count()
     confirmed_reservations = Reservation.objects.filter(status='confirmed').count()
     completed_reservations = Reservation.objects.filter(status='completed').count()
@@ -216,12 +218,41 @@ def admin_index(request):
     # Payment stats
     paid_total = Reservation.objects.filter(payment_status='paid').aggregate(Sum('total_price'))['total_price__sum'] or 0
     pending_payment_total = Reservation.objects.filter(payment_status='pending').aggregate(Sum('total_price'))['total_price__sum'] or 0
-
+    
     # Recent reservations
-    recent_reservations = Reservation.objects.order_by('-created_at')[:5]
+    recent_reservations = Reservation.objects.order_by('-created_at')[:10]
 
     # Pending reservations list for display in dashboard
     pending_reservations_list = Reservation.objects.filter(status='pending').order_by('-created_at')[:5]
+    
+    # Review stats
+    from django.db.models import Count, Avg
+    total_reviews = Review.objects.count()
+    pending_reviews = Review.objects.filter(is_approved=False, is_rejected=False).count()
+    approved_reviews = Review.objects.filter(is_approved=True).count()
+    rejected_reviews = Review.objects.filter(is_rejected=True).count()
+    
+    # Ratings breakdown
+    five_star_count = Review.objects.filter(rating=5).count()
+    four_star_count = Review.objects.filter(rating=4).count()
+    three_star_count = Review.objects.filter(rating=3).count()
+    
+    # Calculate percentages
+    five_star_percentage = (five_star_count / total_reviews * 100) if total_reviews > 0 else 0
+    four_star_percentage = (four_star_count / total_reviews * 100) if total_reviews > 0 else 0
+    three_star_percentage = (three_star_count / total_reviews * 100) if total_reviews > 0 else 0
+    
+    # Generate recent activities (sample data)
+    # در واقع، باید این داده ها از یک مدل فعالیت سیستم گرفته شوند
+    recent_activities = []
+    for i, reservation in enumerate(recent_reservations[:5]):
+        activity = {
+            'user': reservation.user,
+            'timestamp': reservation.created_at,
+            'action_text': f"قام بحجز {reservation.car.make} {reservation.car.model}",
+            'description': f"من {reservation.pickup_date.strftime('%Y-%m-%d')} إلى {reservation.return_date.strftime('%Y-%m-%d')}"
+        }
+        recent_activities.append(activity)
 
     # Data for charts
     # Monthly reservations for last 6 months
@@ -269,11 +300,16 @@ def admin_index(request):
             category_labels.append(category)
             category_data.append(count)
 
+    # Fix: Import Review model at the function level to avoid import errors
+    from .models import Review
+    
     context = {
         'total_cars': total_cars,
         'available_cars': available_cars,
-        'total_users': total_users,
+        'total_customers': total_customers,
+        'new_customers': new_customers,
         'total_reservations': total_reservations,
+        'active_reservations': active_reservations,
         'pending_reservations': pending_reservations,
         'pending_reservations_list': pending_reservations_list,
         'confirmed_reservations': confirmed_reservations,
@@ -289,10 +325,26 @@ def admin_index(request):
         'status_data': status_data,
         'category_labels': category_labels,
         'category_data': category_data,
+        
+        # Review stats
+        'total_reviews': total_reviews,
+        'pending_reviews': pending_reviews,
+        'approved_reviews': approved_reviews,
+        'rejected_reviews': rejected_reviews,
+        'five_star_percentage': five_star_percentage,
+        'four_star_percentage': four_star_percentage,
+        'three_star_percentage': three_star_percentage,
+        
+        # Recent activities
+        'recent_activities': recent_activities,
+        
+        # Occupancy data (sample data)
+        'occupancy_data': '65, 75, 82, 78, 80, 70, 68',
+        
         'current_user': request.user,  # Add current user to context
     }
 
-    return render(request, 'admin/index.html', context)
+    return render(request, 'admin/enhanced/index.html', context)
 
 @login_required
 @admin_required
