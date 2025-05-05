@@ -1,34 +1,42 @@
 /**
- * قواعد CSS المجبرة للتأكد من أن القائمة الجانبية تبقى ثابتة تماماً
- * هذا الملف يحتوي على قواعد CSS ذات أولوية عالية لتجاوز أي قواعد أخرى
+ * قواعد CSS المجبرة للتأكد من أن القائمة الجانبية تبقى ثابتة على اليمين
  */
 
-/* تثبيت القائمة الجانبية نهائياً */
 .admin-sidebar {
     position: fixed !important;
     top: 0 !important;
+    right: 0 !important; /* تثبيت على اليمين */
+    left: auto !important;
     height: 100vh !important;
     width: 250px !important;
     max-width: 250px !important;
     overflow-y: auto !important;
     z-index: 9999 !important;
-    opacity: 1 !important;
-    visibility: visible !important;
     transform: none !important;
     transition: none !important;
-    animation: none !important;
-    pointer-events: auto !important;
 }
 
-/* تحديد موقع القائمة حسب اتجاه اللغة */
-html[dir="ltr"] .admin-sidebar {
-    left: 0 !important;
-    right: auto !important;
+/* تعديل المحتوى الرئيسي */
+.admin-content {
+    margin-right: 250px !important;
+    margin-left: 0 !important;
+    width: calc(100% - 250px) !important;
 }
 
-html[dir="rtl"] .admin-sidebar {
-    right: 0 !important;
-    left: auto !important;
+/* تعديلات للشاشات الصغيرة */
+@media (max-width: 991px) {
+    .admin-sidebar {
+        transform: translateX(100%) !important;
+    }
+
+    .admin-sidebar.show {
+        transform: translateX(0) !important;
+    }
+
+    .admin-content {
+        margin-right: 0 !important;
+        width: 100% !important;
+    }
 }
 
 /* تثبيت الشريط العلوي */
@@ -44,18 +52,6 @@ html[dir="rtl"] .admin-sidebar {
     transform: none !important;
     transition: none !important;
     animation: none !important;
-}
-
-/* تعديل هوامش المحتوى الرئيسي حسب اتجاه اللغة */
-html[dir="ltr"] .admin-content {
-    margin-left: 250px !important;
-    width: calc(100% - 250px) !important;
-}
-
-html[dir="rtl"] .admin-content {
-    margin-right: 250px !important;
-    margin-left: 0 !important;
-    width: calc(100% - 250px) !important;
 }
 
 /* تأكيد عدم تأثر القائمة عند التمرير */
@@ -81,34 +77,4 @@ body.is-loading .admin-content {
 /* قواعد خاصة لمؤشر التحميل */
 .ajax-loading {
     z-index: 99999 !important;
-}
-
-/* قواعد استجابة للشاشات الصغيرة */
-@media (max-width: 992px) {
-    /* نحتفظ بالقائمة مخفية ولكن جاهزة للظهور */
-    html[dir="ltr"] .admin-sidebar {
-        left: -250px !important;
-        right: auto !important;
-    }
-    
-    html[dir="rtl"] .admin-sidebar {
-        right: -250px !important;
-        left: auto !important;
-    }
-    
-    /* عندما تكون القائمة مفتوحة نظهرها بشكل كامل */
-    html[dir="ltr"] .admin-sidebar.show {
-        left: 0 !important;
-    }
-    
-    html[dir="rtl"] .admin-sidebar.show {
-        right: 0 !important;
-    }
-    
-    /* نزيل الهوامش للمحتوى في وضع الجوال */
-    .admin-content {
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        width: 100% !important;
-    }
 }
