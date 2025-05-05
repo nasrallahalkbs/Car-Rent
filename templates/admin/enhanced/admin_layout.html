@@ -1,0 +1,838 @@
+{% load static %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_CODE == 'ar' %}rtl{% else %}ltr{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% trans "لوحة تحكم المسؤول" %}{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+    
+    <!-- Bootstrap RTL for Arabic, LTR for English -->
+    {% if LANGUAGE_CODE == 'ar' %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    {% else %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    {% endif %}
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts - Tajawal for Arabic, Poppins for English -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- ApexCharts for advanced charts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary-color: #0f172a;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --light-color: #f3f4f6;
+            --dark-color: #1f2937;
+            
+            --border-radius: 0.5rem;
+            --box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: {% if LANGUAGE_CODE == 'ar' %}'Tajawal'{% else %}'Poppins'{% endif %}, sans-serif;
+            background-color: #f9fafb;
+            color: #334155;
+        }
+        
+        /* Admin Layout Styling */
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .admin-sidebar {
+            position: fixed;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(to bottom, #4f46e5, #4338ca);
+            color: white;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            {% if LANGUAGE_CODE == 'ar' %}right: 0;{% else %}left: 0;{% endif %}
+        }
+        
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        
+        .sidebar-logo:hover {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .sidebar-toggle {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+        
+        .sidebar-user {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .user-role {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        
+        .sidebar-menu {
+            padding: 1.5rem 0;
+        }
+        
+        .menu-category {
+            padding: 0 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .menu-items {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1.5rem 0;
+        }
+        
+        .menu-item {
+            position: relative;
+        }
+        
+        .menu-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        
+        .menu-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .menu-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .menu-icon {
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-{% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 280px;
+            padding: 0;
+            transition: var(--transition);
+        }
+        
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            background-color: white;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .topbar-search {
+            position: relative;
+            width: 300px;
+        }
+        
+        .topbar-search input {
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid #e2e8f0;
+            width: 100%;
+            font-size: 0.875rem;
+        }
+        
+        .topbar-search i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+        
+        .topbar-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: #f3f4f6;
+            color: #64748b;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+        
+        .topbar-icon:hover {
+            background-color: #e2e8f0;
+            color: #334155;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .content-wrapper {
+            padding: 2rem;
+        }
+        
+        /* Cards, Stats and Widgets */
+        .card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: none;
+            transition: var(--transition);
+            height: 100%;
+        }
+        
+        .card:hover {
+            box-shadow: var(--box-shadow);
+            transform: translateY(-3px);
+        }
+        
+        .card-stat {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .stat-icon.purple {
+            background: linear-gradient(45deg, #6366f1, #8b5cf6);
+        }
+        
+        .stat-icon.blue {
+            background: linear-gradient(45deg, #3b82f6, #60a5fa);
+        }
+        
+        .stat-icon.green {
+            background: linear-gradient(45deg, #10b981, #34d399);
+        }
+        
+        .stat-icon.orange {
+            background: linear-gradient(45deg, #f59e0b, #fbbf24);
+        }
+        
+        .stat-icon.red {
+            background: linear-gradient(45deg, #ef4444, #f87171);
+        }
+        
+        .stat-content {
+            flex: 1;
+        }
+        
+        .stat-title {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-change {
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .stat-change.positive {
+            color: var(--success-color);
+        }
+        
+        .stat-change.negative {
+            color: var(--danger-color);
+        }
+        
+        /* Tables */
+        .table-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .table-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .data-table {
+            width: 100%;
+        }
+        
+        .data-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #64748b;
+        }
+        
+        .avatar-sm {
+            width: 30px;
+            height: 30px;
+            font-size: 0.75rem;
+        }
+        
+        .avatar-lg {
+            width: 50px;
+            height: 50px;
+            font-size: 1.25rem;
+        }
+        
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .user-cell-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-cell-name {
+            font-weight: 600;
+            color: #334155;
+        }
+        
+        .user-cell-email {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-inactive {
+            background-color: rgba(203, 213, 225, 0.5);
+            color: #64748b;
+        }
+        
+        .status-pending {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .status-rejected {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+        
+        /* Buttons */
+        .btn-custom {
+            border-radius: var(--border-radius);
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        .btn-primary-custom {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary-custom:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            color: white;
+        }
+        
+        .btn-outline-primary-custom {
+            background-color: transparent;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .btn-outline-primary-custom:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* Forms */
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+        }
+        
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        /* Responsive design */
+        @media (max-width: 992px) {
+            .admin-sidebar {
+                width: 70px;
+                overflow: visible;
+            }
+            
+            .sidebar-logo span, 
+            .user-info, 
+            .menu-text,
+            .menu-category {
+                display: none;
+            }
+            
+            .main-content {
+                margin-{% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 70px;
+            }
+            
+            .sidebar-user {
+                justify-content: center;
+                padding: 1rem;
+            }
+            
+            .menu-link {
+                justify-content: center;
+                padding: 0.75rem;
+            }
+            
+            .menu-icon {
+                margin-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0;
+                font-size: 1.25rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .topbar-search {
+                display: none;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                <a href="{% url 'admin_index' %}" class="sidebar-logo">
+                    <i class="fas fa-car-side"></i>
+                    <span>{% trans "كاررنتال - الإدارة" %}</span>
+                </a>
+                <button class="sidebar-toggle d-lg-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <!-- User Info -->
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    {% if user.first_name %}
+                        {{ user.first_name|first|upper }}
+                    {% else %}
+                        {{ user.username|first|upper }}
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="user-role">{% trans "مدير النظام" %}</div>
+                </div>
+            </div>
+            
+            <!-- Menu -->
+            <nav class="sidebar-menu">
+                <div class="menu-category">{% trans "لوحة التحكم" %}</div>
+                <ul class="menu-items">
+                    <li class="menu-item">
+                        <a href="{% url 'admin_index' %}" class="menu-link {% if request.path == '/dashboard/' or request.path == '/ar/dashboard/' %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+                            <span class="menu-text">{% trans "لوحة المعلومات" %}</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="menu-category">{% trans "التقارير التحليلية" %}</div>
+                <ul class="menu-items">
+                    <li class="menu-item">
+                        <a href="{% url 'admin_payment_analytics' %}" class="menu-link {% if 'dashboard/analytics' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-chart-line"></i></span>
+                            <span class="menu-text">{% trans "التقارير التحليلية" %}</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="menu-category">{% trans "إدارة المحتوى" %}</div>
+                <ul class="menu-items">
+                    <li class="menu-item">
+                        <a href="{% url 'admin_cars' %}" class="menu-link {% if 'cars/manage' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-car"></i></span>
+                            <span class="menu-text">{% trans "السيارات" %}</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{% url 'admin_car_categories' %}" class="menu-link {% if 'categories/manage' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-tags"></i></span>
+                            <span class="menu-text">{% trans "تصنيفات السيارات" %}</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{% url 'admin_locations' %}" class="menu-link {% if 'locations/manage' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-map-marker-alt"></i></span>
+                            <span class="menu-text">{% trans "المواقع" %}</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{% url 'admin_features' %}" class="menu-link {% if 'features/manage' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-list-ul"></i></span>
+                            <span class="menu-text">{% trans "الميزات" %}</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="menu-category">{% trans "إدارة الحجوزات" %}</div>
+                <ul class="menu-items">
+                    <li class="menu-item">
+                        <a href="{% url 'admin_reservations' %}" class="menu-link {% if 'reservations/manage' in request.path and 'archive' not in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
+                            <span class="menu-text">{% trans "الحجوزات" %}</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{% url 'admin_reservation_archive' %}" class="menu-link {% if 'reservations/archive' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-archive"></i></span>
+                            <span class="menu-text">{% trans "أرشيف الحجوزات" %}</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="menu-category">{% trans "المدفوعات" %}</div>
+                <ul class="menu-items">
+                    <li class="menu-item">
+                        <a href="{% url 'admin_payments' %}" class="menu-link {% if 'payments/manage' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-credit-card"></i></span>
+                            <span class="menu-text">{% trans "المدفوعات" %}</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{% url 'admin_bank_transfer' %}" class="menu-link {% if 'payments/bank-transfer' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-university"></i></span>
+                            <span class="menu-text">{% trans "التحويلات البنكية" %}</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="menu-category">{% trans "المراجعات" %}</div>
+                <ul class="menu-items">
+                    <li class="menu-item">
+                        <a href="{% url 'admin_reviews' %}" class="menu-link {% if 'reviews/manage' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-star"></i></span>
+                            <span class="menu-text">{% trans "مراجعات العملاء" %}</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="menu-category">{% trans "المستخدمون" %}</div>
+                <ul class="menu-items">
+                    <li class="menu-item">
+                        <a href="{% url 'admin_customers' %}" class="menu-link {% if 'customers/manage' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-users"></i></span>
+                            <span class="menu-text">{% trans "العملاء" %}</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="menu-category">{% trans "إعدادات النظام" %}</div>
+                <ul class="menu-items">
+                    <li class="menu-item">
+                        <a href="{% url 'admin_settings' %}" class="menu-link {% if 'settings' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-cog"></i></span>
+                            <span class="menu-text">{% trans "الإعدادات العامة" %}</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{% url 'admin_profile' %}" class="menu-link {% if 'profile' in request.path %}active{% endif %}">
+                            <span class="menu-icon"><i class="fas fa-user-cog"></i></span>
+                            <span class="menu-text">{% trans "الملف الشخصي" %}</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{% url 'user_logout' %}" class="menu-link">
+                            <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
+                            <span class="menu-text">{% trans "تسجيل الخروج" %}</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                {% if user.admin_profile.is_superadmin %}
+                <div class="menu-category">{% trans "المسؤول الأعلى" %}</div>
+                <ul class="menu-items">
+                    <li class="menu-item">
+                        <a href="{% url 'superadmin_dashboard' %}" class="menu-link">
+                            <span class="menu-icon"><i class="fas fa-user-shield"></i></span>
+                            <span class="menu-text">{% trans "لوحة المسؤول الأعلى" %}</span>
+                        </a>
+                    </li>
+                </ul>
+                {% endif %}
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="d-lg-none sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="topbar-search">
+                        <input type="text" placeholder="{% trans 'ابحث هنا...' %}" class="form-control">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-icon">
+                        <a href="/car-rental/" class="text-reset">
+                            <i class="fas fa-globe"></i>
+                        </a>
+                    </div>
+                    <div class="topbar-icon">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+                    <div class="dropdown">
+                        <div class="topbar-icon" data-bs-toggle="dropdown">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <input type="hidden" name="language" value="ar">
+                                    <button type="submit" class="dropdown-item">العربية</button>
+                                </form>
+                            </li>
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <input type="hidden" name="language" value="en">
+                                    <button type="submit" class="dropdown-item">English</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="content-wrapper">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+    
+    <!-- Sidebar Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggles = document.querySelectorAll('.sidebar-toggle');
+            const sidebar = document.querySelector('.admin-sidebar');
+            
+            sidebarToggles.forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                });
+            });
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(event) {
+                const isClickInside = sidebar.contains(event.target) || 
+                                    [...sidebarToggles].some(toggle => toggle.contains(event.target));
+                
+                if (!isClickInside && window.innerWidth < 992 && sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                }
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
