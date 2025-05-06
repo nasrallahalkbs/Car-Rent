@@ -1,14 +1,15 @@
-{% extends 'admin/index.html' %}
+
+{% extends 'admin/enhanced/admin_layout.html' %}
 {% load static %}
 
-{% block title %}Payment Management{% endblock %}
+{% block title %}{% if is_english %}Payment Management{% else %}إدارة المدفوعات{% endif %}{% endblock %}
 
-{% block admin_content %}
+{% block content %}
 <div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-dollar-sign me-2"></i> Payment Management</h2>
+        <h2><i class="fas fa-dollar-sign me-2"></i> {% if is_english %}Payment Management{% else %}إدارة المدفوعات{% endif %}</h2>
         <a href="{% url 'add_manual_payment' %}" class="btn btn-primary">
-            <i class="fas fa-plus-circle me-2"></i> Add Manual Payment
+            <i class="fas fa-plus-circle me-2"></i> {% if is_english %}Add Manual Payment{% else %}إضافة دفعة يدوية{% endif %}
         </a>
     </div>
     
@@ -19,10 +20,16 @@
                 <div class="d-flex align-items-center">
                     <i class="fas fa-chart-line fs-4 me-3"></i>
                     <div>
-                        <h5 class="fw-bold mb-1">Payment Analytics</h5>
-                        <p class="mb-0">For detailed payment analytics and financial reports, please visit the
+                        <h5 class="fw-bold mb-1">{% if is_english %}Payment Analytics{% else %}تحليلات المدفوعات{% endif %}</h5>
+                        <p class="mb-0">
+                            {% if is_english %}
+                            For detailed payment analytics and financial reports, please visit the
+                            {% else %}
+                            للحصول على تحليلات مفصلة للمدفوعات والتقارير المالية، يرجى زيارة
+                            {% endif %}
                             <a href="{% url 'admin_dashboard_analytics' %}" class="alert-link">
-                                <i class="fas fa-external-link-alt me-1"></i> Analytics Dashboard
+                                <i class="fas fa-external-link-alt me-1"></i> 
+                                {% if is_english %}Analytics Dashboard{% else %}لوحة التحليلات{% endif %}
                             </a>
                         </p>
                     </div>
@@ -36,8 +43,8 @@
                         <i class="fas fa-credit-card text-primary fs-4"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold text-muted mb-1">Payment Records</h5>
-                        <p class="mb-0">Total: <span class="badge bg-primary">{{ payments.paginator.count }}</span></p>
+                        <h5 class="fw-bold text-muted mb-1">{% if is_english %}Payment Records{% else %}سجلات الدفع{% endif %}</h5>
+                        <p class="mb-0">{% if is_english %}Total{% else %}الإجمالي{% endif %}: <span class="badge bg-primary">{{ payments.paginator.count }}</span></p>
                     </div>
                 </div>
             </div>
@@ -47,7 +54,7 @@
     <!-- Payment Table -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white">
-            <h5 class="mb-0 py-2">Payment History</h5>
+            <h5 class="mb-0 py-2">{% if is_english %}Payment History{% else %}سجل المدفوعات{% endif %}</h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -55,13 +62,13 @@
                     <thead class="bg-light">
                         <tr>
                             <th>ID</th>
-                            <th>Customer</th>
-                            <th>Car</th>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Method</th>
-                            <th>Actions</th>
+                            <th>{% if is_english %}Customer{% else %}العميل{% endif %}</th>
+                            <th>{% if is_english %}Car{% else %}السيارة{% endif %}</th>
+                            <th>{% if is_english %}Date{% else %}التاريخ{% endif %}</th>
+                            <th>{% if is_english %}Amount{% else %}المبلغ{% endif %}</th>
+                            <th>{% if is_english %}Status{% else %}الحالة{% endif %}</th>
+                            <th>{% if is_english %}Method{% else %}الطريقة{% endif %}</th>
+                            <th>{% if is_english %}Actions{% else %}الإجراءات{% endif %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,11 +95,11 @@
                             <td>${{ payment.amount|floatformat:2 }}</td>
                             <td>
                                 {% if payment.status == 'paid' %}
-                                <span class="badge bg-success rounded-pill">Paid</span>
+                                <span class="badge bg-success rounded-pill">{% if is_english %}Paid{% else %}مدفوع{% endif %}</span>
                                 {% elif payment.status == 'refunded' %}
-                                <span class="badge bg-danger rounded-pill">Refunded</span>
+                                <span class="badge bg-danger rounded-pill">{% if is_english %}Refunded{% else %}مسترجع{% endif %}</span>
                                 {% elif payment.status == 'pending' %}
-                                <span class="badge bg-warning rounded-pill">Pending</span>
+                                <span class="badge bg-warning rounded-pill">{% if is_english %}Pending{% else %}معلق{% endif %}</span>
                                 {% else %}
                                 <span class="badge bg-secondary rounded-pill">{{ payment.status|title }}</span>
                                 {% endif %}
@@ -114,33 +121,33 @@
                             <td>
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        Actions
+                                        {% if is_english %}Actions{% else %}إجراءات{% endif %}
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="{% url 'payment_details' payment.id %}">
-                                            <i class="fas fa-info-circle me-2"></i> View Details
+                                            <i class="fas fa-info-circle me-2"></i> {% if is_english %}View Details{% else %}عرض التفاصيل{% endif %}
                                         </a></li>
                                         <li><a class="dropdown-item" href="{% url 'print_receipt' payment.id %}">
-                                            <i class="fas fa-print me-2"></i> Print Receipt
+                                            <i class="fas fa-print me-2"></i> {% if is_english %}Print Receipt{% else %}طباعة الإيصال{% endif %}
                                         </a></li>
                                         <li><a class="dropdown-item" href="{% url 'download_receipt' payment.id %}">
-                                            <i class="fas fa-download me-2"></i> Download PDF
+                                            <i class="fas fa-download me-2"></i> {% if is_english %}Download PDF{% else %}تحميل PDF{% endif %}
                                         </a></li>
                                         
                                         {% if payment.status == 'paid' %}
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item text-danger" href="{% url 'process_refund' payment.id %}" 
-                                               onclick="return confirm('Are you sure you want to process a refund for this payment?')">
-                                            <i class="fas fa-undo-alt me-2"></i> Process Refund
+                                               onclick="return confirm('{% if is_english %}Are you sure you want to process a refund for this payment?{% else %}هل أنت متأكد من أنك تريد إجراء استرداد لهذه الدفعة؟{% endif %}')">
+                                            <i class="fas fa-undo-alt me-2"></i> {% if is_english %}Process Refund{% else %}إجراء استرداد{% endif %}
                                         </a></li>
                                         {% elif payment.status == 'pending' %}
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item text-success" href="{% url 'mark_as_paid' payment.id %}">
-                                            <i class="fas fa-check-circle me-2"></i> Mark as Paid
+                                            <i class="fas fa-check-circle me-2"></i> {% if is_english %}Mark as Paid{% else %}تعيين كمدفوع{% endif %}
                                         </a></li>
                                         <li><a class="dropdown-item text-danger" href="{% url 'cancel_payment' payment.id %}"
-                                               onclick="return confirm('Are you sure you want to cancel this payment?')">
-                                            <i class="fas fa-times-circle me-2"></i> Cancel Payment
+                                               onclick="return confirm('{% if is_english %}Are you sure you want to cancel this payment?{% else %}هل أنت متأكد من أنك تريد إلغاء هذه الدفعة؟{% endif %}')">
+                                            <i class="fas fa-times-circle me-2"></i> {% if is_english %}Cancel Payment{% else %}إلغاء الدفع{% endif %}
                                         </a></li>
                                         {% endif %}
                                     </ul>
@@ -152,7 +159,7 @@
                             <td colspan="8" class="text-center py-4">
                                 <div class="text-muted">
                                     <i class="fas fa-receipt fs-3 mb-3"></i>
-                                    <p>No payment records found.</p>
+                                    <p>{% if is_english %}No payment records found.{% else %}لم يتم العثور على سجلات دفع.{% endif %}</p>
                                 </div>
                             </td>
                         </tr>
