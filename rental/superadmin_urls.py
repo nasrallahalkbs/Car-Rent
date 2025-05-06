@@ -57,17 +57,9 @@ urlpatterns = [
     
     # النسخ الاحتياطي واستعادة النظام - تعليق مؤقت
     path('backup/', superadmin_views.superadmin_dashboard, name='superadmin_backup'),
-    # path('backup/create/', superadmin_views.create_backup, name='superadmin_create_backup'),
-    # path('backup/<int:backup_id>/restore/', superadmin_views.restore_backup, name='superadmin_restore_backup'),
-    # path('backup/<int:backup_id>/download/', superadmin_views.download_backup, name='superadmin_download_backup'),
-    # path('backup/<int:backup_id>/delete/', superadmin_views.delete_backup, name='superadmin_delete_backup'),
     
     # جدولة المهام - تعليق مؤقت
     path('scheduler/', superadmin_views.superadmin_dashboard, name='superadmin_scheduler'),
-    # path('scheduler/add/', superadmin_views.add_scheduled_job, name='superadmin_add_scheduled_job'),
-    # path('scheduler/<int:job_id>/edit/', superadmin_views.edit_scheduled_job, name='superadmin_edit_scheduled_job'),
-    # path('scheduler/<int:job_id>/delete/', superadmin_views.delete_scheduled_job, name='superadmin_delete_scheduled_job'),
-    # path('scheduler/<int:job_id>/toggle/', superadmin_views.toggle_scheduled_job, name='superadmin_toggle_scheduled_job'),
     
     # إعدادات النظام - تعليق مؤقت
     path('settings/', superadmin_views.superadmin_dashboard, name='superadmin_settings'),
@@ -77,6 +69,4 @@ urlpatterns = [
     
     # تشخيص وإصلاح النظام - تعليق مؤقت
     path('diagnostics/', superadmin_views.superadmin_dashboard, name='superadmin_diagnostics'),
-    # path('diagnostics/run/<str:diagnostic_type>/', superadmin_views.run_diagnostic, name='superadmin_run_diagnostic'),
-    # path('diagnostics/fix/<int:issue_id>/', superadmin_views.fix_system_issue, name='superadmin_fix_issue'),
 ]
