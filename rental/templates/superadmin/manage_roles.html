@@ -1,0 +1,198 @@
+{% extends "superadmin/layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "إدارة الأدوار" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block css %}
+<style>
+    .role-details {
+        margin-bottom: 10px;
+    }
+    
+    .role-card {
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+    }
+    
+    .role-card:hover {
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .role-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #2b3847;
+        margin-bottom: 10px;
+    }
+    
+    .role-badge {
+        background-color: #f0f7ff;
+        border-radius: 3px;
+        padding: 5px 10px;
+        font-size: 0.85rem;
+        display: inline-block;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        color: #2b548d;
+    }
+    
+    .role-description {
+        color: #5e6e82;
+        margin-bottom: 15px;
+        min-height: 60px;
+    }
+    
+    .role-meta {
+        font-size: 0.85rem;
+        color: #5e6e82;
+        margin-bottom: 10px;
+    }
+    
+    .role-actions {
+        margin-top: 15px;
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+    }
+    
+    .role-permissions {
+        max-height: 120px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+    }
+    
+    .superadmin-badge {
+        background-color: #fce7e7;
+        color: #d64040;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-body">
+    <!-- row -->
+    <div class="container-fluid">
+        <div class="row page-titles mx-0">
+            <div class="col-sm-6 p-md-0">
+                <div class="welcome-text">
+                    <h4>{% trans "إدارة الأدوار" %}</h4>
+                    <span>{% trans "إدارة أدوار المسؤولين وصلاحياتهم" %}</span>
+                </div>
+            </div>
+            <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'superadmin_dashboard' %}">{% trans "الرئيسية" %}</a></li>
+                    <li class="breadcrumb-item active"><a href="javascript:void(0)">{% trans "الأدوار" %}</a></li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">{% trans "أدوار المسؤولين الحالية" %}</h4>
+                        <a href="{% url 'superadmin_add_role' %}" class="btn btn-primary">
+                            <i class="fa fa-plus"></i> {% trans "إضافة دور جديد" %}
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for role in roles %}
+                            <div class="col-md-4">
+                                <div class="card role-card">
+                                    <div class="card-body">
+                                        <h5 class="role-title">{{ role.name }}</h5>
+                                        
+                                        {% if role.is_superadmin %}
+                                        <div class="role-badge superadmin-badge">{% trans "مسؤول أعلى" %}</div>
+                                        {% endif %}
+                                        
+                                        <div class="role-meta">
+                                            <i class="fa fa-users"></i> {{ role.admin_count }} {% trans "مسؤول" %}
+                                        </div>
+                                        
+                                        <div class="role-description">
+                                            {{ role.description|default:_("لا يوجد وصف") }}
+                                        </div>
+                                        
+                                        <div class="role-details">
+                                            <strong>{% trans "الصلاحيات:" %}</strong>
+                                            <div class="role-permissions">
+                                                {% for permission in role.permissions.all %}
+                                                <div class="role-badge">{{ permission.name }}</div>
+                                                {% empty %}
+                                                <div class="text-muted">{% trans "لا توجد صلاحيات محددة" %}</div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="role-actions">
+                                            <a href="{% url 'superadmin_role_details' role.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fa fa-eye"></i> {% trans "عرض" %}
+                                            </a>
+                                            <a href="{% url 'superadmin_edit_role' role.id %}" class="btn btn-sm btn-primary">
+                                                <i class="fa fa-edit"></i> {% trans "تعديل" %}
+                                            </a>
+                                            {% if not role.is_superadmin and role.admin_count == 0 %}
+                                            <a href="{% url 'superadmin_delete_role' role.id %}" class="btn btn-sm btn-danger delete-role" data-toggle="modal" data-target="#deleteModal" data-id="{{ role.id }}" data-name="{{ role.name }}">
+                                                <i class="fa fa-trash"></i> {% trans "حذف" %}
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="col-md-12">
+                                <div class="alert alert-info">
+                                    {% trans "لا توجد أدوار مضافة حتى الآن. قم بإضافة دور جديد للبدء." %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- حذف الدور -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">{% trans "تأكيد الحذف" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "هل أنت متأكد من رغبتك في حذف دور:" %} <strong id="roleName"></strong>؟</p>
+                <p class="text-danger">{% trans "هذا الإجراء لا يمكن التراجع عنه." %}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "إلغاء" %}</button>
+                <a href="#" id="confirmDelete" class="btn btn-danger">{% trans "نعم، حذف" %}</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // تحديث بيانات نافذة تأكيد الحذف
+    $('.delete-role').on('click', function() {
+        var roleId = $(this).data('id');
+        var roleName = $(this).data('name');
+        
+        $('#roleName').text(roleName);
+        $('#confirmDelete').attr('href', "{% url 'superadmin_delete_role' 0 %}".replace('0', roleId));
+    });
+});
+</script>
+{% endblock %}
