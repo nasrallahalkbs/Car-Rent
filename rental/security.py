@@ -66,6 +66,9 @@ def set_system_setting(key, value, value_type='string', group='general', descrip
     """تعيين قيمة إعداد النظام"""
     import json
     
+    # سجل العملية بشكل تفصيلي للتشخيص
+    print(f"DEBUG SET_SETTING: Setting {key} to {value} (type: {value_type})")
+    
     # تحويل القيمة إلى نص حسب نوعها
     if value_type == 'json' or value_type == 'list':
         if isinstance(value, (dict, list)):
@@ -77,19 +80,31 @@ def set_system_setting(key, value, value_type='string', group='general', descrip
     else:  # string
         string_value = value
     
-    # إنشاء أو تحديث الإعداد
-    setting, created = SystemSetting.objects.update_or_create(
-        key=key,
-        defaults={
-            'value': string_value,
-            'value_type': value_type,
-            'group': group,
-            'description': description,
-            'is_public': is_public
-        }
-    )
-    
-    return setting
+    try:
+        # إنشاء أو تحديث الإعداد
+        setting, created = SystemSetting.objects.update_or_create(
+            key=key,
+            defaults={
+                'value': string_value,
+                'value_type': value_type,
+                'group': group,
+                'description': description,
+                'is_public': is_public
+            }
+        )
+        
+        status = "Created new setting" if created else "Updated existing setting"
+        print(f"DEBUG SET_SETTING: {status} {key} = {string_value}")
+        
+        # تأكد من حفظ الإعداد بشكل صحيح من خلال قراءته مرة أخرى
+        verification = get_system_setting(key)
+        print(f"DEBUG SET_SETTING: Verification read back: {key} = {verification}")
+        
+        return setting
+    except Exception as e:
+        print(f"DEBUG SET_SETTING ERROR: Failed to set {key}: {str(e)}")
+        logger.error(f"Failed to set system setting {key}: {str(e)}")
+        raise
 
 # ============================================
 # استيراد نماذج المصادقة الثنائية والأمان

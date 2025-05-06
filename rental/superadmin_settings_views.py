@@ -149,8 +149,13 @@ def security_settings(request):
     
     if request.method == 'POST':
         action = request.POST.get('action')
+        print(f"DEBUG POST: Received action = {action}")
+        print(f"DEBUG POST: POST data = {dict(request.POST)}")
         
         if action == 'update_security_settings':
+            # طباعة تشخيصية لبيانات الفورم
+            print("DEBUG POST: Processing security settings update")
+            
             # تحديث إعدادات الأمان العامة
             set_system_setting('password_min_length', request.POST.get('password_min_length', '8'),
                               'integer', 'security', _('الحد الأدنى لطول كلمة المرور'))
@@ -170,10 +175,17 @@ def security_settings(request):
             set_system_setting('max_old_passwords', request.POST.get('max_old_passwords', '5'),
                               'integer', 'security', _('عدد كلمات المرور السابقة المحتفظ بها'))
             
-            set_system_setting('account_lockout_attempts', request.POST.get('account_lockout_attempts', '5'),
+            # المعالجة الصريحة لإعدادات قفل الحساب
+            account_lockout_attempts = request.POST.get('account_lockout_attempts', '5')
+            account_lockout_minutes = request.POST.get('account_lockout_minutes', '30')
+            
+            print(f"DEBUG POST: account_lockout_attempts = {account_lockout_attempts}")
+            print(f"DEBUG POST: account_lockout_minutes = {account_lockout_minutes}")
+            
+            set_system_setting('account_lockout_attempts', account_lockout_attempts,
                               'integer', 'security', _('عدد محاولات تسجيل الدخول الفاشلة قبل قفل الحساب'))
             
-            set_system_setting('account_lockout_minutes', request.POST.get('account_lockout_minutes', '30'),
+            set_system_setting('account_lockout_minutes', account_lockout_minutes,
                               'integer', 'security', _('مدة قفل الحساب بالدقائق'))
             
             set_system_setting('session_timeout_minutes', request.POST.get('session_timeout_minutes', '60'),
