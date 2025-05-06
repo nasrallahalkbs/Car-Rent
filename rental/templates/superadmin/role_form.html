@@ -1,0 +1,185 @@
+{% extends "superadmin/layout.html" %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block css %}
+<style>
+    .permission-section {
+        margin-bottom: 25px;
+        border: 1px solid #eee;
+        border-radius: 5px;
+        padding: 20px;
+    }
+    
+    .permission-section-title {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+        color: #2b3847;
+    }
+    
+    .permission-list {
+        max-height: 250px;
+        overflow-y: auto;
+    }
+    
+    .role-help {
+        background-color: #f5f5f5;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .superadmin-warning {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #fce7e7;
+        border-left: 3px solid #d64040;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-body">
+    <!-- row -->
+    <div class="container-fluid">
+        <div class="row page-titles mx-0">
+            <div class="col-sm-6 p-md-0">
+                <div class="welcome-text">
+                    <h4>{{ title }}</h4>
+                    <span>{% trans "إدارة أدوار المسؤولين وصلاحياتهم" %}</span>
+                </div>
+            </div>
+            <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'superadmin_dashboard' %}">{% trans "الرئيسية" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'superadmin_manage_roles' %}">{% trans "الأدوار" %}</a></li>
+                    <li class="breadcrumb-item active"><a href="javascript:void(0)">{{ title }}</a></li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">{{ title }}</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.name|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.is_superadmin|as_crispy_field }}
+                                    
+                                    {% if not role %}
+                                    <div class="superadmin-warning" id="superadminWarning" style="display: none;">
+                                        <h6>{% trans "تحذير: صلاحيات المسؤول الأعلى" %}</h6>
+                                        <p>{% trans "هذا الدور سيملك وصولاً كاملاً لجميع صلاحيات النظام. استخدم هذا الخيار بحذر شديد." %}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ form.description|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            {% if not role and not permissions %}
+                            <div class="role-help my-4">
+                                <h5>{% trans "إرشادات إنشاء الأدوار" %}</h5>
+                                <p>{% trans "عند إنشاء دور جديد، يرجى الالتزام بالإرشادات التالية:" %}</p>
+                                <ul>
+                                    <li>{% trans "استخدم اسمًا وصفيًا واضحًا للدور (مثال: مسؤول المبيعات، مسؤول المحتوى)" %}</li>
+                                    <li>{% trans "أضف وصفًا مفصلاً للدور لمساعدة المسؤولين الآخرين على فهم الغرض منه" %}</li>
+                                    <li>{% trans "حدد الصلاحيات بعناية. كلما كانت الصلاحيات أكثر تحديدًا، كان النظام أكثر أمانًا" %}</li>
+                                    <li>{% trans "تجنب منح صلاحيات مسؤول أعلى إلا عند الضرورة القصوى" %}</li>
+                                </ul>
+                            </div>
+                            {% endif %}
+                            
+                            <h5 class="mt-4 mb-3">{% trans "الصلاحيات" %}</h5>
+                            <div id="permissionsContainer">
+                                {% regroup permissions_choices by module as permission_groups %}
+                                
+                                {% for group in permission_groups %}
+                                <div class="permission-section">
+                                    <h6 class="permission-section-title">{{ group.grouper|default:_("صلاحيات عامة") }}</h6>
+                                    <div class="permission-list">
+                                        <div class="row">
+                                            {% for permission in group.list %}
+                                            <div class="col-md-6">
+                                                <div class="custom-control custom-checkbox mb-2">
+                                                    <input type="checkbox" 
+                                                        class="custom-control-input" 
+                                                        name="permissions" 
+                                                        id="permission_{{ permission.id }}" 
+                                                        value="{{ permission.id }}"
+                                                        {% if role and permission in role.permissions.all %}checked{% endif %}
+                                                    >
+                                                    <label class="custom-control-label" for="permission_{{ permission.id }}">
+                                                        {{ permission.name }}
+                                                        <small class="d-block text-muted">{{ permission.description|truncatechars:60 }}</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-12 text-right">
+                                    <a href="{% url 'superadmin_manage_roles' %}" class="btn btn-default mr-2">{% trans "إلغاء" %}</a>
+                                    <button type="submit" class="btn btn-primary">{% trans "حفظ" %}</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // عرض تحذير المسؤول الأعلى عند تحديد الخيار
+    $('#id_is_superadmin').change(function() {
+        if($(this).is(':checked')) {
+            $('#superadminWarning').slideDown();
+        } else {
+            $('#superadminWarning').slideUp();
+        }
+    }).trigger('change');
+    
+    // تحديد كل الصلاحيات في مجموعة
+    $('.select-all-permissions').click(function(e) {
+        e.preventDefault();
+        var sectionId = $(this).data('section');
+        $('#' + sectionId + ' input[type="checkbox"]').prop('checked', true);
+    });
+    
+    // إلغاء تحديد كل الصلاحيات في مجموعة
+    $('.deselect-all-permissions').click(function(e) {
+        e.preventDefault();
+        var sectionId = $(this).data('section');
+        $('#' + sectionId + ' input[type="checkbox"]').prop('checked', false);
+    });
+});
+</script>
+{% endblock %}
