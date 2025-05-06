@@ -257,7 +257,7 @@ def admin_index(request):
             'user': reservation.user,
             'timestamp': reservation.created_at,
             'action_text': f"قام بحجز {reservation.car.make} {reservation.car.model}",
-            'description': f"من {reservation.pickup_date.strftime('%Y-%m-%d')} إلى {reservation.return_date.strftime('%Y-%m-%d')}"
+            'description': f"من {reservation.start_date.strftime('%Y-%m-%d')} إلى {reservation.end_date.strftime('%Y-%m-%d')}"
         }
         recent_activities.append(activity)
 
@@ -520,14 +520,14 @@ def admin_reservations(request):
     if start_date_str:
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            reservations = reservations.filter(pickup_date__gte=start_date)
+            reservations = reservations.filter(start_date__gte=start_date)
         except ValueError:
             pass
     
     if end_date_str:
         try:
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            reservations = reservations.filter(return_date__lte=end_date)
+            reservations = reservations.filter(end_date__lte=end_date)
         except ValueError:
             pass
     
