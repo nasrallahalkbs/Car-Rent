@@ -172,7 +172,7 @@ def get_report_data(report_type):
     elif report_type == 'system':
         # تقرير حالة النظام
         return {
-            'admin_activities': AdminActivity.objects.select_related('admin__user').order_by('-action_date')[:100],
+            'admin_activities': AdminActivity.objects.select_related('admin__user').order_by('-created_at')[:100],
             'review_management': ReviewManagement.objects.select_related('admin').order_by('-action_date')[:100],
             'title': _('تقرير حالة النظام')
         }
