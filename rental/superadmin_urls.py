@@ -24,18 +24,18 @@ urlpatterns = [
     path('admins/<int:admin_id>/edit/', superadmin_views.edit_admin, name='superadmin_edit_admin'),
     path('admins/<int:admin_id>/toggle/', superadmin_views.toggle_admin_status, name='superadmin_toggle_admin_status'),
     
-    # إدارة الأدوار - تعليق مؤقت
-    path('roles/', superadmin_views.superadmin_dashboard, name='superadmin_manage_roles'),
-    # path('roles/add/', superadmin_views.add_role, name='superadmin_add_role'),
-    # path('roles/<int:role_id>/', superadmin_views.role_details, name='superadmin_role_details'),
-    # path('roles/<int:role_id>/edit/', superadmin_views.edit_role, name='superadmin_edit_role'),
-    # path('roles/<int:role_id>/delete/', superadmin_views.delete_role, name='superadmin_delete_role'),
+    # إدارة الأدوار
+    path('roles/', superadmin_views.manage_roles, name='superadmin_manage_roles'),
+    path('roles/add/', superadmin_views.add_role, name='superadmin_add_role'),
+    path('roles/<int:role_id>/', superadmin_views.role_details, name='superadmin_role_details'),
+    path('roles/<int:role_id>/edit/', superadmin_views.edit_role, name='superadmin_edit_role'),
+    path('roles/<int:role_id>/delete/', superadmin_views.delete_role, name='superadmin_delete_role'),
     
-    # إدارة الأذونات - تعليق مؤقت
-    path('permissions/', superadmin_views.superadmin_dashboard, name='superadmin_manage_permissions'),
-    # path('permissions/add/', superadmin_views.add_permission, name='superadmin_add_permission'),
-    # path('permissions/<int:permission_id>/edit/', superadmin_views.edit_permission, name='superadmin_edit_permission'),
-    # path('permissions/<int:permission_id>/delete/', superadmin_views.delete_permission, name='superadmin_delete_permission'),
+    # إدارة الصلاحيات
+    path('permissions/', superadmin_views.manage_permissions, name='superadmin_manage_permissions'),
+    path('permissions/add/', superadmin_views.add_permission, name='superadmin_add_permission'),
+    path('permissions/<int:permission_id>/edit/', superadmin_views.edit_permission, name='superadmin_edit_permission'),
+    path('permissions/<int:permission_id>/delete/', superadmin_views.delete_permission, name='superadmin_delete_permission'),
     
     # الإحصائيات والتحليلات - تعليق مؤقت
     path('analytics/', superadmin_views.superadmin_dashboard, name='superadmin_analytics'),
