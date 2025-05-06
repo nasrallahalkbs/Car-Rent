@@ -6,6 +6,7 @@ import zipfile
 import tempfile
 import datetime
 import subprocess
+import django
 from pathlib import Path
 
 from django.http import HttpResponse, FileResponse
@@ -99,7 +100,7 @@ def create_backup(request):
                 "name": backup_name,
                 "created_at": timezone.now().isoformat(),
                 "created_by": request.user.username,
-                "django_version": settings.DJANGO_VERSION,
+                "django_version": django.__version__,
                 "database_engine": settings.DATABASES['default']['ENGINE'],
             }
             backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))

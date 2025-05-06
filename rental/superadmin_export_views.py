@@ -22,10 +22,35 @@ from .models_superadmin import AdminUser, Role, Permission, AdminActivity, Revie
 try:
     from .models import Reservation, Customer, Vehicle
 except ImportError:
-    # Create placeholder models for testing
-    Reservation = None
-    Customer = None
-    Vehicle = None
+    # Create placeholder models for testing with dummy objects attribute
+    class DummyQuerySet:
+        def __init__(self, items=None):
+            self.items = items or []
+        
+        def all(self):
+            return self
+        
+        def select_related(self, *args):
+            return self
+        
+        def count(self):
+            return len(self.items)
+        
+        def aggregate(self, *args):
+            return {'total_cost__sum': 0}
+        
+        def values(self, *args):
+            return self
+        
+        def annotate(self, *args):
+            return []
+    
+    class DummyModel:
+        objects = DummyQuerySet()
+    
+    Reservation = DummyModel
+    Customer = DummyModel
+    Vehicle = DummyModel
 
 # الدالة المساعدة للتحقق من صلاحيات المسؤول الأعلى
 def is_superadmin(user):
