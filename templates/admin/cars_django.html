@@ -1,194 +1,207 @@
-<!-- CACHE_BUSTER 1746413947 --><!-- CACHE_BUSTER 1746413947 --><!-- CACHE_BUSTER 1746413947 --><!-- CACHE_BUSTER 1746413947 -->{% extends 'admin/index.html' %}
-{% load i18n %}
+
+{% extends 'admin/enhanced/admin_layout.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}إدارة السيارات - لوحة التحكم{% endblock %}
+{% block title %}{% trans "إدارة السيارات" %}{% endblock %}
 
-{% block admin_content %}
+{% block content %}
 <!-- رأس الصفحة -->
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="section-heading mb-0">إدارة السيارات</h2>
-        <p class="text-muted">إدارة وعرض وتحرير كافة السيارات في النظام</p>
+        <h1 class="h3">{% trans "إدارة السيارات" %}</h1>
+        <p class="text-muted">{% trans "إدارة وعرض وتحرير كافة السيارات في النظام" %}</p>
     </div>
-    <a href="{% url 'add_car' %}" class="btn btn-primary px-4 py-2">
-        <i class="fas fa-plus-circle ms-2" ms-1></i> إضافة سيارة جديدة
+    <a href="{% url 'add_car' %}" class="btn btn-primary">
+        <i class="fas fa-plus-circle {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+        {% trans "إضافة سيارة جديدة" %}
     </a>
 </div>
 
 <!-- بطاقات الإحصائيات -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-4">
-        <div class="dashboard-card stat-card">
-            <div class="stat-icon bg-primary">
-                <i class="fas fa-car" ms-1></i>  </div>
-            <div class="stat-details">
-                <div class="stat-number">{{ cars|length }}</div>
-                <p class="stat-label">إجمالي السيارات</p>
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-stat">
+                <div class="stat-icon purple">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">{% trans "إجمالي السيارات" %}</div>
+                    <div class="stat-value">{{ cars|length }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i> {{ available_cars }} {% trans "متاحة" %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3 mb-4">
-        <div class="dashboard-card stat-card">
-            <div class="stat-icon bg-success">
-                <i class="fas fa-check-circle" ms-1></i>  </div>
-            <div class="stat-details">
-                <div class="stat-number">{{ available_cars }}</div>
-                <p class="stat-label">السيارات المتاحة</p>
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-stat">
+                <div class="stat-icon blue">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">{% trans "السيارات المتاحة" %}</div>
+                    <div class="stat-value">{{ available_cars }}</div>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3 mb-4">
-        <div class="dashboard-card stat-card">
-            <div class="stat-icon bg-warning">
-                <i class="fas fa-dollar-sign" ms-1></i>  </div>
-            <div class="stat-details">
-                <div class="stat-number">{{ avg_daily_rate|floatformat:2 }}</div>
-                <p class="stat-label">متوسط السعر اليومي</p>
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-stat">
+                <div class="stat-icon green">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">{% trans "متوسط السعر اليومي" %}</div>
+                    <div class="stat-value">{{ avg_daily_rate|floatformat:2 }}</div>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3 mb-4">
-        <div class="dashboard-card stat-card">
-            <div class="stat-icon bg-danger">
-                <i class="fas fa-chart-line" ms-1></i>  </div>
-            <div class="stat-details">
-                <div class="stat-number">{{ reservations_count }}</div>
-                <p class="stat-label">إجمالي الحجوزات</p>
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-stat">
+                <div class="stat-icon orange">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">{% trans "إجمالي الحجوزات" %}</div>
+                    <div class="stat-value">{{ reservations_count }}</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- فلتر البحث -->
-<div class="dashboard-card mb-4 p-4">
-    <h4 class="mb-3 fw-bold">بحث وفلترة</h4>
-    <form method="get" class="row g-3">
-        <div class="col-md-3">
-            <label for="category" class="form-label">الفئة</label>
-            <select name="category" id="category" class="form-select">
-                <option value="">كل الفئات</option>
-                <option value="Economy" {% if request.GET.category == 'Economy' %}selected{% endif %}>اقتصادية</option>
-                <option value="Compact" {% if request.GET.category == 'Compact' %}selected{% endif %}>مدمجة</option>
-                <option value="Mid-size" {% if request.GET.category == 'Mid-size' %}selected{% endif %}>متوسطة</option>
-                <option value="Luxury" {% if request.GET.category == 'Luxury' %}selected{% endif %}>فاخرة</option>
-                <option value="SUV" {% if request.GET.category == 'SUV' %}selected{% endif %}>دفع رباعي</option>
-                <option value="Truck" {% if request.GET.category == 'Truck' %}selected{% endif %}>شاحنة</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label for="transmission" class="form-label">ناقل الحركة</label>
-            <select name="transmission" id="transmission" class="form-select">
-                <option value="">الكل</option>
-                <option value="Automatic" {% if request.GET.transmission == 'Automatic' %}selected{% endif %}>أوتوماتيك</option>
-                <option value="Manual" {% if request.GET.transmission == 'Manual' %}selected{% endif %}>يدوي</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label for="fuel_type" class="form-label">نوع الوقود</label>
-            <select name="fuel_type" id="fuel_type" class="form-select">
-                <option value="">الكل</option>
-                <option value="Gas" {% if request.GET.fuel_type == 'Gas' %}selected{% endif %}>بنزين</option>
-                <option value="Diesel" {% if request.GET.fuel_type == 'Diesel' %}selected{% endif %}>ديزل</option>
-                <option value="Electric" {% if request.GET.fuel_type == 'Electric' %}selected{% endif %}>كهربائي</option>
-                <option value="Hybrid" {% if request.GET.fuel_type == 'Hybrid' %}selected{% endif %}>هجين</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label for="availability" class="form-label">الحالة</label>
-            <select name="availability" id="availability" class="form-select">
-                <option value="">الكل</option>
-                <option value="available" {% if request.GET.availability == 'available' %}selected{% endif %}>متاحة</option>
-                <option value="unavailable" {% if request.GET.availability == 'unavailable' %}selected{% endif %}>غير متاحة</option>
-            </select>
-        </div>
-        <div class="col-md-6">
-            <label for="search" class="form-label">بحث</label>
-            <input type="text" class="form-control" id="search" name="search" placeholder="بحث بالاسم، الطراز، أو رقم اللوحة..." 
-                   value="{{ request.GET.search|default:'' }}">
-        </div>
-        <div class="col-md-6 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary ms-2">
-                <i class="fas fa-search ms-2" ms-1></i> بحث
-            </button>
-            <a href="{% url 'admin_cars' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-redo ms-2" ms-1></i> إعادة تعيين
-            </a>
-        </div>
-    </form>
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">{% trans "بحث وفلترة" %}</h5>
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="category" class="form-label">{% trans "الفئة" %}</label>
+                <select name="category" id="category" class="form-select">
+                    <option value="">{% trans "كل الفئات" %}</option>
+                    <option value="Economy" {% if request.GET.category == 'Economy' %}selected{% endif %}>{% trans "اقتصادية" %}</option>
+                    <option value="Compact" {% if request.GET.category == 'Compact' %}selected{% endif %}>{% trans "مدمجة" %}</option>
+                    <option value="Mid-size" {% if request.GET.category == 'Mid-size' %}selected{% endif %}>{% trans "متوسطة" %}</option>
+                    <option value="Luxury" {% if request.GET.category == 'Luxury' %}selected{% endif %}>{% trans "فاخرة" %}</option>
+                    <option value="SUV" {% if request.GET.category == 'SUV' %}selected{% endif %}>{% trans "دفع رباعي" %}</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="transmission" class="form-label">{% trans "ناقل الحركة" %}</label>
+                <select name="transmission" id="transmission" class="form-select">
+                    <option value="">{% trans "الكل" %}</option>
+                    <option value="Automatic" {% if request.GET.transmission == 'Automatic' %}selected{% endif %}>{% trans "أوتوماتيك" %}</option>
+                    <option value="Manual" {% if request.GET.transmission == 'Manual' %}selected{% endif %}>{% trans "يدوي" %}</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="availability" class="form-label">{% trans "الحالة" %}</label>
+                <select name="availability" id="availability" class="form-select">
+                    <option value="">{% trans "الكل" %}</option>
+                    <option value="available" {% if request.GET.availability == 'available' %}selected{% endif %}>{% trans "متاحة" %}</option>
+                    <option value="unavailable" {% if request.GET.availability == 'unavailable' %}selected{% endif %}>{% trans "غير متاحة" %}</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="search" class="form-label">{% trans "بحث" %}</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       placeholder="{% trans 'بحث بالاسم، الطراز، أو رقم اللوحة...' %}" 
+                       value="{{ request.GET.search|default:'' }}">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                    {% trans "بحث" %}
+                </button>
+                <a href="{% url 'admin_cars' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-redo {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                    {% trans "إعادة تعيين" %}
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- جدول السيارات -->
-<div class="dashboard-card table-card">
-    <div class="table-card-header">
-        <h4 class="table-card-title"><i class="fas fa-car ms-2" ms-1></i> قائمة السيارات</h4>
-        <div>
-            <span class="text-muted ms-3">إجمالي النتائج: {{ cars|length }}</span>
-        </div>
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-car {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+            {% trans "قائمة السيارات" %}
+        </h5>
+        <span class="text-muted">{% trans "إجمالي النتائج" %}: {{ cars|length }}</span>
     </div>
     
     {% if cars %}
     <div class="table-responsive">
-        <table class="table admin-table">
+        <table class="table table-hover mb-0">
             <thead>
                 <tr>
-                    <th>الصورة</th>
-                    <th>التفاصيل</th>
-                    <th>المواصفات</th>
-                    <th>السعر اليومي</th>
-                    <th>الحالة</th>
-                    <th>الإجراءات</th>
+                    <th>{% trans "الصورة" %}</th>
+                    <th>{% trans "التفاصيل" %}</th>
+                    <th>{% trans "المواصفات" %}</th>
+                    <th>{% trans "السعر اليومي" %}</th>
+                    <th>{% trans "الحالة" %}</th>
+                    <th>{% trans "الإجراءات" %}</th>
                 </tr>
             </thead>
             <tbody>
                 {% for car in cars %}
                 <tr>
                     <td style="width: 100px;">
-                        <div style="width: 80px; height: 60px; border-radius: 8px; overflow: hidden; background-color: #f8fafc;">
+                        <div class="car-image-container">
                             {% if car.image %}
-                            <img src="{{ car.image.url }}" alt="{{ car.make }} {{ car.model }}" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
+                                <img src="{{ car.image.url }}" alt="{{ car.make }} {{ car.model }}" class="img-fluid rounded">
                             {% elif car.image_url %}
-                            <img src="{{ car.image_url }}" alt="{{ car.make }} {{ car.model }}" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
+                                <img src="{{ car.image_url }}" alt="{{ car.make }} {{ car.model }}" class="img-fluid rounded">
                             {% else %}
-                            <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ car.make }} {{ car.model }}" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
+                                <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ car.make }} {{ car.model }}" class="img-fluid rounded">
                             {% endif %}
                         </div>
                     </td>
                     <td>
-                        <div style="min-width: 180px;">
-                            <div class="fw-bold text-dark">{{ car.make }} {{ car.model }}</div>
-                            <div class="small text-muted">{{ car.year }} | {{ car.license_plate }}</div>
-                            <div class="mt-1">
-                                <span class="badge bg-primary">{{ car.category }}</span>
-                            </div>
+                        <div class="car-details">
+                            <h6 class="mb-1">{{ car.make }} {{ car.model }}</h6>
+                            <div class="text-muted small">{{ car.year }} | {{ car.license_plate }}</div>
+                            <span class="badge bg-primary">{{ car.get_category_display }}</span>
                         </div>
                     </td>
                     <td>
-                        <div style="min-width: 180px;">
-                            <div><i class="fas fa-gas-pump text-muted ms-2" ms-1></i> {{ car.fuel_type }}</div>
-                            <div><i class="fas fa-cog text-muted ms-2" ms-1></i> {{ car.transmission }}</div>
-                            <div><i class="fas fa-chair text-muted ms-2" ms-1></i> {{ car.seats }} مقاعد</div>
+                        <div class="car-specs">
+                            <div><i class="fas fa-gas-pump text-muted {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>{{ car.get_fuel_type_display }}</div>
+                            <div><i class="fas fa-cog text-muted {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>{{ car.get_transmission_display }}</div>
+                            <div><i class="fas fa-chair text-muted {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>{{ car.seats }} {% trans "مقاعد" %}</div>
                         </div>
                     </td>
                     <td>
-                        <div class="fw-bold text-primary" style="font-size: 1.1rem;">{{ car.daily_rate }} د.ك</div>
+                        <div class="price-tag">{{ car.daily_rate }} {% trans "د.ك" %}</div>
                     </td>
                     <td>
                         {% if car.is_available %}
-                        <span class="status-badge status-badge-confirmed">متاحة</span>
+                            <span class="status-badge status-active">{% trans "متاحة" %}</span>
                         {% else %}
-                        <span class="status-badge status-badge-cancelled">غير متاحة</span>
+                            <span class="status-badge status-inactive">{% trans "غير متاحة" %}</span>
                         {% endif %}
                     </td>
                     <td>
-                        <div class="d-flex">
-                            <a href="{% url 'edit_car' car_id=car.id %}" class="action-btn action-btn-primary ms-2">
-                                <i class="fas fa-edit" ms-1></i>  </a>
-                            <a href="{% url 'delete_car' car_id=car.id %}" class="action-btn action-btn-danger" onclick="return confirm('هل أنت متأكد من حذف هذه السيارة؟');">
-                                <i class="fas fa-trash" ms-1></i>  </a>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'edit_car' car_id=car.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'delete_car' car_id=car.id %}" class="btn btn-sm btn-outline-danger" 
+                               onclick="return confirm('{% trans "هل أنت متأكد من حذف هذه السيارة؟" %}');">
+                                <i class="fas fa-trash"></i>
+                            </a>
                         </div>
                     </td>
                 </tr>
@@ -198,12 +211,55 @@
     </div>
     {% else %}
     <div class="text-center py-5">
-        <i class="fas fa-car text-muted fa-4x mb-3" ms-1></i>  <h5>لا توجد سيارات</h5>
-        <p class="text-muted">لم يتم العثور على سيارات تطابق معايير البحث.</p>
+        <i class="fas fa-car text-muted fa-4x mb-3"></i>
+        <h5>{% trans "لا توجد سيارات" %}</h5>
+        <p class="text-muted">{% trans "لم يتم العثور على سيارات تطابق معايير البحث." %}</p>
         <a href="{% url 'add_car' %}" class="btn btn-primary mt-2">
-            <i class="fas fa-plus-circle ms-2" ms-1></i> إضافة سيارة جديدة
+            <i class="fas fa-plus-circle {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+            {% trans "إضافة سيارة جديدة" %}
         </a>
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .car-image-container {
+        width: 80px;
+        height: 60px;
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #f8fafc;
+    }
+    
+    .car-image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .car-details {
+        min-width: 180px;
+    }
+    
+    .car-specs {
+        min-width: 180px;
+    }
+    
+    .price-tag {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+</style>
 {% endblock %}
