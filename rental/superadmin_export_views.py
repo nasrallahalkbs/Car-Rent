@@ -286,8 +286,8 @@ def export_excel_report(request, report_type):
                 worksheet.write(row, 0, review.customer.get_full_name() if review.customer else '')
                 worksheet.write(row, 1, review.rating)
                 worksheet.write(row, 2, review.comment or '')
-                if hasattr(review, 'action_date') and review.action_date:
-                    worksheet.write_datetime(row, 3, review.action_date, date_format)
+                if hasattr(review, 'created_at') and review.created_at:
+                    worksheet.write_datetime(row, 3, review.created_at, date_format)
                 else:
                     worksheet.write(row, 3, '')
                 worksheet.write(row, 4, str(review.reservation.id) if review.reservation else '')
