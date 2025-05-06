@@ -43,4 +43,33 @@ urlpatterns = [
     
     # التحليلات والإحصائيات
     path('analytics/', superadmin_views.superadmin_analytics, name='superadmin_analytics'),
+    
+    # تصدير التقارير
+    path('export/pdf/<str:report_type>/', superadmin_views.export_pdf_report, name='superadmin_export_pdf'),
+    path('export/excel/<str:report_type>/', superadmin_views.export_excel_report, name='superadmin_export_excel'),
+    
+    # نظام النسخ الاحتياطي واستعادة النظام
+    path('backup/', superadmin_views.backup_system, name='superadmin_backup'),
+    path('backup/create/', superadmin_views.create_backup, name='superadmin_create_backup'),
+    path('backup/restore/<str:backup_id>/', superadmin_views.restore_backup, name='superadmin_restore_backup'),
+    path('backup/download/<str:backup_id>/', superadmin_views.download_backup, name='superadmin_download_backup'),
+    path('backup/delete/<str:backup_id>/', superadmin_views.delete_backup, name='superadmin_delete_backup'),
+    
+    # جدولة النسخ الاحتياطي والوظائف
+    path('scheduler/', superadmin_views.scheduler_dashboard, name='superadmin_scheduler'),
+    path('scheduler/job/add/', superadmin_views.add_scheduled_job, name='superadmin_add_scheduled_job'),
+    path('scheduler/job/<int:job_id>/edit/', superadmin_views.edit_scheduled_job, name='superadmin_edit_scheduled_job'),
+    path('scheduler/job/<int:job_id>/delete/', superadmin_views.delete_scheduled_job, name='superadmin_delete_scheduled_job'),
+    path('scheduler/job/<int:job_id>/toggle/', superadmin_views.toggle_scheduled_job, name='superadmin_toggle_scheduled_job'),
+    
+    # إعدادات النظام
+    path('settings/', superadmin_views.system_settings, name='superadmin_settings'),
+    path('settings/security/', superadmin_views.security_settings, name='superadmin_security_settings'),
+    path('settings/notifications/', superadmin_views.notification_settings, name='superadmin_notification_settings'),
+    path('settings/advanced-permissions/', superadmin_views.advanced_permissions, name='superadmin_advanced_permissions'),
+    
+    # أدوات تشخيص وإصلاح النظام
+    path('diagnostics/', superadmin_views.system_diagnostics, name='superadmin_diagnostics'),
+    path('diagnostics/run/<str:diagnostic_type>/', superadmin_views.run_diagnostic, name='superadmin_run_diagnostic'),
+    path('diagnostics/fix/<str:issue_id>/', superadmin_views.fix_system_issue, name='superadmin_fix_issue'),
 ]

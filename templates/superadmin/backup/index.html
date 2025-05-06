@@ -1,0 +1,229 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة النسخ الاحتياطي" %}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "إدارة النسخ الاحتياطي" %}</h1>
+        <p class="text-muted">{% trans "إنشاء وإدارة واستعادة النسخ الاحتياطية للنظام" %}</p>
+    </div>
+    <div>
+        <a href="{% url 'superadmin_create_backup' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> {% trans "إنشاء نسخة احتياطية" %}
+        </a>
+    </div>
+</div>
+
+<!-- إحصائيات النسخ الاحتياطي -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-stat">
+                <div class="stat-icon purple">
+                    <i class="fas fa-save"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">{% trans "عدد النسخ الاحتياطية" %}</div>
+                    <div class="stat-value">{{ backup_count }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-check"></i> {% trans "مخزنة بأمان" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-stat">
+                <div class="stat-icon blue">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">{% trans "آخر نسخة احتياطية" %}</div>
+                    <div class="stat-value">{{ last_backup.created_at|date:"Y-m-d" }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-calendar"></i> {{ last_backup.created_at|date:"H:i" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-stat">
+                <div class="stat-icon green">
+                    <i class="fas fa-hdd"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">{% trans "الحجم الإجمالي" %}</div>
+                    <div class="stat-value">{{ total_backup_size|filesizeformat }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-check"></i> {% trans "مشترك" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card">
+            <div class="card-stat">
+                <div class="stat-icon orange">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">{% trans "المهام المجدولة" %}</div>
+                    <div class="stat-value">{{ scheduled_backups.count }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-check"></i> {% trans "نشطة" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- قائمة النسخ الاحتياطية -->
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">{% trans "النسخ الاحتياطية المتوفرة" %}</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover data-table mb-0">
+                <thead>
+                    <tr>
+                        <th>{% trans "الاسم" %}</th>
+                        <th>{% trans "تاريخ الإنشاء" %}</th>
+                        <th>{% trans "الحجم" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                        <th>{% trans "بواسطة" %}</th>
+                        <th>{% trans "الإجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for backup in backups %}
+                    <tr>
+                        <td>{{ backup.name }}</td>
+                        <td>{{ backup.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ backup.file_size|filesizeformat }}</td>
+                        <td>
+                            {% if backup.status == 'completed' %}
+                            <span class="badge bg-success">{% trans "مكتمل" %}</span>
+                            {% elif backup.status == 'pending' %}
+                            <span class="badge bg-warning">{% trans "قيد الإنشاء" %}</span>
+                            {% elif backup.status == 'failed' %}
+                            <span class="badge bg-danger">{% trans "فشل" %}</span>
+                            {% elif backup.status == 'restored' %}
+                            <span class="badge bg-info">{% trans "تمت الاستعادة" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ backup.created_by.username }}</td>
+                        <td>
+                            <div class="btn-group">
+                                {% if backup.status == 'completed' %}
+                                <a href="{% url 'superadmin_download_backup' backup.id %}" class="btn btn-sm btn-outline-primary" title="{% trans 'تنزيل' %}">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <a href="{% url 'superadmin_restore_backup' backup.id %}" class="btn btn-sm btn-outline-success" title="{% trans 'استعادة' %}">
+                                    <i class="fas fa-undo"></i>
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'superadmin_delete_backup' backup.id %}" class="btn btn-sm btn-outline-danger" title="{% trans 'حذف' %}">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <p class="text-muted mb-0">{% trans "لا توجد نسخ احتياطية متوفرة حالياً" %}</p>
+                            <a href="{% url 'superadmin_create_backup' %}" class="btn btn-primary mt-3">
+                                <i class="fas fa-plus"></i> {% trans "إنشاء نسخة احتياطية" %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- المهام المجدولة للنسخ الاحتياطي -->
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">{% trans "النسخ الاحتياطي التلقائي" %}</h5>
+        <a href="{% url 'superadmin_scheduler' %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-cog"></i> {% trans "إدارة الجدولة" %}
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>{% trans "الاسم" %}</th>
+                        <th>{% trans "التكرار" %}</th>
+                        <th>{% trans "التشغيل التالي" %}</th>
+                        <th>{% trans "آخر تشغيل" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in scheduled_backups %}
+                    <tr>
+                        <td>{{ job.name }}</td>
+                        <td>
+                            {% if job.interval_type == 'custom' %}
+                            <code>{{ job.cron_expression }}</code>
+                            {% else %}
+                            {{ job.get_interval_type_display }} ({{ job.interval_value }})
+                            {% endif %}
+                        </td>
+                        <td>{{ job.next_run|date:"Y-m-d H:i" }}</td>
+                        <td>{{ job.last_run|date:"Y-m-d H:i"|default:"--" }}</td>
+                        <td>
+                            {% if job.is_active %}
+                            <span class="badge bg-success">{% trans "نشط" %}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{% trans "معطل" %}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <p class="text-muted mb-0">{% trans "لا توجد مهام نسخ احتياطي مجدولة" %}</p>
+                            <a href="{% url 'superadmin_scheduler' %}" class="btn btn-primary mt-3">
+                                <i class="fas fa-plus"></i> {% trans "إضافة مهمة مجدولة" %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // تعطيل جدول البيانات للمهام المجدولة
+        $('.table:not(.data-table)').DataTable({
+            paging: false,
+            searching: false,
+            ordering: false,
+            info: false
+        });
+    });
+</script>
+{% endblock %}

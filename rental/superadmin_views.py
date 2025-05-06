@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.db.models import Q, Count
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 from django.utils import timezone
 from functools import wraps
 from django.db import transaction
@@ -13,9 +13,26 @@ from django.contrib.auth.hashers import make_password
 
 from .models import User, Review
 from .models_superadmin import Permission, Role, AdminUser, AdminActivity, ReviewManagement
+from .models_system import SystemBackup, ScheduledJob, SystemSetting, SystemIssue, SystemNotification
 from .forms_superadmin import PermissionForm, RoleForm, AdminUserForm, ReviewManagementForm, SuperAdminLoginForm
+
 # دوال التحليلات
 from .analytics_superadmin import *
+
+# دوال تصدير التقارير
+from .superadmin_export_views import export_pdf_report, export_excel_report
+
+# دوال النسخ الاحتياطي والاستعادة
+from .superadmin_backup_views import backup_system, create_backup, restore_backup, download_backup, delete_backup
+
+# دوال جدولة المهام
+from .superadmin_scheduler_views import scheduler_dashboard, add_scheduled_job, edit_scheduled_job, delete_scheduled_job, toggle_scheduled_job
+
+# دوال إعدادات النظام
+from .superadmin_settings_views import system_settings, security_settings, notification_settings, advanced_permissions
+
+# دوال تشخيص وإصلاح النظام
+from .superadmin_diagnostics_views import system_diagnostics, run_diagnostic, fix_system_issue
 
 def get_client_ip(request):
     """Get the client IP address"""
