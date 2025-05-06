@@ -178,15 +178,30 @@ def security_settings(request):
             # المعالجة الصريحة لإعدادات قفل الحساب
             account_lockout_attempts = request.POST.get('account_lockout_attempts', '5')
             account_lockout_minutes = request.POST.get('account_lockout_minutes', '30')
+            session_timeout_minutes = request.POST.get('session_timeout_minutes', '60')
             
             print(f"DEBUG POST: account_lockout_attempts = {account_lockout_attempts}")
             print(f"DEBUG POST: account_lockout_minutes = {account_lockout_minutes}")
+            print(f"DEBUG POST: session_timeout_minutes = {session_timeout_minutes}")
             
+            # التحقق من صحة القيم وتحويلها إلى أرقام صحيحة
+            try:
+                account_lockout_attempts = int(account_lockout_attempts)
+                account_lockout_minutes = int(account_lockout_minutes)
+                session_timeout_minutes = int(session_timeout_minutes)
+            except ValueError:
+                messages.error(request, _('الرجاء إدخال قيم صحيحة للأرقام'))
+                return redirect('superadmin_security_settings')
+
+            # حفظ الإعدادات
             set_system_setting('account_lockout_attempts', account_lockout_attempts,
                               'integer', 'security', _('عدد محاولات تسجيل الدخول الفاشلة قبل قفل الحساب'))
             
             set_system_setting('account_lockout_minutes', account_lockout_minutes,
                               'integer', 'security', _('مدة قفل الحساب بالدقائق'))
+
+            set_system_setting('session_timeout_minutes', session_timeout_minutes,
+                              'integer', 'security', _('مدة انتهاء الجلسة بالدقائق'))
             
             set_system_setting('session_timeout_minutes', request.POST.get('session_timeout_minutes', '60'),
                               'integer', 'security', _('مدة انتهاء جلسة العمل بالدقائق'))
