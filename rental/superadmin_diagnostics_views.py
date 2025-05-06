@@ -292,13 +292,15 @@ def run_system_check():
             existing_issue = SystemIssue.objects.filter(title__contains=issue['issue_id'], status__in=['new', 'in_progress']).first()
             if not existing_issue:
                 # إنشاء مشكلة جديدة
-                SystemIssue.objects.create(
+                db_issue = SystemIssue.objects.create(
                     title=issue['title'],
                     description=issue['description'],
                     area='system',
                     severity=issue['severity'],
                     status='new'
                 )
+                # إضافة معرف قاعدة البيانات إلى القاموس لاستخدامه في القالب
+                issue['db_id'] = db_issue.id
     
     return {
         'issues': issues,
@@ -383,13 +385,15 @@ def run_database_check():
             existing_issue = SystemIssue.objects.filter(title__contains=issue['issue_id'], status__in=['new', 'in_progress']).first()
             if not existing_issue:
                 # إنشاء مشكلة جديدة
-                SystemIssue.objects.create(
+                db_issue = SystemIssue.objects.create(
                     title=issue['title'],
                     description=issue['description'],
                     area='database',
                     severity=issue['severity'],
                     status='new'
                 )
+                # إضافة معرف قاعدة البيانات إلى القاموس لاستخدامه في القالب
+                issue['db_id'] = db_issue.id
     
     return {
         'issues': issues,
@@ -454,13 +458,15 @@ def run_media_check():
             existing_issue = SystemIssue.objects.filter(title__contains=issue['issue_id'], status__in=['new', 'in_progress']).first()
             if not existing_issue:
                 # إنشاء مشكلة جديدة
-                SystemIssue.objects.create(
+                db_issue = SystemIssue.objects.create(
                     title=issue['title'],
                     description=issue['description'],
                     area='media',
                     severity=issue['severity'],
                     status='new'
                 )
+                # إضافة معرف قاعدة البيانات إلى القاموس لاستخدامه في القالب
+                issue['db_id'] = db_issue.id
     
     return {
         'issues': issues,
@@ -561,13 +567,15 @@ def run_permission_check():
             existing_issue = SystemIssue.objects.filter(title__contains=issue['issue_id'], status__in=['new', 'in_progress']).first()
             if not existing_issue:
                 # إنشاء مشكلة جديدة
-                SystemIssue.objects.create(
+                db_issue = SystemIssue.objects.create(
                     title=issue['title'],
                     description=issue['description'],
                     area='permissions',
                     severity=issue['severity'],
                     status='new'
                 )
+                # إضافة معرف قاعدة البيانات إلى القاموس لاستخدامه في القالب
+                issue['db_id'] = db_issue.id
     
     return {
         'issues': issues,
