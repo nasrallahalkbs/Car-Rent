@@ -6,8 +6,11 @@ import datetime
 import traceback
 import subprocess
 import sqlite3
+import django
+import tempfile
 
 from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -77,7 +80,7 @@ def get_system_stats():
     stats = {
         'os_info': f"{os.name} {sys.platform}",
         'python_version': sys.version.split(' ')[0],
-        'django_version': settings.DJANGO_VERSION,
+        'django_version': django.__version__,
         'cpu_usage': cpu_usage,
         'memory_usage': memory.percent,
         'memory_total': f"{memory.total / (1024**3):.2f} GB",
