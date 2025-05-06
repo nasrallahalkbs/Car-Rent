@@ -1,0 +1,292 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "تشخيص وإصلاح النظام" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .system-card {
+        height: 100%;
+        transition: all 0.2s ease;
+    }
+    .system-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    }
+    .tool-icon {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    .stats-circle {
+        width: 8rem;
+        height: 8rem;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto 1rem;
+        color: white;
+    }
+    .stats-circle-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+    }
+    .stats-circle-value {
+        font-size: 1.75rem;
+        font-weight: bold;
+    }
+    .bg-critical {
+        background-color: #dc3545;
+    }
+    .bg-high {
+        background-color: #fd7e14;
+    }
+    .bg-medium {
+        background-color: #ffc107;
+    }
+    .bg-low {
+        background-color: #0dcaf0;
+    }
+    .bg-fixed {
+        background-color: #20c997;
+    }
+    .system-issue {
+        border-right: 4px solid transparent;
+    }
+    .system-issue.critical {
+        border-right-color: #dc3545;
+    }
+    .system-issue.high {
+        border-right-color: #fd7e14;
+    }
+    .system-issue.medium {
+        border-right-color: #ffc107;
+    }
+    .system-issue.low {
+        border-right-color: #0dcaf0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "تشخيص وإصلاح النظام" %}</h1>
+        <p class="text-muted">{% trans "أدوات تشخيص وإصلاح مشاكل النظام" %}</p>
+    </div>
+</div>
+
+<!-- إحصائيات النظام -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h5 class="card-title mb-0">{% trans "حالة النظام" %}</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-3 text-muted">{% trans "نظام التشغيل" %}</h6>
+                                <p><strong>{% trans "نظام التشغيل" %}:</strong> {{ system_stats.os_info }}</p>
+                                <p><strong>{% trans "مدة التشغيل" %}:</strong> {{ system_stats.uptime }}</p>
+                                <p><strong>{% trans "بايثون" %}:</strong> {{ system_stats.python_version }}</p>
+                                <p><strong>{% trans "جانجو" %}:</strong> {{ system_stats.django_version }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-3 text-muted">{% trans "قاعدة البيانات" %}</h6>
+                                <p><strong>{% trans "نوع قاعدة البيانات" %}:</strong> {{ system_stats.db_type }}</p>
+                                <p><strong>{% trans "حجم قاعدة البيانات" %}:</strong> {{ system_stats.db_size }}</p>
+                                <p><strong>{% trans "عدد الاتصالات" %}:</strong> {{ system_stats.db_connections }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-3 text-muted">{% trans "المعالج" %}</h6>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar {% if system_stats.cpu_usage > 90 %}bg-danger{% elif system_stats.cpu_usage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ system_stats.cpu_usage }}%"
+                                         aria-valuenow="{{ system_stats.cpu_usage }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ system_stats.cpu_usage }}%
+                                    </div>
+                                </div>
+                                <p class="text-muted small">{% trans "نسبة استخدام المعالج" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-3 text-muted">{% trans "الذاكرة" %}</h6>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar {% if system_stats.memory_usage > 90 %}bg-danger{% elif system_stats.memory_usage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ system_stats.memory_usage }}%"
+                                         aria-valuenow="{{ system_stats.memory_usage }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ system_stats.memory_usage }}%
+                                    </div>
+                                </div>
+                                <p class="text-muted small">{% trans "الإجمالي" %}: {{ system_stats.memory_total }} | {% trans "المتاح" %}: {{ system_stats.memory_available }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">{% trans "المساحة التخزينية" %}</h6>
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar {% if system_stats.disk_usage > 90 %}bg-danger{% elif system_stats.disk_usage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ system_stats.disk_usage }}%"
+                                 aria-valuenow="{{ system_stats.disk_usage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                {{ system_stats.disk_usage }}%
+                            </div>
+                        </div>
+                        <p class="text-muted small">{% trans "الإجمالي" %}: {{ system_stats.disk_total }} | {% trans "المتاح" %}: {{ system_stats.disk_free }}</p>
+                        
+                        <h6 class="mt-4">{% trans "إحصائيات المشاكل" %}</h6>
+                        <div class="row gx-2 mt-3">
+                            <div class="col">
+                                <div class="stats-circle bg-critical">
+                                    <div class="stats-circle-value">{{ issue_stats.critical }}</div>
+                                    <div class="stats-circle-label">{% trans "حرجة" %}</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="stats-circle bg-high">
+                                    <div class="stats-circle-value">{{ issue_stats.high }}</div>
+                                    <div class="stats-circle-label">{% trans "عالية" %}</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="stats-circle bg-medium">
+                                    <div class="stats-circle-value">{{ issue_stats.medium }}</div>
+                                    <div class="stats-circle-label">{% trans "متوسطة" %}</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="stats-circle bg-low">
+                                    <div class="stats-circle-value">{{ issue_stats.low }}</div>
+                                    <div class="stats-circle-label">{% trans "منخفضة" %}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- أدوات التشخيص -->
+<div class="row mb-4">
+    <div class="col-12 mb-4">
+        <h5>{% trans "أدوات التشخيص" %}</h5>
+    </div>
+    
+    {% for tool in diagnostic_tools %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card system-card h-100">
+            <div class="card-body text-center py-4">
+                <i class="fas {{ tool.icon }} tool-icon"></i>
+                <h5>{{ tool.name }}</h5>
+                <p class="text-muted">{{ tool.description }}</p>
+                <a href="{% url 'superadmin_run_diagnostic' tool.id %}" class="btn btn-sm btn-primary mt-2">
+                    <i class="fas fa-play me-1"></i> {% trans "تشغيل" %}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- مشاكل النظام -->
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">{% trans "مشاكل النظام" %}</h5>
+        <span class="badge bg-primary">{{ issue_stats.total }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>{% trans "العنوان" %}</th>
+                        <th>{% trans "المنطقة" %}</th>
+                        <th>{% trans "الخطورة" %}</th>
+                        <th>{% trans "تاريخ الاكتشاف" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                        <th>{% trans "الإجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in system_issues %}
+                    <tr class="system-issue {{ issue.severity }}">
+                        <td>{{ issue.title }}</td>
+                        <td>{{ issue.area }}</td>
+                        <td>
+                            {% if issue.severity == 'critical' %}
+                            <span class="badge bg-danger">{% trans "حرجة" %}</span>
+                            {% elif issue.severity == 'high' %}
+                            <span class="badge bg-warning text-dark">{% trans "عالية" %}</span>
+                            {% elif issue.severity == 'medium' %}
+                            <span class="badge bg-info text-dark">{% trans "متوسطة" %}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{% trans "منخفضة" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ issue.detected_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            {% if issue.status == 'new' %}
+                            <span class="badge bg-danger">{% trans "جديدة" %}</span>
+                            {% elif issue.status == 'in_progress' %}
+                            <span class="badge bg-warning text-dark">{% trans "قيد المعالجة" %}</span>
+                            {% elif issue.status == 'fixed' %}
+                            <span class="badge bg-success">{% trans "تم الإصلاح" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if issue.status != 'fixed' %}
+                            <a href="{% url 'superadmin_fix_issue' issue.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-wrench"></i> {% trans "إصلاح" %}
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <p class="text-muted mb-0">{% trans "لا توجد مشاكل مكتشفة حالياً" %}</p>
+                            <p class="text-success"><i class="fas fa-check-circle"></i> {% trans "النظام يعمل بشكل جيد" %}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

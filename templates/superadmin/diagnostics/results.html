@@ -1,0 +1,220 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "نتائج التشخيص" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .results-icon-success {
+        font-size: 4rem;
+        color: #20c997;
+        margin-bottom: 1.5rem;
+    }
+    .results-icon-warning {
+        font-size: 4rem;
+        color: #ffc107;
+        margin-bottom: 1.5rem;
+    }
+    .results-icon-danger {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 1.5rem;
+    }
+    .issue-card {
+        border-right: 4px solid transparent;
+        margin-bottom: 1rem;
+    }
+    .issue-card.success {
+        border-right-color: #20c997;
+    }
+    .issue-card.warning {
+        border-right-color: #ffc107;
+    }
+    .issue-card.danger {
+        border-right-color: #dc3545;
+    }
+    .issue-title {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    .issue-description {
+        color: #6c757d;
+        margin-bottom: 0.75rem;
+    }
+    .issue-solution {
+        padding: 0.5rem 1rem;
+        background-color: rgba(13, 110, 253, 0.1);
+        border-radius: 0.25rem;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "نتائج التشخيص" %}</h1>
+        <p class="text-muted">{% trans "نتائج تشخيص" %} {{ diagnostic_type }}</p>
+    </div>
+    <div>
+        <a href="{% url 'superadmin_diagnostics' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> {% trans "العودة للتشخيص" %}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- المشاكل -->
+        {% if results.issues %}
+        <div class="mb-4">
+            <h5 class="mb-3 text-danger">
+                <i class="fas fa-exclamation-circle"></i> 
+                {% trans "المشاكل المكتشفة" %}
+                ({{ results.issues|length }})
+            </h5>
+            
+            {% for issue in results.issues %}
+            <div class="card issue-card danger">
+                <div class="card-body">
+                    <h6 class="issue-title">{{ issue.title }}</h6>
+                    <p class="issue-description">{{ issue.description }}</p>
+                    
+                    {% if issue.solution %}
+                    <div class="issue-solution">
+                        <i class="fas fa-tools me-1"></i> <strong>{% trans "الحل:" %}</strong> {{ issue.solution }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% if issue.severity == 'critical' or issue.severity == 'high' %}
+                <div class="card-footer bg-white">
+                    <a href="{% url 'superadmin_fix_issue' issue.issue_id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-wrench"></i> {% trans "إصلاح تلقائي" %}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- التحذيرات -->
+        {% if results.warnings %}
+        <div class="mb-4">
+            <h5 class="mb-3 text-warning">
+                <i class="fas fa-exclamation-triangle"></i> 
+                {% trans "التحذيرات" %}
+                ({{ results.warnings|length }})
+            </h5>
+            
+            {% for warning in results.warnings %}
+            <div class="card issue-card warning">
+                <div class="card-body">
+                    <h6 class="issue-title">{{ warning.title }}</h6>
+                    <p class="issue-description">{{ warning.description }}</p>
+                    
+                    {% if warning.solution %}
+                    <div class="issue-solution">
+                        <i class="fas fa-lightbulb me-1"></i> <strong>{% trans "التوصية:" %}</strong> {{ warning.solution }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- النجاحات -->
+        {% if results.success %}
+        <div class="mb-4">
+            <h5 class="mb-3 text-success">
+                <i class="fas fa-check-circle"></i> 
+                {% trans "الفحوصات الناجحة" %}
+                ({{ results.success|length }})
+            </h5>
+            
+            {% for success_item in results.success %}
+            <div class="card issue-card success">
+                <div class="card-body">
+                    <h6 class="issue-title">{{ success_item.title }}</h6>
+                    <p class="issue-description">{{ success_item.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if not results.issues and not results.warnings and not results.success %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-info-circle results-icon-warning"></i>
+                <h5>{% trans "لا توجد نتائج" %}</h5>
+                <p class="text-muted">{% trans "لم يتم العثور على نتائج لهذا التشخيص" %}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- ملخص النتائج -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{% trans "ملخص النتائج" %}</h5>
+            </div>
+            <div class="card-body text-center py-4">
+                {% if results.issues %}
+                <i class="fas fa-times-circle results-icon-danger"></i>
+                <h4>{% trans "تم اكتشاف مشاكل" %}</h4>
+                <p class="text-muted">{% trans "تم العثور على مشاكل تحتاج إلى اهتمام" %}</p>
+                {% elif results.warnings %}
+                <i class="fas fa-exclamation-triangle results-icon-warning"></i>
+                <h4>{% trans "تم اكتشاف تحذيرات" %}</h4>
+                <p class="text-muted">{% trans "تم العثور على تحذيرات يجب مراجعتها" %}</p>
+                {% else %}
+                <i class="fas fa-check-circle results-icon-success"></i>
+                <h4>{% trans "جميع الفحوصات ناجحة" %}</h4>
+                <p class="text-muted">{% trans "لم يتم العثور على أي مشاكل" %}</p>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{% trans "مشاكل" %}:</span>
+                        <span>{{ results.issues|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{% trans "تحذيرات" %}:</span>
+                        <span>{{ results.warnings|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>{% trans "ناجحة" %}:</span>
+                        <span>{{ results.success|length }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- روابط سريعة -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{% trans "خيارات" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'superadmin_run_diagnostic' diagnostic_type %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-redo me-2"></i> {% trans "إعادة تشغيل التشخيص" %}
+                    </a>
+                    {% if results.issues %}
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-magic me-2"></i> {% trans "إصلاح جميع المشاكل تلقائياً" %}
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'superadmin_diagnostics' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-arrow-left me-2"></i> {% trans "العودة إلى التشخيص" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

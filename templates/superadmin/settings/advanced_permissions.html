@@ -1,0 +1,181 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "الأذونات المتقدمة" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-check-input {
+        float: right;
+        margin-right: 0;
+        margin-left: 0.5em;
+    }
+    .model-icon {
+        font-size: 1.25rem;
+        color: var(--primary-color);
+        margin-right: 0.5rem;
+    }
+    .permission-header {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .permission-header i {
+        opacity: 0.7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "الأذونات المتقدمة" %}</h1>
+        <p class="text-muted">{% trans "إدارة الأذونات على مستوى الحقول للأدوار المختلفة" %}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{% trans "الأدوار" %}</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush nav nav-tabs" id="role-tabs" role="tablist">
+                    {% for role in roles %}
+                    <a class="list-group-item list-group-item-action {% if forloop.first %}active{% endif %}" 
+                       id="role-{{ role.id }}-tab" 
+                       data-bs-toggle="tab" 
+                       href="#role-{{ role.id }}" 
+                       role="tab" 
+                       aria-controls="role-{{ role.id }}" 
+                       aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                        <i class="fas fa-user-tag me-2"></i> {{ role.name }}
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item">
+                        <p class="text-muted mb-0">{% trans "لا توجد أدوار معرفة" %}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-9">
+        <div class="tab-content" id="role-tabs-content">
+            {% for role in roles %}
+            <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                 id="role-{{ role.id }}" 
+                 role="tabpanel" 
+                 aria-labelledby="role-{{ role.id }}-tab">
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">{{ role.name }}</h5>
+                        <span class="badge bg-primary">{{ role.adminuser_set.count }} {% trans "مستخدم" %}</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">{{ role.description }}</p>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {% trans "حدد لكل حقل ما إذا كان يمكن قراءته أو تعديله بواسطة هذا الدور" %}
+                        </div>
+                    </div>
+                </div>
+                
+                {% for model in available_models %}
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <div class="permission-header">
+                            <i class="fas fa-table model-icon"></i>
+                            <strong>{{ model.name }}</strong>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'superadmin_advanced_permissions' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_field_permissions">
+                            <input type="hidden" name="role_id" value="{{ role.id }}">
+                            <input type="hidden" name="model_name" value="{{ model.name }}">
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th width="50%">{% trans "الحقل" %}</th>
+                                            <th class="text-center">{% trans "قراءة" %}</th>
+                                            <th class="text-center">{% trans "كتابة" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for field in model.fields %}
+                                        <tr>
+                                            <td>
+                                                <label for="read_{{ field }}">{{ field }}</label>
+                                                <input type="hidden" name="field_name" value="{{ field }}">
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="form-check justify-content-center d-flex">
+                                                    <input type="checkbox" class="form-check-input" id="read_{{ field }}" name="read_{{ field }}" 
+                                                    {% if advanced_permissions and advanced_permissions|get_item:role.id|get_item:model.name|get_item:field|get_item:'read' %}checked{% endif %}>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="form-check justify-content-center d-flex">
+                                                    <input type="checkbox" class="form-check-input" id="write_{{ field }}" name="write_{{ field }}"
+                                                    {% if advanced_permissions and advanced_permissions|get_item:role.id|get_item:model.name|get_item:field|get_item:'write' %}checked{% endif %}>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="d-flex justify-content-end mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> {% trans "حفظ الأذونات" %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // حل مشكلة علامة التبويب |get_item إذا لم تكن موجودة
+    if (!Object.prototype.get_item) {
+        Object.defineProperty(Object.prototype, 'get_item', {
+            value: function(key) {
+                return this[key];
+            },
+            enumerable: false
+        });
+    }
+    
+    $(document).ready(function() {
+        // التبديل بين علامات التبويب
+        $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+            // حفظ علامة التبويب النشطة في التخزين المحلي للمتصفح
+            localStorage.setItem('activeRoleTab', $(e.target).attr('href'));
+        });
+        
+        // استعادة علامة التبويب النشطة من التخزين المحلي
+        var activeTab = localStorage.getItem('activeRoleTab');
+        if(activeTab){
+            $('#role-tabs a[href="' + activeTab + '"]').tab('show');
+        }
+    });
+</script>
+{% endblock %}

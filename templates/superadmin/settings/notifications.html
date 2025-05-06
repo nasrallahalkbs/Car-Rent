@@ -1,0 +1,170 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إعدادات الإشعارات" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-check-input {
+        float: right;
+        margin-right: 0;
+        margin-left: 0.5em;
+    }
+    .notification-info-box {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .notification-icon {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        opacity: 0.7;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "إعدادات الإشعارات" %}</h1>
+        <p class="text-muted">{% trans "إدارة إعدادات الإشعارات ورسائل النظام" %}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- إعدادات الإشعارات -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{% trans "إعدادات الإشعارات" %}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <h6>{% trans "إعدادات عامة" %}</h6>
+                        <hr>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="notifications_enabled" name="notifications_enabled" {% if notification_settings.notifications_enabled.value == 'true' %}checked{% endif %}>
+                            <label class="form-check-label" for="notifications_enabled">{% trans "تفعيل الإشعارات" %}</label>
+                            <div class="form-text">{% trans "إذا تم تعطيل هذا الخيار، ستتوقف جميع الإشعارات" %}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>{% trans "قنوات الإشعار" %}</h6>
+                        <hr>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="email_notifications_enabled" name="email_notifications_enabled" {% if notification_settings.email_notifications_enabled.value == 'true' %}checked{% endif %}>
+                            <label class="form-check-label" for="email_notifications_enabled">{% trans "إشعارات البريد الإلكتروني" %}</label>
+                            <div class="form-text">{% trans "إرسال إشعارات عبر البريد الإلكتروني" %}</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="push_notifications_enabled" name="push_notifications_enabled" {% if notification_settings.push_notifications_enabled.value == 'true' %}checked{% endif %}>
+                            <label class="form-check-label" for="push_notifications_enabled">{% trans "إشعارات مباشرة" %}</label>
+                            <div class="form-text">{% trans "إرسال إشعارات مباشرة في المتصفح" %}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>{% trans "الأحداث التي ترسل إشعارات" %}</h6>
+                        <hr>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="notify_on_new_reservation" name="notify_on_new_reservation" {% if notification_settings.notify_on_new_reservation.value == 'true' %}checked{% endif %}>
+                            <label class="form-check-label" for="notify_on_new_reservation">{% trans "حجز جديد" %}</label>
+                            <div class="form-text">{% trans "إرسال إشعار عند إنشاء حجز جديد" %}</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="notify_on_payment" name="notify_on_payment" {% if notification_settings.notify_on_payment.value == 'true' %}checked{% endif %}>
+                            <label class="form-check-label" for="notify_on_payment">{% trans "عملية دفع" %}</label>
+                            <div class="form-text">{% trans "إرسال إشعار عند إتمام عملية دفع" %}</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="notify_on_review" name="notify_on_review" {% if notification_settings.notify_on_review.value == 'true' %}checked{% endif %}>
+                            <label class="form-check-label" for="notify_on_review">{% trans "تقييم جديد" %}</label>
+                            <div class="form-text">{% trans "إرسال إشعار عند إضافة تقييم جديد" %}</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="notify_on_error" name="notify_on_error" {% if notification_settings.notify_on_error.value == 'true' %}checked{% endif %}>
+                            <label class="form-check-label" for="notify_on_error">{% trans "أخطاء النظام" %}</label>
+                            <div class="form-text">{% trans "إرسال إشعار عند حدوث خطأ في النظام" %}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>{% trans "بريد المسؤولين" %}</h6>
+                        <hr>
+                        
+                        <div class="mb-3">
+                            <label for="admin_email_recipients" class="form-label">{% trans "عناوين البريد الإلكتروني للمسؤولين" %}</label>
+                            <input type="text" class="form-control" id="admin_email_recipients" name="admin_email_recipients" value="{{ notification_settings.admin_email_recipients.value }}">
+                            <div class="form-text">{% trans "أدخل عناوين البريد الإلكتروني مفصولة بفواصل (،)" %}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {% trans "حفظ الإعدادات" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- معلومات مساعدة -->
+        <div class="card mb-4">
+            <div class="card-body notification-info-box">
+                <div class="text-center mb-3">
+                    <i class="fas fa-info-circle notification-icon"></i>
+                    <h5>{% trans "معلومات عن الإشعارات" %}</h5>
+                </div>
+                
+                <p>{% trans "يتيح نظام الإشعارات إبقاء المسؤولين والمستخدمين على اطلاع بأحدث الأحداث في النظام." %}</p>
+                
+                <div class="alert alert-info">
+                    <h6 class="mb-2">{% trans "ملاحظة:" %}</h6>
+                    <p class="mb-0 small">{% trans "لإرسال إشعارات البريد الإلكتروني، تأكد من ضبط إعدادات SMTP في ملف settings.py." %}</p>
+                </div>
+                
+                <hr>
+                
+                <h6>{% trans "أنواع الإشعارات:" %}</h6>
+                <ul class="mb-0">
+                    <li>{% trans "إشعارات البريد الإلكتروني" %}</li>
+                    <li>{% trans "إشعارات مباشرة في النظام" %}</li>
+                    <li>{% trans "إشعارات النظام للمسؤولين" %}</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- اختبار الإشعارات -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{% trans "اختبار الإشعارات" %}</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">{% trans "إرسال إشعار اختباري للتحقق من إعدادات الإشعارات" %}</p>
+                
+                <div class="d-grid">
+                    <button type="button" class="btn btn-outline-primary">
+                        <i class="fas fa-paper-plane"></i> {% trans "إرسال إشعار اختباري" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

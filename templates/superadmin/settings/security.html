@@ -1,0 +1,289 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إعدادات الأمان" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-check-input {
+        float: right;
+        margin-right: 0;
+        margin-left: 0.5em;
+    }
+    .tab-pane {
+        padding: 1.5rem;
+    }
+    .security-icon {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        opacity: 0.7;
+        margin-bottom: 1rem;
+    }
+    .settings-card {
+        height: 100%;
+        transition: var(--transition);
+    }
+    .settings-card:hover {
+        border-color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "إعدادات الأمان" %}</h1>
+        <p class="text-muted">{% trans "إدارة إعدادات أمان النظام والمصادقة الثنائية" %}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush nav nav-tabs" id="security-tabs" role="tablist">
+                    <a class="list-group-item list-group-item-action active" id="passwords-tab" data-bs-toggle="tab" href="#passwords" role="tab" aria-controls="passwords" aria-selected="true">
+                        <i class="fas fa-key me-2"></i> {% trans "كلمات المرور" %}
+                    </a>
+                    <a class="list-group-item list-group-item-action" id="two-factor-tab" data-bs-toggle="tab" href="#two-factor" role="tab" aria-controls="two-factor" aria-selected="false">
+                        <i class="fas fa-shield-alt me-2"></i> {% trans "المصادقة الثنائية" %}
+                    </a>
+                    <a class="list-group-item list-group-item-action" id="sessions-tab" data-bs-toggle="tab" href="#sessions" role="tab" aria-controls="sessions" aria-selected="false">
+                        <i class="fas fa-laptop me-2"></i> {% trans "الجلسات والأجهزة" %}
+                    </a>
+                    <a class="list-group-item list-group-item-action" id="lockout-tab" data-bs-toggle="tab" href="#lockout" role="tab" aria-controls="lockout" aria-selected="false">
+                        <i class="fas fa-lock me-2"></i> {% trans "قفل الحساب" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-9">
+        <div class="tab-content" id="security-tabs-content">
+            <!-- إعدادات كلمات المرور -->
+            <div class="tab-pane fade show active" id="passwords" role="tabpanel" aria-labelledby="passwords-tab">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{% trans "متطلبات كلمة المرور" %}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">{% trans "ضبط متطلبات قوة كلمة المرور لجميع المستخدمين في النظام" %}</p>
+                        
+                        <form method="post" action="{% url 'superadmin_security_settings' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_security_settings">
+                            
+                            <div class="mb-3">
+                                <label class="form-label">{% trans "الحد الأدنى لطول كلمة المرور" %}</label>
+                                <input type="number" class="form-control" name="password_min_length" value="{{ security_settings.password_min_length.value|default:8 }}" min="6" max="32">
+                                <div class="form-text">{% trans "الحد الأدنى لعدد الأحرف المطلوبة لكلمة المرور" %}</div>
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="password_requires_uppercase" name="password_requires_uppercase" {% if security_settings.password_requires_uppercase.value == 'true' %}checked{% endif %}>
+                                <label class="form-check-label" for="password_requires_uppercase">{% trans "تتطلب الأحرف الكبيرة (A-Z)" %}</label>
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="password_requires_numbers" name="password_requires_numbers" {% if security_settings.password_requires_numbers.value == 'true' %}checked{% endif %}>
+                                <label class="form-check-label" for="password_requires_numbers">{% trans "تتطلب الأرقام (0-9)" %}</label>
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="password_requires_special" name="password_requires_special" {% if security_settings.password_requires_special.value == 'true' %}checked{% endif %}>
+                                <label class="form-check-label" for="password_requires_special">{% trans "تتطلب الرموز الخاصة (!@#$%)" %}</label>
+                            </div>
+                            
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> {% trans "حفظ الإعدادات" %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- إعدادات المصادقة الثنائية -->
+            <div class="tab-pane fade" id="two-factor" role="tabpanel" aria-labelledby="two-factor-tab">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{% trans "المصادقة الثنائية" %}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">{% trans "المصادقة الثنائية توفر طبقة إضافية من الأمان عند تسجيل الدخول" %}</p>
+                        
+                        <form method="post" action="{% url 'superadmin_security_settings' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_two_factor">
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="two_factor_enabled" name="two_factor_enabled" {% if two_factor_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="two_factor_enabled">{% trans "تمكين المصادقة الثنائية على مستوى النظام" %}</label>
+                                <div class="form-text">{% trans "السماح للمستخدمين بتفعيل المصادقة الثنائية لحساباتهم" %}</div>
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="two_factor_required_for_admins" name="two_factor_required_for_admins" {% if two_factor_required %}checked{% endif %}>
+                                <label class="form-check-label" for="two_factor_required_for_admins">{% trans "المصادقة الثنائية مطلوبة للمسؤولين" %}</label>
+                                <div class="form-text">{% trans "فرض المصادقة الثنائية على جميع حسابات المسؤولين" %}</div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> {% trans "حفظ الإعدادات" %}
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <hr class="my-4">
+                        
+                        <h5>{% trans "إعداد المصادقة الثنائية لحسابك" %}</h5>
+                        <p class="text-muted">{% trans "إعداد المصادقة الثنائية لحسابك الشخصي" %}</p>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                            <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#setup2FAModal">
+                                <i class="fas fa-qrcode"></i> {% trans "إعداد المصادقة الثنائية" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- إعدادات الجلسات -->
+            <div class="tab-pane fade" id="sessions" role="tabpanel" aria-labelledby="sessions-tab">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{% trans "إعدادات الجلسات" %}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">{% trans "إعدادات جلسات المستخدمين ومدة انتهاء الجلسة" %}</p>
+                        
+                        <form method="post" action="{% url 'superadmin_security_settings' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_security_settings">
+                            
+                            <div class="mb-3">
+                                <label class="form-label">{% trans "مدة انتهاء جلسة العمل (بالدقائق)" %}</label>
+                                <input type="number" class="form-control" name="session_timeout_minutes" value="{{ security_settings.session_timeout_minutes.value|default:60 }}" min="15" max="1440">
+                                <div class="form-text">{% trans "مدة خمول الجلسة قبل تسجيل الخروج التلقائي" %}</div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> {% trans "حفظ الإعدادات" %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- إعدادات قفل الحساب -->
+            <div class="tab-pane fade" id="lockout" role="tabpanel" aria-labelledby="lockout-tab">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{% trans "إعدادات قفل الحساب" %}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">{% trans "إعدادات قفل الحساب بعد محاولات تسجيل دخول فاشلة" %}</p>
+                        
+                        <form method="post" action="{% url 'superadmin_security_settings' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_security_settings">
+                            
+                            <div class="mb-3">
+                                <label class="form-label">{% trans "عدد محاولات تسجيل الدخول الفاشلة قبل قفل الحساب" %}</label>
+                                <input type="number" class="form-control" name="account_lockout_attempts" value="{{ security_settings.account_lockout_attempts.value|default:5 }}" min="3" max="10">
+                                <div class="form-text">{% trans "عدد محاولات تسجيل الدخول الفاشلة قبل قفل الحساب" %}</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">{% trans "مدة قفل الحساب (بالدقائق)" %}</label>
+                                <input type="number" class="form-control" name="account_lockout_minutes" value="{{ security_settings.account_lockout_minutes.value|default:30 }}" min="5" max="1440">
+                                <div class="form-text">{% trans "المدة التي يبقى فيها الحساب مقفلاً" %}</div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> {% trans "حفظ الإعدادات" %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for 2FA Setup -->
+<div class="modal fade" id="setup2FAModal" tabindex="-1" aria-labelledby="setup2FAModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="setup2FAModalLabel">{% trans "إعداد المصادقة الثنائية" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <p>{% trans "امسح رمز QR التالي باستخدام تطبيق المصادقة" %}</p>
+                    <div class="qr-placeholder p-4 d-inline-block bg-light rounded">
+                        <img src="https://via.placeholder.com/200x200" alt="QR Code" class="img-fluid">
+                    </div>
+                </div>
+                
+                <form>
+                    <div class="mb-3">
+                        <label for="otpCode" class="form-label">{% trans "أدخل الرمز من تطبيقك" %}</label>
+                        <input type="text" class="form-control text-center" id="otpCode" placeholder="123456" maxlength="6" autocomplete="off">
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6>{% trans "التطبيقات المدعومة:" %}</h6>
+                        <ul class="mb-0 ps-4">
+                            <li>Google Authenticator</li>
+                            <li>Microsoft Authenticator</li>
+                            <li>Authy</li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                <button type="button" class="btn btn-primary">{% trans "تفعيل" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // التبديل بين علامات التبويب
+        $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+            // حفظ علامة التبويب النشطة في التخزين المحلي للمتصفح
+            localStorage.setItem('activeSecurityTab', $(e.target).attr('href'));
+        });
+        
+        // استعادة علامة التبويب النشطة من التخزين المحلي
+        var activeTab = localStorage.getItem('activeSecurityTab');
+        if(activeTab){
+            $('#security-tabs a[href="' + activeTab + '"]').tab('show');
+        }
+        
+        // تنسيق حقل رمز OTP
+        $('#otpCode').on('input', function() {
+            // فقط السماح بالأرقام
+            $(this).val($(this).val().replace(/[^0-9]/g, ''));
+            
+            // اقتصار الطول على 6 أرقام
+            if ($(this).val().length > 6) {
+                $(this).val($(this).val().substring(0, 6));
+            }
+        });
+    });
+</script>
+{% endblock %}
