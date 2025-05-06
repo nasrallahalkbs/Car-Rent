@@ -53,10 +53,41 @@
                 
                 <div class="row mb-4">
                     <div class="col-12">
-                        <div class="form-group mb-3">
-                            <label for="args_json">{% trans "معاملات الوظيفة (JSON)" %}</label>
-                            <textarea id="args_json" name="args_json" class="form-control" rows="5">{{ args_json|default:'{}' }}</textarea>
-                            <small class="form-text text-muted">{% trans "المعاملات التي ستمرر إلى الوظيفة بتنسيق JSON" %}</small>
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">{% trans "معاملات الوظيفة" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- واجهة المستخدم المحسنة للمعاملات -->
+                                <div id="parameters-container">
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <h6>{% trans "المعاملات" %}</h6>
+                                        <button type="button" id="add-parameter" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-plus"></i> {% trans "إضافة معامل" %}
+                                        </button>
+                                    </div>
+                                    <div id="parameters-list">
+                                        <!-- سيتم إضافة المعاملات هنا بواسطة JavaScript -->
+                                    </div>
+                                </div>
+                                
+                                <!-- حقل مخفي لتخزين معاملات JSON -->
+                                <input type="hidden" id="args_json" name="args_json" value="{{ args_json|default:'{}' }}">
+                                
+                                <div class="mt-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="show-json-editor">
+                                        <label class="form-check-label" for="show-json-editor">{% trans "عرض محرر JSON المتقدم" %}</label>
+                                    </div>
+                                </div>
+                                
+                                <!-- محرر JSON المتقدم (مخفي بشكل افتراضي) -->
+                                <div id="advanced-json-editor" class="mt-3" style="display: none;">
+                                    <label for="json-editor">{% trans "محرر JSON المتقدم" %}</label>
+                                    <textarea id="json-editor" class="form-control" rows="5">{{ args_json|default:'{}' }}</textarea>
+                                    <small class="form-text text-muted">{% trans "تحرير المعاملات مباشرة بتنسيق JSON (للمستخدمين المتقدمين)" %}</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -107,7 +138,240 @@
         // تطبيق الإعدادات الأولية
         $('#id_interval_type').trigger('change');
         
-        // التحقق من صحة JSON
+        // تهيئة قائمة المعاملات
+        var paramsList = $('#parameters-list');
+        var paramCount = 0;
+        var currentParams = {};
+        
+        try {
+            currentParams = JSON.parse($('#args_json').val() || '{}');
+        } catch (e) {
+            console.error('خطأ في تحليل JSON الحالي:', e);
+            currentParams = {};
+        }
+        
+        // عرض المعاملات الموجودة
+        function showExistingParams() {
+            for (var key in currentParams) {
+                if (currentParams.hasOwnProperty(key)) {
+                    addParameterField(key, currentParams[key]);
+                }
+            }
+        }
+        
+        // إضافة حقل معامل جديد
+        function addParameterField(key = '', value = '') {
+            var paramId = 'param-' + paramCount;
+            var valueType = typeof value;
+            var isObject = valueType === 'object' && value !== null && !Array.isArray(value);
+            var isArray = Array.isArray(value);
+            
+            var fieldHtml = `
+                <div class="parameter-row mb-3 p-2 border rounded" id="${paramId}-container">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="form-group mb-2">
+                                <label for="${paramId}-key">{% trans "اسم المعامل" %}</label>
+                                <input type="text" id="${paramId}-key" class="form-control param-key" value="${key}" placeholder="{% trans "اسم المعامل" %}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-2">
+                                <label for="${paramId}-type">{% trans "نوع القيمة" %}</label>
+                                <select id="${paramId}-type" class="form-control param-type">
+                                    <option value="string" ${valueType === 'string' ? 'selected' : ''}>{% trans "نص" %}</option>
+                                    <option value="number" ${valueType === 'number' ? 'selected' : ''}>{% trans "رقم" %}</option>
+                                    <option value="boolean" ${valueType === 'boolean' ? 'selected' : ''}>{% trans "منطقي" %}</option>
+                                    <option value="object" ${isObject ? 'selected' : ''}>{% trans "كائن (JSON)" %}</option>
+                                    <option value="array" ${isArray ? 'selected' : ''}>{% trans "مصفوفة" %}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-2 param-value-container">`;
+                            
+            // تحديد نوع حقل الإدخال بناءً على نوع القيمة
+            if (valueType === 'boolean') {
+                fieldHtml += `
+                    <label for="${paramId}-value">{% trans "القيمة" %}</label>
+                    <select id="${paramId}-value" class="form-control param-value">
+                        <option value="true" ${value === true ? 'selected' : ''}>{% trans "نعم" %}</option>
+                        <option value="false" ${value === false ? 'selected' : ''}>{% trans "لا" %}</option>
+                    </select>`;
+            } else if (isObject || isArray) {
+                fieldHtml += `
+                    <label for="${paramId}-value">{% trans "القيمة (JSON)" %}</label>
+                    <textarea id="${paramId}-value" class="form-control param-value" rows="1">${JSON.stringify(value)}</textarea>`;
+            } else {
+                fieldHtml += `
+                    <label for="${paramId}-value">{% trans "القيمة" %}</label>
+                    <input type="${valueType === 'number' ? 'number' : 'text'}" id="${paramId}-value" class="form-control param-value" value="${value}">`;
+            }
+            
+            fieldHtml += `
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="mt-4 pt-1 text-end">
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-param" data-param-id="${paramId}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            paramsList.append(fieldHtml);
+            
+            // تعيين معالج الأحداث لتغيير نوع القيمة
+            $(`#${paramId}-type`).on('change', function() {
+                var newType = $(this).val();
+                var valueContainer = $(`#${paramId}-container .param-value-container`);
+                var currentVal = $(`#${paramId}-value`).val();
+                
+                // تحويل القيمة الحالية إلى النوع الجديد
+                var convertedValue = '';
+                try {
+                    if (newType === 'string') {
+                        convertedValue = String(currentVal);
+                    } else if (newType === 'number') {
+                        convertedValue = isNaN(Number(currentVal)) ? 0 : Number(currentVal);
+                    } else if (newType === 'boolean') {
+                        convertedValue = Boolean(currentVal);
+                    } else if (newType === 'object') {
+                        convertedValue = '{}';
+                    } else if (newType === 'array') {
+                        convertedValue = '[]';
+                    }
+                } catch (e) {
+                    console.error('خطأ في تحويل القيمة:', e);
+                }
+                
+                // إعادة رسم حقل القيمة وفقاً للنوع
+                var newValueHtml = '';
+                if (newType === 'boolean') {
+                    newValueHtml = `
+                        <label for="${paramId}-value">{% trans "القيمة" %}</label>
+                        <select id="${paramId}-value" class="form-control param-value">
+                            <option value="true">{% trans "نعم" %}</option>
+                            <option value="false" selected>{% trans "لا" %}</option>
+                        </select>`;
+                } else if (newType === 'object' || newType === 'array') {
+                    newValueHtml = `
+                        <label for="${paramId}-value">{% trans "القيمة (JSON)" %}</label>
+                        <textarea id="${paramId}-value" class="form-control param-value" rows="1">${convertedValue}</textarea>`;
+                } else {
+                    newValueHtml = `
+                        <label for="${paramId}-value">{% trans "القيمة" %}</label>
+                        <input type="${newType === 'number' ? 'number' : 'text'}" id="${paramId}-value" class="form-control param-value" value="${convertedValue}">`;
+                }
+                
+                valueContainer.html(newValueHtml);
+                updateJsonFromFields();
+            });
+            
+            paramCount++;
+        }
+        
+        // عرض المعاملات الموجودة عند تحميل الصفحة
+        showExistingParams();
+        
+        // إضافة معامل جديد عند النقر على الزر
+        $('#add-parameter').on('click', function() {
+            addParameterField();
+            updateJsonFromFields();
+        });
+        
+        // حذف معامل
+        $(document).on('click', '.remove-param', function() {
+            var paramId = $(this).data('param-id');
+            $(`#${paramId}-container`).remove();
+            updateJsonFromFields();
+        });
+        
+        // تحديث حقل JSON من الحقول المرئية
+        function updateJsonFromFields() {
+            var jsonObj = {};
+            
+            $('.parameter-row').each(function() {
+                var keyInput = $(this).find('.param-key');
+                var typeSelect = $(this).find('.param-type');
+                var valueInput = $(this).find('.param-value');
+                
+                var key = keyInput.val().trim();
+                var type = typeSelect.val();
+                var rawValue = valueInput.val();
+                
+                if (key) {
+                    var value;
+                    switch (type) {
+                        case 'string':
+                            value = String(rawValue);
+                            break;
+                        case 'number':
+                            value = isNaN(Number(rawValue)) ? 0 : Number(rawValue);
+                            break;
+                        case 'boolean':
+                            value = rawValue === 'true';
+                            break;
+                        case 'object':
+                        case 'array':
+                            try {
+                                value = JSON.parse(rawValue);
+                            } catch (e) {
+                                value = type === 'object' ? {} : [];
+                                console.error('خطأ في تحليل JSON:', e);
+                            }
+                            break;
+                        default:
+                            value = rawValue;
+                    }
+                    
+                    jsonObj[key] = value;
+                }
+            });
+            
+            // تحديث حقل JSON المخفي ومحرر JSON المتقدم
+            var jsonStr = JSON.stringify(jsonObj, null, 2);
+            $('#args_json').val(jsonStr);
+            $('#json-editor').val(jsonStr);
+        }
+        
+        // تحديث JSON عند تغيير أي من حقول المعاملات
+        $(document).on('change', '.param-key, .param-type, .param-value', function() {
+            updateJsonFromFields();
+        });
+        
+        // التبديل بين عرض محرر JSON المتقدم وإخفائه
+        $('#show-json-editor').on('change', function() {
+            if ($(this).is(':checked')) {
+                $('#advanced-json-editor').show();
+            } else {
+                $('#advanced-json-editor').hide();
+            }
+        });
+        
+        // تحديث حقول المعاملات عند تغيير JSON في المحرر المتقدم
+        $('#json-editor').on('change', function() {
+            var jsonStr = $(this).val();
+            
+            try {
+                var jsonObj = JSON.parse(jsonStr);
+                $('#args_json').val(jsonStr);
+                
+                // إعادة رسم حقول المعاملات
+                $('#parameters-list').empty();
+                paramCount = 0;
+                currentParams = jsonObj;
+                showExistingParams();
+            } catch (e) {
+                console.error('خطأ في تحليل JSON:', e);
+                // عدم تحديث الحقول إذا كان JSON غير صحيح
+            }
+        });
+        
+        // التحقق من صحة JSON عند إرسال النموذج
         $('#scheduledJobForm').on('submit', function(e) {
             var argsJson = $('#args_json').val();
             
