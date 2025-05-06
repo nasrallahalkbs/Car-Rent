@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
@@ -959,3 +959,157 @@ def system_logs(request):
     }
     
     return render(request, 'superadmin/system_logs.html', context)
+
+
+# إدارة المصادقة الثنائية للمستخدمين
+@superadmin_required
+def user_2fa(request, user_id):
+    """إدارة المصادقة الثنائية للمستخدم"""
+    User = get_user_model()
+    user = get_object_or_404(User, id=user_id)
+    
+    # التحقق من وجود معلومات أمان المستخدم أو إنشائها
+    user_security, created = UserSecurity.objects.get_or_create(user=user)
+    
+    # الحصول على بيانات QR ورموز النسخ الاحتياطية
+    qr_code = None
+    backup_codes = None
+    
+    # جلب سجل محاولات تسجيل الدخول
+    login_attempts = LoginAttempt.objects.filter(user=user).order_by('-timestamp')[:20]
+    
+    # معالجة الإجراءات
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # إعداد المصادقة الثنائية
+        if action == 'setup_2fa':
+            security = setup_2fa_for_user(user)
+            qr_code = generate_qr_code_image(user)
+            backup_codes = security.backup_codes
+            messages.success(request, _("تم إعداد المصادقة الثنائية بنجاح. يرجى مسح رمز QR بتطبيق المصادقة."))
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("إعداد المصادقة الثنائية"),
+                _("تم إعداد المصادقة الثنائية للمستخدم {}").format(user.username),
+                request
+            )
+        
+        # تعطيل المصادقة الثنائية
+        elif action == 'disable_2fa':
+            result = disable_2fa_for_user(user, force=True)
+            if result:
+                messages.success(request, _("تم تعطيل المصادقة الثنائية بنجاح."))
+                
+                # تسجيل النشاط
+                log_admin_activity(
+                    request.admin_profile,
+                    _("تعطيل المصادقة الثنائية"),
+                    _("تم تعطيل المصادقة الثنائية للمستخدم {}").format(user.username),
+                    request
+                )
+            else:
+                messages.error(request, _("حدث خطأ أثناء تعطيل المصادقة الثنائية."))
+        
+        # إعادة توليد رموز النسخ الاحتياطية
+        elif action == 'regenerate_backup_codes':
+            backup_codes = generate_backup_codes(user, force_regenerate=True)
+            messages.success(request, _("تم إعادة توليد رموز النسخ الاحتياطية بنجاح."))
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("إعادة توليد رموز النسخ الاحتياطية"),
+                _("تم إعادة توليد رموز النسخ الاحتياطية للمستخدم {}").format(user.username),
+                request
+            )
+        
+        # فتح قفل الحساب
+        elif action == 'unlock_account':
+            result = security_unlock_account(user)
+            if result:
+                messages.success(request, _("تم فتح قفل الحساب بنجاح."))
+                
+                # تسجيل النشاط
+                log_admin_activity(
+                    request.admin_profile,
+                    _("فتح قفل الحساب"),
+                    _("تم فتح قفل حساب المستخدم {}").format(user.username),
+                    request
+                )
+            else:
+                messages.error(request, _("حدث خطأ أثناء فتح قفل الحساب."))
+        
+        # إعادة تعيين محاولات تسجيل الدخول
+        elif action == 'reset_login_attempts':
+            result = reset_failed_login_attempts(user)
+            if result:
+                messages.success(request, _("تم إعادة تعيين محاولات تسجيل الدخول بنجاح."))
+                
+                # تسجيل النشاط
+                log_admin_activity(
+                    request.admin_profile,
+                    _("إعادة تعيين محاولات تسجيل الدخول"),
+                    _("تم إعادة تعيين محاولات تسجيل الدخول للمستخدم {}").format(user.username),
+                    request
+                )
+            else:
+                messages.error(request, _("حدث خطأ أثناء إعادة تعيين محاولات تسجيل الدخول."))
+        
+        # تفعيل الحساب
+        elif action == 'activate_account':
+            user.is_active = True
+            user.save()
+            messages.success(request, _("تم تفعيل الحساب بنجاح."))
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("تفعيل الحساب"),
+                _("تم تفعيل حساب المستخدم {}").format(user.username),
+                request
+            )
+        
+        # تعطيل الحساب
+        elif action == 'deactivate_account':
+            user.is_active = False
+            user.save()
+            messages.success(request, _("تم تعطيل الحساب بنجاح."))
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("تعطيل الحساب"),
+                _("تم تعطيل حساب المستخدم {}").format(user.username),
+                request
+            )
+    
+    # التحقق من وجود رموز احتياطية
+    if user_security.two_factor_enabled and not backup_codes:
+        backup_codes = user_security.backup_codes
+    
+    # التحقق من وجود مسؤول أعلى
+    is_superadmin = False
+    try:
+        admin_user = AdminUser.objects.get(user=user)
+        is_superadmin = admin_user.is_superadmin
+    except AdminUser.DoesNotExist:
+        pass
+    
+    # رمز QR إذا كانت المصادقة الثنائية مفعلة ولم يتم تحميل الرمز بعد
+    if user_security.two_factor_enabled and not qr_code:
+        qr_code = generate_qr_code_image(user)
+    
+    context = {
+        'user': user,
+        'user_security': user_security,
+        'login_attempts': login_attempts,
+        'qr_code': qr_code,
+        'backup_codes': backup_codes,
+        'is_superadmin': is_superadmin,
+        'totp_secret': user_security.totp_secret,
+    }
+    
+    return render(request, 'superadmin/user_2fa.html', context)
