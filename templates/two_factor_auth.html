@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "المصادقة الثنائية" %} - {% trans "نظام تأجير السيارات" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card bg-light border shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{% trans "المصادقة الثنائية" %}</h4>
+                </div>
+                
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-shield-alt fa-4x text-primary mb-3"></i>
+                        <p class="lead">{% trans "الرجاء إدخال رمز المصادقة الثنائية" %}</p>
+                        <p class="text-muted">{% trans "افتح تطبيق المصادقة على هاتفك وأدخل الرمز المعروض" %}</p>
+                    </div>
+                    
+                    {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="username" value="{{ username }}">
+                        
+                        <div class="form-group">
+                            <label for="two_factor_token">{% trans "رمز التحقق" %}</label>
+                            <input type="text" name="two_factor_token" id="two_factor_token" class="form-control text-center" 
+                                placeholder="000000" autofocus required pattern="[0-9]{6}" maxlength="6">
+                            <small class="form-text text-muted">{% trans "أدخل الرمز المكون من 6 أرقام" %}</small>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-check-circle me-2"></i>{% trans "تحقق" %}
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-3 text-center">
+                        <p class="text-muted">{% trans "أو" %}</p>
+                        <a href="{% url 'login' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>{% trans "العودة إلى تسجيل الدخول" %}
+                        </a>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="accordion" id="help-accordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="backup-codes-heading">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                           data-bs-target="#backup-codes-content" aria-expanded="false" aria-controls="backup-codes-content">
+                                        {% trans "استخدام رمز احتياطي" %}
+                                    </button>
+                                </h2>
+                                <div id="backup-codes-content" class="accordion-collapse collapse" aria-labelledby="backup-codes-heading" data-bs-parent="#help-accordion">
+                                    <div class="accordion-body">
+                                        <p>{% trans "إذا لم تتمكن من الوصول إلى تطبيق المصادقة، يمكنك استخدام أحد الرموز الاحتياطية." %}</p>
+                                        <p>{% trans "الرموز الاحتياطية هي رموز لمرة واحدة تم إنشاؤها عند إعداد المصادقة الثنائية." %}</p>
+                                        <p>{% trans "يمكنك إدخال رمز احتياطي في نفس الحقل أعلاه." %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="help-heading">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                           data-bs-target="#help-content" aria-expanded="false" aria-controls="help-content">
+                                        {% trans "تحتاج مساعدة؟" %}
+                                    </button>
+                                </h2>
+                                <div id="help-content" class="accordion-collapse collapse" aria-labelledby="help-heading" data-bs-parent="#help-accordion">
+                                    <div class="accordion-body">
+                                        <p>{% trans "إذا واجهت مشكلة في الوصول إلى حسابك، يرجى التواصل مع مسؤول النظام." %}</p>
+                                        <p>{% trans "يمكن لمسؤول النظام مساعدتك في إعادة تعيين المصادقة الثنائية." %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // التركيز على حقل الرمز تلقائيًا عند تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('two_factor_token').focus();
+    });
+    
+    // تنسيق حقل الرمز لقبول الأرقام فقط
+    document.getElementById('two_factor_token').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+</script>
+{% endblock %}

@@ -24,6 +24,9 @@ urlpatterns = [
     path('admins/<int:admin_id>/edit/', superadmin_views.edit_admin, name='superadmin_edit_admin'),
     path('admins/<int:admin_id>/toggle/', superadmin_views.toggle_admin_status, name='superadmin_toggle_admin_status'),
     
+    # إدارة المصادقة الثنائية للمستخدمين
+    path('users/<int:user_id>/2fa/', superadmin_views.user_2fa, name='superadmin_user_2fa'),
+    
     # إدارة الأدوار
     path('roles/', superadmin_views.manage_roles, name='superadmin_manage_roles'),
     path('roles/add/', superadmin_views.add_role, name='superadmin_add_role'),

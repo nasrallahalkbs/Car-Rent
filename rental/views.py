@@ -166,6 +166,13 @@ def register_view(request):
 
 def login_view(request):
     """User login view with redirection based on user type"""
+    # استيراد وحدات الأمان
+    from .security import get_system_setting, record_login_attempt, check_account_lockout, verify_2fa_token
+    from .security_models import UserSecurity, TwoFactorSession
+    import uuid
+    from django.utils import timezone
+    import json
+    
     # إذا كان المستخدم مسجل الدخول بالفعل، نوجهه للصفحة المناسبة
     if request.user.is_authenticated:
         # التحقق إذا كان المستخدم سوبر أدمن
@@ -183,14 +190,158 @@ def login_view(request):
             else:
                 return redirect('profile')  # توجيه لصفحة الملف الشخصي للمستخدم العادي
 
-    if request.method == 'POST':
+    # التحقق من وجود جلسة مصادقة ثنائية مؤقتة
+    if 'two_factor_session' in request.session:
+        # استرجاع معلومات جلسة المصادقة الثنائية
+        session_key = request.session['two_factor_session']
+        try:
+            two_fa_session = TwoFactorSession.objects.get(session_key=session_key)
+            
+            # التحقق من صلاحية الجلسة
+            if two_fa_session.is_valid():
+                # تسجيل الدخول للمستخدم
+                user = two_fa_session.user
+                login(request, user)
+                
+                # حذف جلسة المصادقة الثنائية المؤقتة
+                del request.session['two_factor_session']
+                two_fa_session.delete()
+                
+                # تسجيل محاولة تسجيل الدخول الناجحة
+                record_login_attempt(request, user.username, 'success', 'تم التحقق من المصادقة الثنائية')
+                
+                # التحقق من نوع المستخدم وتوجيهه للصفحة المناسبة
+                from .models_superadmin import AdminUser
+                try:
+                    admin_profile = AdminUser.objects.get(user=user)
+                    if admin_profile.is_superadmin:
+                        messages.success(request, "تم تسجيل الدخول بنجاح كمسؤول أعلى!")
+                        return redirect('superadmin_dashboard')
+                    elif user.is_staff or user.is_admin:
+                        messages.success(request, "تم تسجيل الدخول بنجاح كمسؤول!")
+                        return redirect('admin_index')
+                except (AdminUser.DoesNotExist, ImportError):
+                    if user.is_staff:
+                        messages.success(request, "تم تسجيل الدخول بنجاح كمسؤول!")
+                        return redirect('admin_index')
+                    else:
+                        messages.success(request, "تم تسجيل الدخول بنجاح!")
+                        return redirect('profile')
+            else:
+                # جلسة المصادقة الثنائية منتهية الصلاحية
+                del request.session['two_factor_session']
+                two_fa_session.delete()
+                messages.error(request, "انتهت صلاحية جلسة المصادقة الثنائية، يرجى إعادة تسجيل الدخول.")
+                
+        except TwoFactorSession.DoesNotExist:
+            # جلسة المصادقة الثنائية غير موجودة
+            del request.session['two_factor_session']
+            messages.error(request, "جلسة المصادقة الثنائية غير صالحة، يرجى إعادة تسجيل الدخول.")
+
+    # التعامل مع نموذج التحقق من المصادقة الثنائية
+    if request.method == 'POST' and 'two_factor_token' in request.POST and 'username' in request.POST:
+        username = request.POST.get('username')
+        token = request.POST.get('two_factor_token')
+        user = User.objects.filter(username=username).first()
+        
+        if user and token:
+            # التحقق من رمز المصادقة الثنائية
+            if verify_2fa_token(user, token):
+                # إنشاء جلسة مصادقة ثنائية مؤقتة
+                session_key = str(uuid.uuid4())
+                expires_at = timezone.now() + timezone.timedelta(minutes=5)
+                
+                # حفظ الجلسة في قاعدة البيانات
+                TwoFactorSession.objects.create(
+                    user=user,
+                    session_key=session_key,
+                    expires_at=expires_at,
+                    is_verified=True
+                )
+                
+                # حفظ معرف الجلسة في جلسة المستخدم
+                request.session['two_factor_session'] = session_key
+                
+                # تسجيل محاولة تسجيل الدخول الناجحة
+                record_login_attempt(request, username, 'success', 'تم التحقق من المصادقة الثنائية')
+                
+                # تسجيل الدخول للمستخدم
+                login(request, user)
+                
+                # التوجيه حسب نوع المستخدم
+                from .models_superadmin import AdminUser
+                try:
+                    admin_profile = AdminUser.objects.get(user=user)
+                    if admin_profile.is_superadmin:
+                        messages.success(request, "تم تسجيل الدخول بنجاح كمسؤول أعلى!")
+                        return redirect('superadmin_dashboard')
+                    elif user.is_staff or user.is_admin:
+                        messages.success(request, "تم تسجيل الدخول بنجاح كمسؤول!")
+                        return redirect('admin_index')
+                except (AdminUser.DoesNotExist, ImportError):
+                    if user.is_staff:
+                        messages.success(request, "تم تسجيل الدخول بنجاح كمسؤول!")
+                        return redirect('admin_index')
+                    else:
+                        messages.success(request, "تم تسجيل الدخول بنجاح!")
+                        return redirect('profile')
+            else:
+                # رمز المصادقة الثنائية غير صحيح
+                messages.error(request, "رمز المصادقة الثنائية غير صحيح، يرجى المحاولة مرة أخرى.")
+                record_login_attempt(request, username, 'failed', 'رمز المصادقة الثنائية غير صحيح')
+                
+                # عرض نموذج المصادقة الثنائية مرة أخرى
+                template = get_template_by_language(request, 'two_factor_auth.html')
+                return render(request, template, {'username': username})
+                
+        else:
+            # معلومات المصادقة الثنائية غير كاملة
+            messages.error(request, "معلومات المصادقة الثنائية غير كاملة، يرجى إعادة تسجيل الدخول.")
+            
+    # تسجيل الدخول العادي
+    if request.method == 'POST' and 'username' in request.POST and 'password' in request.POST:
         form = LoginForm(request, data=request.POST)
+        username = request.POST.get('username')
+        
+        # التحقق من حالة قفل الحساب قبل محاولة المصادقة
+        is_locked, locked_until = check_account_lockout(username)
+        if is_locked:
+            lock_minutes = round((locked_until - timezone.now()).total_seconds() / 60)
+            messages.error(request, f"تم قفل الحساب مؤقتاً. يرجى المحاولة مرة أخرى بعد {lock_minutes} دقيقة.")
+            record_login_attempt(request, username, 'locked', f'الحساب مقفل حتى {locked_until}')
+            
+            template = get_template_by_language(request, 'login.html')
+            return render(request, template, {'form': form})
+        
         if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
+            
             if user is not None:
+                # التحقق مما إذا كان المستخدم يحتاج للمصادقة الثنائية
+                try:
+                    security = UserSecurity.objects.get(user=user)
+                    
+                    # التحقق مما إذا كانت المصادقة الثنائية مفعلة للمستخدم
+                    if security.two_factor_enabled:
+                        # التحقق مما إذا كان المستخدم مسؤولاً وكانت المصادقة الثنائية مطلوبة للمسؤولين
+                        is_admin = user.is_staff or user.is_admin or hasattr(user, 'adminuser')
+                        two_factor_required = get_system_setting('two_factor_required_for_admins', False)
+                        
+                        if security.two_factor_enabled or (is_admin and two_factor_required):
+                            # إنشاء نموذج المصادقة الثنائية
+                            template = get_template_by_language(request, 'two_factor_auth.html')
+                            return render(request, template, {'username': username})
+                except UserSecurity.DoesNotExist:
+                    # المستخدم ليس لديه معلومات أمان
+                    pass
+                    
+                # إذا لم تكن المصادقة الثنائية مفعلة، قم بتسجيل الدخول مباشرة
                 login(request, user)
+                
+                # تسجيل محاولة تسجيل الدخول الناجحة
+                record_login_attempt(request, username, 'success', 'تسجيل دخول ناجح')
                 
                 # التحقق من نوع المستخدم وتوجيهه للصفحة المناسبة
                 from .models_superadmin import AdminUser

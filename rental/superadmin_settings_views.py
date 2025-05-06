@@ -131,12 +131,21 @@ def security_settings(request):
         messages.error(request, _('ليس لديك صلاحية الوصول إلى إعدادات الأمان'))
         return redirect('superadmin_dashboard')
     
+    # استيراد وحدة الأمان
+    from .security import get_system_setting, set_system_setting, get_security_statistics, init_security_tables
+    
+    # التأكد من تهيئة جداول وإعدادات الأمان
+    init_security_tables()
+    
     # الحصول على إعدادات الأمان الحالية
     security_settings = SystemSetting.objects.filter(group='security').order_by('key')
     
     # إعدادات المصادقة الثنائية
     two_factor_enabled = get_system_setting('two_factor_enabled', False)
     two_factor_required = get_system_setting('two_factor_required_for_admins', False)
+    
+    # إحصائيات الأمان
+    security_stats = get_security_statistics()
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -154,6 +163,12 @@ def security_settings(request):
             
             set_system_setting('password_requires_special', 'true' if 'password_requires_special' in request.POST else 'false',
                               'boolean', 'security', _('كلمة المرور تتطلب رموز خاصة'))
+            
+            set_system_setting('password_expiry_days', request.POST.get('password_expiry_days', '0'),
+                              'integer', 'security', _('فترة صلاحية كلمة المرور بالأيام (0 = لا تنتهي)'))
+                              
+            set_system_setting('max_old_passwords', request.POST.get('max_old_passwords', '5'),
+                              'integer', 'security', _('عدد كلمات المرور السابقة المحتفظ بها'))
             
             set_system_setting('account_lockout_attempts', request.POST.get('account_lockout_attempts', '5'),
                               'integer', 'security', _('عدد محاولات تسجيل الدخول الفاشلة قبل قفل الحساب'))
@@ -176,6 +191,19 @@ def security_settings(request):
             
             messages.success(request, _('تم تحديث إعدادات المصادقة الثنائية بنجاح'))
         
+        elif action == 'unlock_account':
+            # فتح قفل حساب مستخدم
+            from .security import unlock_account
+            username = request.POST.get('username')
+            
+            if username:
+                if unlock_account(username):
+                    messages.success(request, _(f'تم فتح قفل حساب المستخدم {username} بنجاح'))
+                else:
+                    messages.error(request, _(f'فشل في فتح قفل حساب المستخدم {username}'))
+            else:
+                messages.error(request, _('لم يتم تحديد اسم المستخدم'))
+        
         return redirect('superadmin_security_settings')
     
     # إعداد السياق
@@ -183,6 +211,7 @@ def security_settings(request):
         'security_settings': {s.key: s for s in security_settings},
         'two_factor_enabled': two_factor_enabled,
         'two_factor_required': two_factor_required,
+        'security_stats': security_stats,
         'title': _('إعدادات الأمان'),
     }
     

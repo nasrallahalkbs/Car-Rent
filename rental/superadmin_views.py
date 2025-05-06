@@ -15,6 +15,8 @@ from .models import User, Review
 from .models_superadmin import Permission, Role, AdminUser, AdminActivity, ReviewManagement
 from .models_system import SystemBackup, ScheduledJob, SystemSetting, SystemIssue, SystemNotification
 from .forms_superadmin import PermissionForm, RoleForm, AdminUserForm, ReviewManagementForm, SuperAdminLoginForm
+from .security_models import UserSecurity, LoginAttempt
+from .security import setup_2fa_for_user, generate_qr_code_image, unlock_account as security_unlock_account
 
 # دوال التحليلات
 from .analytics_superadmin import *
@@ -33,6 +35,18 @@ from .superadmin_settings_views import system_settings, security_settings, notif
 
 # دوال تشخيص وإصلاح النظام
 from .superadmin_diagnostics_views import system_diagnostics, run_diagnostic, fix_system_issue
+
+# استيراد وظائف أمان إضافية
+from .security import (
+    disable_2fa_for_user, 
+    enable_2fa_for_user, 
+    reset_failed_login_attempts, 
+    generate_backup_codes,
+    verify_2fa_token,
+    setup_2fa_for_user,
+    generate_qr_code_image,
+    unlock_account as security_unlock_account
+)
 
 def get_client_ip(request):
     """Get the client IP address"""
@@ -265,10 +279,19 @@ def admin_details(request, admin_id):
     # التقييمات التي قام بإدارتها
     managed_reviews = ReviewManagement.objects.filter(admin=admin_user).order_by('-action_date')[:10]
     
+    # الحصول على معلومات المصادقة الثنائية للمستخدم
+    try:
+        security = UserSecurity.objects.get(user=admin_user.user)
+        two_factor_enabled = security.two_factor_enabled
+    except UserSecurity.DoesNotExist:
+        security = None
+        two_factor_enabled = False
+    
     context = {
         'admin_user': admin_user,
         'recent_activities': recent_activities,
         'managed_reviews': managed_reviews,
+        'two_factor_enabled': two_factor_enabled,
     }
     
     # محاولة تحميل القالب من المسار الصريح
@@ -558,6 +581,169 @@ def delete_permission(request, permission_id):
         return redirect('superadmin_manage_permissions')
     
     return render(request, 'superadmin/delete_permission.html', {'permission': permission})
+
+# إدارة المصادقة الثنائية للمستخدمين
+@superadmin_required
+def user_2fa(request, user_id):
+    """إدارة المصادقة الثنائية للمستخدم"""
+    user = get_object_or_404(User, id=user_id)
+    
+    # التحقق مما إذا كان المستخدم مسؤولاً أعلى
+    is_superadmin = False
+    try:
+        admin_profile = AdminUser.objects.get(user=user)
+        is_superadmin = admin_profile.is_superadmin
+    except AdminUser.DoesNotExist:
+        pass
+    
+    # الحصول على معلومات الأمان للمستخدم
+    try:
+        user_security = UserSecurity.objects.get(user=user)
+    except UserSecurity.DoesNotExist:
+        user_security = UserSecurity.objects.create(user=user)
+    
+    # الحصول على سجل محاولات تسجيل الدخول
+    login_attempts = LoginAttempt.objects.filter(user=user).order_by('-timestamp')[:20]
+    
+    # متغيرات للعرض
+    backup_codes = None
+    qr_code = None
+    totp_secret = None
+    
+    # معالجة الإجراءات
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # إعداد المصادقة الثنائية
+        if action == 'setup_2fa':
+            secret, qr_code_url = setup_2fa_for_user(user)
+            user_security.two_factor_enabled = True
+            user_security.save()
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("إعداد المصادقة الثنائية"),
+                _("تم إعداد المصادقة الثنائية للمستخدم: %(username)s") % {'username': user.username},
+                request
+            )
+            
+            qr_code = qr_code_url
+            totp_secret = secret
+            messages.success(request, _("تم إعداد المصادقة الثنائية بنجاح"))
+        
+        # تعطيل المصادقة الثنائية
+        elif action == 'disable_2fa':
+            disable_2fa_for_user(user)
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("تعطيل المصادقة الثنائية"),
+                _("تم تعطيل المصادقة الثنائية للمستخدم: %(username)s") % {'username': user.username},
+                request
+            )
+            
+            messages.success(request, _("تم تعطيل المصادقة الثنائية بنجاح"))
+        
+        # توليد رموز احتياطية
+        elif action == 'generate_backup_codes':
+            backup_codes = generate_backup_codes(user)
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("توليد رموز احتياطية"),
+                _("تم توليد رموز احتياطية للمستخدم: %(username)s") % {'username': user.username},
+                request
+            )
+            
+            messages.success(request, _("تم توليد رموز احتياطية جديدة بنجاح"))
+        
+        # إعادة توليد رموز احتياطية
+        elif action == 'regenerate_backup_codes':
+            backup_codes = generate_backup_codes(user, force_regenerate=True)
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("إعادة توليد رموز احتياطية"),
+                _("تم إعادة توليد رموز احتياطية للمستخدم: %(username)s") % {'username': user.username},
+                request
+            )
+            
+            messages.success(request, _("تم إعادة توليد رموز احتياطية جديدة بنجاح"))
+        
+        # فتح قفل الحساب
+        elif action == 'unlock_account':
+            security_unlock_account(user)
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("فتح قفل الحساب"),
+                _("تم فتح قفل حساب المستخدم: %(username)s") % {'username': user.username},
+                request
+            )
+            
+            messages.success(request, _("تم فتح قفل الحساب بنجاح"))
+        
+        # إعادة تعيين محاولات تسجيل الدخول
+        elif action == 'reset_login_attempts':
+            reset_failed_login_attempts(user)
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("إعادة تعيين محاولات تسجيل الدخول"),
+                _("تم إعادة تعيين محاولات تسجيل الدخول للمستخدم: %(username)s") % {'username': user.username},
+                request
+            )
+            
+            messages.success(request, _("تم إعادة تعيين محاولات تسجيل الدخول بنجاح"))
+        
+        # تفعيل الحساب
+        elif action == 'activate_account':
+            user.is_active = True
+            user.save()
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("تفعيل الحساب"),
+                _("تم تفعيل حساب المستخدم: %(username)s") % {'username': user.username},
+                request
+            )
+            
+            messages.success(request, _("تم تفعيل الحساب بنجاح"))
+        
+        # إلغاء تفعيل الحساب
+        elif action == 'deactivate_account':
+            user.is_active = False
+            user.save()
+            
+            # تسجيل النشاط
+            log_admin_activity(
+                request.admin_profile,
+                _("إلغاء تفعيل الحساب"),
+                _("تم إلغاء تفعيل حساب المستخدم: %(username)s") % {'username': user.username},
+                request
+            )
+            
+            messages.success(request, _("تم إلغاء تفعيل الحساب بنجاح"))
+    
+    # تجهيز السياق للعرض
+    context = {
+        'user': user,
+        'user_security': user_security,
+        'is_superadmin': is_superadmin,
+        'login_attempts': login_attempts,
+        'backup_codes': backup_codes,
+        'qr_code': qr_code,
+        'totp_secret': totp_secret,
+    }
+    
+    return render(request, 'superadmin/user_2fa.html', context)
 
 # إدارة التقييمات
 @superadmin_required
