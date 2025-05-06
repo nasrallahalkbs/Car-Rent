@@ -126,13 +126,13 @@ def create_backup(request):
         backup.status = 'completed'
         backup.save()
         
-        messages.success(request, _('تم إنشاء نسخة احتياطية بنجاح'))
+        messages.success(request, 'تم إنشاء نسخة احتياطية بنجاح')
     except Exception as e:
         # في حالة حدوث خطأ
         backup.status = 'failed'
         backup.notes = str(e)
         backup.save()
-        messages.error(request, _('حدث خطأ أثناء إنشاء النسخة الاحتياطية: %(error)s') % {'error': str(e)})
+        messages.error(request, f'حدث خطأ أثناء إنشاء النسخة الاحتياطية: {str(e)}')
     
     return redirect('superadmin_backup')
 
