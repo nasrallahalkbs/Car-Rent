@@ -215,9 +215,34 @@ def security_settings(request):
         
         return redirect('superadmin_security_settings')
     
+    # طباعة تشخيصية للإعدادات
+    print(f"DEBUG CONTEXT: Found {security_settings.count()} security settings")
+    security_settings_dict = {s.key: s for s in security_settings}
+    print(f"DEBUG CONTEXT: Dictionary keys = {list(security_settings_dict.keys())}")
+    print(f"DEBUG CONTEXT: account_lockout_attempts in dictionary = {'account_lockout_attempts' in security_settings_dict}")
+    
+    if 'account_lockout_attempts' in security_settings_dict:
+        print(f"DEBUG CONTEXT: account_lockout_attempts value = {security_settings_dict['account_lockout_attempts'].value}")
+    else:
+        print("DEBUG CONTEXT: account_lockout_attempts not found in dictionary")
+    
+    # تأكد من استخدام القيم الافتراضية إذا لم تكن موجودة
+    if 'account_lockout_attempts' not in security_settings_dict:
+        # محاولة تهيئة الإعدادات
+        print("DEBUG CONTEXT: Initializing security settings")
+        init_security_tables()
+        # إعادة الحصول على الإعدادات
+        security_settings = SystemSetting.objects.filter(group='security').order_by('key')
+        security_settings_dict = {s.key: s for s in security_settings}
+        
+        print("DEBUG CONTEXT: After initialization:")
+        print(f"DEBUG CONTEXT: Found {security_settings.count()} security settings")
+        for s in security_settings:
+            print(f"DEBUG CONTEXT: {s.key} = {s.value}")
+    
     # إعداد السياق
     context = {
-        'security_settings': {s.key: s for s in security_settings},
+        'security_settings': security_settings_dict,
         'two_factor_enabled': two_factor_enabled,
         'two_factor_required': two_factor_required,
         'security_stats': security_stats,

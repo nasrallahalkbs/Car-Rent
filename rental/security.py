@@ -498,6 +498,25 @@ def init_security_tables():
 
 def get_security_statistics():
     """الحصول على إحصائيات أمان النظام"""
+    
+    # طباعة تشخيصية للتحقق من قيم إعدادات الأمان
+    account_lockout_attempts = MAX_LOGIN_ATTEMPTS
+    account_lockout_minutes = LOCKOUT_DURATION_MINUTES
+    
+    try:
+        account_lockout_attempts = get_system_setting('account_lockout_attempts', MAX_LOGIN_ATTEMPTS)
+        account_lockout_minutes = get_system_setting('account_lockout_minutes', LOCKOUT_DURATION_MINUTES)
+        print(f"DEBUG STATS: account_lockout_attempts = {account_lockout_attempts}")
+        print(f"DEBUG STATS: account_lockout_minutes = {account_lockout_minutes}")
+        
+        # التحقق من جميع إعدادات الأمان
+        security_settings = SystemSetting.objects.filter(group='security')
+        print(f"DEBUG STATS: Found {security_settings.count()} security settings")
+        for setting in security_settings:
+            print(f"DEBUG STATS: {setting.key} = {setting.value} (type: {setting.value_type})")
+    except Exception as e:
+        print(f"DEBUG STATS ERROR: {str(e)}")
+    
     stats = {
         'login_attempts': {
             'today': LoginAttempt.objects.filter(timestamp__gte=timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)).count(),
@@ -510,6 +529,10 @@ def get_security_statistics():
             'active': get_user_model().objects.filter(is_active=True).count(),
             'with_2fa': UserSecurity.objects.filter(two_factor_enabled=True).count(),
             'locked': UserSecurity.objects.filter(locked_until__gt=timezone.now()).count(),
+        },
+        'settings': {
+            'account_lockout_attempts': account_lockout_attempts,
+            'account_lockout_minutes': account_lockout_minutes,
         }
     }
     
