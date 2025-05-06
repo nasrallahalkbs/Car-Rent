@@ -5,40 +5,54 @@
 
 {% block title %}{{ title }} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
 
-{% block css %}
+{% block extra_css %}
 <style>
     .permission-section {
-        margin-bottom: 25px;
-        border: 1px solid #eee;
-        border-radius: 5px;
-        padding: 20px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: var(--border-radius);
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     
     .permission-section-title {
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
-        color: #2b3847;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        font-weight: 600;
+        color: var(--heading-color);
     }
     
     .permission-list {
-        max-height: 250px;
+        max-height: 300px;
         overflow-y: auto;
+        padding-right: 0.5rem;
     }
     
     .role-help {
-        background-color: #f5f5f5;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 20px;
+        background-color: #f8fafc;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
     }
     
     .superadmin-warning {
-        margin-top: 15px;
-        padding: 10px;
-        background-color: #fce7e7;
-        border-left: 3px solid #d64040;
-        margin-bottom: 20px;
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: rgba(239, 68, 68, 0.1);
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        border-left: 3px solid var(--danger-color);
+    }
+    
+    .custom-control-label {
+        padding-right: 10px;
+    }
+    
+    .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
     }
 </style>
 {% endblock %}
@@ -78,12 +92,12 @@
                                     {{ form.name|as_crispy_field }}
                                 </div>
                                 <div class="col-md-6">
-                                    {{ form.is_superadmin|as_crispy_field }}
+                                    {{ form.is_active|as_crispy_field }}
                                     
                                     {% if not role %}
-                                    <div class="superadmin-warning" id="superadminWarning" style="display: none;">
-                                        <h6>{% trans "تحذير: صلاحيات المسؤول الأعلى" %}</h6>
-                                        <p>{% trans "هذا الدور سيملك وصولاً كاملاً لجميع صلاحيات النظام. استخدم هذا الخيار بحذر شديد." %}</p>
+                                    <div class="superadmin-warning">
+                                        <h6>{% trans "تحذير: إدارة الصلاحيات" %}</h6>
+                                        <p>{% trans "تأكد من اختيار الصلاحيات المناسبة للدور. منح صلاحيات إضافية قد يؤثر على أمان النظام." %}</p>
                                     </div>
                                     {% endif %}
                                 </div>
@@ -158,14 +172,7 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
-    // عرض تحذير المسؤول الأعلى عند تحديد الخيار
-    $('#id_is_superadmin').change(function() {
-        if($(this).is(':checked')) {
-            $('#superadminWarning').slideDown();
-        } else {
-            $('#superadminWarning').slideUp();
-        }
-    }).trigger('change');
+    // تحذير الأدوار يظهر دائماً لتذكير المستخدمين بأهمية إدارة الصلاحيات
     
     // تحديد كل الصلاحيات في مجموعة
     $('.select-all-permissions').click(function(e) {
