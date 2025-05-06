@@ -909,8 +909,38 @@
     
     <script>
         $(document).ready(function() {
-            // التهيئة العامة لـ DataTables تم إيقافها هنا
-            // كل صفحة تقوم بتهيئة الجداول الخاصة بها
+            // التهيئة العامة لـ DataTables
+            // تطبيق الإعدادات الافتراضية لجميع الجداول التي لا تحتوي على فئة custom-init
+            $.fn.dataTable.ext.errMode = 'none'; // إيقاف رسائل الخطأ الظاهرة للمستخدم
+            
+            // تعديل البروتوتايب لتطبيق إعدادات موحدة وآمنة
+            var oldDataTable = $.fn.dataTable;
+            $.fn.dataTable = function(options) {
+                // إذا كانت الجداول تستخدم التهيئة المخصصة، سنتركها كما هي
+                if (this.hasClass('custom-init')) {
+                    return oldDataTable.apply(this, arguments);
+                }
+                
+                // دمج الإعدادات المقدمة مع الإعدادات الافتراضية الآمنة
+                var safeOptions = $.extend({
+                    paging: true,
+                    ordering: true,
+                    info: true,
+                    responsive: true,
+                    language: {
+                        {% if LANGUAGE_CODE == 'ar' %}
+                        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ar.json',
+                        {% endif %}
+                    },
+                    // تعطيل فحص تطابق عدد الأعمدة
+                    checkColumnCount: false
+                }, options);
+                
+                return oldDataTable.apply(this, [safeOptions]);
+            };
+            
+            // تطبيق DataTables افتراضيًا على جميع الجداول ذات الفئة data-table
+            $('.data-table:not(.custom-init)').DataTable();
             
             // Toggle sidebar on mobile
             $('.sidebar-toggle').on('click', function() {
