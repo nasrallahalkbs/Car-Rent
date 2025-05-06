@@ -1,0 +1,273 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "تفاصيل المسؤول" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background-color: var(--light-bg);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .profile-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .profile-actions {
+        margin-top: 1.5rem;
+    }
+    
+    .activity-item {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color-light);
+        transition: background-color 0.2s;
+    }
+    
+    .activity-item:hover {
+        background-color: var(--hover-bg);
+    }
+    
+    .activity-icon {
+        background-color: var(--light-bg);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 1rem;
+    }
+    
+    .timestamp {
+        font-size: 0.8rem;
+        color: var(--muted-color);
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 50px;
+    }
+    
+    .status-active {
+        background-color: rgba(var(--success-rgb), 0.15);
+        color: var(--success-color);
+    }
+    
+    .status-inactive {
+        background-color: rgba(var(--danger-rgb), 0.15);
+        color: var(--danger-color);
+    }
+    
+    .status-superadmin {
+        background-color: rgba(var(--primary-rgb), 0.15);
+        color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-body">
+    <div class="container-fluid">
+        <div class="row page-titles mx-0">
+            <div class="col-sm-6 p-md-0">
+                <div class="welcome-text">
+                    <h4>{% trans "تفاصيل المسؤول" %}</h4>
+                    <span>{% trans "عرض معلومات وأنشطة المسؤول" %}</span>
+                </div>
+            </div>
+            <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'superadmin_dashboard' %}">{% trans "الرئيسية" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'superadmin_manage_admins' %}">{% trans "المسؤولين" %}</a></li>
+                    <li class="breadcrumb-item active"><a href="javascript:void(0)">{{ admin_user.user.username }}</a></li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body profile-header">
+                        <div class="text-center mb-4">
+                            <div class="profile-avatar mb-3">
+                                <i class="fa fa-user-circle fa-5x text-muted"></i>
+                            </div>
+                            <h4>{{ admin_user.user.get_full_name|default:admin_user.user.username }}</h4>
+                            <p class="text-muted">{{ admin_user.role.name }}</p>
+                            
+                            <div class="d-flex justify-content-center gap-2 mt-3">
+                                {% if admin_user.is_superadmin %}
+                                <span class="status-badge status-superadmin">
+                                    <i class="fa fa-crown me-1"></i> {% trans "مسؤول أعلى" %}
+                                </span>
+                                {% endif %}
+                                
+                                {% if admin_user.user.is_active %}
+                                <span class="status-badge status-active">
+                                    <i class="fa fa-check me-1"></i> {% trans "نشط" %}
+                                </span>
+                                {% else %}
+                                <span class="status-badge status-inactive">
+                                    <i class="fa fa-times me-1"></i> {% trans "معطل" %}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="profile-info">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "اسم المستخدم" %}</span>
+                                <span>{{ admin_user.user.username }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "البريد الإلكتروني" %}</span>
+                                <span>{{ admin_user.user.email }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "آخر تسجيل دخول" %}</span>
+                                <span>{{ admin_user.user.last_login|date:"j F Y H:i"|default:_("لم يسجل دخول بعد") }}</span>
+                            </div>
+                            {% if admin_user.last_login_ip %}
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "آخر IP" %}</span>
+                                <span>{{ admin_user.last_login_ip }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "تاريخ الإنشاء" %}</span>
+                                <span>{{ admin_user.user.date_joined|date:"j F Y" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-actions">
+                            <a href="{% url 'superadmin_edit_admin' admin_user.id %}" class="btn btn-primary btn-block">
+                                <i class="fa fa-edit me-1"></i> {% trans "تعديل" %}
+                            </a>
+                            
+                            {% if not admin_user.is_superadmin or request.admin_profile.is_superadmin %}
+                            <form method="post" action="{% url 'superadmin_toggle_admin_status' admin_user.id %}" class="mt-2">
+                                {% csrf_token %}
+                                {% if admin_user.user.is_active %}
+                                <button type="submit" class="btn btn-outline-danger btn-block">
+                                    <i class="fa fa-ban me-1"></i> {% trans "تعطيل الحساب" %}
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-outline-success btn-block">
+                                    <i class="fa fa-check-circle me-1"></i> {% trans "تفعيل الحساب" %}
+                                </button>
+                                {% endif %}
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if admin_user.notes %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">{% trans "ملاحظات" %}</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ admin_user.notes|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">{% trans "الأنشطة الأخيرة" %}</h5>
+                    </div>
+                    <div class="card-body px-0 pb-0">
+                        {% if recent_activities %}
+                        <div class="activity-list">
+                            {% for activity in recent_activities %}
+                            <div class="activity-item d-flex align-items-start">
+                                <div class="activity-icon">
+                                    <i class="fa fa-history"></i>
+                                </div>
+                                <div class="w-100">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">{{ activity.action }}</span>
+                                        <span class="timestamp">{{ activity.created_at|date:"j F Y H:i" }}</span>
+                                    </div>
+                                    <p class="mb-0">{{ activity.description }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center my-5">
+                            <i class="fa fa-history fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد أنشطة لهذا المسؤول بعد" %}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">{% trans "التقييمات المُدارة" %}</h5>
+                    </div>
+                    <div class="card-body px-0 pb-0">
+                        {% if managed_reviews %}
+                        <div class="table-responsive">
+                            <table class="table table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "العميل" %}</th>
+                                        <th>{% trans "التقييم" %}</th>
+                                        <th>{% trans "الإجراء" %}</th>
+                                        <th>{% trans "التاريخ" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for review in managed_reviews %}
+                                    <tr>
+                                        <td>{{ review.review.customer.get_full_name }}</td>
+                                        <td>{{ review.review.rating }} / 5</td>
+                                        <td>
+                                            {% if review.status == 'approved' %}
+                                            <span class="badge bg-success">{% trans "تمت الموافقة" %}</span>
+                                            {% elif review.status == 'rejected' %}
+                                            <span class="badge bg-danger">{% trans "تم الرفض" %}</span>
+                                            {% else %}
+                                            <span class="badge bg-warning">{% trans "في الانتظار" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ review.action_date|date:"j F Y" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center my-5">
+                            <i class="fa fa-star fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لم يقم هذا المسؤول بإدارة أي تقييمات بعد" %}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // يمكن إضافة أي سلوك JavaScript هنا إذا لزم الأمر
+    });
+</script>
+{% endblock %}
