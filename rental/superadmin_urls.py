@@ -3,6 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 
 from . import superadmin_views
+from . import superadmin_export_views
+from . import superadmin_backup_views
+from . import superadmin_scheduler_views
+from . import superadmin_settings_views
+from . import superadmin_diagnostics_views
 
 urlpatterns = [
     # صفحات تسجيل الدخول والخروج
@@ -51,22 +56,32 @@ urlpatterns = [
     # path('reviews/<int:review_id>/approve/', superadmin_views.approve_review, name='superadmin_approve_review'),
     # path('reviews/<int:review_id>/reject/', superadmin_views.reject_review, name='superadmin_reject_review'),
     
-    # تصدير التقارير - تعليق مؤقت
-    path('export/pdf/<str:report_type>/', superadmin_views.superadmin_dashboard, name='superadmin_export_pdf'),
-    path('export/excel/<str:report_type>/', superadmin_views.superadmin_dashboard, name='superadmin_export_excel'),
+    # تصدير التقارير
+    path('export/pdf/<str:report_type>/', superadmin_export_views.export_pdf_report, name='superadmin_export_pdf'),
+    path('export/excel/<str:report_type>/', superadmin_export_views.export_excel_report, name='superadmin_export_excel'),
     
-    # النسخ الاحتياطي واستعادة النظام - تعليق مؤقت
-    path('backup/', superadmin_views.superadmin_dashboard, name='superadmin_backup'),
+    # النسخ الاحتياطي واستعادة النظام
+    path('backup/', superadmin_backup_views.backup_system, name='superadmin_backup'),
+    path('backup/create/', superadmin_backup_views.create_backup, name='superadmin_create_backup'),
+    path('backup/<int:backup_id>/restore/', superadmin_backup_views.restore_backup, name='superadmin_restore_backup'),
+    path('backup/<int:backup_id>/download/', superadmin_backup_views.download_backup, name='superadmin_download_backup'),
+    path('backup/<int:backup_id>/delete/', superadmin_backup_views.delete_backup, name='superadmin_delete_backup'),
     
-    # جدولة المهام - تعليق مؤقت
-    path('scheduler/', superadmin_views.superadmin_dashboard, name='superadmin_scheduler'),
+    # جدولة المهام
+    path('scheduler/', superadmin_scheduler_views.scheduler_dashboard, name='superadmin_scheduler'),
+    path('scheduler/add/', superadmin_scheduler_views.add_scheduled_job, name='superadmin_add_scheduled_job'),
+    path('scheduler/<int:job_id>/edit/', superadmin_scheduler_views.edit_scheduled_job, name='superadmin_edit_scheduled_job'),
+    path('scheduler/<int:job_id>/delete/', superadmin_scheduler_views.delete_scheduled_job, name='superadmin_delete_scheduled_job'),
+    path('scheduler/<int:job_id>/toggle/', superadmin_scheduler_views.toggle_scheduled_job, name='superadmin_toggle_scheduled_job'),
     
-    # إعدادات النظام - تعليق مؤقت
-    path('settings/', superadmin_views.superadmin_dashboard, name='superadmin_settings'),
-    path('settings/security/', superadmin_views.superadmin_dashboard, name='superadmin_security_settings'),
-    path('settings/notifications/', superadmin_views.superadmin_dashboard, name='superadmin_notification_settings'),
-    path('settings/advanced-permissions/', superadmin_views.superadmin_dashboard, name='superadmin_advanced_permissions'),
+    # إعدادات النظام
+    path('settings/', superadmin_settings_views.system_settings, name='superadmin_settings'),
+    path('settings/security/', superadmin_settings_views.security_settings, name='superadmin_security_settings'),
+    path('settings/notifications/', superadmin_settings_views.notification_settings, name='superadmin_notification_settings'),
+    path('settings/advanced-permissions/', superadmin_settings_views.advanced_permissions, name='superadmin_advanced_permissions'),
     
-    # تشخيص وإصلاح النظام - تعليق مؤقت
-    path('diagnostics/', superadmin_views.superadmin_dashboard, name='superadmin_diagnostics'),
+    # تشخيص وإصلاح النظام
+    path('diagnostics/', superadmin_diagnostics_views.system_diagnostics, name='superadmin_diagnostics'),
+    path('diagnostics/run/<str:diagnostic_type>/', superadmin_diagnostics_views.run_diagnostic, name='superadmin_run_diagnostic'),
+    path('diagnostics/fix/<int:issue_id>/', superadmin_diagnostics_views.fix_system_issue, name='superadmin_fix_issue'),
 ]
