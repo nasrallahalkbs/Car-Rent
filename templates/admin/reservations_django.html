@@ -1,87 +1,13 @@
-<!-- CACHE_BUSTER 1746413947 --><!-- CACHE_BUSTER 1746413947 -->{% extends 'admin/admin_layout.html' %}
+{% extends 'admin/enhanced/admin_layout.html' %}
 {% load static %}
 {% load i18n %}
 
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/old-table.css' %}">
-<style>
-    /* تخصيص إضافي للصفحة */
-    .dashboard-title {
-        margin-bottom: 25px;
-    }
-    .timestamp {
-        color: #64748b;
-        font-size: 0.8rem;
-        margin-top: 10px;
-    }
-    .table-container {
-        background-color: white;
-        border-radius: 10px;
-        padding: 20px;
-        overflow-x: auto;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
-    .status-badge {
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        display: inline-block;
-    }
-    .status-confirmed {
-        background-color: #dcfce7;
-        color: #16a34a;
-    }
-    .status-pending {
-        background-color: #fef9c3;
-        color: #ca8a04;
-    }
-    .status-cancelled {
-        background-color: #fee2e2;
-        color: #dc2626;
-    }
-    .status-completed {
-        background-color: #dbeafe;
-        color: #2563eb;
-    }
-    .pagination-container {
-        margin-top: 20px;
-        display: flex;
-        justify-content: center;
-    }
-    .page-link {
-        margin: 0 5px;
-        padding: 8px 15px;
-        border-radius: 6px;
-        background-color: #f8fafc;
-        color: #475569;
-        text-decoration: none;
-    }
-    .page-link.active {
-        background-color: #3b82f6;
-        color: white;
-    }
-    .empty-state {
-        text-align: center;
-        padding: 50px 20px;
-    }
-    .empty-state i {
-        font-size: 3rem;
-        color: #cbd5e1;
-        margin-bottom: 20px;
-    }
-    .empty-state-message {
-        font-size: 1.2rem;
-        color: #64748b;
-        margin-bottom: 20px;
-    }
-</style>
-{% endblock %}
+{% block title %}{% trans "إدارة الحجوزات" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center dashboard-title">
-        <h2>{% trans "Reservations Management" %}</h2>
+        <h2>{% trans "إدارة الحجوزات" %}</h2>
         <div class="timestamp">
             {% now "Y-m-d H:i" as current_time %}
             {% if is_english %}
@@ -91,325 +17,341 @@
             {% endif %}
         </div>
     </div>
-    
+
     <!-- بطاقات الإحصائيات -->
-    <div class="stats-cards">
-        <div class="stat-card">
-            <div class="stat-icon pending-icon">
-                <i class="fas fa-hourglass-half"></i>
-            </div>
-            <div>
-                <div class="stat-label">{% trans "Pending" %}</div>
-                <div class="stat-value">{{ pending_count }}</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon confirmed-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div>
-                <div class="stat-label">{% trans "Confirmed" %}</div>
-                <div class="stat-value">{{ confirmed_count }}</div>
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-md-3">
+            <div class="card">
+                <div class="card-stat">
+                    <div class="stat-icon purple">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-title">{% trans "قيد الانتظار" %}</div>
+                        <div class="stat-value">{{ pending_count }}</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon cancelled-icon">
-                <i class="fas fa-times-circle"></i>
-            </div>
-            <div>
-                <div class="stat-label">{% trans "Cancelled" %}</div>
-                <div class="stat-value">{{ cancelled_count }}</div>
+        <div class="col-sm-6 col-md-3">
+            <div class="card">
+                <div class="card-stat">
+                    <div class="stat-icon blue">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-title">{% trans "مؤكدة" %}</div>
+                        <div class="stat-value">{{ confirmed_count }}</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon completed-icon">
-                <i class="fas fa-flag-checkered"></i>
+        <div class="col-sm-6 col-md-3">
+            <div class="card">
+                <div class="card-stat">
+                    <div class="stat-icon red">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-title">{% trans "ملغية" %}</div>
+                        <div class="stat-value">{{ cancelled_count }}</div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <div class="stat-label">{% trans "Completed" %}</div>
-                <div class="stat-value">{{ completed_count }}</div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="card">
+                <div class="card-stat">
+                    <div class="stat-icon green">
+                        <i class="fas fa-flag-checkered"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-title">{% trans "مكتملة" %}</div>
+                        <div class="stat-value">{{ completed_count }}</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    
+
     <!-- قسم التصفية والبحث -->
-    <div class="filter-section">
-        <form method="get" class="filter-form">
-            <div class="filter-group">
-                <label class="filter-label">{% trans "Status" %}</label>
-                <select name="status" class="filter-select">
-                    <option value="">{% trans "All" %}</option>
-                    <option value="pending" {% if status == 'pending' %}selected{% endif %}>{% trans "Pending" %}</option>
-                    <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>{% trans "Confirmed" %}</option>
-                    <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>{% trans "Cancelled" %}</option>
-                    <option value="completed" {% if status == 'completed' %}selected{% endif %}>{% trans "Completed" %}</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label class="filter-label">{% trans "Payment Status" %}</label>
-                <select name="payment_status" class="filter-select">
-                    <option value="">{% trans "All" %}</option>
-                    <option value="pending" {% if payment_status == 'pending' %}selected{% endif %}>{% trans "Pending" %}</option>
-                    <option value="paid" {% if payment_status == 'paid' %}selected{% endif %}>{% trans "Paid" %}</option>
-                    <option value="refunded" {% if payment_status == 'refunded' %}selected{% endif %}>{% trans "Refunded" %}</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label class="filter-label">{% trans "Start Date" %}</label>
-                <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="filter-input">
-            </div>
-            <div class="filter-group">
-                <label class="filter-label">{% trans "End Date" %}</label>
-                <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="filter-input">
-            </div>
-            <div class="filter-group">
-                <label class="filter-label">{% trans "Search" %}</label>
-                <input type="text" name="search" value="{{ search }}" placeholder="{% trans 'Search ID, Customer...' %}" class="filter-input">
-            </div>
-            <div class="filter-actions">
-                <button type="submit" class="filter-btn search-btn">
-                    <i class="fas fa-search me-1"></i> {% trans "Search" %}
-                </button>
-                <a href="{% url 'admin_reservations' %}" class="filter-btn reset-btn">
-                    <i class="fas fa-redo me-1"></i> {% trans "Reset" %}
-                </a>
-            </div>
-        </form>
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">{% trans "الحالة" %}</label>
+                    <select name="status" class="form-select">
+                        <option value="">{% trans "الكل" %}</option>
+                        <option value="pending" {% if status == 'pending' %}selected{% endif %}>{% trans "قيد الانتظار" %}</option>
+                        <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>{% trans "مؤكدة" %}</option>
+                        <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>{% trans "ملغية" %}</option>
+                        <option value="completed" {% if status == 'completed' %}selected{% endif %}>{% trans "مكتملة" %}</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">{% trans "حالة الدفع" %}</label>
+                    <select name="payment_status" class="form-select">
+                        <option value="">{% trans "الكل" %}</option>
+                        <option value="pending" {% if payment_status == 'pending' %}selected{% endif %}>{% trans "معلق" %}</option>
+                        <option value="paid" {% if payment_status == 'paid' %}selected{% endif %}>{% trans "مدفوع" %}</option>
+                        <option value="refunded" {% if payment_status == 'refunded' %}selected{% endif %}>{% trans "مسترد" %}</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">{% trans "من تاريخ" %}</label>
+                    <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">{% trans "إلى تاريخ" %}</label>
+                    <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">{% trans "بحث" %}</label>
+                    <input type="text" name="search" value="{{ search }}" placeholder="{% trans 'رقم الحجز، العميل...' %}" class="form-control">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="d-grid gap-2 w-100">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i> {% trans "بحث" %}
+                        </button>
+                        <a href="{% url 'admin_reservations' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-redo me-1"></i> {% trans "إعادة تعيين" %}
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
-    
-    <!-- أزرار العمليات المجمعة -->
-    <div class="bulk-actions">
-        <button type="button" class="action-btn-bulk print-btn" onclick="printTable()">
-            <i class="fas fa-print"></i> {% trans "Print" %}
-        </button>
-        <button type="button" class="action-btn-bulk">
-            <i class="fas fa-file-export"></i> {% trans "Export" %}
-        </button>
-    </div>
-    
+
     <!-- جدول الحجوزات -->
-    <div class="table-container">
-        {% if reservations %}
-            <table class="reservation-table">
-                <thead>
-                    <tr>
-                        <th>{% trans "Reservation ID" %}</th>
-                        <th>{% trans "Customer" %}</th>
-                        <th>{% trans "Car" %}</th>
-                        <th>{% trans "Pickup - Return" %}</th>
-                        <th>{% trans "Duration" %}</th>
-                        <th>{% trans "Total" %}</th>
-                        <th>{% trans "Status" %}</th>
-                        <th>{% trans "Payment Status" %}</th>
-                        <th>{% trans "Actions" %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reservation in reservations %}
-                    <tr>
-                        <td data-label="{% trans 'Reservation ID' %}">
-                            <a href="{% url 'admin_reservation_detail' reservation.id %}" class="reservation-id">
-                                #{{ reservation.reservation_number }}
-                            </a>
-                        </td>
-                        <td data-label="{% trans 'Customer' %}">
-                            <div>{{ reservation.user.first_name }} {{ reservation.user.last_name }}</div>
-                            <small>{{ reservation.user.email }}</small>
-                        </td>
-                        <td data-label="{% trans 'Car' %}">
-                            <div class="car-info">
-                                {% if reservation.car.image %}
-                                    <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}">
-                                {% elif reservation.car.image_url %}
-                                    <img src="{{ reservation.car.image_url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}">
-                                {% else %}
-                                    <img src="{% static 'images/car-placeholder.svg' %}" alt="{{ reservation.car.make }} {{ reservation.car.model }}">
-                                {% endif %}
-                                <div class="car-details">
-                                    <div class="car-make-model">{{ reservation.car.make }} {{ reservation.car.model }}</div>
-                                    <div class="car-year">{{ reservation.car.year }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td data-label="{% trans 'Pickup - Return' %}">
-                            <div>
-                                {% if is_english %}
-                                {{ reservation.pickup_date|date:"m/d/Y" }}
-                                {% else %}
-                                {{ reservation.pickup_date|date:"d/m/Y" }}
-                                {% endif %}
-                            </div>
-                            <div class="mt-1">
-                                {% if is_english %}
-                                {{ reservation.return_date|date:"m/d/Y" }}
-                                {% else %}
-                                {{ reservation.return_date|date:"d/m/Y" }}
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td data-label="{% trans 'Duration' %}">
-                            <div class="duration-display">
-                                <span class="duration-day">{{ reservation.days }} {% trans "days" %}</span>
-                            </div>
-                        </td>
-                        <td data-label="{% trans 'Total' %}">
-                            <div class="price-display">
-                                {{ reservation.total_price }} {% trans "SAR" %}
-                            </div>
-                        </td>
-                        <td data-label="{% trans 'Status' %}">
-                            <span class="status-badge status-{{ reservation.status }}">
-                                {% if reservation.status == 'pending' %}
-                                    {% trans "Pending" %}
-                                {% elif reservation.status == 'confirmed' %}
-                                    {% trans "Confirmed" %}
-                                {% elif reservation.status == 'cancelled' %}
-                                    {% trans "Cancelled" %}
-                                {% elif reservation.status == 'completed' %}
-                                    {% trans "Completed" %}
-                                {% endif %}
-                            </span>
-                        </td>
-                        <td data-label="{% trans 'Payment Status' %}">
-                            <span class="status-badge {% if reservation.payment_status == 'paid' %}status-confirmed{% elif reservation.payment_status == 'refunded' %}status-cancelled{% else %}status-pending{% endif %}">
-                                {% if reservation.payment_status == 'pending' %}
-                                    {% trans "Pending" %}
-                                {% elif reservation.payment_status == 'paid' %}
-                                    {% trans "Paid" %}
-                                {% elif reservation.payment_status == 'refunded' %}
-                                    {% trans "Refunded" %}
-                                {% endif %}
-                            </span>
-                        </td>
-                        <td data-label="{% trans 'Actions' %}">
-                            <a href="{% url 'admin_reservation_detail' reservation.id %}" class="action-btn btn-pending">
-                                <i class="fas fa-eye"></i> {% trans "View" %}
-                            </a>
-                            
-                            {% if reservation.status == 'pending' %}
-                            <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="action-btn btn-confirm confirm-button">
-                                <i class="fas fa-check"></i> {% trans "Confirm" %}
-                            </a>
-                            {% endif %}
-                            
-                            {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
-                            <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="action-btn btn-danger cancel-button">
-                                <i class="fas fa-times"></i> {% trans "Cancel" %}
-                            </a>
-                            {% endif %}
-                            
-                            {% if reservation.status == 'confirmed' %}
-                            <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="action-btn btn-primary complete-button">
-                                <i class="fas fa-flag-checkered"></i> {% trans "Complete" %}
-                            </a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <div class="empty-state">
-                <i class="far fa-calendar-times"></i>
-                <div class="empty-state-message">{% trans "No reservations found with the specified criteria." %}</div>
-                <a href="{% url 'admin_reservations' %}" class="btn btn-primary">
-                    <i class="fas fa-sync me-1"></i> {% trans "View All Reservations" %}
-                </a>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% trans "قائمة الحجوزات" %}</h5>
+            <div>
+                <button type="button" class="btn btn-outline-primary me-2" onclick="printTable()">
+                    <i class="fas fa-print"></i> {% trans "طباعة" %}
+                </button>
+                <button type="button" class="btn btn-outline-success">
+                    <i class="fas fa-file-export"></i> {% trans "تصدير" %}
+                </button>
             </div>
-        {% endif %}
+        </div>
+        <div class="card-body p-0">
+            {% if reservations %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{% trans "رقم الحجز" %}</th>
+                                <th>{% trans "العميل" %}</th>
+                                <th>{% trans "السيارة" %}</th>
+                                <th>{% trans "الاستلام - الإرجاع" %}</th>
+                                <th>{% trans "المدة" %}</th>
+                                <th>{% trans "الإجمالي" %}</th>
+                                <th>{% trans "الحالة" %}</th>
+                                <th>{% trans "حالة الدفع" %}</th>
+                                <th>{% trans "الإجراءات" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in reservations %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'admin_reservation_detail' reservation.id %}" class="text-primary fw-bold">
+                                        #{{ reservation.reservation_number }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-2">
+                                            {{ reservation.user.first_name|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div>{{ reservation.user.get_full_name }}</div>
+                                            <small class="text-muted">{{ reservation.user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if reservation.car.image %}
+                                            <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.make }} {{ reservation.car.model }}" class="me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                        {% endif %}
+                                        <div>
+                                            <div>{{ reservation.car.make }} {{ reservation.car.model }}</div>
+                                            <small class="text-muted">{{ reservation.car.year }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>{{ reservation.pickup_date|date:"Y-m-d" }}</div>
+                                    <div class="text-muted">{{ reservation.return_date|date:"Y-m-d" }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">
+                                        {{ reservation.days }} {% trans "يوم" %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold">{{ reservation.total_price }}</span>
+                                    <small class="text-muted">{% trans "ريال" %}</small>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ reservation.status }}">
+                                        {% if reservation.status == 'pending' %}
+                                            {% trans "قيد الانتظار" %}
+                                        {% elif reservation.status == 'confirmed' %}
+                                            {% trans "مؤكدة" %}
+                                        {% elif reservation.status == 'cancelled' %}
+                                            {% trans "ملغية" %}
+                                        {% elif reservation.status == 'completed' %}
+                                            {% trans "مكتملة" %}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge {% if reservation.payment_status == 'paid' %}status-confirmed{% elif reservation.payment_status == 'refunded' %}status-cancelled{% else %}status-pending{% endif %}">
+                                        {% if reservation.payment_status == 'pending' %}
+                                            {% trans "معلق" %}
+                                        {% elif reservation.payment_status == 'paid' %}
+                                            {% trans "مدفوع" %}
+                                        {% elif reservation.payment_status == 'refunded' %}
+                                            {% trans "مسترد" %}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="{% url 'admin_reservation_detail' reservation.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+
+                                        {% if reservation.status == 'pending' %}
+                                        <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="btn btn-sm btn-outline-success confirm-button">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% endif %}
+
+                                        {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
+                                        <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="btn btn-sm btn-outline-danger cancel-button">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                        {% endif %}
+
+                                        {% if reservation.status == 'confirmed' %}
+                                        <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="btn btn-sm btn-outline-info complete-button">
+                                            <i class="fas fa-flag-checkered"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="far fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h5>{% trans "لا توجد حجوزات" %}</h5>
+                    <p class="text-muted">{% trans "لم يتم العثور على أي حجوزات تطابق معايير البحث." %}</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
-    
+
     <!-- ترقيم الصفحات -->
     {% if reservations.has_other_pages %}
-    <div class="pagination-container">
-        {% if reservations.has_previous %}
-            <a href="?page={{ reservations.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">
-                <i class="fas fa-chevron-left"></i>
-            </a>
-        {% endif %}
-        
-        {% for num in reservations.paginator.page_range %}
-            {% if num == reservations.number %}
-                <span class="page-link active">{{ num }}</span>
-            {% elif num > reservations.number|add:'-3' and num < reservations.number|add:'3' %}
-                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">{{ num }}</a>
-            {% endif %}
-        {% endfor %}
-        
-        {% if reservations.has_next %}
-            <a href="?page={{ reservations.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="page-link">
-                <i class="fas fa-chevron-right"></i>
-            </a>
-        {% endif %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav>
+            <ul class="pagination">
+                {% if reservations.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reservations.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in reservations.paginator.page_range %}
+                    {% if num == reservations.number %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > reservations.number|add:'-3' and num < reservations.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if reservations.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ reservations.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
     </div>
     {% endif %}
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // زر التأكيد
-        const confirmButtons = document.querySelectorAll('a[href*="update_reservation_status"][href*="confirmed"]');
+        // تأكيد الحجز
+        const confirmButtons = document.querySelectorAll('.confirm-button');
         confirmButtons.forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (confirm('هل أنت متأكد من رغبتك في تأكيد هذا الحجز؟')) {
-                    const reservation_id = this.href.split('/').slice(-3)[0];
-                    window.location.href = `/ar/dashboard/reservations/${reservation_id}/confirmed/`;
-                }
-            });
-        });
-        
-        // زر الإلغاء
-        const cancelButtons = document.querySelectorAll('a[href*="update_reservation_status"][href*="cancelled"]');
-        cancelButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟')) {
-                    const reservation_id = this.href.split('/').slice(-3)[0];
-                    window.location.href = `/ar/dashboard/reservations/${reservation_id}/cancelled/`;
+                if (confirm('{% trans "هل أنت متأكد من تأكيد هذا الحجز؟" %}')) {
+                    window.location.href = this.href;
                 }
             });
         });
 
-        // زر الإكمال
-        const completeButtons = document.querySelectorAll('a[href*="update_reservation_status"][href*="completed"]');
+        // إلغاء الحجز
+        const cancelButtons = document.querySelectorAll('.cancel-button');
+        cancelButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('{% trans "هل أنت متأكد من إلغاء هذا الحجز؟" %}')) {
+                    window.location.href = this.href;
+                }
+            });
+        });
+
+        // إكمال الحجز
+        const completeButtons = document.querySelectorAll('.complete-button');
         completeButtons.forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                const reservation_id = this.href.split('/').slice(-3)[0];
-                window.location.href = `/ar/dashboard/reservations/${reservation_id}/completed/`;
+                if (confirm('{% trans "هل أنت متأكد من إكمال هذا الحجز؟" %}')) {
+                    window.location.href = this.href;
+                }
             });
         });
     });
 
-    // دالة لطباعة جدول الحجوزات
+    // دالة طباعة الجدول
     function printTable() {
-        var printContents = document.querySelector('.table-container').innerHTML;
+        var printContents = document.querySelector('.table-responsive').innerHTML;
         var originalContents = document.body.innerHTML;
-        
-        // تخصيص صفحة الطباعة
+
         var printWindow = window.open('', '', 'height=600,width=800');
-        printWindow.document.write('<html><head><title>طباعة الحجوزات</title>');
+        printWindow.document.write('<html><head><title>{% trans "طباعة الحجوزات" %}</title>');
         printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">');
-        printWindow.document.write('<style>body { font-family: Arial; padding: 20px; direction: rtl; } .table { width: 100%; } .table th { background-color: #f8f9fa; } @media print { .print-header { display: block!important; text-align: center; margin-bottom: 20px; } }</style>');
+        printWindow.document.write('<style>body { font-family: Arial; padding: 20px; direction: rtl; }</style>');
         printWindow.document.write('</head><body>');
-        
-        // إضافة ترويسة الطباعة
-        printWindow.document.write('<div class="print-header">');
-        printWindow.document.write('<h2>إدارة الحجوزات</h2>');
-        printWindow.document.write('<p>تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-SA') + '</p>');
-        printWindow.document.write('</div>');
-        
-        // محتوى الجدول
+
+        printWindow.document.write('<h2 class="text-center mb-4">{% trans "قائمة الحجوزات" %}</h2>');
         printWindow.document.write(printContents);
-        
+
         printWindow.document.write('</body></html>');
         printWindow.document.close();
         printWindow.focus();
-        
-        // طباعة المستند بعد تحميل الصفحة
+
         printWindow.onload = function() {
             printWindow.print();
             printWindow.close();
