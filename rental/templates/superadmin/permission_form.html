@@ -5,116 +5,103 @@
 
 {% block title %}{{ title }} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
 
-{% block css %}
+{% block extra_css %}
 <style>
     .permission-help {
-        background-color: #f5f5f5;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 20px;
+        background-color: #f8fafc;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
     }
     
     .permission-desc {
-        font-size: 0.9rem;
-        margin-top: 10px;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        color: #64748b;
     }
     
     .permission-examples {
-        font-size: 0.85rem;
-        margin-top: 15px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-        padding: 10px;
+        font-size: 0.875rem;
+        margin-top: 1rem;
+        background-color: #f1f5f9;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        border-left: 3px solid var(--primary-color);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="content-body">
-    <!-- row -->
-    <div class="container-fluid">
-        <div class="row page-titles mx-0">
-            <div class="col-sm-6 p-md-0">
-                <div class="welcome-text">
-                    <h4>{{ title }}</h4>
-                    <span>{% trans "إدارة صلاحيات النظام" %}</span>
-                </div>
-            </div>
-            <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'superadmin_dashboard' %}">{% trans "الرئيسية" %}</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'superadmin_manage_permissions' %}">{% trans "الصلاحيات" %}</a></li>
-                    <li class="breadcrumb-item active"><a href="javascript:void(0)">{{ title }}</a></li>
-                </ol>
-            </div>
+<div class="container-fluid">
+    <div class="page-header mb-4">
+        <div>
+            <h3 class="page-title">{{ title }}</h3>
+            <p class="text-muted">{% trans "إدارة صلاحيات النظام" %}</p>
         </div>
+        <div class="page-actions">
+            <a href="{% url 'superadmin_manage_permissions' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                {% trans "العودة للصلاحيات" %}
+            </a>
+        </div>
+    </div>
 
-        <div class="row">
-            <div class="col-xl-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title">{{ title }}</h4>
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        {{ form.name|as_crispy_field }}
                     </div>
-                    <div class="card-body">
-                        <form method="post">
-                            {% csrf_token %}
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    {{ form.name|as_crispy_field }}
-                                </div>
-                                <div class="col-md-6">
-                                    {{ form.codename|as_crispy_field }}
-                                    <div class="permission-desc">
-                                        {% trans "الاسم الرمزي هو معرف فريد للصلاحية يستخدم في التحقق من الأذونات" %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-12">
-                                    {{ form.description|as_crispy_field }}
-                                </div>
-                            </div>
-                            
-                            <!-- حقل القسم/الوحدة غير متوفر حالياً في النموذج -->
-                            <!-- <div class="row">
-                                <div class="col-md-12">
-                                    {{ form.module|as_crispy_field }}
-                                </div>
-                            </div> -->
-                            
-                            {% if not permission %}
-                            <div class="permission-help my-4">
-                                <h5>{% trans "إرشادات إنشاء الصلاحيات" %}</h5>
-                                <p>{% trans "عند إنشاء صلاحية جديدة، يرجى الالتزام بالإرشادات التالية:" %}</p>
-                                <ul>
-                                    <li>{% trans "استخدم اسمًا وصفيًا واضحًا للصلاحية" %}</li>
-                                    <li>{% trans "استخدم اسمًا رمزيًا فريدًا باللغة الإنجليزية بدون مسافات (مثال: view_reports)" %}</li>
-                                    <li>{% trans "حدد الوحدة/القسم الذي تنتمي إليه الصلاحية" %}</li>
-                                    <li>{% trans "أضف وصفًا مفصلاً لما تسمح به هذه الصلاحية" %}</li>
-                                </ul>
-                                
-                                <div class="permission-examples">
-                                    <h6>{% trans "أمثلة على الصلاحيات:" %}</h6>
-                                    <div><strong>{% trans "اسم:" %}</strong> {% trans "إدارة المستخدمين" %}</div>
-                                    <div><strong>{% trans "اسم رمزي:" %}</strong> manage_users</div>
-                                    <div><strong>{% trans "وحدة:" %}</strong> {% trans "إدارة المستخدمين" %}</div>
-                                    <div><strong>{% trans "وصف:" %}</strong> {% trans "السماح بإضافة وتعديل وحذف وتعطيل المستخدمين" %}</div>
-                                </div>
-                            </div>
-                            {% endif %}
-                            
-                            <div class="row mt-3">
-                                <div class="col-md-12 text-right">
-                                    <a href="{% url 'superadmin_manage_permissions' %}" class="btn btn-default mr-2">{% trans "إلغاء" %}</a>
-                                    <button type="submit" class="btn btn-primary">{% trans "حفظ" %}</button>
-                                </div>
-                            </div>
-                        </form>
+                    <div class="col-md-6">
+                        {{ form.codename|as_crispy_field }}
+                        <div class="permission-desc">
+                            {% trans "الاسم الرمزي هو معرف فريد للصلاحية يستخدم في التحقق من الأذونات" %}
+                        </div>
                     </div>
                 </div>
-            </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        {{ form.description|as_crispy_field }}
+                    </div>
+                </div>
+                
+                {% if not permission %}
+                <div class="permission-help">
+                    <h5>{% trans "إرشادات إنشاء الصلاحيات" %}</h5>
+                    <p>{% trans "عند إنشاء صلاحية جديدة، يرجى الالتزام بالإرشادات التالية:" %}</p>
+                    <ul>
+                        <li>{% trans "استخدم اسمًا وصفيًا واضحًا للصلاحية" %}</li>
+                        <li>{% trans "استخدم اسمًا رمزيًا فريدًا باللغة الإنجليزية بدون مسافات (مثال: view_reports)" %}</li>
+                        <li>{% trans "حدد الوحدة/القسم الذي تنتمي إليه الصلاحية" %}</li>
+                        <li>{% trans "أضف وصفًا مفصلاً لما تسمح به هذه الصلاحية" %}</li>
+                    </ul>
+                    
+                    <div class="permission-examples">
+                        <h6>{% trans "أمثلة على الصلاحيات:" %}</h6>
+                        <div><strong>{% trans "اسم:" %}</strong> {% trans "إدارة المستخدمين" %}</div>
+                        <div><strong>{% trans "اسم رمزي:" %}</strong> manage_users</div>
+                        <div><strong>{% trans "وحدة:" %}</strong> {% trans "إدارة المستخدمين" %}</div>
+                        <div><strong>{% trans "وصف:" %}</strong> {% trans "السماح بإضافة وتعديل وحذف وتعطيل المستخدمين" %}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="text-center">
+                    <a href="{% url 'superadmin_manage_permissions' %}" class="btn btn-outline-secondary {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}">
+                        <i class="fas fa-times {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                        {% trans "إلغاء" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class="fas fa-save {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                        {% trans "حفظ" %}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
