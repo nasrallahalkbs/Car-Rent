@@ -590,8 +590,16 @@ def fix_system_issue(request, issue_id):
         messages.error(request, _('ليس لديك صلاحية لإصلاح مشاكل النظام'))
         return redirect('superadmin_diagnostics')
     
-    # الحصول على المشكلة
-    issue = get_object_or_404(SystemIssue, id=issue_id)
+    # التحقق إذا كان issue_id رقمي (معرف قاعدة بيانات) أو نصي (معرف مشكلة)
+    if issue_id.isdigit():
+        # الحصول على المشكلة من قاعدة البيانات باستخدام المعرف
+        issue = get_object_or_404(SystemIssue, id=issue_id)
+    else:
+        # الحصول على المشكلة من قاعدة البيانات باستخدام المعرف النصي (issue_id)
+        issue = SystemIssue.objects.filter(title__contains=issue_id).first()
+        if not issue:
+            messages.error(request, _('المشكلة غير موجودة'))
+            return redirect('superadmin_diagnostics')
     
     # التحقق من حالة المشكلة
     if issue.status == 'fixed':
@@ -633,8 +641,40 @@ def fix_system_issue(request, issue_id):
             success = True
         
         else:
+            # التعامل مع باقي أنواع المشاكل
+            if 'database_integrity' in issue.title or issue_id == 'database_integrity':
+                # محاولة إصلاح سلامة قاعدة البيانات
+                try:
+                    from django.core.management import call_command
+                    call_command('migrate', verbosity=0)
+                    call_command('check', '--database', 'default')
+                    success = True
+                except Exception as e:
+                    error_message = str(e)
+            
+            elif 'cache_error' in issue.title or issue_id == 'cache_error':
+                # تنظيف ذاكرة التخزين المؤقت
+                try:
+                    from django.core.cache import cache
+                    cache.clear()
+                    success = True
+                except Exception as e:
+                    error_message = str(e)
+            
+            elif 'media_files' in issue.title or issue_id == 'media_files':
+                # إصلاح ملفات الوسائط المفقودة
+                try:
+                    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+                    os.makedirs(os.path.join(settings.MEDIA_ROOT, 'documents'), exist_ok=True)
+                    os.makedirs(os.path.join(settings.MEDIA_ROOT, 'uploads'), exist_ok=True)
+                    os.makedirs(os.path.join(settings.MEDIA_ROOT, 'profiles'), exist_ok=True)
+                    success = True
+                except Exception as e:
+                    error_message = str(e)
+            
             # مشكلة غير معروفة
-            error_message = _('لا يوجد إصلاح تلقائي لهذه المشكلة')
+            else:
+                error_message = _('لا يوجد إصلاح تلقائي لهذه المشكلة')
         
         if success:
             # تحديث حالة المشكلة

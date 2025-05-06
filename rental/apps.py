@@ -8,6 +8,9 @@ class RentalConfig(AppConfig):
     def ready(self):
         """تشغيل التنظيف والحماية عند بدء تشغيل التطبيق"""
         try:
+            # تسجيل الفلاتر المخصصة
+            import rental.templatetags.custom_filters
+            
             # تشغيل الحماية والتنظيف عند بدء التشغيل
             import rental.signals  # لتسجيل الإشارات
             try:
