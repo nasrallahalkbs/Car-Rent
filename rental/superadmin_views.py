@@ -501,7 +501,7 @@ def add_permission(request):
     else:
         form = PermissionForm()
     
-    return render(request, 'superadmin/permission_form.html', {'form': form, 'title': _('إضافة صلاحية جديدة')})
+    return render(request, 'superadmin/permission_form_new.html', {'form': form, 'title': _('إضافة صلاحية جديدة')})
 
 @superadmin_required
 def edit_permission(request, permission_id):
@@ -526,7 +526,7 @@ def edit_permission(request, permission_id):
     else:
         form = PermissionForm(instance=permission)
     
-    return render(request, 'superadmin/permission_form.html', {'form': form, 'permission': permission, 'title': _('تعديل الصلاحية')})
+    return render(request, 'superadmin/permission_form_new.html', {'form': form, 'permission': permission, 'title': _('تعديل الصلاحية')})
 
 @superadmin_required
 def delete_permission(request, permission_id):
