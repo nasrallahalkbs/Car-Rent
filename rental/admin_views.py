@@ -1100,7 +1100,7 @@ def admin_users(request):
         'search': search,
     }
 
-    return render(request, 'admin/users_django.html', context)
+    return render(request, 'admin/users_enhanced.html', context)
 
 @login_required
 @admin_required

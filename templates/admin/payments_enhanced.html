@@ -1,0 +1,546 @@
+{% extends "admin/enhanced/admin_layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "إدارة المدفوعات" %} | {% trans "لوحة المسؤول" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .payment-card {
+    transition: all 0.2s ease;
+    border-radius: 12px;
+  }
+  .payment-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-weight: 500;
+    font-size: 0.85rem;
+  }
+  .status-badge i {
+    margin-left: 4px;
+  }
+  .hoverable-row:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+  }
+  .action-buttons .btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    margin-right: 4px;
+    background-color: transparent;
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    backdrop-filter: blur(5px);
+  }
+  .action-buttons .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: currentColor;
+    border-radius: 50%;
+    opacity: 0.08;
+    z-index: -1;
+    transform: scale(0);
+    transition: all 0.3s ease;
+  }
+  .action-buttons .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: rgba(0,0,0,0.05);
+  }
+  .action-buttons .btn:hover::before {
+    transform: scale(1);
+    opacity: 0.12;
+  }
+  .action-buttons .btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+  }
+  .action-buttons .btn i {
+    margin-left: 0;
+    font-size: 1rem;
+  }
+  .summary-card {
+    border-radius: 15px;
+    overflow: hidden;
+    border: none;
+    transition: all 0.3s ease;
+  }
+  .summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  .summary-card .card-body {
+    padding: 20px;
+  }
+  .summary-card .icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .filters-bar {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  .filters-bar .form-select, 
+  .filters-bar .form-control {
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+  }
+  .table thead th {
+    font-weight: 600;
+    border-top: none;
+    border-bottom: 2px solid #eaeaea;
+  }
+  .empty-state {
+    padding: 40px 0;
+  }
+  .table-container {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .customer-info,
+  .car-info {
+    display: flex;
+    align-items: center;
+  }
+  .customer-avatar,
+  .car-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    flex-shrink: 0;
+  }
+  .search-box {
+    position: relative;
+  }
+  .search-box i {
+    position: absolute;
+    left: 12px;
+    top: 10px;
+    color: #999;
+  }
+  .search-box input {
+    padding-left: 35px;
+    border-radius: 20px;
+  }
+  .stats-title {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-bottom: 5px;
+  }
+  .stats-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0;
+  }
+  .payment-method-icon {
+    font-size: 1.5rem;
+    margin-left: 10px;
+  }
+  .amount-value {
+    font-weight: 600;
+    color: #28a745;
+  }
+  .payment-id {
+    font-family: monospace;
+    padding: 4px 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header with Quick Actions -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="h3 mb-1">إدارة المدفوعات</h2>
+          <p class="text-muted mb-0">إدارة جميع معاملات الدفع في النظام</p>
+        </div>
+        <div class="d-flex">
+          <a href="{% url 'admin_payment_analytics' %}" class="btn btn-primary me-2">
+            <i class="fas fa-chart-line ms-1"></i> تقارير المدفوعات
+          </a>
+          <a href="{% url 'add_manual_payment' %}" class="btn btn-outline-primary">
+            <i class="fas fa-plus ms-1"></i> إضافة دفعة يدوياً
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Stats Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+          <div class="summary-card card shadow-sm h-100">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <p class="stats-title">قيد الانتظار</p>
+                  <h3 class="stats-value">{{ pending_count }}</h3>
+                </div>
+                <div class="icon-box bg-warning bg-opacity-10 text-warning">
+                  <i class="fas fa-clock fa-fw fa-lg"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+          <div class="summary-card card shadow-sm h-100">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <p class="stats-title">مدفوعات اليوم</p>
+                  <h3 class="stats-value">{{ today_count|default:"0" }}</h3>
+                </div>
+                <div class="icon-box bg-info bg-opacity-10 text-info">
+                  <i class="fas fa-calendar-day fa-fw fa-lg"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+          <div class="summary-card card shadow-sm h-100">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <p class="stats-title">مدفوعات مسترجعة</p>
+                  <h3 class="stats-value">{{ refunded_count|default:"0" }}</h3>
+                </div>
+                <div class="icon-box bg-secondary bg-opacity-10 text-secondary">
+                  <i class="fas fa-undo fa-fw fa-lg"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+          <div class="summary-card card shadow-sm h-100">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <p class="stats-title">إجمالي المدفوعات</p>
+                  <h3 class="stats-value">{{ total_count|default:"0" }}</h3>
+                </div>
+                <div class="icon-box bg-success bg-opacity-10 text-success">
+                  <i class="fas fa-money-bill-wave fa-fw fa-lg"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-bar shadow-sm">
+        <form method="get" class="row g-3">
+          <div class="col-md-3">
+            <label for="payment_status" class="form-label small mb-1">حالة الدفع</label>
+            <select name="payment_status" id="payment_status" class="form-select" onchange="this.form.submit()">
+              <option value="" {% if not payment_status %}selected{% endif %}>كل الحالات</option>
+              <option value="pending" {% if payment_status == 'pending' %}selected{% endif %}>قيد الانتظار</option>
+              <option value="paid" {% if payment_status == 'paid' %}selected{% endif %}>مدفوع</option>
+              <option value="refunded" {% if payment_status == 'refunded' %}selected{% endif %}>مسترجع</option>
+              <option value="cancelled" {% if payment_status == 'cancelled' %}selected{% endif %}>ملغي</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="date_range" class="form-label small mb-1">النطاق الزمني</label>
+            <select name="date_range" id="date_range" class="form-select" onchange="this.form.submit()">
+              <option value="" {% if not date_range %}selected{% endif %}>كل الفترات</option>
+              <option value="today" {% if date_range == 'today' %}selected{% endif %}>اليوم</option>
+              <option value="week" {% if date_range == 'week' %}selected{% endif %}>آخر أسبوع</option>
+              <option value="month" {% if date_range == 'month' %}selected{% endif %}>آخر شهر</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-1">&nbsp;</label>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="show_cancelled" name="show_cancelled" value="yes" {% if show_cancelled %}checked{% endif %} onchange="this.form.submit()">
+              <label class="form-check-label" for="show_cancelled">
+                إظهار المدفوعات الملغاة
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label for="search" class="form-label small mb-1">بحث</label>
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" name="search" id="search" class="form-control" placeholder="رقم الدفع، اسم العميل..." value="{{ search|default:'' }}">
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Payments Table -->
+      <div class="card border-0 shadow-sm overflow-hidden mb-4">
+        <div class="card-header bg-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">قائمة المدفوعات</h5>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-secondary" onclick="printTable()">
+                <i class="fas fa-print ms-1"></i> طباعة
+              </button>
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-sort ms-1"></i> ترتيب حسب
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="?sort=newest">الأحدث أولاً</a></li>
+                <li><a class="dropdown-item" href="?sort=oldest">الأقدم أولاً</a></li>
+                <li><a class="dropdown-item" href="?sort=amount_high">المبلغ الأعلى</a></li>
+                <li><a class="dropdown-item" href="?sort=amount_low">المبلغ الأقل</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>رقم الدفع</th>
+                <th>العميل</th>
+                <th>تفاصيل الحجز</th>
+                <th>المبلغ</th>
+                <th>طريقة الدفع</th>
+                <th>حالة الدفع</th>
+                <th>تاريخ الدفع</th>
+                <th class="text-center">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payments %}
+              <tr class="hoverable-row">
+                <td>
+                  <span class="payment-id">{{ payment.id }}</span>
+                </td>
+                <td>
+                  <div class="customer-info">
+                    <div class="customer-avatar">
+                      <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                      <p class="mb-0 fw-medium">{{ payment.user.get_full_name }}</p>
+                      <small class="text-muted">{{ payment.user.email }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="car-info">
+                    <div class="car-image">
+                      <i class="fas fa-car"></i>
+                    </div>
+                    <div>
+                      <p class="mb-0 fw-medium">{{ payment.car.make }} {{ payment.car.model }}</p>
+                      <small class="text-muted">{{ payment.start_date|date:"Y/m/d" }} - {{ payment.end_date|date:"Y/m/d" }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="amount-value">{{ payment.total_price }}</span> 
+                  <small class="text-muted">د.ك</small>
+                </td>
+                <td>
+                  {% if payment.payment_method == 'visa' %}
+                  <i class="fab fa-cc-visa text-primary payment-method-icon"></i>
+                  {% elif payment.payment_method == 'mastercard' %}
+                  <i class="fab fa-cc-mastercard text-danger payment-method-icon"></i>
+                  {% elif payment.payment_method == 'bank_transfer' %}
+                  <i class="fas fa-university text-success payment-method-icon"></i>
+                  {% elif payment.payment_method == 'cash' %}
+                  <i class="fas fa-money-bill-wave text-success payment-method-icon"></i>
+                  {% else %}
+                  <i class="fas fa-credit-card text-secondary payment-method-icon"></i>
+                  {% endif %}
+                  <span>{{ payment.payment_method|title }}</span>
+                </td>
+                <td>
+                  {% if payment.payment_status == 'pending' %}
+                  <span class="status-badge bg-warning bg-opacity-10 text-warning">
+                    <i class="fas fa-clock"></i> قيد الانتظار
+                  </span>
+                  {% elif payment.payment_status == 'paid' %}
+                  <span class="status-badge bg-success bg-opacity-10 text-success">
+                    <i class="fas fa-check-circle"></i> مدفوع
+                  </span>
+                  {% elif payment.payment_status == 'refunded' %}
+                  <span class="status-badge bg-info bg-opacity-10 text-info">
+                    <i class="fas fa-undo"></i> مسترجع
+                  </span>
+                  {% elif payment.payment_status == 'cancelled' %}
+                  <span class="status-badge bg-danger bg-opacity-10 text-danger">
+                    <i class="fas fa-ban"></i> ملغي
+                  </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <small class="text-muted">{{ payment.created_at|date:"Y/m/d" }}</small>
+                </td>
+                <td>
+                  <div class="action-buttons d-flex justify-content-center">
+                    <a href="{% url 'payment_details' payment.id %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="عرض التفاصيل">
+                      <i class="fas fa-eye"></i>
+                    </a>
+
+                    {% if payment.payment_status == 'pending' %}
+                    <a href="{% url 'mark_as_paid' payment.id %}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="تأكيد الدفع">
+                      <i class="fas fa-check"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if payment.payment_status == 'paid' %}
+                    <a href="{% url 'process_refund' payment.id %}" class="btn btn-outline-info" data-bs-toggle="tooltip" title="استرجاع المبلغ">
+                      <i class="fas fa-undo"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if payment.payment_status == 'paid' %}
+                    <a href="{% url 'print_receipt' payment.id %}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="طباعة الإيصال">
+                      <i class="fas fa-print"></i>
+                    </a>
+                    <a href="{% url 'download_receipt' payment.id %}" class="btn btn-outline-dark" data-bs-toggle="tooltip" title="تحميل الإيصال PDF">
+                      <i class="fas fa-file-pdf"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if payment.payment_status == 'pending' %}
+                    <a href="{% url 'cancel_payment' payment.id %}" class="btn btn-outline-danger" onclick="return confirm('هل أنت متأكد من رغبتك في إلغاء هذه الدفعة؟');" data-bs-toggle="tooltip" title="إلغاء الدفع">
+                      <i class="fas fa-trash-alt"></i>
+                    </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="text-center empty-state">
+                  <div class="py-4">
+                    <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                    <h5>لا توجد مدفوعات</h5>
+                    <p class="text-muted">لم يتم العثور على أي مدفوعات تطابق معايير البحث</p>
+                    <a href="{% url 'admin_payments' %}" class="btn btn-outline-primary">عرض جميع المدفوعات</a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      {% if payments.has_other_pages %}
+      <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+          {% if payments.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if show_cancelled %}&show_cancelled=yes{% endif %}" aria-label="First">
+              <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ payments.previous_page_number }}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if show_cancelled %}&show_cancelled=yes{% endif %}" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="First">
+              <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+          </li>
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          {% endif %}
+          
+          {% for num in payments.paginator.page_range %}
+            {% if payments.number == num %}
+            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% elif num > payments.number|add:'-3' and num < payments.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if show_cancelled %}&show_cancelled=yes{% endif %}">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if payments.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ payments.next_page_number }}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if show_cancelled %}&show_cancelled=yes{% endif %}" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ payments.paginator.num_pages }}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if show_cancelled %}&show_cancelled=yes{% endif %}" aria-label="Last">
+              <span aria-hidden="true">&raquo;&raquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Last">
+              <span aria-hidden="true">&raquo;&raquo;</span>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Initialize tooltips
+  document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    
+    // Print table functionality
+    window.printTable = function() {
+      var printContents = document.querySelector('.table-container').innerHTML;
+      var originalContents = document.body.innerHTML;
+      document.body.innerHTML = '<h1 class="text-center mb-4">قائمة المدفوعات</h1>' + printContents;
+      window.print();
+      document.body.innerHTML = originalContents;
+      location.reload();
+    }
+  });
+</script>
+{% endblock %}
