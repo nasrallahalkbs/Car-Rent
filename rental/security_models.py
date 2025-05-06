@@ -94,7 +94,7 @@ class UserSecurity(models.Model):
             
             # تسجيل محاولة الدخول
             if request:
-                from .security_models import LoginAttempt
+                # استخدام self.__class__.__module__ للوصول إلى النموذج من نفس الملف بدون دورة استيراد
                 LoginAttempt.objects.create(
                     user=self.user,
                     username=self.user.username,
@@ -110,7 +110,7 @@ class UserSecurity(models.Model):
         
         # تسجيل محاولة الدخول
         if request:
-            from .security_models import LoginAttempt
+            # نستخدم LoginAttempt مباشرة بدون استيراد من نفس الملف لتجنب مشاكل الاستيراد الدائري
             LoginAttempt.objects.create(
                 user=self.user,
                 username=self.user.username,

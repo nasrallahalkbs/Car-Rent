@@ -179,6 +179,15 @@ def security_settings(request):
             set_system_setting('session_timeout_minutes', request.POST.get('session_timeout_minutes', '60'),
                               'integer', 'security', _('مدة انتهاء جلسة العمل بالدقائق'))
             
+            # طباعة القيم للتأكد من أنها تم حفظها بشكل صحيح
+            print(f"DEBUG: account_lockout_attempts = {request.POST.get('account_lockout_attempts')}")
+            print(f"DEBUG: account_lockout_minutes = {request.POST.get('account_lockout_minutes')}")
+            
+            # تحقق من قيم الإعدادات بعد الحفظ
+            from .security import get_system_setting
+            print(f"DEBUG AFTER SAVE: account_lockout_attempts = {get_system_setting('account_lockout_attempts')}")
+            print(f"DEBUG AFTER SAVE: account_lockout_minutes = {get_system_setting('account_lockout_minutes')}")
+            
             messages.success(request, _('تم حفظ إعدادات الأمان بنجاح'))
         
         elif action == 'update_two_factor':

@@ -369,8 +369,13 @@ def login_view(request):
                 
                 return redirect('profile')
             else:
+                # تسجيل محاولة تسجيل دخول فاشلة
+                record_login_attempt(request, username, 'failed', 'كلمة مرور غير صحيحة')
                 messages.error(request, "خطأ في اسم المستخدم أو كلمة المرور!")
         else:
+            # تسجيل محاولة تسجيل دخول فاشلة (بيانات النموذج غير صالحة)
+            username = request.POST.get('username', '')
+            record_login_attempt(request, username, 'failed', 'بيانات النموذج غير صالحة')
             messages.error(request, "خطأ في اسم المستخدم أو كلمة المرور!")
     else:
         form = LoginForm()
