@@ -1,0 +1,204 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    #div_id_cron_expression {
+        display: none;
+    }
+    .cron-help {
+        margin-top: 15px;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        display: none;
+    }
+    .cron-help code {
+        font-size: 0.85rem;
+        background-color: #e9ecef;
+        padding: 2px 5px;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{{ title }}</h1>
+        <p class="text-muted">{% trans "قم بإنشاء مهمة مجدولة جديدة وتحديد تكرارها" %}</p>
+    </div>
+    <div>
+        <a href="{% url 'superadmin_scheduler' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> {% trans "العودة للقائمة" %}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{% trans "بيانات المهمة المجدولة" %}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="job-form">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.job_type|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    {{ form.function_name|as_crispy_field }}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.interval_type|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.interval_value|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    {{ form.cron_expression|as_crispy_field }}
+                    
+                    <div class="cron-help">
+                        <h6>{% trans "صيغة التعبير الدوري (Cron):" %}</h6>
+                        <p>{% trans "تنسيق التعبير:" %} <code>دقيقة ساعة يوم_الشهر شهر يوم_الأسبوع</code></p>
+                        <ul>
+                            <li><strong>{% trans "دقيقة:" %}</strong> 0-59</li>
+                            <li><strong>{% trans "ساعة:" %}</strong> 0-23</li>
+                            <li><strong>{% trans "يوم_الشهر:" %}</strong> 1-31</li>
+                            <li><strong>{% trans "شهر:" %}</strong> 1-12</li>
+                            <li><strong>{% trans "يوم_الأسبوع:" %}</strong> 0-6 (0 تعني الأحد)</li>
+                        </ul>
+                        <p><strong>{% trans "أمثلة:" %}</strong></p>
+                        <ul>
+                            <li><code>0 12 * * *</code> - {% trans "كل يوم عند الساعة 12 ظهراً" %}</li>
+                            <li><code>0 0 * * 0</code> - {% trans "كل يوم أحد عند منتصف الليل" %}</li>
+                            <li><code>0 0 1 * *</code> - {% trans "أول يوم من كل شهر عند منتصف الليل" %}</li>
+                            <li><code>*/15 * * * *</code> - {% trans "كل 15 دقيقة" %}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="args_json" class="form-label">{% trans "المعاملات (JSON)" %}</label>
+                        <textarea id="args_json" name="args_json" class="form-control" rows="3">{{ args_json|default:'{}' }}</textarea>
+                        <div class="form-text">{% trans "معاملات الوظيفة بتنسيق JSON" %}</div>
+                    </div>
+                    
+                    {{ form.is_active|as_crispy_field }}
+                    
+                    <div class="text-end mt-4">
+                        <a href="{% url 'superadmin_scheduler' %}" class="btn btn-outline-secondary me-2">
+                            {% trans "إلغاء" %}
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if job %}
+                                {% trans "تحديث المهمة" %}
+                            {% else %}
+                                {% trans "حفظ المهمة" %}
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{% trans "مساعدة" %}</h5>
+            </div>
+            <div class="card-body">
+                <h6>{% trans "أنواع المهام" %}</h6>
+                <ul class="mb-4">
+                    {% for key, name in job_types.items %}
+                    <li><strong>{{ name }}</strong> - {% if key == 'backup' %}
+                        {% trans "نسخ احتياطي للنظام" %}
+                        {% elif key == 'cleanup' %}
+                        {% trans "تنظيف وإزالة الملفات المؤقتة" %}
+                        {% elif key == 'report' %}
+                        {% trans "إنشاء تقارير دورية" %}
+                        {% else %}
+                        {% trans "مهمة مخصصة" %}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                
+                <h6>{% trans "أنواع التكرار" %}</h6>
+                <ul>
+                    {% for key, name in interval_types.items %}
+                    <li><strong>{{ name }}</strong> - {% if key == 'hourly' %}
+                        {% trans "تكرار كل عدد محدد من الساعات" %}
+                        {% elif key == 'daily' %}
+                        {% trans "تكرار كل عدد محدد من الأيام" %}
+                        {% elif key == 'weekly' %}
+                        {% trans "تكرار كل عدد محدد من الأسابيع" %}
+                        {% elif key == 'monthly' %}
+                        {% trans "تكرار كل عدد محدد من الشهور" %}
+                        {% else %}
+                        {% trans "تكرار مخصص باستخدام صيغة Cron" %}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // التعامل مع تغيير نوع الفاصل الزمني
+        $('#id_interval_type').on('change', function() {
+            const intervalType = $(this).val();
+            
+            // إظهار/إخفاء حقل قيمة الفاصل الزمني
+            if (intervalType === 'custom') {
+                $('#div_id_interval_value').hide();
+                $('#div_id_cron_expression').show();
+                $('.cron-help').show();
+            } else {
+                $('#div_id_interval_value').show();
+                $('#div_id_cron_expression').hide();
+                $('.cron-help').hide();
+            }
+        }).trigger('change');
+        
+        // التعامل مع تغيير نوع المهمة
+        $('#id_job_type').on('change', function() {
+            const jobType = $(this).val();
+            let functionName = '';
+            
+            // اقتراح اسم الوظيفة بناءً على نوع المهمة
+            if (jobType === 'backup') {
+                functionName = 'create_system_backup';
+            } else if (jobType === 'cleanup') {
+                functionName = 'cleanup_temp_files';
+            } else if (jobType === 'report') {
+                functionName = 'generate_system_report';
+            }
+            
+            // تعيين قيمة اسم الوظيفة
+            if (functionName && !$('#id_function_name').val()) {
+                $('#id_function_name').val(functionName);
+            }
+        });
+    });
+</script>
+{% endblock %}
