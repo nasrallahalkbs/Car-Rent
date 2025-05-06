@@ -271,7 +271,13 @@ def admin_details(request, admin_id):
         'managed_reviews': managed_reviews,
     }
     
-    return render(request, 'superadmin/admin_details.html', context)
+    # محاولة تحميل القالب من المسار الصريح
+    try:
+        return render(request, 'superadmin/admin_details.html', context)
+    except Exception as e:
+        print(f"خطأ في تحميل القالب: {e}")
+        # محاولة تحميل القالب بشكل مباشر
+        return render(request, 'templates/superadmin/admin_details.html', context)
 
 @superadmin_required
 def add_admin(request):
