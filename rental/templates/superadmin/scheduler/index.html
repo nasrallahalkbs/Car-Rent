@@ -1,0 +1,173 @@
+{% extends 'superadmin/layout.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- بطاقات الإحصائيات -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-stat">
+                    <div class="stat-icon purple">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-title">{% trans "إجمالي المهام" %}</div>
+                        <div class="stat-value">{{ jobs.count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-stat">
+                    <div class="stat-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-title">{% trans "المهام النشطة" %}</div>
+                        <div class="stat-value">{{ active_jobs }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-stat">
+                    <div class="stat-icon red">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-title">{% trans "المهام غير النشطة" %}</div>
+                        <div class="stat-value">{{ inactive_jobs }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-stat">
+                    <div class="stat-icon blue">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-title">{% trans "المهام المجدولة" %}</div>
+                        <div class="stat-value">{{ jobs|length }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول المهام -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">{% trans "المهام المجدولة" %}</h5>
+            <a href="{% url 'superadmin_add_scheduled_job' %}" class="btn btn-primary-custom btn-sm">
+                <i class="fas fa-plus {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                {% trans "إضافة مهمة" %}
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">{% trans "الاسم" %}</th>
+                            <th scope="col">{% trans "النوع" %}</th>
+                            <th scope="col">{% trans "الوظيفة" %}</th>
+                            <th scope="col">{% trans "الجدولة" %}</th>
+                            <th scope="col">{% trans "التشغيل القادم" %}</th>
+                            <th scope="col">{% trans "آخر تشغيل" %}</th>
+                            <th scope="col">{% trans "الحالة" %}</th>
+                            <th scope="col">{% trans "الإجراءات" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobs %}
+                        <tr>
+                            <td>{{ job.name }}</td>
+                            <td>
+                                {% if job.job_type == 'backup' %}
+                                <span class="badge bg-primary">{% trans "نسخ احتياطي" %}</span>
+                                {% elif job.job_type == 'cleanup' %}
+                                <span class="badge bg-warning">{% trans "تنظيف" %}</span>
+                                {% elif job.job_type == 'report' %}
+                                <span class="badge bg-info">{% trans "تقرير" %}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{% trans "مخصص" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ job.function_name }}</td>
+                            <td>
+                                {% if job.interval_type == 'custom' %}
+                                <small dir="ltr" class="text-monospace">{{ job.cron_expression }}</small>
+                                {% else %}
+                                {% if job.interval_value == 1 %}
+                                {% if job.interval_type == 'hourly' %}{% trans "كل ساعة" %}
+                                {% elif job.interval_type == 'daily' %}{% trans "يومياً" %}
+                                {% elif job.interval_type == 'weekly' %}{% trans "أسبوعياً" %}
+                                {% elif job.interval_type == 'monthly' %}{% trans "شهرياً" %}
+                                {% endif %}
+                                {% else %}
+                                {% if job.interval_type == 'hourly' %}{% trans "كل" %} {{ job.interval_value }} {% trans "ساعات" %}
+                                {% elif job.interval_type == 'daily' %}{% trans "كل" %} {{ job.interval_value }} {% trans "أيام" %}
+                                {% elif job.interval_type == 'weekly' %}{% trans "كل" %} {{ job.interval_value }} {% trans "أسابيع" %}
+                                {% elif job.interval_type == 'monthly' %}{% trans "كل" %} {{ job.interval_value }} {% trans "شهور" %}
+                                {% endif %}
+                                {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ job.next_run|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if job.last_run %}
+                                {{ job.last_run|date:"Y-m-d H:i" }}
+                                {% else %}
+                                <span class="text-muted">{% trans "لم يتم التشغيل بعد" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if job.is_active %}
+                                <span class="status-badge status-active">{% trans "نشط" %}</span>
+                                {% else %}
+                                <span class="status-badge status-inactive">{% trans "غير نشط" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'superadmin_toggle_scheduled_job' job.id %}" class="btn btn-sm {% if job.is_active %}btn-warning{% else %}btn-success{% endif %}" title="{% if job.is_active %}{% trans 'تعطيل' %}{% else %}{% trans 'تفعيل' %}{% endif %}">
+                                        <i class="fas {% if job.is_active %}fa-pause{% else %}fa-play{% endif %}"></i>
+                                    </a>
+                                    <a href="{% url 'superadmin_edit_scheduled_job' job.id %}" class="btn btn-sm btn-info" title="{% trans 'تعديل' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'superadmin_delete_scheduled_job' job.id %}" class="btn btn-sm btn-danger" title="{% trans 'حذف' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <div class="py-5">
+                                    <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                                    <p>{% trans "لا توجد مهام مجدولة بعد" %}</p>
+                                    <a href="{% url 'superadmin_add_scheduled_job' %}" class="btn btn-primary-custom btn-sm">
+                                        <i class="fas fa-plus {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                                        {% trans "إضافة مهمة جديدة" %}
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

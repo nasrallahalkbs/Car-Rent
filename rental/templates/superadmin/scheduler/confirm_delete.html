@@ -1,0 +1,76 @@
+{% extends 'superadmin/layout.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">{% trans "تأكيد حذف المهمة المجدولة" %}</h5>
+        </div>
+        <div class="card-body">
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
+                
+                <h4 class="mb-3">{% trans "هل أنت متأكد من حذف المهمة المجدولة التالية؟" %}</h4>
+                
+                <div class="bg-light p-4 mb-4 mx-auto" style="max-width: 500px; border-radius: 8px;">
+                    <h5 class="mb-3">{{ job.name }}</h5>
+                    
+                    <div class="row mb-2">
+                        <div class="col-sm-4 text-sm-end fw-bold">{% trans "النوع:" %}</div>
+                        <div class="col-sm-8 text-sm-start">
+                            {% if job.job_type == 'backup' %}
+                            <span class="badge bg-primary">{% trans "نسخ احتياطي" %}</span>
+                            {% elif job.job_type == 'cleanup' %}
+                            <span class="badge bg-warning">{% trans "تنظيف" %}</span>
+                            {% elif job.job_type == 'report' %}
+                            <span class="badge bg-info">{% trans "تقرير" %}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{% trans "مخصص" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-2">
+                        <div class="col-sm-4 text-sm-end fw-bold">{% trans "الوظيفة:" %}</div>
+                        <div class="col-sm-8 text-sm-start">{{ job.function_name }}</div>
+                    </div>
+                    
+                    <div class="row mb-2">
+                        <div class="col-sm-4 text-sm-end fw-bold">{% trans "الحالة:" %}</div>
+                        <div class="col-sm-8 text-sm-start">
+                            {% if job.is_active %}
+                            <span class="status-badge status-active">{% trans "نشط" %}</span>
+                            {% else %}
+                            <span class="status-badge status-inactive">{% trans "غير نشط" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-2">
+                        <div class="col-sm-4 text-sm-end fw-bold">{% trans "التشغيل القادم:" %}</div>
+                        <div class="col-sm-8 text-sm-start">{{ job.next_run|date:"Y-m-d H:i" }}</div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                    {% trans "هذا الإجراء لا يمكن التراجع عنه. سيتم حذف المهمة المجدولة بشكل نهائي." %}
+                </div>
+                
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                        {% trans "تأكيد الحذف" %}
+                    </button>
+                    <a href="{% url 'superadmin_scheduler' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
+                        {% trans "إلغاء" %}
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
