@@ -73,6 +73,7 @@ urlpatterns = [
     path('scheduler/<int:job_id>/edit/', superadmin_scheduler_views.edit_scheduled_job, name='superadmin_edit_scheduled_job'),
     path('scheduler/<int:job_id>/delete/', superadmin_scheduler_views.delete_scheduled_job, name='superadmin_delete_scheduled_job'),
     path('scheduler/<int:job_id>/toggle/', superadmin_scheduler_views.toggle_scheduled_job, name='superadmin_toggle_scheduled_job'),
+    path('scheduler/<int:job_id>/run/', superadmin_scheduler_views.run_job_now, name='superadmin_run_job_now'),
     
     # إعدادات النظام
     path('settings/', superadmin_settings_views.system_settings, name='superadmin_settings'),

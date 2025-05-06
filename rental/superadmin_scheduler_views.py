@@ -253,3 +253,28 @@ def toggle_scheduled_job(request, job_id):
     messages.success(request, f"{status_message}: {job.name}")
     
     return redirect('superadmin_scheduler')
+
+@login_required
+def run_job_now(request, job_id):
+    """تنفيذ مهمة الآن (وضع الاختبار)"""
+    if not is_superadmin(request.user):
+        messages.error(request, _('ليس لديك صلاحية لتنفيذ المهام'))
+        return redirect('superadmin_scheduler')
+    
+    # الحصول على المهمة المجدولة
+    job = get_object_or_404(ScheduledJob, id=job_id)
+    
+    # تنفيذ المهمة
+    try:
+        from .scheduler_executor import execute_job
+        result = execute_job(job)
+        
+        if result.get('status') == 'success':
+            messages.success(request, _('تم تنفيذ المهمة بنجاح: ') + result.get('message', ''))
+        else:
+            messages.error(request, _('فشل تنفيذ المهمة: ') + result.get('message', ''))
+            
+    except Exception as e:
+        messages.error(request, _('حدث خطأ أثناء تنفيذ المهمة: ') + str(e))
+    
+    return redirect('superadmin_scheduler')
