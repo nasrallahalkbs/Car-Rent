@@ -655,6 +655,70 @@ def review_details(request, review_id):
     return render(request, 'superadmin/review_details.html', context)
 
 @superadmin_required
+def approve_review(request, review_id):
+    """الموافقة على تقييم"""
+    review = get_object_or_404(Review, id=review_id)
+    
+    # محاولة الحصول على سجل إدارة التقييم أو إنشائه إذا لم يكن موجوداً
+    review_management, created = ReviewManagement.objects.get_or_create(
+        review=review,
+        defaults={
+            'status': 'pending',
+            'admin': request.admin_profile,
+            'notes': ''
+        }
+    )
+    
+    # تحديث الحالة إلى موافق عليه
+    review_management.status = 'approved'
+    review_management.admin = request.admin_profile
+    review_management.action_date = timezone.now()
+    review_management.save()
+    
+    # تسجيل النشاط
+    log_admin_activity(
+        request.admin_profile,
+        _("الموافقة على تقييم"),
+        _("تمت الموافقة على تقييم المستخدم: %(username)s") % {'username': review.user.username},
+        request
+    )
+    
+    messages.success(request, _("تمت الموافقة على التقييم بنجاح"))
+    return redirect('superadmin_manage_reviews')
+
+@superadmin_required
+def reject_review(request, review_id):
+    """رفض تقييم"""
+    review = get_object_or_404(Review, id=review_id)
+    
+    # محاولة الحصول على سجل إدارة التقييم أو إنشائه إذا لم يكن موجوداً
+    review_management, created = ReviewManagement.objects.get_or_create(
+        review=review,
+        defaults={
+            'status': 'pending',
+            'admin': request.admin_profile,
+            'notes': ''
+        }
+    )
+    
+    # تحديث الحالة إلى مرفوض
+    review_management.status = 'rejected'
+    review_management.admin = request.admin_profile
+    review_management.action_date = timezone.now()
+    review_management.save()
+    
+    # تسجيل النشاط
+    log_admin_activity(
+        request.admin_profile,
+        _("رفض تقييم"),
+        _("تم رفض تقييم المستخدم: %(username)s") % {'username': review.user.username},
+        request
+    )
+    
+    messages.success(request, _("تم رفض التقييم بنجاح"))
+    return redirect('superadmin_manage_reviews')
+
+@superadmin_required
 def system_logs(request):
     """View system logs"""
     # استرجاع جميع سجلات النشاط

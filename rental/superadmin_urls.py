@@ -17,12 +17,12 @@ urlpatterns = [
     # لوحة التحكم الرئيسية
     path('', superadmin_views.superadmin_dashboard, name='superadmin_dashboard'),
     
-    # إدارة المسؤولين - تعليق المسارات غير المنفذة بعد
-    path('admins/', superadmin_views.superadmin_dashboard, name='superadmin_manage_admins'),
-    # path('admins/add/', superadmin_views.add_admin, name='superadmin_add_admin'),
-    # path('admins/<int:admin_id>/', superadmin_views.admin_details, name='superadmin_admin_details'),
-    # path('admins/<int:admin_id>/edit/', superadmin_views.edit_admin, name='superadmin_edit_admin'),
-    # path('admins/<int:admin_id>/delete/', superadmin_views.delete_admin, name='superadmin_delete_admin'),
+    # إدارة المسؤولين
+    path('admins/', superadmin_views.manage_admins, name='superadmin_manage_admins'),
+    path('admins/add/', superadmin_views.add_admin, name='superadmin_add_admin'),
+    path('admins/<int:admin_id>/', superadmin_views.admin_details, name='superadmin_admin_details'),
+    path('admins/<int:admin_id>/edit/', superadmin_views.edit_admin, name='superadmin_edit_admin'),
+    path('admins/<int:admin_id>/toggle/', superadmin_views.toggle_admin_status, name='superadmin_toggle_admin_status'),
     
     # إدارة الأدوار - تعليق مؤقت
     path('roles/', superadmin_views.superadmin_dashboard, name='superadmin_manage_roles'),
@@ -44,17 +44,17 @@ urlpatterns = [
     # path('analytics/reviews/', superadmin_views.reviews_analytics, name='superadmin_reviews_analytics'),
     # path('analytics/revenue/', superadmin_views.revenue_analytics, name='superadmin_revenue_analytics'),
     
-    # سجلات النظام - تعليق مؤقت
-    path('logs/', superadmin_views.superadmin_dashboard, name='superadmin_system_logs'),
-    # path('logs/admin-activity/', superadmin_views.admin_activity_logs, name='superadmin_admin_activity_logs'),
+    # سجلات النظام
+    path('logs/', superadmin_views.system_logs, name='superadmin_system_logs'),
+    path('logs/admin-activity/', superadmin_views.system_logs, name='superadmin_admin_activity_logs'),
     # path('logs/user-activity/', superadmin_views.user_activity_logs, name='superadmin_user_activity_logs'),
     # path('logs/error-logs/', superadmin_views.error_logs, name='superadmin_error_logs'),
     
-    # إدارة التقييمات - تعليق مؤقت
-    path('reviews/', superadmin_views.superadmin_dashboard, name='superadmin_manage_reviews'),
-    # path('reviews/<int:review_id>/', superadmin_views.review_details, name='superadmin_review_details'),
-    # path('reviews/<int:review_id>/approve/', superadmin_views.approve_review, name='superadmin_approve_review'),
-    # path('reviews/<int:review_id>/reject/', superadmin_views.reject_review, name='superadmin_reject_review'),
+    # إدارة التقييمات
+    path('reviews/', superadmin_views.manage_reviews, name='superadmin_manage_reviews'),
+    path('reviews/<int:review_id>/', superadmin_views.review_details, name='superadmin_review_details'),
+    path('reviews/<int:review_id>/approve/', superadmin_views.approve_review, name='superadmin_approve_review'),
+    path('reviews/<int:review_id>/reject/', superadmin_views.reject_review, name='superadmin_reject_review'),
     
     # تصدير التقارير
     path('export/pdf/<str:report_type>/', superadmin_export_views.export_pdf_report, name='superadmin_export_pdf'),
