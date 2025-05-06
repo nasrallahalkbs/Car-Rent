@@ -1,3 +1,4 @@
+
 {% extends 'admin/enhanced/admin_layout.html' %}
 {% load static %}
 {% load i18n %}
@@ -24,7 +25,7 @@
                     </div>
                     <div class="stat-content">
                         <div class="stat-title">{% trans "قيد المراجعة" %}</div>
-                        <div class="stat-value" id="pendingCount">0</div>
+                        <div class="stat-value" id="pendingCount">{{ pending_count }}</div>
                     </div>
                 </div>
             </div>
@@ -37,7 +38,7 @@
                     </div>
                     <div class="stat-content">
                         <div class="stat-title">{% trans "مؤكدة" %}</div>
-                        <div class="stat-value" id="confirmedCount">0</div>
+                        <div class="stat-value" id="confirmedCount">{{ confirmed_count }}</div>
                     </div>
                 </div>
             </div>
@@ -50,7 +51,7 @@
                     </div>
                     <div class="stat-content">
                         <div class="stat-title">{% trans "مكتملة" %}</div>
-                        <div class="stat-value" id="completedCount">0</div>
+                        <div class="stat-value" id="completedCount">{{ completed_count }}</div>
                     </div>
                 </div>
             </div>
@@ -63,7 +64,7 @@
                     </div>
                     <div class="stat-content">
                         <div class="stat-title">{% trans "ملغية" %}</div>
-                        <div class="stat-value" id="cancelledCount">0</div>
+                        <div class="stat-value" id="cancelledCount">{{ cancelled_count }}</div>
                     </div>
                 </div>
             </div>
@@ -169,19 +170,19 @@
                                 </a>
 
                                 {% if reservation.status == 'pending' %}
-                                <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="btn btn-sm btn-outline-success">
+                                <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="btn btn-sm btn-outline-success confirm-button">
                                     <i class="fas fa-check"></i>
                                 </a>
                                 {% endif %}
 
                                 {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
-                                <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="btn btn-sm btn-outline-danger">
+                                <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="btn btn-sm btn-outline-danger cancel-button">
                                     <i class="fas fa-times"></i>
                                 </a>
                                 {% endif %}
 
                                 {% if reservation.status == 'confirmed' %}
-                                <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="btn btn-sm btn-outline-info">
+                                <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="btn btn-sm btn-outline-info complete-button">
                                     <i class="fas fa-flag-checkered"></i>
                                 </a>
                                 {% endif %}
@@ -194,36 +195,15 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Count reservations by status
-    const rows = document.querySelectorAll('tbody tr');
-    let pendingCount = 0;
-    let confirmedCount = 0;
-    let completedCount = 0;
-    let cancelledCount = 0;
-
-    rows.forEach(row => {
-        const status = row.dataset.status;
-        if (status === 'pending') pendingCount++;
-        if (status === 'confirmed') confirmedCount++;
-        if (status === 'completed') completedCount++;
-        if (status === 'cancelled') cancelledCount++;
-    });
-
-    // Update counts
-    document.getElementById('pendingCount').textContent = pendingCount;
-    document.getElementById('confirmedCount').textContent = confirmedCount;
-    document.getElementById('completedCount').textContent = completedCount;
-    document.getElementById('cancelledCount').textContent = cancelledCount;
-
     // Filter functionality
     const statusFilter = document.getElementById('statusFilter');
     const searchInput = document.getElementById('reservationSearch');
+    const rows = document.querySelectorAll('tbody tr');
 
     function filterTable() {
         const searchTerm = searchInput.value.toLowerCase();
