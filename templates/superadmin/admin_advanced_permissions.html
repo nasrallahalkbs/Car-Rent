@@ -353,7 +353,8 @@
     }
     
     /* ===== الأقسام والحاويات ===== */
-    .permissions-container [data-section] {
+    /* تم تعديل هذه الأنماط لإظهار جميع الأقسام */
+    /*.permissions-container [data-section] {
         display: none;
         animation: fadeOut 0.3s ease forwards;
     }
@@ -361,7 +362,7 @@
     .permissions-container [data-section].active {
         display: block;
         animation: fadeIn 0.5s ease forwards;
-    }
+    }*/
     
     @keyframes fadeIn {
         from {
@@ -2508,12 +2509,20 @@ $(document).ready(function() {
             $('.neo-tab').removeClass('active');
             $(this).addClass('active');
             
-            // تغيير القسم المعروض
-            $('[data-section]').removeClass('active');
-            $(`[data-section="${target}"]`).addClass('active');
+            // نضيف فقط كلاس "active" ولا نحذفه من العناصر الأخرى
+            // ملاحظة: كود CSS سيتجاوز الجزء الذي يخفي العناصر الأخرى
+            $('.permissions-container [data-section]').addClass('active');
             
             // حفظ التبويب المحدد في التخزين المحلي
             localStorage.setItem('selectedPermissionTab', target);
+            
+            // تحريك الشاشة إلى القسم المحدد
+            const section = $(`[data-section="${target}"]`);
+            if (section.length) {
+                $('html, body').animate({
+                    scrollTop: section.offset().top - 100
+                }, 300);
+            }
         }
     });
     
