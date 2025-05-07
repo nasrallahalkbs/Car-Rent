@@ -128,9 +128,14 @@ function initializeSelectAllButtons() {
  * تهيئة زر حفظ التغييرات
  */
 function initializeSaveButton() {
-    $('.save-button').on('click', function() {
+    $('.save-button, .submit-button').on('click', function(e) {
         if ($(this).prop('disabled')) {
             return;
+        }
+        
+        // منع السلوك الافتراضي إذا كان الزر من نوع save-button
+        if ($(this).hasClass('save-button')) {
+            e.preventDefault();
         }
         
         // تعطيل الزر أثناء العملية
@@ -140,20 +145,59 @@ function initializeSaveButton() {
         const originalText = $(this).html();
         $(this).html('<i class="fas fa-spinner fa-spin"></i> جارِ الحفظ...');
         
-        // محاكاة عملية الحفظ (في الإنتاج سيكون هنا طلب AJAX)
-        setTimeout(() => {
-            // إظهار رسالة نجاح
-            showNotification('تم', 'تم حفظ الصلاحيات بنجاح', 'success');
+        // إضافة حقول مخفية للصلاحيات المختارة
+        addHiddenPermissionFields();
+        
+        // إرسال النموذج
+        if ($(this).hasClass('save-button')) {
+            $('#permissions-form').submit();
+        }
+    });
+    
+    // تحديث زر الحفظ الأساسي عند تغيير الصلاحيات
+    $('.permission-card').on('click', function() {
+        $('.submit-button').prop('disabled', false);
+    });
+}
+
+/**
+ * إضافة حقول مخفية للصلاحيات المختارة
+ */
+function addHiddenPermissionFields() {
+    // حذف الحقول المخفية السابقة
+    $('#permissions-form input[type="hidden"][name^="checkbox_"]').remove();
+    
+    // إضافة حقول مخفية للصلاحيات المفعلة
+    $('.permissions-section').each(function() {
+        const sectionId = $(this).attr('id').replace('section-', '');
+        
+        $(this).find('.permission-card').each(function() {
+            const permName = $(this).find('.permission-title').text().trim();
+            let fieldName = permName;
             
-            // استعادة نص الزر
-            $(this).html('<i class="fas fa-check"></i> تم الحفظ');
+            // تنظيف اسم الصلاحية
+            if (fieldName.indexOf('عرض') !== -1) {
+                fieldName = 'view_' + sectionId;
+            } else if (fieldName.indexOf('تعديل') !== -1) {
+                fieldName = 'edit_' + sectionId;
+            } else if (fieldName.indexOf('إضافة') !== -1 || fieldName.indexOf('إنشاء') !== -1) {
+                fieldName = 'create_' + sectionId;
+            } else if (fieldName.indexOf('حذف') !== -1) {
+                fieldName = 'delete_' + sectionId;
+            } else {
+                fieldName = fieldName.toLowerCase().replace(/\s+/g, '_');
+            }
             
-            // استعادة حالة الزر بعد فترة
-            setTimeout(() => {
-                $(this).html(originalText);
-                $(this).prop('disabled', true);
-            }, 2000);
-        }, 1500);
+            // إذا كانت البطاقة مفعلة، أضف حقل مخفي
+            if ($(this).hasClass('active')) {
+                const hiddenField = $('<input>').attr({
+                    type: 'hidden',
+                    name: sectionId + '_' + fieldName,
+                    value: 'on'
+                });
+                $('#permissions-form').append(hiddenField);
+            }
+        });
     });
 }
 
