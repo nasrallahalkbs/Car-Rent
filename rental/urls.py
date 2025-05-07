@@ -16,7 +16,8 @@ from django.shortcuts import render
 from . import views, admin_views, payment_views, analytics_views
 from .admin_views_windows import admin_archive_windows_explorer
 from .windows_explorer_view import admin_archive_windows
-from .csrf_debug import csrf_debug_view, csrf_debug_page
+# CSRF Debug وظائف - تم إزالة الوظائف المفقودة
+# from .csrf_debug import csrf_debug_view, csrf_debug_page
 from . import car_condition_views
 from . import views_custody
 
@@ -140,9 +141,9 @@ urlpatterns = [
     path('dashboard/archive/delete/<int:document_id>/', admin_views.delete_document, name='delete_document'),
     path('dashboard/archive/upload-direct/', admin_views.admin_archive_upload_direct, name='admin_archive_upload_direct'),
 
-    # Diagnostic routes
-    path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
-    path('csrf-debug-page/', csrf_debug_page, name='csrf_debug_page'),
+    # Diagnostic routes - معلقة مؤقتاً حتى يتم إنشاء الدوال
+    # path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
+    # path('csrf-debug-page/', csrf_debug_page, name='csrf_debug_page'),
 
     # إضافة الإصلاح البسيط كخيار إضافي
     path('dashboard/archive/simple-upload/', admin_views.simple_upload_form, name='simple_upload_form'),
