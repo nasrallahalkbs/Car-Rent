@@ -305,60 +305,12 @@ def admin_details(request, admin_id):
 @login_required
 @superadmin_required
 def admin_advanced_permissions(request, admin_id):
-    """إدارة الصلاحيات المتقدمة للمسؤول"""
+    """إدارة الصلاحيات المتقدمة للمسؤول - الإصدار المبسط جداً"""
     try:
         admin = get_object_or_404(AdminUser, id=admin_id)
     except AdminUser.DoesNotExist:
         messages.error(request, _('المسؤول غير موجود'))
         return redirect('superadmin_manage_admins')
-    
-    # الحصول على الصلاحيات الحالية للمسؤول من قاعدة البيانات
-    # استخدام SQLite مباشرة للتجنب مشاكل ORM
-    admin_permissions = {}
-    
-    # محاولة الحصول على الصلاحيات المخصصة إذا كانت موجودة
-    try:
-        import sqlite3
-        import json
-        
-        # الاتصال بقاعدة البيانات مباشرة
-        conn = sqlite3.connect('db.sqlite3')
-        c = conn.cursor()
-        
-        # التحقق من جدول rental_adminpermission
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rental_adminpermission'")
-        if not c.fetchone():
-            print("جدول rental_adminpermission غير موجود، سيتم إنشاؤه...")
-            c.execute('''
-            CREATE TABLE rental_adminpermission (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                admin_id INTEGER NOT NULL,
-                permissions TEXT NOT NULL,
-                UNIQUE(admin_id)
-            )
-            ''')
-            conn.commit()
-            print("تم إنشاء جدول rental_adminpermission")
-        
-        # استعلام عن صلاحيات المسؤول
-        c.execute("SELECT permissions FROM rental_adminpermission WHERE admin_id = ?", (admin_id,))
-        result = c.fetchone()
-        
-        if result and result[0]:
-            try:
-                admin_permissions = json.loads(result[0])
-                print(f"تم تحميل صلاحيات المسؤول {admin_id}:", admin_permissions)
-            except json.JSONDecodeError as json_error:
-                print(f"خطأ في تحليل JSON للصلاحيات: {json_error}")
-        else:
-            print(f"لا توجد صلاحيات مخزنة للمسؤول {admin_id}")
-        
-        # إغلاق الاتصال
-        conn.close()
-        
-    except Exception as e:
-        print(f"خطأ في قراءة الصلاحيات: {e}")
-        admin_permissions = {}
     
     # قائمة بجميع الصلاحيات مقسمة حسب الأقسام
     all_permissions = {
@@ -387,153 +339,71 @@ def admin_advanced_permissions(request, admin_id):
         'diagnostics': ['view_system_status', 'view_technical_reports', 'clean_system_data', 'repair_system_issues']
     }
     
-    # معالجة طلب POST لحفظ الصلاحيات - آلية محسنة وشاملة
+    # استخدام SQLite مباشرة للحصول على الصلاحيات
+    import sqlite3
+    import json
+    
+    # تهيئة صلاحيات المسؤول كقاموس فارغ
+    admin_permissions = {}
+    for section in all_permissions:
+        admin_permissions[section] = []
+    
+    # الحصول على الصلاحيات من قاعدة البيانات
+    try:
+        # الاتصال بقاعدة البيانات
+        conn = sqlite3.connect('db.sqlite3')
+        c = conn.cursor()
+        
+        # التحقق من وجود الجدول وإنشائه إذا لم يكن موجوداً
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rental_adminpermission'")
+        if not c.fetchone():
+            c.execute('''
+            CREATE TABLE rental_adminpermission (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                admin_id INTEGER NOT NULL,
+                permissions TEXT NOT NULL,
+                UNIQUE(admin_id)
+            )
+            ''')
+            conn.commit()
+        
+        # استعلام عن صلاحيات المسؤول
+        c.execute("SELECT permissions FROM rental_adminpermission WHERE admin_id = ?", (admin_id,))
+        result = c.fetchone()
+        
+        if result and result[0]:
+            stored_permissions = json.loads(result[0])
+            # نسخ الصلاحيات المخزنة إلى صلاحيات المسؤول
+            for section, perms in stored_permissions.items():
+                if section in admin_permissions:
+                    admin_permissions[section] = perms
+        
+        conn.close()
+    except Exception as e:
+        # لا شيء يُفعل في حالة الخطأ - سنستخدم الصلاحيات الفارغة
+        pass
+    
+    # معالجة طلب حفظ الصلاحيات
     if request.method == 'POST':
-        # طباعة معلومات للتصحيح
-        print(f"### بدء معالجة طلب حفظ الصلاحيات")
-        print(f"### معرف المسؤول: {admin_id}")
-        
-        # طباعة جميع المفاتيح المرسلة للتحقق من وصول البيانات
-        print("Keys received in POST:", list(request.POST.keys()))
-        
-        # تغيير استراتيجية المعالجة - نستخدم طريقة واحدة موحدة لجمع الصلاحيات
-        # نتخلى عن التمييز بين save_changes_only وغيره لأنه سبب مشاكل
-        save_changes_only = False
-        
-        # إنشاء كائن لتتبع الصلاحيات - آلية جديدة تتجاوز كل المشاكل السابقة
+        # جمع صلاحيات المسؤول من النموذج المرسل
         selected_permissions = {}
-        
-        if save_changes_only and changes_json:
-            # حفظ التغييرات فقط
-            import json
-            try:
-                # تحليل JSON التغييرات
-                changes = json.loads(changes_json)
-                print("Changes JSON received:", changes)
-                
-                # استرجاع الصلاحيات الحالية قبل تحديثها
-                selected_permissions = dict(admin_permissions) if admin_permissions else {}
-                
-                # حفظ نسخة من الصلاحيات الأصلية للمقارنة لاحقاً
-                original_permissions = {k: list(v) for k, v in selected_permissions.items()}
-                
-                # طباعة الصلاحيات قبل التغيير
-                print("Original permissions before changes:", original_permissions)
-                
-                # معالجة التغييرات
-                for section, perms in changes.items():
-                    # التأكد من وجود المصفوفة
-                    if section not in selected_permissions:
-                        selected_permissions[section] = []
-                    
-                    # إذا كان القسم فارغاً وموجود في التغييرات، نتحقق من إلغاء جميع الصلاحيات
-                    section_has_changes = False
-                    section_has_active = False
-                    
-                    for perm in perms:
-                        # تحديد الحالة الجديدة (نشطة أم لا)
-                        is_active = request.POST.get(f"{section}_{perm}") == 'on'
-                        print(f"Processing change: {section}_{perm} = {is_active}")
-                        section_has_changes = True
-                        
-                        if is_active:
-                            section_has_active = True
-                            # إذا كانت نشطة وغير موجودة، أضفها
-                            if perm not in selected_permissions[section]:
-                                selected_permissions[section].append(perm)
-                                print(f"Added permission: {section}_{perm}")
-                        else:
-                            # إذا كانت غير نشطة وموجودة، احذفها
-                            if perm in selected_permissions[section]:
-                                selected_permissions[section].remove(perm)
-                                print(f"Removed permission: {section}_{perm}")
-                    
-                    # إذا كان هناك تغييرات ولكن لا توجد صلاحيات نشطة، نفرغ القسم
-                    if section_has_changes and not section_has_active:
-                        selected_permissions[section] = []
-                        print(f"Section {section} has changes but no active permissions, emptying it")
-                
-                # فحص أقسام محددة للتأكد من عدم وجود صلاحيات نشطة
-                # من أجل قسم الحجوزات تحديداً
-                
-                # التحقق من وجود علامة إلغاء جميع صلاحيات الحجوزات (من JavaScript)
-                if request.POST.get('reservations_empty') == 'true':
-                    selected_permissions['reservations'] = []
-                    print("✅ تم إفراغ قسم الحجوزات باستخدام علامة reservations_empty")
-                # أو البحث عن التغييرات المرسلة في JSON
-                elif 'reservations' in changes and len(changes['reservations']) > 0:
-                    # التحقق إذا كانت هناك طلبات POST صريحة لإلغاء الصلاحيات
-                    all_deactivated = True
-                    for perm in all_permissions.get('reservations', []):
-                        # إذا كان هناك أي صلاحية نشطة، نضع المتغير كـ False
-                        if request.POST.get(f"reservations_{perm}") == 'on':
-                            all_deactivated = False
-                            break
-                    
-                    # إذا تم إلغاء جميع الصلاحيات، نتأكد من أن المصفوفة فارغة
-                    if all_deactivated:
-                        selected_permissions['reservations'] = []
-                        print("All reservations permissions were deactivated, setting to empty list")
-                
-                # فحص جميع الأقسام الأخرى لاكتشاف الأقسام الفارغة
-                for section in all_permissions.keys():
-                    # إذا كان القسم موجود في selected_permissions
-                    if section in selected_permissions:
-                        # إذا كان هناك علامة بإفراغ هذا القسم
-                        if request.POST.get(f"{section}_empty") == 'true':
-                            selected_permissions[section] = []
-                            print(f"✅ تم إفراغ قسم {section} باستخدام علامة {section}_empty")
-                
-                print("Updated permissions after changes:", selected_permissions)
-            except json.JSONDecodeError as e:
-                print(f"Error parsing changes JSON: {e}")
-                # استخدام الطريقة التقليدية كحل بديل
-                save_changes_only = False
-        
-        # تجميع الصلاحيات من النموذج (الطريقة المحسنة يدويًا لكافة الحالات)
-        if not save_changes_only:
-            # جمع جميع الصلاحيات المحددة من النموذج (الطريقة المحسنة)
-            # أولاً نقوم بإنشاء قائمة فارغة لكل قسم للتأكد من تطبيق الإلغاء بشكل صحيح
-            selected_permissions = {}
-            for section in all_permissions.keys():
-                selected_permissions[section] = []
-                
-            # الآن نبحث عن الصلاحيات المحددة فقط
-            # فحص جميع مفاتيح POST
-            for key in request.POST.keys():
-                # البحث عن أنماط أسماء الصلاحيات
-                for section in all_permissions.keys():
-                    # فحص نمط section_permission (مثل dashboard_view_dashboard)
-                    if key.startswith(f"{section}_") and request.POST.get(key) == 'on':
-                        # استخراج اسم الصلاحية من المفتاح
-                        permission = key.replace(f"{section}_", "")
-                        
-                        # التأكد من أن الصلاحية موجودة في قائمة الصلاحيات المتاحة للقسم
-                        if permission in all_permissions.get(section, []):
-                            if permission not in selected_permissions[section]:
-                                selected_permissions[section].append(permission)
-                                print(f"✅ تمت إضافة الصلاحية: {section}_{permission}")
+        for section in all_permissions:
+            selected_permissions[section] = []
             
-            # طباعة تقرير عن الأقسام
-            for section in list(selected_permissions.keys()):
-                if not selected_permissions[section]:
-                    print(f"🔍 القسم {section} فارغ")
-                else:
-                    print(f"🔍 القسم {section} يحتوي على {len(selected_permissions[section])} صلاحية")
+        # البحث عن الصلاحيات المحددة في النموذج
+        for key, value in request.POST.items():
+            for section in all_permissions:
+                if key.startswith(f"{section}_") and value == 'on':
+                    permission = key.replace(f"{section}_", "")
+                    if permission in all_permissions[section]:
+                        selected_permissions[section].append(permission)
         
-        # طباعة الصلاحيات المحددة للتشخيص
-        print("Final Permissions Object:", selected_permissions)
-        
-        # حفظ الصلاحيات بواسطة SQLite مباشرة (تجنب استخدام connection والـ ORM)
+        # حفظ الصلاحيات في قاعدة البيانات
         try:
-            # استخدام SQLite مباشرة
-            import json
-            import sqlite3
-            
+            # تحويل الصلاحيات إلى JSON
             permissions_json = json.dumps(selected_permissions)
-            print("Permissions JSON:", permissions_json)
             
-            # الاتصال بقاعدة البيانات مباشرة
+            # الاتصال بقاعدة البيانات
             conn = sqlite3.connect('db.sqlite3')
             c = conn.cursor()
             
@@ -542,22 +412,13 @@ def admin_advanced_permissions(request, admin_id):
             
             # إضافة السجل الجديد
             c.execute("INSERT INTO rental_adminpermission (admin_id, permissions) VALUES (?, ?)", 
-                    (admin_id, permissions_json))
-            
-            # التأكد من الإضافة
-            c.execute("SELECT permissions FROM rental_adminpermission WHERE admin_id = ?", (admin_id,))
-            result = c.fetchone()
-            if result:
-                print(f"✅ تم حفظ الصلاحيات للمسؤول رقم {admin_id}")
-            else:
-                print(f"❌ فشل حفظ الصلاحيات للمسؤول رقم {admin_id}")
+                     (admin_id, permissions_json))
             
             # حفظ التغييرات وإغلاق الاتصال
             conn.commit()
             conn.close()
-            print("تم حفظ الصلاحيات بنجاح في قاعدة البيانات")
             
-            # تسجيل نشاط تحديث الصلاحيات
+            # تسجيل نشاط المسؤول
             log_admin_activity(
                 request.admin_profile,
                 _("تحديث الصلاحيات المتقدمة"),
@@ -565,48 +426,47 @@ def admin_advanced_permissions(request, admin_id):
                 request
             )
             
-            messages.success(request, _("تم حفظ الصلاحيات بنجاح"))
-            admin_permissions = selected_permissions  # تحديث الصلاحيات المعروضة
+            # تحديث صلاحيات المسؤول للعرض
+            admin_permissions = selected_permissions
             
-            # التحقق مما إذا كان الطلب AJAX
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.POST.get('use_enhanced_ui') == 'true':
-                # إرجاع استجابة JSON تحتوي على الصلاحيات المحدثة
+            # الاستجابة بناءً على نوع الطلب
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # استجابة JSON لطلبات AJAX
                 return JsonResponse({
                     'status': 'success',
                     'message': _("تم حفظ الصلاحيات بنجاح"),
-                    'permissions': selected_permissions,
-                    'permissions_json': json.dumps(selected_permissions)
+                    'permissions': selected_permissions
                 })
             else:
-                # إعادة توجيه مع معلمة نجاح للإشارة إلى الحفظ الناجح
+                # رسالة نجاح للطلبات العادية
+                messages.success(request, _("تم حفظ الصلاحيات بنجاح"))
                 return redirect(f"{request.path}?saved=true")
-            
+                
         except Exception as e:
-            print(f"خطأ في حفظ الصلاحيات: {e}")
-            messages.error(request, _("حدث خطأ أثناء حفظ الصلاحيات"))
-            
-            # التحقق مما إذا كان الطلب AJAX
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.POST.get('use_enhanced_ui') == 'true':
-                # إرجاع استجابة JSON مع الخطأ
+            # معالجة الخطأ
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # استجابة JSON مع الخطأ
                 return JsonResponse({
                     'status': 'error',
                     'message': _("حدث خطأ أثناء حفظ الصلاحيات")
                 }, status=500)
+            else:
+                # رسالة خطأ للطلبات العادية
+                messages.error(request, _("حدث خطأ أثناء حفظ الصلاحيات"))
     
-    # تحويل قائمة الصلاحيات ليتم عرضها في القالب
+    # تحضير الصلاحيات للعرض في القالب
     context_permissions = {}
     for section, permissions in all_permissions.items():
         context_permissions[section] = []
         for perm in permissions:
-            is_active = False
-            if section in admin_permissions and perm in admin_permissions[section]:
-                is_active = True
+            # تحديد ما إذا كانت الصلاحية نشطة
+            is_active = perm in admin_permissions.get(section, [])
             context_permissions[section].append({
                 'name': perm,
                 'active': is_active
             })
     
-    # تسجيل نشاط الوصول إلى الصلاحيات المتقدمة (فقط للطلبات GET)
+    # تسجيل نشاط المسؤول للطلبات GET
     if request.method == 'GET':
         log_admin_activity(
             request.admin_profile,
@@ -615,18 +475,15 @@ def admin_advanced_permissions(request, admin_id):
             request
         )
     
-    # استخدام user.get_full_name بدلاً من admin.get_full_name
-    # إضافة نسخة JSON من الصلاحيات الحالية للمسؤول لاستخدامها في JavaScript
-    import json
-    permissions_json = json.dumps(admin_permissions)
-    
+    # إعداد محتوى الصفحة
     context = {
         'admin': admin,
         'title': _('إدارة الصلاحيات المتقدمة - ') + admin.user.get_full_name(),
         'permissions': context_permissions,
-        'permissions_json': permissions_json
+        'permissions_json': json.dumps(admin_permissions)
     }
     
+    # عرض الصفحة
     return render(request, 'superadmin/admin_advanced_permissions_redesign.html', context)
 
 @superadmin_required
