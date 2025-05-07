@@ -331,9 +331,10 @@ def admin_advanced_permissions(request, admin_id):
         request
     )
     
+    # استخدام user.get_full_name بدلاً من admin.get_full_name
     context = {
         'admin': admin,
-        'title': _('إدارة الصلاحيات المتقدمة - ') + admin.get_full_name(),
+        'title': _('إدارة الصلاحيات المتقدمة - ') + admin.user.get_full_name(),
         'dashboard_permissions': dashboard_permissions,
         'reservation_permissions': reservation_permissions,
         'customer_permissions': customer_permissions,
