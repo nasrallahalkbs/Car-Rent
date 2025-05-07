@@ -102,7 +102,7 @@ function initializePermissionCards() {
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
-        }).html('<i class="fas fa-save"></i> <span>حفظ جميع الصلاحيات</span>');
+        }).html('<i class="fas fa-save"></i> <span>حفظ التغييرات</span>');
         
         // إضافة مؤشر التغييرات
         const changesIndicator = $('<span>').attr({
@@ -126,13 +126,8 @@ function initializePermissionCards() {
         // إخفاء الزر في البداية حتى يتم إجراء تغييرات
         saveButton.hide();
         
-        // إضافة حدث النقر على زر الحفظ
-        saveButton.on('click', function() {
-            saveAllPermissions();
-            changesCount = 0;
-            $('#changes-counter').text('0');
-            $(this).hide();
-        });
+        // ملاحظة: تم نقل معالج النقر على زر الحفظ إلى permissions_trackchanges.js
+        // لكي نتمكن من تتبع التغييرات فقط بدلاً من حفظ جميع الصلاحيات
         
         // إضافة الزر للصفحة
         $('body').append(saveButton);

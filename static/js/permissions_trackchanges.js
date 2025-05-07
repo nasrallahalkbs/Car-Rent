@@ -13,11 +13,18 @@ $(document).ready(function() {
     // حفظ الحالة الأولية للصلاحيات
     captureInitialPermissionState();
     
-    // إلغاء تعريف دالة saveAllPermissions الأصلية واستبدالها
-    var originalSaveFunction = window.saveAllPermissions;
+    // إعادة تعريف دالة saveAllPermissions مع التأكد من ربطها مرة أخرى بزر الحفظ
+    console.log('عملية استبدال وظيفة الحفظ');
     window.saveAllPermissions = function() {
         return saveChangedPermissionsOnly();
     };
+    
+    // ربط زر الحفظ مرة أخرى بالدالة الجديدة
+    $('#save-all-permissions-btn').off('click').on('click', function() {
+        console.log('تم النقر على زر الحفظ المحسن');
+        saveChangedPermissionsOnly();
+        return false;
+    });
     
     // إضافة مستمع أحداث على كل بطاقة صلاحية
     $('.permission-card').on('click', function() {
