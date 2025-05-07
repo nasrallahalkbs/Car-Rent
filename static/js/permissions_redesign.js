@@ -165,6 +165,8 @@ function saveAllPermissions() {
                 $('#' + saveNotificationId).fadeOut(300, function() {
                     $(this).remove();
                 });
+                // تحديث الصفحة بعد الحفظ بنجاح
+                window.location.reload();
             }, 1500);
         }, 1000);
     }
@@ -236,8 +238,44 @@ function initializeSaveButton() {
         // عرض إشعار بأنه جاري الحفظ
         showNotification('حفظ', 'جاري حفظ الصلاحيات...', 'info');
         
-        // إرسال النموذج
+        // إرسال النموذج وتحديث الصفحة بعد الحفظ
         $('#permissions-form').submit();
+        
+        // عرض مؤشر جاري الحفظ
+        const saveNotificationId = 'direct-save-notification';
+        if ($('#' + saveNotificationId).length === 0) {
+            const notification = $('<div>').attr({
+                id: saveNotificationId,
+                class: 'save-indicator'
+            }).css({
+                position: 'fixed',
+                bottom: '70px',
+                right: '20px',
+                background: '#4caf50',
+                color: 'white',
+                padding: '10px 15px',
+                borderRadius: '4px',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                zIndex: 9999
+            }).html('<i class="fas fa-spinner fa-spin"></i> <span>جارِ حفظ التغييرات...</span>');
+            
+            $('body').append(notification);
+            
+            // بعد إتمام الإرسال
+            setTimeout(() => {
+                $('#' + saveNotificationId).html('<i class="fas fa-check-circle"></i> <span>تم حفظ التغييرات</span>');
+                setTimeout(() => {
+                    $('#' + saveNotificationId).fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                    // تحديث الصفحة بعد الحفظ بنجاح
+                    window.location.reload();
+                }, 1500);
+            }, 1000);
+        }
         
         return true;
     });
