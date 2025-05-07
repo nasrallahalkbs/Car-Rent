@@ -3,25 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة الصلاحيات المتقدمة</title>
+    <title>إدارة الصلاحيات المتقدمة - {{ admin.user.get_full_name }}</title>
     
     <!-- Bootstrap RTL CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #1abc9c;
+            --danger-color: #e74c3c;
+            --success-color: #28a745;
+            --warning-color: #f1c40f;
+            --light-gray: #f8f9fa;
+            --dark-gray: #343a40;
+        }
+        
         body {
             background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .container {
-            max-width: 1200px;
-            margin: 50px auto;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            padding: 30px;
+        
+        .superadmin-container {
+            display: flex;
+            min-height: 100vh;
         }
+        
+        .superadmin-sidebar {
+            width: 250px;
+            background-color: var(--secondary-color);
+            color: white;
+            padding-top: 1rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .superadmin-content {
+            flex: 1;
+            margin-right: 250px;
+            padding: 2rem;
+        }
+        
+        .header-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header-brand span {
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+        
+        .main-section {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
         .permission-card {
             cursor: pointer;
             transition: all 0.3s ease;
@@ -35,9 +94,9 @@
         }
         
         .permission-card.active {
-            background-color: #28a745;
+            background-color: var(--success-color);
             color: white;
-            border-color: #28a745;
+            border-color: var(--success-color);
             box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
         }
         
@@ -76,91 +135,186 @@
             color: white;
             text-align: center;
         }
+        
+        /* السيدبار الجانبي */
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .sidebar-nav .nav-item {
+            margin-bottom: 0.25rem;
+        }
+        
+        .sidebar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.75rem 1rem;
+            border-radius: 0.25rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar-nav .nav-link:hover,
+        .sidebar-nav .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .sidebar-nav .nav-link i {
+            margin-left: 0.75rem;
+            font-size: 1.1rem;
+            min-width: 1.5rem;
+            text-align: center;
+        }
+        
+        /* ملخص المستخدم */
+        .user-summary {
+            text-align: center;
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: auto;
+        }
+        
+        .user-summary img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-name {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-role {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2 class="mb-4">إدارة الصلاحيات المتقدمة - {{ admin.user.get_full_name }}</h2>
-
-        <!-- رسالة نجاح ثابتة -->
-        {% if messages %}
-        <div class="row">
-            <div class="col-md-12">
-                {% for message in messages %}
-                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
-                    {{ message }}
-                </div>
-                {% endfor %}
+    <div class="superadmin-container">
+        <!-- القائمة الجانبية -->
+        <div class="superadmin-sidebar">
+            <div class="header-brand">
+                <i class="fas fa-shield-alt"></i>
+                <span>لوحة المسؤول الأعلى</span>
             </div>
-        </div>
-        {% endif %}
-
-        <!-- النموذج المبسط -->
-        <form id="permissionsForm" method="post" action="">
-            {% csrf_token %}
-            <input type="hidden" name="admin_id" value="{{ admin.id }}">
-
-            <!-- شريط التنقل المبسط -->
-            <ul class="nav nav-tabs mb-4" id="simple-tabs">
-                {% for section_name, perms in permissions.items %}
+            
+            <!-- قائمة التنقل -->
+            <ul class="sidebar-nav">
                 <li class="nav-item">
-                    <a class="nav-link {% if forloop.first %}active{% endif %}" 
-                       data-section="{{ section_name }}" 
-                       href="#section-{{ section_name }}">
-                        {{ section_name|title }} 
-                        <span class="badge {% if section_name in permissions_json %}bg-success{% else %}bg-secondary{% endif %} permissions-count" id="count-{{ section_name }}">
-                            <!-- سيتم تحديث العدد باستخدام JavaScript -->
-                            0
-                        </span>
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        لوحة التحكم
                     </a>
                 </li>
-                {% endfor %}
+                <li class="nav-item">
+                    <a href="#" class="nav-link active">
+                        <i class="fas fa-users-cog"></i>
+                        إدارة المسؤولين
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-user-tag"></i>
+                        إدارة الأدوار
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-key"></i>
+                        إدارة الصلاحيات
+                    </a>
+                </li>
             </ul>
-
-            <!-- محتوى الأقسام -->
-            <div class="tab-content">
-                {% for section_name, perms in permissions.items %}
-                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
-                     id="section-{{ section_name }}">
+        </div>
+        
+        <!-- المحتوى الرئيسي -->
+        <div class="superadmin-content">
+            <!-- رسالة نجاح -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- رأس الصفحة -->
+            <div class="main-header">
+                <h2>إدارة الصلاحيات المتقدمة - {{ admin.user.get_full_name }}</h2>
+                <a href="{% url 'superadmin_admin_details' admin.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> العودة للتفاصيل
+                </a>
+            </div>
+            
+            <!-- قسم الصلاحيات الرئيسي -->
+            <div class="main-section">
+                <form id="permissionsForm" method="post" action="">
+                    {% csrf_token %}
+                    <input type="hidden" name="admin_id" value="{{ admin.id }}">
                     
-                    <div class="row">
-                        {% for perm in perms %}
-                        <div class="col-md-3 mb-4">
-                            <div class="card permission-card {% if perm.active %}active{% endif %}" 
-                                 data-section="{{ section_name }}"
-                                 data-permission="{{ perm.name }}">
-                                <div class="card-body text-center">
-                                    <h5 class="permission-title mb-2">{{ perm.name|title }}</h5>
-                                    <input type="checkbox" name="{{ section_name }}_{{ perm.name }}" 
-                                           id="perm_{{ section_name }}_{{ perm.name }}"
-                                           {% if perm.active %}checked{% endif %}
-                                           style="display: none;">
+                    <!-- شريط التنقل بين أقسام الصلاحيات -->
+                    <ul class="nav nav-tabs mb-4" id="simple-tabs">
+                        {% for section_name, perms in permissions.items %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if forloop.first %}active{% endif %}" 
+                              data-section="{{ section_name }}" 
+                              href="#section-{{ section_name }}">
+                                {{ section_name|title }} 
+                                <span class="badge {% if section_name in permissions_json %}bg-success{% else %}bg-secondary{% endif %} permissions-count" id="count-{{ section_name }}">
+                                    <!-- سيتم تحديث العدد باستخدام JavaScript -->
+                                    0
+                                </span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <!-- محتوى أقسام الصلاحيات -->
+                    <div class="tab-content">
+                        {% for section_name, perms in permissions.items %}
+                        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                             id="section-{{ section_name }}">
+                            <div class="row">
+                                {% for perm in perms %}
+                                <div class="col-md-3 mb-4">
+                                    <div class="card permission-card {% if perm.active %}active{% endif %}" 
+                                         data-section="{{ section_name }}"
+                                         data-permission="{{ perm.name }}">
+                                        <div class="card-body text-center">
+                                            <h5 class="permission-title mb-2">{{ perm.name|title }}</h5>
+                                            <input type="checkbox" name="{{ section_name }}_{{ perm.name }}" 
+                                                   id="perm_{{ section_name }}_{{ perm.name }}"
+                                                   {% if perm.active %}checked{% endif %}
+                                                   style="display: none;">
+                                        </div>
+                                    </div>
                                 </div>
+                                {% endfor %}
                             </div>
                         </div>
                         {% endfor %}
                     </div>
-                </div>
-                {% endfor %}
+                    
+                    <div class="text-start mt-4">
+                        <button type="submit" class="btn btn-primary" id="savePermissionsBtn">
+                            <i class="fas fa-save me-2"></i> حفظ الصلاحيات
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <div class="row mt-4">
-                <div class="col-md-12">
-                    <button type="submit" class="btn btn-primary" id="savePermissionsBtn">
-                        <i class="fas fa-save me-2"></i> حفظ الصلاحيات
-                    </button>
-                    <a href="{% url 'superadmin_admin_details' admin.id %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-right me-2"></i> العودة
-                    </a>
-                </div>
-            </div>
-        </form>
+        </div>
     </div>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
     $(document).ready(function() {
