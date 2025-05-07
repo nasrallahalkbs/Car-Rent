@@ -389,24 +389,66 @@ def admin_advanced_permissions(request, admin_id):
     
     # معالجة طلب POST لحفظ الصلاحيات
     if request.method == 'POST':
-        # جمع الصلاحيات المحددة
-        selected_permissions = {}
+        # التحقق من نوع الطلب (حفظ كل الصلاحيات أو التغييرات فقط)
+        save_changes_only = request.POST.get('save_changes_only') == 'true'
+        changes_json = request.POST.get('changes_json')
         
         # طباعة جميع المفاتيح المرسلة للتحقق من وصول البيانات
         print("Keys received in POST:", request.POST.keys())
+        print("Save changes only mode:", save_changes_only)
         
-        # جمع الصلاحيات المرسلة من النموذج
-        for section, permissions in all_permissions.items():
-            section_permissions = []
-            for perm in permissions:
-                # التحقق من الطرق المختلفة لإرسال الصلاحيات
-                if (request.POST.get(f"{section}_{perm}") == 'on' or 
-                    request.POST.get(perm) == 'on' or
-                    request.POST.get(f"{section}_{perm}_{section}") == 'on'):
-                    section_permissions.append(perm)
-                    print(f"Permission added: {section}_{perm}")
-            
-            selected_permissions[section] = section_permissions
+        if save_changes_only and changes_json:
+            # حفظ التغييرات فقط
+            import json
+            try:
+                # تحليل JSON التغييرات
+                changes = json.loads(changes_json)
+                print("Changes JSON received:", changes)
+                
+                # استرجاع الصلاحيات الحالية وتحديثها بالتغييرات
+                selected_permissions = dict(admin_permissions) if admin_permissions else {}
+                
+                # معالجة التغييرات
+                for section, perms in changes.items():
+                    # التأكد من وجود المصفوفة
+                    if section not in selected_permissions:
+                        selected_permissions[section] = []
+                    
+                    for perm in perms:
+                        # تحديد الحالة الجديدة (نشطة أم لا)
+                        is_active = request.POST.get(f"{section}_{perm}") == 'on'
+                        print(f"Processing change: {section}_{perm} = {is_active}")
+                        
+                        # إذا كانت نشطة وغير موجودة، أضفها
+                        if is_active and perm not in selected_permissions[section]:
+                            selected_permissions[section].append(perm)
+                            print(f"Added permission: {section}_{perm}")
+                        # إذا كانت غير نشطة وموجودة، احذفها
+                        elif not is_active and perm in selected_permissions[section]:
+                            selected_permissions[section].remove(perm)
+                            print(f"Removed permission: {section}_{perm}")
+                
+                print("Updated permissions after changes:", selected_permissions)
+            except json.JSONDecodeError as e:
+                print(f"Error parsing changes JSON: {e}")
+                # استخدام الطريقة التقليدية كحل بديل
+                save_changes_only = False
+        
+        # إذا لم يكن حفظ التغييرات فقط أو فشل تحليل JSON التغييرات
+        if not save_changes_only:
+            # جمع جميع الصلاحيات المحددة من النموذج (الطريقة التقليدية)
+            selected_permissions = {}
+            for section, permissions in all_permissions.items():
+                section_permissions = []
+                for perm in permissions:
+                    # التحقق من الطرق المختلفة لإرسال الصلاحيات
+                    if (request.POST.get(f"{section}_{perm}") == 'on' or 
+                        request.POST.get(perm) == 'on' or
+                        request.POST.get(f"{section}_{perm}_{section}") == 'on'):
+                        section_permissions.append(perm)
+                        print(f"Permission added: {section}_{perm}")
+                
+                selected_permissions[section] = section_permissions
         
         # طباعة الصلاحيات المحددة للتشخيص
         print("Final Permissions Object:", selected_permissions)
