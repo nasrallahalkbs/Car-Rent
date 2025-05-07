@@ -392,12 +392,30 @@ function updatePermissionCounts() {
         const totalCards = $(this).find('.permission-card').length;
         const activeCards = $(this).find('.permission-card.active').length;
         
+        // طباعة معلومات تشخيصية
+        console.log(`⚡ تحديث عداد القسم (${sectionId}): عدد الصلاحيات النشطة = ${activeCards}`);
+        
         // تحديث عداد الصلاحيات في التبويب
         $(`.tab-item[data-section="${sectionId}"] .tab-count`).text(activeCards);
         
         // تحديث عداد الصلاحيات في القسم
         $(this).find('.section-count').text(`${activeCards} / ${totalCards}`);
+        
+        // تغيير لون العداد إذا كان أكبر من صفر
+        if (activeCards > 0) {
+            $(`.tab-item[data-section="${sectionId}"] .tab-count`).addClass('active');
+        } else {
+            $(`.tab-item[data-section="${sectionId}"] .tab-count`).removeClass('active');
+            // تأكيد إضافي لتصفير العداد
+            $(`.tab-item[data-section="${sectionId}"] .tab-count`).text('0');
+            console.log(`🚨 تصفير عداد قسم ${sectionId}`);
+        }
     });
+    
+    // طباعة تفاصيل كاملة عن عدادات قسم الحجوزات
+    const reservationCards = $('#section-reservations .permission-card').length;
+    const reservationActiveCards = $('#section-reservations .permission-card.active').length;
+    console.log(`📊 إحصائيات قسم الحجوزات: إجمالي = ${reservationCards}، نشط = ${reservationActiveCards}`);
 }
 
 /**
