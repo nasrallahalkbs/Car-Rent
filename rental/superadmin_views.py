@@ -389,17 +389,16 @@ def admin_advanced_permissions(request, admin_id):
     
     # معالجة طلب POST لحفظ الصلاحيات - آلية محسنة وشاملة
     if request.method == 'POST':
-        # التحقق من نوع الطلب (حفظ كل الصلاحيات أو التغييرات فقط)
-        save_changes_only = request.POST.get('save_changes_only') == 'true' or request.POST.get('save_changes') == 'save'
-        changes_json = request.POST.get('changes_json')
-        
         # طباعة معلومات للتصحيح
         print(f"### بدء معالجة طلب حفظ الصلاحيات")
         print(f"### معرف المسؤول: {admin_id}")
         
         # طباعة جميع المفاتيح المرسلة للتحقق من وصول البيانات
         print("Keys received in POST:", list(request.POST.keys()))
-        print("Save changes only mode:", save_changes_only)
+        
+        # تغيير استراتيجية المعالجة - نستخدم طريقة واحدة موحدة لجمع الصلاحيات
+        # نتخلى عن التمييز بين save_changes_only وغيره لأنه سبب مشاكل
+        save_changes_only = False
         
         # إنشاء كائن لتتبع الصلاحيات - آلية جديدة تتجاوز كل المشاكل السابقة
         selected_permissions = {}
@@ -491,21 +490,36 @@ def admin_advanced_permissions(request, admin_id):
                 # استخدام الطريقة التقليدية كحل بديل
                 save_changes_only = False
         
-        # إذا لم يكن حفظ التغييرات فقط أو فشل تحليل JSON التغييرات
+        # تجميع الصلاحيات من النموذج (الطريقة المحسنة يدويًا لكافة الحالات)
         if not save_changes_only:
             # جمع جميع الصلاحيات المحددة من النموذج (الطريقة التقليدية)
             selected_permissions = {}
-            for section, permissions in all_permissions.items():
-                section_permissions = []
-                for perm in permissions:
-                    # التحقق من الطرق المختلفة لإرسال الصلاحيات
-                    if (request.POST.get(f"{section}_{perm}") == 'on' or 
-                        request.POST.get(perm) == 'on' or
-                        request.POST.get(f"{section}_{perm}_{section}") == 'on'):
-                        section_permissions.append(perm)
-                        print(f"Permission added: {section}_{perm}")
-                
-                selected_permissions[section] = section_permissions
+            
+            # فحص جميع مفاتيح POST
+            for key in request.POST.keys():
+                # البحث عن أنماط أسماء الصلاحيات
+                for section in all_permissions.keys():
+                    # إنشاء مصفوفة فارغة لكل قسم إذا لم تكن موجودة
+                    if section not in selected_permissions:
+                        selected_permissions[section] = []
+                    
+                    # فحص نمط section_permission (مثل dashboard_view_dashboard)
+                    if key.startswith(f"{section}_") and request.POST.get(key) == 'on':
+                        # استخراج اسم الصلاحية من المفتاح
+                        permission = key.replace(f"{section}_", "")
+                        
+                        # التأكد من أن الصلاحية موجودة في قائمة الصلاحيات المتاحة للقسم
+                        if permission in all_permissions.get(section, []):
+                            if permission not in selected_permissions[section]:
+                                selected_permissions[section].append(permission)
+                                print(f"✅ تمت إضافة الصلاحية: {section}_{permission}")
+            
+            # تنظيف الأقسام الفارغة
+            for section in list(selected_permissions.keys()):
+                if not selected_permissions[section]:
+                    print(f"🔍 القسم {section} فارغ")
+                else:
+                    print(f"🔍 القسم {section} يحتوي على {len(selected_permissions[section])} صلاحية")
         
         # طباعة الصلاحيات المحددة للتشخيص
         print("Final Permissions Object:", selected_permissions)
