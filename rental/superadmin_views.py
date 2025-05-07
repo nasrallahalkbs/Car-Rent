@@ -387,17 +387,22 @@ def admin_advanced_permissions(request, admin_id):
         'diagnostics': ['view_system_status', 'view_technical_reports', 'clean_system_data', 'repair_system_issues']
     }
     
-    # معالجة طلب POST لحفظ الصلاحيات
+    # معالجة طلب POST لحفظ الصلاحيات - آلية محسنة وشاملة
     if request.method == 'POST':
         # التحقق من نوع الطلب (حفظ كل الصلاحيات أو التغييرات فقط)
         save_changes_only = request.POST.get('save_changes_only') == 'true' or request.POST.get('save_changes') == 'save'
         changes_json = request.POST.get('changes_json')
         
-        print(f"### بيانات النموذج المرسلة: {dict(request.POST)}")
+        # طباعة معلومات للتصحيح
+        print(f"### بدء معالجة طلب حفظ الصلاحيات")
+        print(f"### معرف المسؤول: {admin_id}")
         
         # طباعة جميع المفاتيح المرسلة للتحقق من وصول البيانات
-        print("Keys received in POST:", request.POST.keys())
+        print("Keys received in POST:", list(request.POST.keys()))
         print("Save changes only mode:", save_changes_only)
+        
+        # إنشاء كائن لتتبع الصلاحيات - آلية جديدة تتجاوز كل المشاكل السابقة
+        selected_permissions = {}
         
         if save_changes_only and changes_json:
             # حفظ التغييرات فقط
