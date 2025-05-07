@@ -1,0 +1,751 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة الصلاحيات المتقدمة" %} - {{ admin.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .permission-section {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        background-color: #fff;
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    
+    .permission-section:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .permission-header {
+        padding: 1.2rem;
+        background: linear-gradient(to left, #f8f9fa, #ffffff);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+    }
+    
+    .permission-header .icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 1rem;
+        color: #fff;
+        font-size: 1.2rem;
+    }
+    
+    .permission-header .title {
+        flex-grow: 1;
+    }
+    
+    .permission-body {
+        padding: 1.5rem;
+    }
+    
+    .permission-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+        gap: 1rem;
+    }
+    
+    .permission-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .permission-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .permission-card.active {
+        background: rgba(var(--bs-success-rgb), 0.05);
+        border-color: var(--bs-success);
+    }
+    
+    .permission-card.active .permission-name {
+        color: var(--bs-success);
+    }
+    
+    .permission-card .permission-icon {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        color: rgba(0, 0, 0, 0.15);
+        font-size: 1rem;
+    }
+    
+    .permission-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        padding-left: 1.5rem;
+    }
+    
+    .permission-desc {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .admin-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: var(--bs-primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+    
+    .admin-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .admin-role {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        color: var(--bs-primary);
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+    
+    .status-badge {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0.5rem;
+        height: 100%;
+    }
+    
+    .status-badge.read {
+        background-color: #10b981;
+    }
+    
+    .status-badge.write {
+        background-color: #f59e0b;
+    }
+    
+    .status-badge.admin {
+        background-color: #6366f1;
+    }
+    
+    .status-badge.none {
+        background-color: #e5e7eb;
+    }
+    
+    .panel-tabs {
+        display: flex;
+        overflow-x: auto;
+        gap: 0.5rem;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .panel-tab {
+        padding: 0.75rem 1.5rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .panel-tab.active {
+        background-color: var(--bs-primary);
+        color: white;
+    }
+    
+    .panel-tab:hover:not(.active) {
+        background-color: #e9ecef;
+    }
+    
+    .permissions-container [data-section] {
+        display: none;
+    }
+    
+    .permissions-container [data-section].active {
+        display: block;
+    }
+    
+    @media (max-width: 768px) {
+        .permission-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "إدارة الصلاحيات المتقدمة" %}</h1>
+        <p class="text-muted">{% trans "استعراض وإدارة صلاحيات المسؤول" %} {{ admin.get_full_name }}</p>
+    </div>
+    <div>
+        <a href="{% url 'superadmin_manage_admins' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right me-1"></i> {% trans "عودة" %}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="permission-section">
+            <div class="permission-header">
+                <div class="icon" style="background-color: #4f46e5;">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="title">
+                    <h5 class="mb-0">{% trans "معلومات المسؤول" %}</h5>
+                    <small class="text-muted">{% trans "البيانات الأساسية وتفاصيل الصلاحيات" %}</small>
+                </div>
+            </div>
+            
+            <div class="permission-body">
+                <div class="admin-info">
+                    <div class="admin-avatar">
+                        {{ admin.get_initials }}
+                    </div>
+                    <h4 class="mb-0">{{ admin.get_full_name }}</h4>
+                    <span class="admin-role">{{ admin.role.name }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold text-muted">{% trans "الدور" %}</span>
+                        <span>{{ admin.role.name }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold text-muted">{% trans "البريد الإلكتروني" %}</span>
+                        <span>{{ admin.email }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold text-muted">{% trans "مستوى الوصول" %}</span>
+                        <span>{% if admin.is_superadmin %}{% trans "مسؤول أعلى" %}{% else %}{% trans "مسؤول عادي" %}{% endif %}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold text-muted">{% trans "الحالة" %}</span>
+                        <span>{% if admin.is_active %}
+                            <span class="badge bg-success">{% trans "نشط" %}</span>
+                        {% else %}
+                            <span class="badge bg-danger">{% trans "غير نشط" %}</span>
+                        {% endif %}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold text-muted">{% trans "آخر تسجيل دخول" %}</span>
+                        <span>{{ admin.last_login }}</span>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'superadmin_admin_details' admin.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-user me-1"></i> {% trans "عرض الملف الشخصي" %}
+                    </a>
+                    
+                    {% if admin.is_superadmin %}
+                    <a href="#" class="btn btn-outline-danger disabled">
+                        <i class="fas fa-exclamation-triangle me-1"></i> {% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}
+                    </a>
+                    {% else %}
+                    <button class="btn btn-success save-permissions-btn" disabled>
+                        <i class="fas fa-save me-1"></i> {% trans "حفظ التغييرات" %}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="permission-section">
+            <div class="permission-header">
+                <div class="icon" style="background-color: #0ea5e9;">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="title">
+                    <h5 class="mb-0">{% trans "الصلاحيات المتقدمة" %}</h5>
+                    <small class="text-muted">{% trans "إدارة صلاحيات الوصول لجميع أجزاء النظام" %}</small>
+                </div>
+            </div>
+            
+            <div class="permission-body">
+                {% if admin.is_superadmin %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {% trans "المسؤول الأعلى يملك وصولاً كاملاً لجميع أجزاء النظام ولا يمكن تعديل صلاحياته" %}
+                </div>
+                {% else %}
+                <div class="panel-tabs">
+                    <div class="panel-tab active" data-target="dashboard">{% trans "لوحة التحكم" %}</div>
+                    <div class="panel-tab" data-target="reservations">{% trans "الحجوزات" %}</div>
+                    <div class="panel-tab" data-target="customers">{% trans "العملاء" %}</div>
+                    <div class="panel-tab" data-target="vehicles">{% trans "المركبات" %}</div>
+                    <div class="panel-tab" data-target="payments">{% trans "المدفوعات" %}</div>
+                    <div class="panel-tab" data-target="archive">{% trans "الأرشيف" %}</div>
+                    <div class="panel-tab" data-target="reports">{% trans "التقارير" %}</div>
+                    <div class="panel-tab" data-target="system">{% trans "النظام" %}</div>
+                </div>
+                
+                <div class="permissions-container">
+                    <!-- قسم لوحة التحكم -->
+                    <div data-section="dashboard" class="active">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">{% trans "لوحة التحكم" %}</h5>
+                            <span class="badge bg-primary">{{ dashboard_permissions|length }} {% trans "صلاحية" %}</span>
+                        </div>
+                        
+                        <div class="permission-grid">
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-chart-line permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض لوحة التحكم" %}</div>
+                                <div class="permission-desc">{% trans "عرض الإحصائيات والمؤشرات الرئيسية" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-calendar-alt permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض المواعيد القادمة" %}</div>
+                                <div class="permission-desc">{% trans "عرض الحجوزات والمواعيد المستقبلية" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-bell permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض الإشعارات" %}</div>
+                                <div class="permission-desc">{% trans "استلام وعرض إشعارات النظام" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-cog permission-icon"></i>
+                                <div class="permission-name">{% trans "تخصيص لوحة التحكم" %}</div>
+                                <div class="permission-desc">{% trans "تغيير ترتيب ومحتوى لوحة التحكم" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- قسم الحجوزات -->
+                    <div data-section="reservations">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">{% trans "الحجوزات" %}</h5>
+                            <span class="badge bg-primary">{{ reservation_permissions|length }} {% trans "صلاحية" %}</span>
+                        </div>
+                        
+                        <div class="permission-grid">
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-list permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض قائمة الحجوزات" %}</div>
+                                <div class="permission-desc">{% trans "الوصول إلى قائمة جميع الحجوزات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-eye permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض تفاصيل الحجز" %}</div>
+                                <div class="permission-desc">{% trans "الاطلاع على تفاصيل الحجوزات الكاملة" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-edit permission-icon"></i>
+                                <div class="permission-name">{% trans "تعديل الحجوزات" %}</div>
+                                <div class="permission-desc">{% trans "تغيير بيانات وتفاصيل الحجوزات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-plus-circle permission-icon"></i>
+                                <div class="permission-name">{% trans "إنشاء حجز جديد" %}</div>
+                                <div class="permission-desc">{% trans "إضافة حجوزات جديدة للعملاء" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-trash-alt permission-icon"></i>
+                                <div class="permission-name">{% trans "حذف الحجوزات" %}</div>
+                                <div class="permission-desc">{% trans "حذف حجوزات موجودة من النظام" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge admin"></div>
+                                <i class="fas fa-times-circle permission-icon"></i>
+                                <div class="permission-name">{% trans "إلغاء الحجوزات" %}</div>
+                                <div class="permission-desc">{% trans "إلغاء حجوزات نشطة وتحديث حالتها" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-calendar-plus permission-icon"></i>
+                                <div class="permission-name">{% trans "تمديد الحجوزات" %}</div>
+                                <div class="permission-desc">{% trans "تمديد فترة الحجز للعملاء" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-percentage permission-icon"></i>
+                                <div class="permission-name">{% trans "تطبيق خصومات" %}</div>
+                                <div class="permission-desc">{% trans "إضافة خصومات على الحجوزات" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- الأقسام الأخرى... -->
+                    <div data-section="customers">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">{% trans "العملاء" %}</h5>
+                            <span class="badge bg-primary">{{ customer_permissions|length }} {% trans "صلاحية" %}</span>
+                        </div>
+                        
+                        <div class="permission-grid">
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-users permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض قائمة العملاء" %}</div>
+                                <div class="permission-desc">{% trans "الوصول إلى قائمة جميع العملاء" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-user permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض تفاصيل العميل" %}</div>
+                                <div class="permission-desc">{% trans "الاطلاع على بيانات العملاء التفصيلية" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-user-edit permission-icon"></i>
+                                <div class="permission-name">{% trans "تعديل بيانات العملاء" %}</div>
+                                <div class="permission-desc">{% trans "تغيير معلومات العملاء وبياناتهم" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-user-plus permission-icon"></i>
+                                <div class="permission-name">{% trans "إضافة عملاء جدد" %}</div>
+                                <div class="permission-desc">{% trans "تسجيل عملاء جدد في النظام" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-id-card permission-icon"></i>
+                                <div class="permission-name">{% trans "إدارة وثائق الهوية" %}</div>
+                                <div class="permission-desc">{% trans "إدارة المستندات الثبوتية للعملاء" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-ban permission-icon"></i>
+                                <div class="permission-name">{% trans "حظر العملاء" %}</div>
+                                <div class="permission-desc">{% trans "تعليق أو حظر حسابات عملاء" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div data-section="vehicles">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">{% trans "المركبات" %}</h5>
+                            <span class="badge bg-primary">{{ vehicle_permissions|length }} {% trans "صلاحية" %}</span>
+                        </div>
+                        
+                        <div class="permission-grid">
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-car permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض قائمة المركبات" %}</div>
+                                <div class="permission-desc">{% trans "الوصول إلى قائمة المركبات المتاحة" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-info-circle permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض تفاصيل المركبة" %}</div>
+                                <div class="permission-desc">{% trans "الاطلاع على معلومات المركبات التفصيلية" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-edit permission-icon"></i>
+                                <div class="permission-name">{% trans "تعديل بيانات المركبات" %}</div>
+                                <div class="permission-desc">{% trans "تحديث معلومات وخصائص المركبات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-plus permission-icon"></i>
+                                <div class="permission-name">{% trans "إضافة مركبات جديدة" %}</div>
+                                <div class="permission-desc">{% trans "إضافة مركبات جديدة للأسطول" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-tools permission-icon"></i>
+                                <div class="permission-name">{% trans "تسجيل صيانة" %}</div>
+                                <div class="permission-desc">{% trans "إضافة سجلات صيانة للمركبات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-dollar-sign permission-icon"></i>
+                                <div class="permission-name">{% trans "تعديل الأسعار" %}</div>
+                                <div class="permission-desc">{% trans "تغيير أسعار تأجير المركبات" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div data-section="payments">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">{% trans "المدفوعات" %}</h5>
+                            <span class="badge bg-primary">{{ payment_permissions|length }} {% trans "صلاحية" %}</span>
+                        </div>
+                        
+                        <div class="permission-grid">
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-money-bill permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض قائمة المدفوعات" %}</div>
+                                <div class="permission-desc">{% trans "الاطلاع على سجلات المدفوعات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-receipt permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض تفاصيل المدفوعات" %}</div>
+                                <div class="permission-desc">{% trans "الاطلاع على تفاصيل المعاملات المالية" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-cash-register permission-icon"></i>
+                                <div class="permission-name">{% trans "تسجيل مدفوعات يدوية" %}</div>
+                                <div class="permission-desc">{% trans "إضافة مدفوعات يدوية للنظام" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-undo permission-icon"></i>
+                                <div class="permission-name">{% trans "استرداد مدفوعات" %}</div>
+                                <div class="permission-desc">{% trans "إجراء عمليات استرداد المدفوعات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-file-invoice-dollar permission-icon"></i>
+                                <div class="permission-name">{% trans "إنشاء فواتير" %}</div>
+                                <div class="permission-desc">{% trans "إصدار فواتير للعملاء" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-chart-pie permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض التقارير المالية" %}</div>
+                                <div class="permission-desc">{% trans "الوصول لتقارير الإيرادات والمصروفات" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div data-section="archive">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">{% trans "الأرشيف" %}</h5>
+                            <span class="badge bg-primary">{{ archive_permissions|length }} {% trans "صلاحية" %}</span>
+                        </div>
+                        
+                        <div class="permission-grid">
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-folder-open permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض الأرشيف" %}</div>
+                                <div class="permission-desc">{% trans "استعراض هيكل مجلدات الأرشيف" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-file permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض المستندات" %}</div>
+                                <div class="permission-desc">{% trans "استعراض محتويات المستندات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-folder-plus permission-icon"></i>
+                                <div class="permission-name">{% trans "إنشاء مجلدات" %}</div>
+                                <div class="permission-desc">{% trans "إضافة مجلدات جديدة للأرشيف" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge write"></div>
+                                <i class="fas fa-file-upload permission-icon"></i>
+                                <div class="permission-name">{% trans "رفع مستندات" %}</div>
+                                <div class="permission-desc">{% trans "إضافة ملفات جديدة للأرشيف" %}</div>
+                            </div>
+                            
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-file-download permission-icon"></i>
+                                <div class="permission-name">{% trans "تنزيل مستندات" %}</div>
+                                <div class="permission-desc">{% trans "تنزيل الملفات من الأرشيف" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-trash permission-icon"></i>
+                                <div class="permission-name">{% trans "حذف مستندات" %}</div>
+                                <div class="permission-desc">{% trans "إزالة ملفات من الأرشيف" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div data-section="reports">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">{% trans "التقارير" %}</h5>
+                            <span class="badge bg-primary">{{ report_permissions|length }} {% trans "صلاحية" %}</span>
+                        </div>
+                        
+                        <div class="permission-grid">
+                            <div class="permission-card active">
+                                <div class="status-badge read"></div>
+                                <i class="fas fa-chart-bar permission-icon"></i>
+                                <div class="permission-name">{% trans "عرض التقارير الأساسية" %}</div>
+                                <div class="permission-desc">{% trans "الوصول إلى تقارير النظام الأساسية" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-file-export permission-icon"></i>
+                                <div class="permission-name">{% trans "تصدير التقارير" %}</div>
+                                <div class="permission-desc">{% trans "تنزيل التقارير بتنسيقات مختلفة" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-chart-line permission-icon"></i>
+                                <div class="permission-name">{% trans "تقارير الإحصائيات" %}</div>
+                                <div class="permission-desc">{% trans "الوصول إلى تقارير الإحصائيات والتحليلات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-user-chart permission-icon"></i>
+                                <div class="permission-name">{% trans "تقارير مخصصة" %}</div>
+                                <div class="permission-desc">{% trans "إنشاء تقارير مخصصة حسب الطلب" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div data-section="system">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">{% trans "النظام" %}</h5>
+                            <span class="badge bg-primary">{{ system_permissions|length }} {% trans "صلاحية" %}</span>
+                        </div>
+                        
+                        <div class="permission-grid">
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-cogs permission-icon"></i>
+                                <div class="permission-name">{% trans "إعدادات النظام" %}</div>
+                                <div class="permission-desc">{% trans "تعديل إعدادات النظام الأساسية" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-user-cog permission-icon"></i>
+                                <div class="permission-name">{% trans "إدارة المستخدمين" %}</div>
+                                <div class="permission-desc">{% trans "إدارة حسابات مستخدمي النظام" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-shield-alt permission-icon"></i>
+                                <div class="permission-name">{% trans "إدارة الأدوار" %}</div>
+                                <div class="permission-desc">{% trans "تعديل أدوار المستخدمين والصلاحيات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-database permission-icon"></i>
+                                <div class="permission-name">{% trans "النسخ الاحتياطي" %}</div>
+                                <div class="permission-desc">{% trans "إدارة النسخ الاحتياطية واستعادة البيانات" %}</div>
+                            </div>
+                            
+                            <div class="permission-card">
+                                <div class="status-badge none"></div>
+                                <i class="fas fa-history permission-icon"></i>
+                                <div class="permission-name">{% trans "سجلات النظام" %}</div>
+                                <div class="permission-desc">{% trans "الوصول إلى سجلات أحداث النظام" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // مفاتيح الأقسام
+    $('.panel-tab').on('click', function() {
+        const target = $(this).data('target');
+        
+        // تحديث حالة التبويبات
+        $('.panel-tab').removeClass('active');
+        $(this).addClass('active');
+        
+        // تحديث القسم المعروض
+        $('[data-section]').removeClass('active');
+        $(`[data-section="${target}"]`).addClass('active');
+    });
+    
+    // تفعيل/إلغاء البطاقات
+    $('.permission-card').on('click', function() {
+        if ({{ admin.is_superadmin|yesno:"true,false" }}) {
+            return; // لا نسمح بالتعديل للمسؤولين الأعلى
+        }
+        
+        $(this).toggleClass('active');
+        
+        // تحديث مؤشر الحالة
+        const statusBadge = $(this).find('.status-badge');
+        if ($(this).hasClass('active')) {
+            statusBadge.removeClass('none').addClass('read');
+        } else {
+            statusBadge.removeClass('read write admin').addClass('none');
+        }
+        
+        // تفعيل زر الحفظ
+        $('.save-permissions-btn').prop('disabled', false);
+    });
+    
+    // حفظ التغييرات
+    $('.save-permissions-btn').on('click', function() {
+        // يمكن ارسال التغييرات عبر AJAX هنا
+        alert('تم حفظ الصلاحيات بنجاح');
+        $(this).prop('disabled', true);
+    });
+});
+</script>
+{% endblock %}
