@@ -937,9 +937,22 @@
                     
                     <!-- قسم تأكيد الحجوزات -->
                     <div data-section="confirmations">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">{% trans "تأكيد الحجوزات" %}</h5>
-                            <span class="badge bg-primary">5 {% trans "صلاحية" %}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="mb-0 fw-bold" style="color: rgba(79, 70, 229, 0.9);">
+                                    <i class="fas fa-clipboard-check me-2"></i>
+                                    {% trans "تأكيد الحجوزات" %}
+                                </h5>
+                                <button type="button" class="btn btn-sm btn-outline-primary select-all-btn ms-2" data-section="confirmations">
+                                    <i class="fas fa-check-double me-1"></i> {% trans "تحديد الكل" %}
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary info-btn ms-1" data-section="confirmations" data-bs-toggle="modal" data-bs-target="#sectionInfoModal" data-title="{% trans 'صلاحيات تأكيد الحجوزات' %}">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                            <span class="badge py-2 px-3" style="background-color: rgba(79, 70, 229, 0.9); border-radius: 50px; font-weight: 500;">
+                                <span class="active-count">0</span> / 5 {% trans "صلاحية" %}
+                            </span>
                         </div>
                         
                         <div class="permission-grid">
@@ -982,9 +995,22 @@
                     
                     <!-- قسم إدارة العهدة -->
                     <div data-section="custody">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">{% trans "إدارة العهدة" %}</h5>
-                            <span class="badge bg-primary">5 {% trans "صلاحية" %}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="mb-0 fw-bold" style="color: rgba(79, 70, 229, 0.9);">
+                                    <i class="fas fa-clipboard-check me-2"></i>
+                                    {% trans "إدارة العهدة" %}
+                                </h5>
+                                <button type="button" class="btn btn-sm btn-outline-primary select-all-btn ms-2" data-section="custody">
+                                    <i class="fas fa-check-double me-1"></i> {% trans "تحديد الكل" %}
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary info-btn ms-1" data-section="custody" data-bs-toggle="modal" data-bs-target="#sectionInfoModal" data-title="{% trans 'صلاحيات إدارة العهدة' %}">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                            <span class="badge py-2 px-3" style="background-color: rgba(79, 70, 229, 0.9); border-radius: 50px; font-weight: 500;">
+                                <span class="active-count">0</span> / 5 {% trans "صلاحية" %}
+                            </span>
                         </div>
                         
                         <div class="permission-grid">
@@ -1986,6 +2012,28 @@
         </div>
     </div>
 </div>
+
+<!-- نافذة حوار تفاصيل القسم -->
+<div class="modal fade" id="sectionInfoModal" tabindex="-1" aria-labelledby="sectionInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 12px;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sectionInfoModalLabel">{% trans "تفاصيل القسم" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'إغلاق' %}"></button>
+            </div>
+            <div class="modal-body">
+                <!-- هنا سيتم عرض تفاصيل القسم ديناميكياً -->
+                <div class="section-permissions-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary select-all-in-modal" data-section="">
+                    <i class="fas fa-check-double me-1"></i> {% trans "تحديد الكل" %}
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إغلاق" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -2047,6 +2095,132 @@ $(document).ready(function() {
         
         savePermissions($(this));
     });
+    
+    // إضافة وظيفة زر "تحديد الكل"
+    $('.select-all-btn').on('click', function() {
+        if ({{ admin.is_superadmin|yesno:"true,false" }}) {
+            showAlert('{% trans "تنبيه" %}', '{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}', 'warning');
+            return;
+        }
+        
+        const sectionId = $(this).data('section');
+        const section = $(`[data-section="${sectionId}"]`);
+        const cards = section.find('.permission-card');
+        
+        // تحديد كل البطاقات في القسم
+        cards.addClass('active');
+        cards.find('.permission-check').css({opacity: 1});
+        
+        // تفعيل زر الحفظ
+        $('.save-permissions-btn').prop('disabled', false);
+        
+        // تحديث العداد
+        updateActivePermissionsCount();
+        
+        showAlert('{% trans "تم التحديد" %}', '{% trans "تم تحديد جميع الصلاحيات في هذا القسم" %}', 'success');
+    });
+    
+    // معالجة زر المعلومات لعرض تفاصيل القسم
+    $('.info-btn').on('click', function() {
+        const sectionId = $(this).data('section');
+        const title = $(this).data('title');
+        const section = $(`[data-section="${sectionId}"]`);
+        
+        // تحديث عنوان النافذة
+        $('#sectionInfoModalLabel').text(title);
+        
+        // جمع بيانات الصلاحيات المتاحة في القسم
+        const permissionsList = $('.section-permissions-list');
+        permissionsList.empty();
+        
+        // تعيين خاصية القسم لزر "تحديد الكل" في النافذة
+        $('.select-all-in-modal').attr('data-section', sectionId);
+        
+        // استنساخ بطاقات الصلاحيات وعرضها كقائمة
+        section.find('.permission-card').each(function() {
+            const card = $(this);
+            const isActive = card.hasClass('active');
+            const icon = card.find('.permission-icon i').attr('class');
+            const name = card.find('.permission-name').text();
+            const desc = card.find('.permission-desc').text();
+            
+            // إنشاء عنصر قائمة جديد
+            const listItem = $(`
+                <div class="permission-list-item" data-card-id="${card.index()}">
+                    <div class="form-check">
+                        <input class="form-check-input modal-permission-checkbox" type="checkbox" ${isActive ? 'checked' : ''}>
+                    </div>
+                    <div class="permission-icon">
+                        <i class="${icon}"></i>
+                    </div>
+                    <div class="permission-details">
+                        <div class="permission-name">${name}</div>
+                        <div class="permission-desc">${desc}</div>
+                    </div>
+                </div>
+            `);
+            
+            permissionsList.append(listItem);
+        });
+        
+        // معالجة نقرات المستخدم على خانات الاختيار
+        $('.modal-permission-checkbox').on('change', function() {
+            if ({{ admin.is_superadmin|yesno:"true,false" }}) {
+                showAlert('{% trans "تنبيه" %}', '{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}', 'warning');
+                return false;
+            }
+            
+            const isChecked = $(this).prop('checked');
+            const listItem = $(this).closest('.permission-list-item');
+            const cardIndex = listItem.data('card-id');
+            const card = section.find('.permission-card').eq(cardIndex);
+            
+            // تحديث حالة البطاقة المقابلة
+            if (isChecked) {
+                card.addClass('active');
+                card.find('.permission-check').css({opacity: 1});
+            } else {
+                card.removeClass('active');
+                card.find('.permission-check').css({opacity: 0});
+            }
+            
+            // تفعيل زر الحفظ
+            $('.save-permissions-btn').prop('disabled', false);
+            
+            // تحديث العداد
+            updateActivePermissionsCount();
+        });
+    });
+    
+    // معالجة زر "تحديد الكل" في النافذة
+    $('.select-all-in-modal').on('click', function() {
+        if ({{ admin.is_superadmin|yesno:"true,false" }}) {
+            showAlert('{% trans "تنبيه" %}', '{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}', 'warning');
+            return;
+        }
+        
+        const sectionId = $(this).data('section');
+        const section = $(`[data-section="${sectionId}"]`);
+        const cards = section.find('.permission-card');
+        
+        // تحديد كل البطاقات في القسم
+        cards.addClass('active');
+        cards.find('.permission-check').css({opacity: 1});
+        
+        // تحديث خانات الاختيار في النافذة
+        $('.modal-permission-checkbox').prop('checked', true);
+        
+        // تفعيل زر الحفظ
+        $('.save-permissions-btn').prop('disabled', false);
+        
+        // تحديث العداد
+        updateActivePermissionsCount();
+        
+        showAlert('{% trans "تم التحديد" %}', '{% trans "تم تحديد جميع الصلاحيات في هذا القسم" %}', 'success');
+    });
+    
+    // تحديث عداد الصلاحيات النشطة عند تحميل الصفحة
+    updateActivePermissionsCount();
 });
 
 // تحديث عداد الصلاحيات النشطة
