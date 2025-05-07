@@ -827,13 +827,18 @@ def user_2fa(request, user_id):
             security = setup_2fa_for_user(user)
             qr_code = generate_qr_code_image(user)
             backup_codes = security.backup_codes
-            messages.success(request, _("تم إعداد المصادقة الثنائية بنجاح. يرجى مسح رمز QR بتطبيق المصادقة."))
+            
+            # تفعيل المصادقة الثنائية مباشرة
+            security.two_factor_enabled = True
+            security.save(update_fields=['two_factor_enabled'])
+            
+            messages.success(request, _("تم إعداد وتفعيل المصادقة الثنائية بنجاح. يرجى مسح رمز QR بتطبيق المصادقة."))
             
             # تسجيل النشاط
             log_admin_activity(
                 request.admin_profile,
                 _("إعداد المصادقة الثنائية"),
-                _("تم إعداد المصادقة الثنائية للمستخدم {}").format(user.username),
+                _("تم إعداد وتفعيل المصادقة الثنائية للمستخدم {}").format(user.username),
                 request
             )
         
