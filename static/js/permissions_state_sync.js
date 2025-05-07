@@ -6,23 +6,32 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔄 تشغيل مزامنة حالة الصلاحيات v1.0');
+    console.log('🔄 تشغيل مزامنة حالة الصلاحيات v1.1');
     
-    // الحصول على الصلاحيات المحفوظة في النظام
+    // الحصول على الصلاحيات المحفوظة في النظام على الفور
     loadSavedPermissions();
     
-    // التأكد من التحديث بعد إعادة تحميل الصفحة (خاصة بعد الحفظ)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('saved') === 'true') {
-        console.log('⚡ تم اكتشاف معلمة الحفظ في URL - جاري تحديث واجهة الصلاحيات...');
+    // متغير للتحكم في تكرار التحديث
+    let updateAttempts = 0;
+    const maxUpdateAttempts = 3;
+    
+    // دالة التحديث المحسنة بعد الحفظ
+    function updateUIAfterSave() {
+        console.log(`⚡ تحديث واجهة الصلاحيات... محاولة ${updateAttempts + 1}/${maxUpdateAttempts}`);
         
-        // تأخير قصير للتأكد من أن كل شيء جاهز
-        setTimeout(() => {
-            loadSavedPermissions();
+        // تحديث البطاقات استناداً إلى قيمة عنصر saved-permissions
+        const savedPermissionsElement = document.getElementById('saved-permissions');
+        if (!savedPermissionsElement) {
+            console.warn('⚠️ عنصر الصلاحيات المحفوظة غير موجود');
+            return;
+        }
+        
+        try {
+            const savedPermissions = JSON.parse(savedPermissionsElement.value || '{}');
+            console.log('📋 تحديث البطاقات باستخدام الصلاحيات:', savedPermissions);
             
-            // هذه خطوة إضافية لضمان أن البيانات محدثة
+            // تحديث كل بطاقة بناءً على البيانات المحفوظة
             document.querySelectorAll('.permission-card').forEach(card => {
-                // التحقق من وجود بيانات الصلاحية
                 const section = card.closest('.permissions-section');
                 if (!section) return;
                 
@@ -33,29 +42,76 @@ document.addEventListener('DOMContentLoaded', function() {
                 const permName = permTitle.dataset.permName || 
                           permTitle.textContent.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
                 
-                // فحص ما إذا كانت الصلاحية موجودة في قاعدة البيانات
-                const savedPermissionsElement = document.getElementById('saved-permissions');
-                if (!savedPermissionsElement) return;
+                const sectionPermissions = savedPermissions[sectionId] || [];
                 
-                try {
-                    const savedPermissions = JSON.parse(savedPermissionsElement.value || '{}');
-                    const sectionPermissions = savedPermissions[sectionId] || [];
-                    
-                    // تطبيق الحالة المناسبة
-                    if (sectionPermissions.includes(permName)) {
+                // تطبيق الحالة المناسبة مع تسجيل تفصيلي
+                if (sectionPermissions.includes(permName)) {
+                    if (!card.classList.contains('active')) {
+                        console.log(`➕ تفعيل صلاحية: ${sectionId}_${permName}`);
                         card.classList.add('active');
-                    } else {
+                    }
+                } else {
+                    if (card.classList.contains('active')) {
+                        console.log(`➖ إلغاء صلاحية: ${sectionId}_${permName}`);
                         card.classList.remove('active');
                     }
-                } catch (error) {
-                    console.error('❌ خطأ في تحليل بيانات الصلاحيات:', error);
                 }
             });
             
             // تحديث جميع العدادات
             updateAllTabCounters();
+            
+            // للتأكد من عدم إعادة تحميل الصفحة
+            if (window.location.search.includes('saved=true')) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('❌ خطأ في تحديث واجهة المستخدم:', error);
+            return false;
+        }
+    }
+    
+    // التحقق من وجود معلمة الحفظ في URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('saved') === 'true') {
+        console.log('🔔 تم اكتشاف معلمة الحفظ في URL - جدولة تحديثات متكررة...');
+        
+        // جدولة عدة محاولات تحديث متتالية
+        const updateInterval = setInterval(() => {
+            const success = updateUIAfterSave();
+            updateAttempts++;
+            
+            if (success || updateAttempts >= maxUpdateAttempts) {
+                clearInterval(updateInterval);
+                console.log(`✅ اكتمال تحديث واجهة الصلاحيات بعد ${updateAttempts} محاولات`);
+                
+                // تحديث نهائي
+                if (!success) {
+                    console.log('🔄 محاولة تحديث نهائية...');
+                    loadSavedPermissions();
+                }
+                
+                // إزالة معلمة URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
         }, 500);
     }
+    
+    // الاستماع لتغييرات البطاقات لتحديث العدادات فوراً
+    document.querySelectorAll('.permission-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // تأخير بسيط لضمان اكتمال التبديل بواسطة السكربت الآخر
+            setTimeout(() => {
+                const section = this.closest('.permissions-section');
+                if (section) {
+                    const sectionId = section.id.replace('section-', '');
+                    updateSectionCounter(sectionId);
+                }
+            }, 50);
+        });
+    });
 });
 
 /**

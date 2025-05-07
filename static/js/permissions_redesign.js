@@ -232,14 +232,24 @@ function initializeSaveButton() {
         // نمنع السلوك الافتراضي مؤقتًا لإضافة الحقول الخفية
         e.preventDefault();
         
+        console.log('💾 بدء عملية حفظ الصلاحيات...');
+        
         // إضافة حقول الصلاحيات المختارة قبل الإرسال
         addHiddenPermissionFields();
         
+        // إضافة حقل للإشارة إلى استخدام واجهة مستخدم محسنة
+        if (!$('#use-enhanced-ui').length) {
+            const enhancedUIField = $('<input>').attr({
+                type: 'hidden',
+                id: 'use-enhanced-ui',
+                name: 'use_enhanced_ui',
+                value: 'true'
+            });
+            $('#permissions-form').append(enhancedUIField);
+        }
+        
         // عرض إشعار بأنه جاري الحفظ
         showNotification('حفظ', 'جاري حفظ الصلاحيات...', 'info');
-        
-        // إرسال النموذج وتحديث الصفحة بعد الحفظ
-        $('#permissions-form').submit();
         
         // عرض مؤشر جاري الحفظ
         const saveNotificationId = 'direct-save-notification';
@@ -263,24 +273,82 @@ function initializeSaveButton() {
             }).html('<i class="fas fa-spinner fa-spin"></i> <span>جارِ حفظ التغييرات...</span>');
             
             $('body').append(notification);
-            
-            // بعد إتمام الإرسال
-            setTimeout(() => {
-                $('#' + saveNotificationId).html('<i class="fas fa-check-circle"></i> <span>تم حفظ التغييرات</span>');
+        }
+        
+        // استخدام AJAX لحفظ البيانات بدلاً من إعادة تحميل الصفحة
+        $.ajax({
+            url: $('#permissions-form').attr('action'),
+            type: 'POST',
+            data: $('#permissions-form').serialize(),
+            success: function(response) {
+                console.log('✅ تم حفظ الصلاحيات بنجاح');
+                
+                // تحديث عنصر الصلاحيات المحفوظة إذا كان موجوداً
+                if (typeof response === 'object' && response.permissions_json) {
+                    console.log('📋 تحديث الصلاحيات المحفوظة:', response.permissions_json);
+                    if ($('#saved-permissions').length) {
+                        $('#saved-permissions').val(response.permissions_json);
+                    } else {
+                        const newPermissionsInput = $('<input>').attr({
+                            type: 'hidden',
+                            id: 'saved-permissions',
+                            value: response.permissions_json
+                        });
+                        $('#permissions-form').append(newPermissionsInput);
+                    }
+                    
+                    // استدعاء تحديث واجهة المستخدم إذا كانت الدالة متاحة
+                    if (typeof loadSavedPermissions === 'function') {
+                        console.log('🔄 تحديث واجهة المستخدم من البيانات الجديدة');
+                        loadSavedPermissions();
+                    }
+                } else {
+                    // إعادة تحميل الصفحة في حالة عدم استلام بيانات أو عدم توفر واجهة مستخدم محسنة
+                    console.log('🔄 لم يتم استلام بيانات الصلاحيات، جاري إعادة تحميل الصفحة...');
+                    window.location.href = window.location.pathname + '?saved=true';
+                    return;
+                }
+                
+                // تحديث إشعار الحفظ
+                $('#' + saveNotificationId).html('<i class="fas fa-check-circle"></i> <span>تم حفظ التغييرات بنجاح</span>');
                 setTimeout(() => {
                     $('#' + saveNotificationId).fadeOut(300, function() {
                         $(this).remove();
                     });
-                    // تحديث الصفحة بعد الحفظ بنجاح
+                }, 2000);
+                
+                // عرض إشعار نجاح الحفظ
+                showNotification('نجاح', 'تم حفظ الصلاحيات بنجاح!', 'success');
+                
+                // إعادة ضبط عداد التغييرات
+                $('#changes-counter').text('0');
+                $('#direct-save-btn').removeClass('has-changes');
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ خطأ في حفظ الصلاحيات:', error);
+                
+                // تحديث إشعار الحفظ لإظهار الخطأ
+                $('#' + saveNotificationId).html('<i class="fas fa-exclamation-triangle"></i> <span>حدث خطأ أثناء الحفظ</span>').css('background', '#f44336');
+                setTimeout(() => {
+                    $('#' + saveNotificationId).fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }, 3000);
+                
+                // عرض إشعار خطأ
+                showNotification('خطأ', 'حدث خطأ أثناء حفظ الصلاحيات، يرجى المحاولة مرة أخرى', 'error');
+                
+                // محاولة إعادة تحميل الصفحة في حالة الفشل
+                setTimeout(() => {
                     window.location.reload();
-                }, 1500);
-            }, 1000);
-        }
+                }, 3000);
+            }
+        });
         
-        return true;
+        return false; // منع إرسال النموذج تلقائياً
     });
     
-    console.log('✅ تم تهيئة زر الحفظ الرئيسي');
+    console.log('✅ تم تهيئة زر الحفظ الرئيسي مع دعم AJAX');
 }
 
 /**
