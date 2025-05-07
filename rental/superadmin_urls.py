@@ -23,6 +23,7 @@ urlpatterns = [
     path('admins/<int:admin_id>/', superadmin_views.admin_details, name='superadmin_admin_details'),
     path('admins/<int:admin_id>/edit/', superadmin_views.edit_admin, name='superadmin_edit_admin'),
     path('admins/<int:admin_id>/toggle/', superadmin_views.toggle_admin_status, name='superadmin_toggle_admin_status'),
+    path('admins/<int:admin_id>/advanced-permissions/', superadmin_views.admin_advanced_permissions, name='superadmin_admin_advanced_permissions'),
     
     # إدارة المصادقة الثنائية للمستخدمين
     path('users/<int:user_id>/2fa/', superadmin_views.user_2fa, name='superadmin_user_2fa'),

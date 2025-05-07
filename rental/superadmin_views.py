@@ -302,6 +302,50 @@ def admin_details(request, admin_id):
         # محاولة تحميل القالب بشكل مباشر
         return render(request, 'templates/superadmin/admin_details.html', context)
 
+@login_required
+@superadmin_required
+def admin_advanced_permissions(request, admin_id):
+    """إدارة الصلاحيات المتقدمة للمسؤول"""
+    try:
+        admin = get_object_or_404(AdminUser, id=admin_id)
+    except AdminUser.DoesNotExist:
+        messages.error(request, _('المسؤول غير موجود'))
+        return redirect('superadmin_manage_admins')
+    
+    # الحصول على معلومات الصلاحيات المتقدمة
+    # هذه البيانات ستكون حقيقية في التطبيق الفعلي من خلال جلب صلاحيات المسؤول وأدواره
+    dashboard_permissions = ['view_dashboard', 'view_calendar', 'view_notifications']
+    reservation_permissions = ['view_reservations', 'view_reservation_details', 'edit_reservations', 'create_reservations', 'cancel_reservations', 'extend_reservations']
+    customer_permissions = ['view_customers', 'view_customer_details', 'edit_customers', 'create_customers']
+    vehicle_permissions = ['view_vehicles', 'view_vehicle_details', 'edit_vehicles', 'create_vehicles', 'maintenance_records']
+    payment_permissions = ['view_payments', 'view_payment_details', 'create_manual_payments']
+    archive_permissions = ['view_archive', 'view_documents', 'create_folders', 'upload_documents', 'download_documents']
+    report_permissions = ['view_basic_reports']
+    system_permissions = []
+    
+    # تسجيل نشاط الوصول إلى الصلاحيات المتقدمة
+    log_admin_activity(
+        request.admin_profile,
+        _("عرض الصلاحيات المتقدمة"),
+        _("تم عرض الصلاحيات المتقدمة للمسؤول: %(username)s") % {'username': admin.user.username},
+        request
+    )
+    
+    context = {
+        'admin': admin,
+        'title': _('إدارة الصلاحيات المتقدمة - ') + admin.get_full_name(),
+        'dashboard_permissions': dashboard_permissions,
+        'reservation_permissions': reservation_permissions,
+        'customer_permissions': customer_permissions,
+        'vehicle_permissions': vehicle_permissions,
+        'payment_permissions': payment_permissions,
+        'archive_permissions': archive_permissions,
+        'report_permissions': report_permissions,
+        'system_permissions': system_permissions,
+    }
+    
+    return render(request, 'superadmin/admin_advanced_permissions.html', context)
+
 @superadmin_required
 def add_admin(request):
     """Add new administrator"""
