@@ -770,12 +770,20 @@
                         <!-- قسم لوحة التحكم -->
                         <div data-section="dashboard" class="active">
                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="mb-0 fw-bold" style="color: rgba(79, 70, 229, 0.9);">
-                                    <i class="fas fa-tachometer-alt me-2"></i>
-                                    {% trans "لوحة التحكم" %}
-                                </h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <h5 class="mb-0 fw-bold" style="color: rgba(79, 70, 229, 0.9);">
+                                        <i class="fas fa-tachometer-alt me-2"></i>
+                                        {% trans "لوحة التحكم" %}
+                                    </h5>
+                                    <button type="button" class="btn btn-sm btn-outline-primary select-all-btn ms-2" data-section="dashboard">
+                                        <i class="fas fa-check-double me-1"></i> {% trans "تحديد الكل" %}
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary info-btn ms-1" data-section="dashboard" data-bs-toggle="modal" data-bs-target="#sectionInfoModal" data-title="{% trans 'صلاحيات لوحة التحكم' %}">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                </div>
                                 <span class="badge py-2 px-3" style="background-color: rgba(79, 70, 229, 0.9); border-radius: 50px; font-weight: 500;">
-                                    {{ dashboard_permissions|length }} {% trans "صلاحية" %}
+                                    <span class="active-count">0</span> / {{ dashboard_permissions|length }} {% trans "صلاحية" %}
                                 </span>
                             </div>
                             
@@ -814,9 +822,22 @@
                     
                     <!-- قسم الحجوزات -->
                     <div data-section="reservations">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">{% trans "الحجوزات" %}</h5>
-                            <span class="badge bg-primary">{{ reservation_permissions|length }} {% trans "صلاحية" %}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="mb-0 fw-bold" style="color: rgba(79, 70, 229, 0.9);">
+                                    <i class="fas fa-calendar-check me-2"></i>
+                                    {% trans "الحجوزات" %}
+                                </h5>
+                                <button type="button" class="btn btn-sm btn-outline-primary select-all-btn ms-2" data-section="reservations">
+                                    <i class="fas fa-check-double me-1"></i> {% trans "تحديد الكل" %}
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary info-btn ms-1" data-section="reservations" data-bs-toggle="modal" data-bs-target="#sectionInfoModal" data-title="{% trans 'صلاحيات إدارة الحجوزات' %}">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                            <span class="badge py-2 px-3" style="background-color: rgba(79, 70, 229, 0.9); border-radius: 50px; font-weight: 500;">
+                                <span class="active-count">0</span> / {{ reservation_permissions|length }} {% trans "صلاحية" %}
+                            </span>
                         </div>
                         
                         <div class="permission-grid">
@@ -2136,6 +2157,60 @@ function showAlert(title, message, type = 'success') {
     
     [data-section].active {
         animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* تنسيق نافذة تفاصيل القسم */
+    .modal-content {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-permissions-list {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    .permission-list-item {
+        padding: 12px 15px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.2s;
+    }
+    
+    .permission-list-item:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .permission-list-item .form-check {
+        margin-right: 12px;
+    }
+    
+    .permission-list-item .permission-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        margin-right: 12px;
+        background-color: rgba(var(--accent-color), 0.1);
+        color: rgba(var(--accent-color), 0.8);
+    }
+    
+    .permission-list-item .permission-details {
+        flex: 1;
+    }
+    
+    .permission-list-item .permission-name {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    
+    .permission-list-item .permission-desc {
+        font-size: 0.85rem;
+        color: #6c757d;
     }
 </style>
 {% endblock %}
