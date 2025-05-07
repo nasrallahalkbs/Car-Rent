@@ -377,28 +377,41 @@ def admin_advanced_permissions(request, admin_id):
             
             selected_permissions[section] = section_permissions
         
-        # حفظ الصلاحيات في قاعدة البيانات
+        # طباعة الصلاحيات المحددة للتشخيص
+        print("Final Permissions Object:", selected_permissions)
+        
+        # حفظ الصلاحيات في قاعدة البيانات باستخدام طريقة مختلفة
         try:
+            # استخدام وظيفة آمنة لحفظ JSON
             import json
             permissions_json = json.dumps(selected_permissions)
+            print("Permissions JSON:", permissions_json)
             
-            # محاولة حفظ الصلاحيات في قاعدة البيانات
+            # الحفظ المباشر باستخدام SQL مبسط
             from django.db import connection
+            
+            # تعديل SQL لتجنب المشاكل
             with connection.cursor() as cursor:
-                # التحقق من وجود سجل للمسؤول
-                cursor.execute("SELECT COUNT(*) FROM rental_adminpermission WHERE admin_id = %s", [admin_id])
-                if cursor.fetchone()[0] > 0:
-                    # تحديث السجل الموجود
-                    cursor.execute(
-                        "UPDATE rental_adminpermission SET permissions = %s WHERE admin_id = %s",
-                        [permissions_json, admin_id]
-                    )
+                # أولاً حذف السجل الموجود إن وجد
+                cursor.execute("DELETE FROM rental_adminpermission WHERE admin_id = %s", [admin_id])
+                
+                # ثم إضافة سجل جديد
+                cursor.execute(
+                    "INSERT INTO rental_adminpermission (admin_id, permissions) VALUES (%s, %s)",
+                    [admin_id, permissions_json]
+                )
+                
+                # التأكد من التعديل
+                cursor.execute("SELECT permissions FROM rental_adminpermission WHERE admin_id = %s", [admin_id])
+                saved_data = cursor.fetchone()
+                if saved_data:
+                    print("Data saved successfully:", saved_data[0])
                 else:
-                    # إنشاء سجل جديد
-                    cursor.execute(
-                        "INSERT INTO rental_adminpermission (admin_id, permissions) VALUES (%s, %s)",
-                        [admin_id, permissions_json]
-                    )
+                    print("WARNING: No data found after saving")
+
+            # محاولة تنفيذ COMMIT للتأكد من حفظ البيانات
+            connection.commit()
+            print("Database transaction committed")
             
             # تسجيل نشاط تحديث الصلاحيات
             log_admin_activity(
