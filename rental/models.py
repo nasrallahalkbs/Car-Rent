@@ -1104,3 +1104,26 @@ class CustomerSignature(models.Model):
     def __str__(self):
         signature_type = _("العميل") if self.is_customer else _("الموظف")
         return f"{self.report} - توقيع {signature_type} - {self.signed_by_name}"
+
+
+class AdminPermission(models.Model):
+    # إدارة الصلاحيات المتقدمة للمسؤولين
+    admin = models.OneToOneField('rental.AdminUser', on_delete=models.CASCADE, related_name='admin_permissions')
+    permissions = models.TextField(null=True, blank=True)  # JSON سيتم تخزين الصلاحيات بتنسيق
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def set_permissions(self, permissions_dict):
+        # تعيين الصلاحيات كقاموس وتخزينها كسلسلة JSON
+        import json
+        self.permissions = json.dumps(permissions_dict)
+        
+    def get_permissions(self):
+        # استرجاع الصلاحيات كقاموس من سلسلة JSON
+        import json
+        if self.permissions:
+            return json.loads(self.permissions)
+        return {}
+        
+    def __str__(self):
+        return f"صلاحيات المسؤول {self.admin.user.username}"
