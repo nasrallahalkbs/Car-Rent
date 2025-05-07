@@ -38,11 +38,20 @@ CSRF_TRUSTED_ORIGINS = [
 # Additional CSRF Settings
 CSRF_COOKIE_SECURE = True  # التشغيل في بيئة HTTPS آمنة
 CSRF_COOKIE_HTTPONLY = False  # السماح للجافا سكريبت بالوصول إلى الكوكي
-CSRF_COOKIE_SAMESITE = None  # تم تعديله من 'None' إلى None لتجنب المشاكل مع Django 5.2
-CSRF_USE_SESSIONS = False  # تم تعديله للسماح بالعمل بشكل أفضل مع AJAX
+CSRF_COOKIE_SAMESITE = 'Lax'  # تعديل لـ Lax بدلاً من None للتوافق مع متصفحات حديثة
+CSRF_USE_SESSIONS = True  # استخدام الجلسة لتخزين CSRF token لمزيد من الأمان
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
-CSRF_TRUSTED_ORIGINS = ['https://*.replit.app', 'https://*.repl.co', 'http://localhost:*']
+# Actualizado para incluir todos los dominios de Replit
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.replit.app',
+    'https://*.replit.dev',
+    'https://*.pike.replit.dev',
+    'https://*.sisko.replit.dev',
+    'https://*.repl.co',
+    'http://localhost:*',
+    'https://*-*-*-*-*.*.replit.dev',  # Formato genérico para dominios de Replit
+]
 CSRF_FAILURE_VIEW = 'rental.csrf_debug.csrf_failure'
 CSRF_COOKIE_DOMAIN = None
 CSRF_COOKIE_PATH = '/'
@@ -78,7 +87,7 @@ MIDDLEWARE = [
 # Session cookie settings
 SESSION_COOKIE_SECURE = True  # تأمين ملف تعريف ارتباط الجلسة مع HTTPS
 SESSION_COOKIE_HTTPONLY = True  # منع الوصول من JavaScript
-SESSION_COOKIE_SAMESITE = 'None'  # تغيير من 'Lax' إلى 'None' للتوافق عبر النطاقات
+SESSION_COOKIE_SAMESITE = 'Lax'  # تعديل لـ Lax توافقًا مع إعدادات CSRF
 
 ROOT_URLCONF = 'car_rental_project.urls'
 
@@ -163,7 +172,7 @@ LANGUAGE_COOKIE_DOMAIN = None               # نطاق الكوكي (لا تعي
 LANGUAGE_COOKIE_PATH = '/'                  # مسار الكوكي (متاح لجميع الصفحات)
 LANGUAGE_COOKIE_SECURE = True               # تأمين مع HTTPS
 LANGUAGE_COOKIE_HTTPONLY = False            # السماح لـ JavaScript بالوصول
-LANGUAGE_COOKIE_SAMESITE = 'None'           # تغيير من 'Lax' إلى 'None' للتوافق عبر النطاقات
+LANGUAGE_COOKIE_SAMESITE = 'Lax'            # تعديل لـ Lax توافقًا مع إعدادات CSRF
 
 # Use SessionMiddleware for storing language preference in the session as well
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30      # مدة جلسة المستخدم (30 يوم)
