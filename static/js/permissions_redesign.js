@@ -208,7 +208,7 @@ function initializeSelectAllButtons() {
         const currentCount = parseInt($('#changes-counter').text() || '0');
         const newCount = currentCount + cards.length;
         $('#changes-counter').text(newCount);
-        $('#save-all-permissions-btn').show();
+        $('#direct-save-btn').addClass('has-changes');
         
         // تأكيد للمستخدم
         showNotification(
@@ -222,11 +222,27 @@ function initializeSelectAllButtons() {
 }
 
 /**
- * تهيئة زر حفظ التغييرات - متوقف
+ * تهيئة زر حفظ التغييرات
  */
 function initializeSaveButton() {
-    // هذه الوظيفة متوقفة ولم تعد تستخدم
-    // يتم استخدام زر حفظ جميع الصلاحيات بدلاً منها
+    // إضافة معالج نقر لزر الحفظ الرئيسي
+    $('#direct-save-btn').on('click', function(e) {
+        // نمنع السلوك الافتراضي مؤقتًا لإضافة الحقول الخفية
+        e.preventDefault();
+        
+        // إضافة حقول الصلاحيات المختارة قبل الإرسال
+        addHiddenPermissionFields();
+        
+        // عرض إشعار بأنه جاري الحفظ
+        showNotification('حفظ', 'جاري حفظ الصلاحيات...', 'info');
+        
+        // إرسال النموذج
+        $('#permissions-form').submit();
+        
+        return true;
+    });
+    
+    console.log('✅ تم تهيئة زر الحفظ الرئيسي');
 }
 
 /**
