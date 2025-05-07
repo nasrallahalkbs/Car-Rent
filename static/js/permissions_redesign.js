@@ -87,24 +87,11 @@ function initializePermissionCards() {
         changesCount++;
     });
     
-    // إضافة زر لحفظ جميع التغييرات في الصفحة
-    if ($('#save-all-permissions-btn').length === 0) {
-        const saveButton = $('<button>').attr({
-            id: 'save-all-permissions-btn',
-            type: 'button',
-            class: 'action-btn primary save-all-btn'
-        }).css({
-            position: 'fixed',
-            bottom: '20px',
-            left: '20px',
-            padding: '10px 15px',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-        }).html('<i class="fas fa-save"></i> <span>حفظ التغييرات</span>');
-        
-        // إضافة مؤشر التغييرات
+    // تتبع التغييرات وتحديث حالة زر الحفظ الثابت
+    // تعديل: تم إلغاء إضافة زر حفظ إضافي وتم الاعتماد على زر الحفظ الأساسي فقط
+    
+    // إضافة مؤشر التغييرات إلى زر الحفظ الحالي إذا لم يكن موجودًا
+    if ($('#changes-counter').length === 0) {
         const changesIndicator = $('<span>').attr({
             id: 'changes-counter',
             class: 'badge badge-light'
@@ -121,23 +108,16 @@ function initializePermissionCards() {
             fontSize: '12px'
         }).text('0');
         
-        saveButton.prepend(changesIndicator);
-        
-        // إخفاء الزر في البداية حتى يتم إجراء تغييرات
-        saveButton.hide();
-        
-        // ملاحظة: تم نقل معالج النقر على زر الحفظ إلى permissions_trackchanges.js
-        // لكي نتمكن من تتبع التغييرات فقط بدلاً من حفظ جميع الصلاحيات
-        
-        // إضافة الزر للصفحة
-        $('body').append(saveButton);
+        // إضافة العداد إلى زر الحفظ الحالي
+        $('#direct-save-btn').prepend(changesIndicator);
     }
     
     // تحديث عداد التغييرات كل ثانية
     setInterval(() => {
         if (changesCount > 0) {
-            $('#save-all-permissions-btn').show();
+            // تحديث العداد وإظهار حالة تغيير على زر الحفظ الحالي
             $('#changes-counter').text(changesCount);
+            $('#direct-save-btn').addClass('has-changes');
         }
     }, 1000);
     
