@@ -598,10 +598,15 @@ def admin_advanced_permissions(request, admin_id):
         )
     
     # استخدام user.get_full_name بدلاً من admin.get_full_name
+    # إضافة نسخة JSON من الصلاحيات الحالية للمسؤول لاستخدامها في JavaScript
+    import json
+    permissions_json = json.dumps(admin_permissions)
+    
     context = {
         'admin': admin,
         'title': _('إدارة الصلاحيات المتقدمة - ') + admin.user.get_full_name(),
-        'permissions': context_permissions
+        'permissions': context_permissions,
+        'permissions_json': permissions_json
     }
     
     return render(request, 'superadmin/admin_advanced_permissions_redesign.html', context)
