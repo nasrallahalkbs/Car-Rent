@@ -361,12 +361,19 @@ def admin_advanced_permissions(request, admin_id):
         # جمع الصلاحيات المحددة
         selected_permissions = {}
         
+        # طباعة جميع المفاتيح المرسلة للتحقق من وصول البيانات
+        print("Keys received in POST:", request.POST.keys())
+        
         # جمع الصلاحيات المرسلة من النموذج
         for section, permissions in all_permissions.items():
             section_permissions = []
             for perm in permissions:
-                if request.POST.get(f"{section}_{perm}") == 'on':
+                # التحقق من الطرق المختلفة لإرسال الصلاحيات
+                if (request.POST.get(f"{section}_{perm}") == 'on' or 
+                    request.POST.get(perm) == 'on' or
+                    request.POST.get(f"{section}_{perm}_{section}") == 'on'):
                     section_permissions.append(perm)
+                    print(f"Permission added: {section}_{perm}")
             
             selected_permissions[section] = section_permissions
         
