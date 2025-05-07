@@ -247,39 +247,11 @@ function initializeSelectAllButtons() {
 }
 
 /**
- * تهيئة زر حفظ التغييرات
+ * تهيئة زر حفظ التغييرات - متوقف
  */
 function initializeSaveButton() {
-    $('.save-button, .submit-button').on('click', function(e) {
-        if ($(this).prop('disabled')) {
-            return;
-        }
-        
-        // منع السلوك الافتراضي إذا كان الزر من نوع save-button
-        if ($(this).hasClass('save-button')) {
-            e.preventDefault();
-        }
-        
-        // تعطيل الزر أثناء العملية
-        $(this).prop('disabled', true);
-        
-        // تغيير نص الزر
-        const originalText = $(this).html();
-        $(this).html('<i class="fas fa-spinner fa-spin"></i> جارِ الحفظ...');
-        
-        // إضافة حقول مخفية للصلاحيات المختارة
-        addHiddenPermissionFields();
-        
-        // إرسال النموذج
-        if ($(this).hasClass('save-button')) {
-            $('#permissions-form').submit();
-        }
-    });
-    
-    // تحديث زر الحفظ الأساسي عند تغيير الصلاحيات
-    $('.permission-card').on('click', function() {
-        $('.submit-button').prop('disabled', false);
-    });
+    // هذه الوظيفة متوقفة ولم تعد تستخدم
+    // يتم استخدام زر حفظ جميع الصلاحيات بدلاً منها
 }
 
 /**
@@ -428,11 +400,6 @@ function updatePermissionCounts() {
         
         // تحديث عداد الصلاحيات في القسم
         $(this).find('.section-count').text(`${activeCards} / ${totalCards}`);
-        
-        // إذا كان هناك صلاحيات مفعلة، قم بتفعيل زر الحفظ
-        if (activeCards > 0) {
-            $('.save-button').prop('disabled', false);
-        }
     });
 }
 
