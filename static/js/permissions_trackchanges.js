@@ -26,6 +26,27 @@ $(document).ready(function() {
         return false;
     });
     
+    // ربط الزر المباشر في القالب
+    $('#direct-save-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log('تم النقر على زر الحفظ المباشر');
+        
+        // إضافة حقول الصلاحيات المتغيرة قبل الإرسال
+        addChangedPermissionsFields();
+        
+        // إضافة علامة حفظ التغييرات فقط
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'save_changes_only',
+            value: 'true'
+        }).appendTo('#permissions-form');
+        
+        // إرسال النموذج
+        $('#permissions-form').submit();
+        
+        return false;
+    });
+    
     // إضافة مستمع أحداث على كل بطاقة صلاحية
     $('.permission-card').on('click', function() {
         var sectionId = $(this).closest('.permissions-section').attr('id').replace('section-', '');
