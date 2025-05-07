@@ -407,8 +407,14 @@ def admin_advanced_permissions(request, admin_id):
                 changes = json.loads(changes_json)
                 print("Changes JSON received:", changes)
                 
-                # استرجاع الصلاحيات الحالية وتحديثها بالتغييرات
+                # استرجاع الصلاحيات الحالية قبل تحديثها
                 selected_permissions = dict(admin_permissions) if admin_permissions else {}
+                
+                # حفظ نسخة من الصلاحيات الأصلية للمقارنة لاحقاً
+                original_permissions = {k: list(v) for k, v in selected_permissions.items()}
+                
+                # طباعة الصلاحيات قبل التغيير
+                print("Original permissions before changes:", original_permissions)
                 
                 # معالجة التغييرات
                 for section, perms in changes.items():
@@ -416,19 +422,48 @@ def admin_advanced_permissions(request, admin_id):
                     if section not in selected_permissions:
                         selected_permissions[section] = []
                     
+                    # إذا كان القسم فارغاً وموجود في التغييرات، نتحقق من إلغاء جميع الصلاحيات
+                    section_has_changes = False
+                    section_has_active = False
+                    
                     for perm in perms:
                         # تحديد الحالة الجديدة (نشطة أم لا)
                         is_active = request.POST.get(f"{section}_{perm}") == 'on'
                         print(f"Processing change: {section}_{perm} = {is_active}")
+                        section_has_changes = True
                         
-                        # إذا كانت نشطة وغير موجودة، أضفها
-                        if is_active and perm not in selected_permissions[section]:
-                            selected_permissions[section].append(perm)
-                            print(f"Added permission: {section}_{perm}")
-                        # إذا كانت غير نشطة وموجودة، احذفها
-                        elif not is_active and perm in selected_permissions[section]:
-                            selected_permissions[section].remove(perm)
-                            print(f"Removed permission: {section}_{perm}")
+                        if is_active:
+                            section_has_active = True
+                            # إذا كانت نشطة وغير موجودة، أضفها
+                            if perm not in selected_permissions[section]:
+                                selected_permissions[section].append(perm)
+                                print(f"Added permission: {section}_{perm}")
+                        else:
+                            # إذا كانت غير نشطة وموجودة، احذفها
+                            if perm in selected_permissions[section]:
+                                selected_permissions[section].remove(perm)
+                                print(f"Removed permission: {section}_{perm}")
+                    
+                    # إذا كان هناك تغييرات ولكن لا توجد صلاحيات نشطة، نفرغ القسم
+                    if section_has_changes and not section_has_active:
+                        selected_permissions[section] = []
+                        print(f"Section {section} has changes but no active permissions, emptying it")
+                
+                # فحص أقسام محددة للتأكد من عدم وجود صلاحيات نشطة
+                # من أجل قسم الحجوزات تحديداً
+                if 'reservations' in changes and len(changes['reservations']) > 0:
+                    # التحقق إذا كانت هناك طلبات POST صريحة لإلغاء الصلاحيات
+                    all_deactivated = True
+                    for perm in all_permissions.get('reservations', []):
+                        # إذا كان هناك أي صلاحية نشطة، نضع المتغير كـ False
+                        if request.POST.get(f"reservations_{perm}") == 'on':
+                            all_deactivated = False
+                            break
+                    
+                    # إذا تم إلغاء جميع الصلاحيات، نتأكد من أن المصفوفة فارغة
+                    if all_deactivated:
+                        selected_permissions['reservations'] = []
+                        print("All reservations permissions were deactivated, setting to empty list")
                 
                 print("Updated permissions after changes:", selected_permissions)
             except json.JSONDecodeError as e:

@@ -31,6 +31,53 @@ $(document).ready(function() {
         e.preventDefault();
         console.log('تم النقر على زر الحفظ المباشر');
         
+        // إذا لم تكن هناك تغييرات مسجلة، قم بفحص ما إذا كان هناك صلاحيات تم إلغاؤها
+        if (Object.keys(changedPermissionsOnly).length === 0) {
+            // فحص جميع الأقسام بحثاً عن تغييرات غير مسجلة
+            $('.permissions-section').each(function() {
+                var sectionId = $(this).attr('id').replace('section-', '');
+                var activePermissions = [];
+                
+                // جمع الصلاحيات النشطة حالياً
+                $(this).find('.permission-card.active').each(function() {
+                    var permName = $(this).find('.permission-title').data('perm-name') || 
+                                  $(this).find('.permission-title').text().trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
+                    activePermissions.push(permName);
+                });
+                
+                // مقارنة بالحالة الأولية
+                if (initialPermissionState[sectionId]) {
+                    if (initialPermissionState[sectionId].length !== activePermissions.length) {
+                        // عدد الصلاحيات النشطة تغير، لذا نضيف جميع صلاحيات هذا القسم للتغييرات
+                        if (!changedPermissionsOnly[sectionId]) {
+                            changedPermissionsOnly[sectionId] = [];
+                        }
+                        
+                        // إضافة جميع الصلاحيات في هذا القسم
+                        $(this).find('.permission-card').each(function() {
+                            var permName = $(this).find('.permission-title').data('perm-name') || 
+                                          $(this).find('.permission-title').text().trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
+                            
+                            if (!changedPermissionsOnly[sectionId].includes(permName)) {
+                                changedPermissionsOnly[sectionId].push(permName);
+                            }
+                        });
+                        
+                        console.log(`إضافة قسم ${sectionId} للتغييرات لأن عدد الصلاحيات تغير`);
+                    }
+                }
+            });
+            
+            // تحديث حالة التغييرات
+            hasChanges = Object.keys(changedPermissionsOnly).length > 0;
+        }
+        
+        // التحقق مرة أخرى إذا كان هناك تغييرات
+        if (!hasChanges) {
+            showNotification('تنبيه', 'لم يتم إجراء أي تغييرات على الصلاحيات', 'warning');
+            return false;
+        }
+        
         // إضافة حقول الصلاحيات المتغيرة قبل الإرسال
         addChangedPermissionsFields();
         
@@ -40,6 +87,11 @@ $(document).ready(function() {
             name: 'save_changes_only',
             value: 'true'
         }).appendTo('#permissions-form');
+        
+        console.log('إرسال النموذج مع التغييرات:', changedPermissionsOnly);
+        
+        // تغيير نص الزر أثناء الحفظ
+        $(this).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...').prop('disabled', true);
         
         // إرسال النموذج
         $('#permissions-form').submit();
@@ -61,6 +113,8 @@ $(document).ready(function() {
         // تحديث حالة التغيير
         var wasActive = initialPermissionState[sectionId] && initialPermissionState[sectionId].includes(permName);
         var isNowActive = $(this).hasClass('active');
+        
+        console.log(`تغيير صلاحية ${sectionId}_${permName}: كانت ${wasActive ? 'مفعلة' : 'معطلة'} والآن ${isNowActive ? 'مفعلة' : 'معطلة'}`);
         
         if (wasActive !== isNowActive) {
             // إضافة أو إزالة من قائمة التغييرات
@@ -101,6 +155,16 @@ $(document).ready(function() {
         
         // تحديث عداد التغييرات وحالة زر الحفظ
         updateChangesCounter();
+        
+        // تحديث عداد الصلاحيات في هذا القسم مباشرة
+        var activeCount = $('#section-' + sectionId).find('.permission-card.active').length;
+        $('.tab-item[data-section="' + sectionId + '"] .tab-count').text(activeCount);
+        
+        if (activeCount > 0) {
+            $('.tab-item[data-section="' + sectionId + '"] .tab-count').addClass('active');
+        } else {
+            $('.tab-item[data-section="' + sectionId + '"] .tab-count').removeClass('active');
+        }
     });
 });
 
@@ -202,6 +266,23 @@ function saveChangedPermissionsOnly() {
     showNotification('جاري الحفظ', 'يتم الآن حفظ التغييرات التي أجريتها فقط', 'info');
     
     return false;
+}
+
+/**
+ * تحديث عداد الصلاحيات لقسم معين
+ * @param {string} sectionId معرف القسم
+ */
+function updateSectionCounter(sectionId) {
+    var activeCount = $('#section-' + sectionId).find('.permission-card.active').length;
+    console.log(`تحديث عداد الصلاحيات للقسم ${sectionId}: ${activeCount} صلاحية نشطة`);
+    
+    $('.tab-item[data-section="' + sectionId + '"] .tab-count').text(activeCount);
+    
+    if (activeCount > 0) {
+        $('.tab-item[data-section="' + sectionId + '"] .tab-count').addClass('active');
+    } else {
+        $('.tab-item[data-section="' + sectionId + '"] .tab-count').removeClass('active');
+    }
 }
 
 /**
