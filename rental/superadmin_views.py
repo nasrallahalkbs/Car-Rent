@@ -359,7 +359,7 @@ def admin_advanced_permissions(request, admin_id):
         'system_permissions': system_permissions,
     }
     
-    return render(request, 'superadmin/admin_advanced_permissions.html', context)
+    return render(request, 'superadmin/admin_advanced_permissions_redesign.html', context)
 
 @superadmin_required
 def add_admin(request):
