@@ -10,63 +10,110 @@ var hasChanges = false; // هل هناك تغييرات؟
 
 /**
  * تعريف دالة إصلاح مباشر لمشكلة تحديث الصلاحيات
+ * إصدار 2.0 - حل شامل ونهائي
  */
 function fixPermissionsTracking() {
     console.log('⚠️ بدء إصلاح مشكلة تحديث الصلاحيات...');
     
-    // 1. إعادة تعريف دالة saveAllPermissions للتأكد من استخدام التتبع المحسن
-    window.saveAllPermissions = function() {
-        console.log('🔄 تم استبدال دالة حفظ جميع الصلاحيات بالدالة المحسنة');
-        return saveChangedPermissionsOnly();
-    };
-    
-    // 2. التأكد من أن أي كائن jQuery للنموذج يستخدم الدالة المحسنة عند الإرسال
-    jQuery.fn.oldSubmit = jQuery.fn.submit;
-    jQuery.fn.submit = function() {
-        // التحقق من أن هذا هو نموذج الصلاحيات
-        if (this.attr('id') === 'permissions-form') {
-            console.log('🔄 تم اعتراض إرسال نموذج الصلاحيات');
-            
-            // إضافة دالة تتبع التغييرات
-            addChangedPermissionsFields();
-            
-            // ثم متابعة التنفيذ الأصلي
-            return jQuery.fn.oldSubmit.apply(this, arguments);
-        } else {
-            // تمرير النماذج الأخرى بدون تغيير
-            return jQuery.fn.oldSubmit.apply(this, arguments);
-        }
-    };
-    
-    // 3. تسجيل تغييرات الصلاحيات عند التغيير
-    if (!window.permissionCardClickHandled) {
-        $('.permission-card').on('click', function() {
-            // تتبع التغييرات بشكل أفضل
-            const sectionId = $(this).closest('.permissions-section').attr('id').replace('section-', '');
-            const permName = $(this).find('.permission-title').data('perm-name') || 
-                          $(this).find('.permission-title').text().trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
-            const isActive = $(this).hasClass('active');
-            
-            console.log(`🔍 تم نقر صلاحية: ${sectionId}.${permName} = ${isActive ? 'active' : 'inactive'}`);
-            
-            // تسجيل التغيير
-            if (!changedPermissionsOnly[sectionId]) {
-                changedPermissionsOnly[sectionId] = [];
-            }
-            
-            // إضافة أو إزالة من قائمة التغييرات
-            if (!changedPermissionsOnly[sectionId].includes(permName)) {
-                changedPermissionsOnly[sectionId].push(permName);
-                console.log(`✏️ تسجيل تغيير للصلاحية: ${sectionId}.${permName}`);
-            }
-            
-            // تحديث حالة التغييرات
-            hasChanges = true;
-        });
-        window.permissionCardClickHandled = true;
+    // أولاً: إصلاح مشكلة تداخل الإصدارات
+    // حل مشكلة التداخل بين الإصدارات المختلفة للسكريبت
+    if (window._permissions_patched) {
+        console.log('🟢 تم إصلاح الإصدار السابق بالفعل');
+        return;
     }
     
-    console.log('✅ تم إصلاح مشكلة تحديث الصلاحيات بنجاح');
+    // ثانياً: إصلاح دالة حفظ التغييرات الرئيسية
+    window.saveAllPermissions = function() {
+        console.log('🔄 تمت إعادة تعريف دالة حفظ جميع الصلاحيات');
+        return directSaveChanges();
+    };
+    
+    // ثالثاً: إضافة دالة حفظ مباشرة للتغييرات (الحل النهائي)
+    window.directSaveChanges = function() {
+        console.log('⚠️ تشغيل آلية الحفظ المباشر والشاملة');
+        
+        // 1. جمع جميع الصلاحيات النشطة حالياً
+        var activePermissions = {};
+        $('.permissions-section').each(function() {
+            var sectionId = $(this).attr('id').replace('section-', '');
+            activePermissions[sectionId] = [];
+            
+            $(this).find('.permission-card.active').each(function() {
+                var permName = $(this).find('.permission-title').data('perm-name') || 
+                               $(this).find('.permission-title').text().trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
+                activePermissions[sectionId].push(permName);
+            });
+        });
+        
+        console.log('🔍 الصلاحيات النشطة:', activePermissions);
+        
+        // 2. إعادة تعيين النموذج
+        var form = $('#permissions-form');
+        // حذف جميع الحقول المخفية السابقة
+        form.find('input[type="hidden"]:not([name="_csrf"])').remove();
+        
+        // 3. إضافة حقل admin_id
+        var adminId = $('#admin-id').val() || form.data('admin-id');
+        form.append('<input type="hidden" name="admin_id" value="' + adminId + '">');
+        
+        // 4. إضافة حقول الصلاحيات
+        for (var sectionId in activePermissions) {
+            for (var i = 0; i < activePermissions[sectionId].length; i++) {
+                var permName = activePermissions[sectionId][i];
+                form.append('<input type="hidden" name="' + sectionId + '_' + permName + '" value="on">');
+            }
+        }
+        
+        // 5. إضافة علامات الأقسام الفارغة
+        $('.permissions-section').each(function() {
+            var sectionId = $(this).attr('id').replace('section-', '');
+            if ($(this).find('.permission-card.active').length === 0) {
+                form.append('<input type="hidden" name="' + sectionId + '_empty" value="true">');
+                console.log('⚠️ إضافة علامة إفراغ للقسم: ' + sectionId);
+            }
+        });
+        
+        // 6. تغيير نص زر الحفظ
+        $('#direct-save-btn').html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...').prop('disabled', true);
+        $('#save-all-permissions-btn').html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...').prop('disabled', true);
+        
+        // 7. إرسال النموذج مباشرة
+        console.log('🟢 إرسال النموذج الآن');
+        form[0].submit(); // استخدام الدالة الأصلية DOM للإرسال
+        
+        return false;
+    };
+    
+    // رابعاً: ربط الزر الرئيسي والثانوي بدالة الحفظ المباشرة
+    // ربط زر الحفظ الرئيسي
+    $('#direct-save-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log('🖱️ تم النقر على زر الحفظ الرئيسي');
+        window.directSaveChanges();
+        return false;
+    });
+    
+    // ربط زر الحفظ الثانوي (العائم)
+    $('#save-all-permissions-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        console.log('🖱️ تم النقر على زر الحفظ الثانوي');
+        window.directSaveChanges();
+        return false;
+    });
+    
+    // خامساً: إعادة تعريف submit لضمان التعامل مع كل طرق الإرسال
+    var form = $('#permissions-form');
+    var originalSubmit = form.submit;
+    form.submit = function() {
+        console.log('🔄 تم اعتراض إرسال النموذج');
+        window.directSaveChanges();
+        return false;
+    };
+    
+    // تعيين علم لتجنب إعادة تطبيق الإصلاح
+    window._permissions_patched = true;
+    
+    console.log('✅ تم إصلاح مشكلة تحديث الصلاحيات بشكل نهائي');
 }
 
 // تتبع التغييرات على الصلاحيات بشكل دقيق
