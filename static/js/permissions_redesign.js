@@ -260,6 +260,7 @@ function initializeSaveButton() {
 function addHiddenPermissionFields() {
     // حذف الحقول المخفية السابقة
     $('#permissions-form input[type="hidden"][name^="checkbox_"]').remove();
+    $('#permissions-form input[type="hidden"][name^="perm_"]').remove();
     $('#permissions-form input[type="hidden"][name$="_view"]').remove();
     $('#permissions-form input[type="hidden"][name$="_edit"]').remove();
     $('#permissions-form input[type="hidden"][name$="_create"]').remove();
@@ -269,84 +270,68 @@ function addHiddenPermissionFields() {
     $('.permissions-section').each(function() {
         const sectionId = $(this).attr('id').replace('section-', '');
         
-        // إنشاء أسماء حقول للإجراءات القياسية في هذا القسم
-        const viewField = sectionId + '_view_' + sectionId;
-        const editField = sectionId + '_edit_' + sectionId;
-        const createField = sectionId + '_create_' + sectionId;
-        const deleteField = sectionId + '_delete_' + sectionId;
-        
-        // المسح وإعادة إنشاء حقول مخفية لكل صلاحية
-        let hasViewPerm = false;
-        let hasEditPerm = false;
-        let hasCreatePerm = false;
-        let hasDeletePerm = false;
-        
         // فحص جميع البطاقات النشطة في هذا القسم
         $(this).find('.permission-card').each(function() {
             const permTitle = $(this).find('.permission-title').text().trim();
-            const permLevel = $(this).find('.permission-level').text().trim();
+            const permName = $(this).find('.permission-title').data('perm-name') || 
+                            permTitle.toLowerCase().replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
             
             // إذا كانت البطاقة نشطة
             if ($(this).hasClass('active')) {
-                // تحديد نوع الصلاحية بناءً على النص أو مستوى الصلاحية
-                if (permLevel === 'R' || permTitle.indexOf('عرض') !== -1 || permTitle.indexOf('الاطلاع') !== -1) {
-                    hasViewPerm = true;
-                } else if (permLevel === 'W' || permTitle.indexOf('تعديل') !== -1 || permTitle.indexOf('إضافة') !== -1 || permTitle.indexOf('إنشاء') !== -1) {
-                    if (permTitle.indexOf('تعديل') !== -1) {
-                        hasEditPerm = true;
-                    }
-                    if (permTitle.indexOf('إضافة') !== -1 || permTitle.indexOf('إنشاء') !== -1) {
-                        hasCreatePerm = true;
-                    }
-                } else if (permLevel === 'D' || permTitle.indexOf('حذف') !== -1) {
-                    hasDeletePerm = true;
-                }
-                
-                // إنشاء حقل مخفي خاص بالبطاقة (للتنوع في أنواع الصلاحيات)
-                let fieldName = 'perm_' + permTitle.toLowerCase().replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
-                const specificField = $('<input>').attr({
+                // إنشاء حقل مخفي للصلاحية
+                // الطريقة 1: باستخدام معرف مباشر كما في request.POST.get(f"{section}_{perm}")
+                const directField = $('<input>').attr({
                     type: 'hidden',
-                    name: sectionId + '_' + fieldName,
+                    name: sectionId + '_' + permName,
                     value: 'on'
                 });
-                $('#permissions-form').append(specificField);
+                $('#permissions-form').append(directField);
+                
+                // الطريقة 2: باستخدام النمط القديم section_action_section
+                let permType = 'view'; // الافتراضي للصلاحيات
+                const permLevel = $(this).find('.permission-level').text().trim();
+                
+                // تحديد نوع الصلاحية بناءً على النص أو مستوى الصلاحية
+                if (permLevel === 'R' || permTitle.indexOf('عرض') !== -1 || permTitle.indexOf('الاطلاع') !== -1) {
+                    permType = 'view';
+                } else if (permLevel === 'W') {
+                    if (permTitle.indexOf('تعديل') !== -1) {
+                        permType = 'edit';
+                    } else if (permTitle.indexOf('إضافة') !== -1 || permTitle.indexOf('إنشاء') !== -1) {
+                        permType = 'create';
+                    } else {
+                        permType = 'edit'; // الافتراضي للكتابة
+                    }
+                } else if (permLevel === 'D' || permTitle.indexOf('حذف') !== -1) {
+                    permType = 'delete';
+                }
+                
+                // إضافة حقل بالنمط القديم
+                const legacyField = $('<input>').attr({
+                    type: 'hidden',
+                    name: sectionId + '_' + permType + '_' + sectionId,
+                    value: 'on'
+                });
+                $('#permissions-form').append(legacyField);
+                
+                // إضافة اسم الصلاحية المباشر
+                const permField = $('<input>').attr({
+                    type: 'hidden',
+                    name: permName,
+                    value: 'on'
+                });
+                $('#permissions-form').append(permField);
             }
         });
-        
-        // إضافة حقول الصلاحيات الرئيسية إذا كانت موجودة
-        if (hasViewPerm) {
-            const viewInput = $('<input>').attr({
-                type: 'hidden',
-                name: viewField,
-                value: 'on'
-            });
-            $('#permissions-form').append(viewInput);
-        }
-        if (hasEditPerm) {
-            const editInput = $('<input>').attr({
-                type: 'hidden',
-                name: editField,
-                value: 'on'
-            });
-            $('#permissions-form').append(editInput);
-        }
-        if (hasCreatePerm) {
-            const createInput = $('<input>').attr({
-                type: 'hidden',
-                name: createField,
-                value: 'on'
-            });
-            $('#permissions-form').append(createInput);
-        }
-        if (hasDeletePerm) {
-            const deleteInput = $('<input>').attr({
-                type: 'hidden',
-                name: deleteField,
-                value: 'on'
-            });
-            $('#permissions-form').append(deleteInput);
-        }
     });
+    
+    // إضافة معرف المسؤول كحقل مخفي
+    const adminIdInput = $('<input>').attr({
+        type: 'hidden',
+        name: 'admin_id',
+        value: $('#admin-id').val() || $('form').data('admin-id')
+    });
+    $('#permissions-form').append(adminIdInput);
 }
 
 /**
