@@ -585,6 +585,11 @@
 {% endblock %}
 
 {% block content %}
+<!-- زر العودة للأعلى -->
+<div class="back-to-top">
+    <i class="fas fa-arrow-up"></i>
+</div>
+
 <div class="container-fluid">
     <!-- ترويسة الصفحة المحسنة -->
     <div class="d-flex justify-content-between align-items-center py-4 flex-wrap gap-3">
@@ -2429,6 +2434,9 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    // التأكد من إظهار جميع الأقسام عند تحميل الصفحة
+    $('.permissions-container [data-section]').addClass('active');
+
     // وظيفة محدثة لتحديث عدد الصلاحيات النشطة في كل قسم
     function updateActiveCounters() {
         $('[data-section]').each(function() {
@@ -2438,6 +2446,21 @@ $(document).ready(function() {
             $(this).find('.active-count').text(activeCount);
         });
     }
+    
+    // إضافة معالج للتمرير وإظهار زر العودة للأعلى
+    $(window).scroll(function() {
+        if ($(this).scrollTop() > 300) {
+            $('.back-to-top').addClass('visible');
+        } else {
+            $('.back-to-top').removeClass('visible');
+        }
+    });
+    
+    // معالج النقر على زر العودة للأعلى
+    $('.back-to-top').click(function() {
+        $('html, body').animate({scrollTop: 0}, 300);
+        return false;
+    });
     
     // تحديث العداد عند تحميل الصفحة
     updateActiveCounters();
