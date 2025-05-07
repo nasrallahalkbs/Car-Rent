@@ -8,10 +8,74 @@ var initialPermissionState = {}; // حالة الصلاحيات الأولية
 var changedPermissionsOnly = {}; // الصلاحيات التي تم تغييرها فقط
 var hasChanges = false; // هل هناك تغييرات؟
 
+/**
+ * تعريف دالة إصلاح مباشر لمشكلة تحديث الصلاحيات
+ */
+function fixPermissionsTracking() {
+    console.log('⚠️ بدء إصلاح مشكلة تحديث الصلاحيات...');
+    
+    // 1. إعادة تعريف دالة saveAllPermissions للتأكد من استخدام التتبع المحسن
+    window.saveAllPermissions = function() {
+        console.log('🔄 تم استبدال دالة حفظ جميع الصلاحيات بالدالة المحسنة');
+        return saveChangedPermissionsOnly();
+    };
+    
+    // 2. التأكد من أن أي كائن jQuery للنموذج يستخدم الدالة المحسنة عند الإرسال
+    jQuery.fn.oldSubmit = jQuery.fn.submit;
+    jQuery.fn.submit = function() {
+        // التحقق من أن هذا هو نموذج الصلاحيات
+        if (this.attr('id') === 'permissions-form') {
+            console.log('🔄 تم اعتراض إرسال نموذج الصلاحيات');
+            
+            // إضافة دالة تتبع التغييرات
+            addChangedPermissionsFields();
+            
+            // ثم متابعة التنفيذ الأصلي
+            return jQuery.fn.oldSubmit.apply(this, arguments);
+        } else {
+            // تمرير النماذج الأخرى بدون تغيير
+            return jQuery.fn.oldSubmit.apply(this, arguments);
+        }
+    };
+    
+    // 3. تسجيل تغييرات الصلاحيات عند التغيير
+    if (!window.permissionCardClickHandled) {
+        $('.permission-card').on('click', function() {
+            // تتبع التغييرات بشكل أفضل
+            const sectionId = $(this).closest('.permissions-section').attr('id').replace('section-', '');
+            const permName = $(this).find('.permission-title').data('perm-name') || 
+                          $(this).find('.permission-title').text().trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
+            const isActive = $(this).hasClass('active');
+            
+            console.log(`🔍 تم نقر صلاحية: ${sectionId}.${permName} = ${isActive ? 'active' : 'inactive'}`);
+            
+            // تسجيل التغيير
+            if (!changedPermissionsOnly[sectionId]) {
+                changedPermissionsOnly[sectionId] = [];
+            }
+            
+            // إضافة أو إزالة من قائمة التغييرات
+            if (!changedPermissionsOnly[sectionId].includes(permName)) {
+                changedPermissionsOnly[sectionId].push(permName);
+                console.log(`✏️ تسجيل تغيير للصلاحية: ${sectionId}.${permName}`);
+            }
+            
+            // تحديث حالة التغييرات
+            hasChanges = true;
+        });
+        window.permissionCardClickHandled = true;
+    }
+    
+    console.log('✅ تم إصلاح مشكلة تحديث الصلاحيات بنجاح');
+}
+
 // تتبع التغييرات على الصلاحيات بشكل دقيق
 $(document).ready(function() {
     // حفظ الحالة الأولية للصلاحيات
     captureInitialPermissionState();
+    
+    // تطبيق الإصلاح المباشر
+    fixPermissionsTracking();
     
     // إعادة تعريف دالة saveAllPermissions مع التأكد من ربطها مرة أخرى بزر الحفظ
     console.log('عملية استبدال وظيفة الحفظ');
@@ -85,6 +149,7 @@ $(document).ready(function() {
         addChangedPermissionsFields();
         
         // إضافة علامة حفظ التغييرات فقط
+        $('#permissions-form input[name="save_changes_only"]').remove();
         $('<input>').attr({
             type: 'hidden',
             name: 'save_changes_only',
@@ -241,32 +306,67 @@ function updatePermissionCounters() {
  * حفظ الصلاحيات المتغيرة فقط
  */
 function saveChangedPermissionsOnly() {
-    // التحقق من وجود تغييرات
+    // التحقق من وجود تغييرات مباشرة أو تغييرات في الأقسام المفرغة
     if (!hasChanges) {
-        showNotification('تنبيه', 'لم يتم إجراء أي تغييرات على الصلاحيات', 'warning');
-        return false;
+        // فحص جميع الأقسام للتحقق من وجود أقسام فارغة
+        let foundEmptyChanges = false;
+        $('.permissions-section').each(function() {
+            const sectionId = $(this).attr('id').replace('section-', '');
+            const activeCount = $(this).find('.permission-card.active').length;
+            
+            // إذا كان القسم له حالة أولية وأصبح فارغاً
+            if (initialPermissionState[sectionId] && 
+                initialPermissionState[sectionId].length > 0 && 
+                activeCount === 0) {
+                foundEmptyChanges = true;
+                if (!changedPermissionsOnly[sectionId]) {
+                    changedPermissionsOnly[sectionId] = [];
+                }
+                console.log(`تم اكتشاف قسم فارغ ${sectionId} - سيتم إضافته للتغييرات`);
+            }
+        });
+        
+        if (!foundEmptyChanges) {
+            showNotification('تنبيه', 'لم يتم إجراء أي تغييرات على الصلاحيات', 'warning');
+            return false;
+        }
+        
+        hasChanges = true;
     }
     
     console.log('التغييرات التي سيتم حفظها:', changedPermissionsOnly);
     
     // تغيير حالة الزر إلى جاري الحفظ
     $('#save-all-permissions-btn').addClass('loading').find('span').text('جاري الحفظ...');
+    $('#direct-save-btn').html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...').prop('disabled', true);
     
     // إضافة الحقول المخفية للصلاحيات المتغيرة فقط
     addChangedPermissionsFields();
     
     // إضافة علامة التغييرات
+    $('#permissions-form input[name="save_changes_only"]').remove();
     $('<input>').attr({
         type: 'hidden',
         name: 'save_changes_only',
         value: 'true'
     }).appendTo('#permissions-form');
     
+    // إضافة حقل JSON لكل التغييرات مرة أخرى للتأكيد
+    $('#permissions-form input[name="changes_json"]').remove();
+    $('<input>').attr({
+        type: 'hidden',
+        name: 'changes_json',
+        value: JSON.stringify(changedPermissionsOnly)
+    }).appendTo('#permissions-form');
+    
+    // طباعة الحقول المضافة للتصحيح
+    console.log('الحقول المضافة للنموذج:', $('#permissions-form input[type="hidden"]').length);
+    
     // إرسال النموذج
     $('#permissions-form').submit();
     
     // عرض إشعار الحفظ
-    showNotification('جاري الحفظ', 'يتم الآن حفظ التغييرات التي أجريتها فقط', 'info');
+    showNotification('جاري الحفظ', 'يتم الآن حفظ التغييرات التي أجريتها', 'info');
     
     return false;
 }
@@ -300,6 +400,8 @@ function addChangedPermissionsFields() {
     $('#permissions-form input[type="hidden"][name$="_edit"]').remove();
     $('#permissions-form input[type="hidden"][name$="_create"]').remove();
     $('#permissions-form input[type="hidden"][name$="_delete"]').remove();
+    $('#permissions-form input[type="hidden"][name$="_empty"]').remove();
+    $('#permissions-form input[type="hidden"][name$="_changed"]').remove();
     
     // إضافة معرف المسؤول كحقل مخفي
     const adminId = $('#admin-id').val() || $('form').data('admin-id');
@@ -310,43 +412,64 @@ function addChangedPermissionsFields() {
     });
     $('#permissions-form').append(adminIdInput);
     
-    // فحص إذا كان قسم الحجوزات فارغاً (جميع الصلاحيات معطلة)
+    // إضافة معرف changes_json كحقل مخفي
+    const changesJsonInput = $('<input>').attr({
+        type: 'hidden',
+        name: 'changes_json',
+        value: JSON.stringify(changedPermissionsOnly)
+    });
+    $('#permissions-form').append(changesJsonInput);
+    
+    // فحص كل الأقسام التي كان لها صلاحيات سابقة وأصبحت فارغة
+    for (const section in initialPermissionState) {
+        const sectionActiveCount = $(`#section-${section} .permission-card.active`).length;
+        
+        // إذا كان القسم له حالة أولية وأصبح فارغاً
+        if (initialPermissionState[section] && 
+            initialPermissionState[section].length > 0 && 
+            sectionActiveCount === 0) {
+            
+            console.log(`تم اكتشاف إلغاء جميع صلاحيات قسم ${section}`);
+            
+            // إضافة حقل خاص لإشعار الخادم بإلغاء جميع صلاحيات القسم
+            const emptySectionField = $('<input>').attr({
+                type: 'hidden',
+                name: `${section}_empty`,
+                value: 'true'
+            });
+            $('#permissions-form').append(emptySectionField);
+            
+            // التأكد من إضافة جميع صلاحيات القسم للتغييرات
+            if (!changedPermissionsOnly[section]) {
+                changedPermissionsOnly[section] = [];
+                
+                // إضافة جميع الصلاحيات الأولية كتغييرات
+                initialPermissionState[section].forEach(perm => {
+                    // إضافة حقل مخفي لكل صلاحية تم إلغاؤها
+                    const permField = $('<input>').attr({
+                        type: 'hidden',
+                        name: `${section}_${perm}`,
+                        value: 'off'
+                    });
+                    $('#permissions-form').append(permField);
+                });
+            }
+        }
+    }
+    
+    // معالجة خاصة لقسم الحجوزات للتوافق مع الكود القديم
     const reservationsActiveCount = $('#section-reservations .permission-card.active').length;
     console.log(`عدد صلاحيات الحجوزات النشطة: ${reservationsActiveCount}`);
     
-    // إذا كان قسم الحجوزات له حالة أولية وأصبح فارغاً
+    // إذا كان قسم الحجوزات أصبح فارغاً
     if (initialPermissionState['reservations'] && initialPermissionState['reservations'].length > 0 && reservationsActiveCount === 0) {
-        console.log('تم اكتشاف إلغاء جميع صلاحيات الحجوزات');
-        
-        // إضافة حقل خاص لإشعار الخادم بإلغاء جميع صلاحيات الحجوزات
+        // إضافة حقل reservations_empty مرة أخرى للتأكيد
         const emptyReservationsField = $('<input>').attr({
             type: 'hidden',
             name: 'reservations_empty',
             value: 'true'
         });
         $('#permissions-form').append(emptyReservationsField);
-        
-        // التأكد من إضافة جميع صلاحيات الحجوزات للتغييرات
-        if (!changedPermissionsOnly['reservations']) {
-            changedPermissionsOnly['reservations'] = [];
-            
-            // إضافة جميع الصلاحيات الأولية كتغييرات
-            if (initialPermissionState['reservations']) {
-                initialPermissionState['reservations'].forEach(perm => {
-                    if (!changedPermissionsOnly['reservations'].includes(perm)) {
-                        changedPermissionsOnly['reservations'].push(perm);
-                        
-                        // إضافة حقل مخفي لكل صلاحية تم إلغاؤها
-                        const permField = $('<input>').attr({
-                            type: 'hidden',
-                            name: `reservations_${perm}_changed`,
-                            value: 'off'
-                        });
-                        $('#permissions-form').append(permField);
-                    }
-                });
-            }
-        }
     }
     
     // إضافة حقول مخفية للصلاحيات المتغيرة
