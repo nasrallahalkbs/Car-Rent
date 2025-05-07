@@ -66,7 +66,8 @@
         .admin-sidebar {
             position: fixed;
             width: 280px;
-            height: 100vh;
+            height: calc(100vh {% if user.admin_profile.is_superadmin %}- 40px{% endif %});
+            {% if user.admin_profile.is_superadmin %}top: 40px;{% else %}top: 0;{% endif %}
             background: linear-gradient(to bottom, #4f46e5, #4338ca);
             color: white;
             overflow-y: auto;
@@ -195,6 +196,7 @@
         .main-content {
             flex: 1;
             margin-{% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 280px;
+            {% if user.admin_profile.is_superadmin %}margin-top: 40px;{% endif %}
             padding: 0;
             transition: var(--transition);
         }
@@ -207,7 +209,7 @@
             background-color: white;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
             position: sticky;
-            top: 0;
+            {% if user.admin_profile.is_superadmin %}top: 40px;{% else %}top: 0;{% endif %}
             z-index: 100;
         }
         
@@ -577,7 +579,7 @@
     <div class="admin-container">
         <!-- Super Admin header for admin panel -->
         {% if user.admin_profile.is_superadmin %}
-        <div class="super-admin-header" style="background: #6366f1; color: white; padding: 10px 20px; display: flex; align-items: center; justify-content: flex-start; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="super-admin-header" style="background: #6366f1; color: white; padding: 10px 20px; display: flex; align-items: center; justify-content: flex-start; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 2000; width: 100%;">
             <i class="fas fa-shield-alt me-2"></i>
             <span style="font-weight: 600;">{% trans "المسؤول الأعلى" %}</span>
         </div>
