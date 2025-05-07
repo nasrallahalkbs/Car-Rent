@@ -307,7 +307,29 @@ def login_view(request):
         is_locked, locked_until = check_account_lockout(username)
         if is_locked:
             lock_minutes = round((locked_until - timezone.now()).total_seconds() / 60)
-            messages.error(request, f"تم قفل الحساب مؤقتاً. يرجى المحاولة مرة أخرى بعد {lock_minutes} دقيقة.")
+            lock_hour = lock_minutes // 60
+            lock_minute = lock_minutes % 60
+            time_format = ""
+            if lock_hour > 0:
+                time_format = f"{lock_hour} ساعة"
+                if lock_minute > 0:
+                    time_format += f" و {lock_minute} دقيقة"
+            else:
+                time_format = f"{lock_minute} دقيقة"
+                
+            messages.error(request, f"""
+                <div class="alert-icon-container mb-2">
+                    <i class="fas fa-lock fa-2x text-danger"></i>
+                </div>
+                <h5 class="mb-2">تم تجميد الحساب مؤقتاً</h5>
+                <p>
+                    تم قفل حسابك مؤقتاً بسبب محاولات دخول غير صحيحة متكررة.<br>
+                    يمكنك المحاولة مرة أخرى بعد <strong>{time_format}</strong>.
+                </p>
+                <p class="small text-muted mt-2">
+                    إذا كنت تواجه مشكلة في الدخول، يرجى التواصل مع المسؤول.
+                </p>
+            """)
             record_login_attempt(request, username, 'locked', f'الحساب مقفل حتى {locked_until}')
             
             template = get_template_by_language(request, 'login.html')
