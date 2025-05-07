@@ -56,8 +56,8 @@ $(document).ready(function() {
         
         // 2. إعادة تعيين النموذج
         var form = $('#permissions-form');
-        // حذف جميع الحقول المخفية السابقة
-        form.find('input[type="hidden"]:not([name="_csrf"])').remove();
+        // حذف جميع الحقول المخفية السابقة مع الاحتفاظ برمز CSRF
+        form.find('input[type="hidden"]:not([name="csrfmiddlewaretoken"])').remove();
         
         // 3. إضافة حقل admin_id
         var adminId = $('#admin-id').val() || form.data('admin-id');
@@ -87,12 +87,53 @@ $(document).ready(function() {
         $('#direct-save-btn').html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...').prop('disabled', true);
         $('#save-all-permissions-btn').html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...').prop('disabled', true);
         
-        // 8. إرسال النموذج مباشرة
+        // 8. إرسال النموذج مباشرة بطريقة أكثر أماناً
         console.log('🟢 إرسال النموذج الآن');
         
-        // استخدام الدالة الأصلية للإرسال
-        // نحتاج إلى استخدام DOM form.submit() وليس jQuery form.submit()
-        form[0].submit();
+        // ★★★ طريقة جديدة وآمنة تماماً لإرسال النموذج مع CSRF 
+        console.log('⚙️ استخدام الإرسال المعزز للنموذج');
+        
+        // 1. التأكد من وجود رمز CSRF والاحتفاظ به إذا كان موجوداً
+        var csrfField = $('#permissions-form input[name="csrfmiddlewaretoken"]');
+        var csrfValue = '';
+        
+        if (csrfField.length > 0) {
+            // الطريقة 1: استخدام الرمز الموجود
+            csrfValue = csrfField.val();
+            console.log('➡️ استخدام رمز CSRF الموجود في النموذج');
+        } else {
+            // الطريقة 2: البحث عن الرمز في أي مكان في الصفحة
+            csrfValue = $('input[name="csrfmiddlewaretoken"]').val();
+            console.log('➡️ استخدام رمز CSRF من الصفحة');
+        }
+        
+        // 2. حذف النموذج وإنشاء نموذج جديد بشكل كامل
+        var formHTML = '<form id="temp-form" method="POST" action="' + form.attr('action') + '">';
+        
+        // 3. إضافة رمز CSRF
+        if (csrfValue) {
+            formHTML += '<input type="hidden" name="csrfmiddlewaretoken" value="' + csrfValue + '">';
+        }
+        
+        // 4. نسخ جميع الحقول المخفية من النموذج الأصلي
+        form.find('input[type="hidden"]').each(function() {
+            var name = $(this).attr('name');
+            var value = $(this).val();
+            if (name && name !== 'csrfmiddlewaretoken') {
+                formHTML += '<input type="hidden" name="' + name + '" value="' + value + '">';
+            }
+        });
+        
+        // 5. إضافة علامة حفظ التغييرات
+        formHTML += '<input type="hidden" name="save_changes" value="save">';
+        formHTML += '</form>';
+        
+        // 6. إضافة النموذج الجديد إلى الصفحة
+        $('body').append(formHTML);
+        
+        // 7. إرسال النموذج الجديد
+        console.log('✅ إرسال النموذج المعزز');
+        $('#temp-form').submit();
         
         return false;
     };

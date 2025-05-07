@@ -383,6 +383,13 @@ function saveChangedPermissionsOnly() {
     
     console.log('التغييرات التي سيتم حفظها:', changedPermissionsOnly);
     
+    // ★★★ استخدام الدالة المباشرة للحفظ بدلاً من إرسال النموذج مباشرة
+    if (typeof window.directSaveChanges === 'function') {
+        return window.directSaveChanges();
+    }
+    
+    // في حالة عدم وجود دالة directSaveChanges، نستخدم الطريقة التقليدية
+    
     // تغيير حالة الزر إلى جاري الحفظ
     $('#save-all-permissions-btn').addClass('loading').find('span').text('جاري الحفظ...');
     $('#direct-save-btn').html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...').prop('disabled', true);
@@ -409,8 +416,24 @@ function saveChangedPermissionsOnly() {
     // طباعة الحقول المضافة للتصحيح
     console.log('الحقول المضافة للنموذج:', $('#permissions-form input[type="hidden"]').length);
     
-    // إرسال النموذج
-    $('#permissions-form').submit();
+    // ★★★ تأكد من إضافة رمز CSRF لحل خطأ 403
+    if ($('#permissions-form input[name="csrfmiddlewaretoken"]').length === 0) {
+        // نحتاج للتأكد من وجود رمز CSRF في الصفحة
+        var csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+        if (csrftoken) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'csrfmiddlewaretoken',
+                value: csrftoken
+            }).appendTo('#permissions-form');
+            console.log('✅ تمت إضافة رمز CSRF للنموذج');
+        } else {
+            console.error('❌ لم يتم العثور على رمز CSRF في الصفحة');
+        }
+    }
+    
+    // إرسال النموذج (استخدام واجهة DOM الأصلية لتجنب المشاكل مع jQuery)
+    document.getElementById('permissions-form').submit();
     
     // عرض إشعار الحفظ
     showNotification('جاري الحفظ', 'يتم الآن حفظ التغييرات التي أجريتها', 'info');
