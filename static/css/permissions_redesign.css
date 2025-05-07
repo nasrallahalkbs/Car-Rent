@@ -1,0 +1,444 @@
+/**
+ * تصميم محسن جذرياً لصفحة الصلاحيات المتقدمة
+ * تم التصميم من الصفر بهيكل وأسلوب بسيط للتأكد من عمل كل شيء
+ */
+
+/* ----- تنسيقات عامة ----- */
+:root {
+    --primary-color: #4f46e5;
+    --primary-light: rgba(79, 70, 229, 0.1);
+    --primary-border: rgba(79, 70, 229, 0.3);
+    --success-color: #16a34a;
+    --success-light: rgba(22, 163, 74, 0.1);
+    --warning-color: #ea580c;
+    --warning-light: rgba(234, 88, 12, 0.1);
+    --danger-color: #dc2626;
+    --danger-light: rgba(220, 38, 38, 0.1);
+    --light-bg: #f8fafc;
+    --border-color: #e2e8f0;
+    --text-dark: #334155;
+    --text-muted: #64748b;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.25s ease;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.page-title {
+    margin: 0;
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.page-description {
+    margin-top: 5px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* ----- عنصر التبويبات ----- */
+.permissions-tabs {
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    overflow-x: auto;
+    padding: 10px;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    margin-bottom: 20px;
+}
+
+.permissions-tabs::-webkit-scrollbar {
+    height: 5px;
+}
+
+.permissions-tabs::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.permissions-tabs::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 5px;
+}
+
+.tab-item {
+    padding: 10px 15px;
+    background: var(--light-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-dark);
+    white-space: nowrap;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-item:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-border);
+    color: var(--primary-color);
+}
+
+.tab-item.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.tab-item.utility {
+    background: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+}
+
+.tab-item svg, 
+.tab-item i {
+    font-size: 0.9rem;
+}
+
+/* ----- أقسام الصلاحيات ----- */
+.permissions-section {
+    display: none;
+    margin-bottom: 20px;
+}
+
+.permissions-section.active {
+    display: block;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.section-title i {
+    color: var(--primary-color);
+    margin-left: 10px;
+    background: var(--primary-light);
+    padding: 8px;
+    border-radius: 8px;
+}
+
+/* ----- بطاقات الصلاحيات ----- */
+.permissions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.permission-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    padding-right: 15px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    cursor: pointer;
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.permission-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.permission-card.active {
+    background: var(--primary-light);
+    border-color: var(--primary-border);
+}
+
+.permission-card .permission-indicator {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    background-color: var(--border-color);
+    transition: var(--transition);
+}
+
+.permission-card.active .permission-indicator {
+    background-color: var(--primary-color);
+}
+
+.permission-card .permission-level {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: var(--transition);
+    background: #e2e8f0;
+    color: var(--text-muted);
+}
+
+.permission-card.active .permission-level {
+    background: var(--primary-color);
+    color: white;
+}
+
+.permission-card .permission-icon {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: var(--light-bg);
+    color: var(--primary-color);
+}
+
+.permission-card.active .permission-icon {
+    background-color: rgba(79, 70, 229, 0.2);
+}
+
+.permission-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+}
+
+.permission-desc {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* ----- أزرار الإجراءات ----- */
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.action-btn {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.action-btn.primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.action-btn.primary:hover {
+    background-color: #4338ca;
+}
+
+.action-btn.outline {
+    background-color: transparent;
+    border-color: var(--border-color);
+    color: var(--text-dark);
+}
+
+.action-btn.outline:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.action-count {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-radius: 20px;
+    padding: 3px 8px;
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
+
+/* ----- جانب ملف المستخدم ----- */
+.user-profile-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.user-profile-header {
+    background: linear-gradient(45deg, var(--primary-color), #818cf8);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.user-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.user-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.user-role {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    margin-top: 5px;
+    font-size: 0.85rem;
+}
+
+.user-profile-body {
+    padding: 20px;
+}
+
+.user-info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.info-value {
+    color: var(--text-dark);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.status-badge.active {
+    background: var(--success-light);
+    color: var(--success-color);
+}
+
+.status-badge.inactive {
+    background: var(--danger-light);
+    color: var(--danger-color);
+}
+
+.user-profile-actions {
+    margin-top: 20px;
+    display: grid;
+    gap: 10px;
+}
+
+.profile-action-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.profile-action-btn.primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.profile-action-btn.primary:hover {
+    background: #4338ca;
+}
+
+.profile-action-btn.success {
+    background: var(--success-color);
+    color: white;
+}
+
+.profile-action-btn.success:hover {
+    background: #15803d;
+}
+
+.profile-action-btn.warning {
+    background: #f59e0b;
+    color: white;
+}
+
+.profile-action-btn.warning:hover {
+    background: #d97706;
+}
+
+.profile-action-btn.disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* ----- تواؤم مع الشاشات المختلفة ----- */
+@media (max-width: 768px) {
+    .permissions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tab-item {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+}
+
+/* ----- تأثيرات انتقالية ----- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.permissions-section.active {
+    animation: fadeIn 0.3s ease;
+}

@@ -1,0 +1,490 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة الصلاحيات المتقدمة" %} - {{ admin.user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/permissions_redesign.css' %}">
+{% endblock %}
+
+{% block content %}
+<input type="hidden" id="is-superadmin" value="{{ admin.is_superadmin|yesno:'true,false' }}">
+
+<div class="container-fluid py-4">
+    <!-- ترويسة الصفحة -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">{% trans "إدارة الصلاحيات المتقدمة" %}</h1>
+            <p class="page-description">{% trans "إدارة صلاحيات وأذونات المسؤول" %} {{ admin.user.get_full_name }}</p>
+        </div>
+        <a href="{% url 'superadmin_manage_admins' %}" class="action-btn outline">
+            <i class="fas fa-arrow-right"></i>
+            <span>{% trans "العودة للمسؤولين" %}</span>
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- معلومات المسؤول والإجراءات -->
+        <div class="col-lg-4">
+            <!-- بطاقة معلومات المسؤول -->
+            <div class="user-profile-card">
+                <div class="user-profile-header">
+                    <div class="user-avatar">
+                        {{ admin.user.username|slice:":2"|upper }}
+                    </div>
+                    <div class="user-name">{{ admin.user.get_full_name }}</div>
+                    <div class="user-role">{{ admin.role.name }}</div>
+                </div>
+                <div class="user-profile-body">
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "الدور الوظيفي" %}</div>
+                        <div class="info-value">{{ admin.role.name }}</div>
+                    </div>
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "البريد الإلكتروني" %}</div>
+                        <div class="info-value">{{ admin.user.email }}</div>
+                    </div>
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "مستوى الصلاحيات" %}</div>
+                        <div class="info-value">
+                            {% if admin.is_superadmin %}
+                                {% trans "مسؤول أعلى" %}
+                            {% else %}
+                                {% trans "مسؤول عادي" %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "حالة الحساب" %}</div>
+                        <div class="info-value">
+                            <span class="status-badge {% if admin.is_active %}active{% else %}inactive{% endif %}">
+                                {% if admin.is_active %}
+                                    <i class="fas fa-check-circle"></i> {% trans "نشط" %}
+                                {% else %}
+                                    <i class="fas fa-times-circle"></i> {% trans "غير نشط" %}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "آخر تسجيل دخول" %}</div>
+                        <div class="info-value">{{ admin.user.last_login|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    
+                    <div class="user-profile-actions">
+                        <a href="{% url 'superadmin_admin_details' admin.id %}" class="profile-action-btn primary">
+                            <i class="fas fa-user-cog"></i>
+                            <span>{% trans "إدارة الملف الشخصي" %}</span>
+                        </a>
+                        
+                        {% if admin.is_superadmin %}
+                        <button class="profile-action-btn disabled">
+                            <i class="fas fa-ban"></i>
+                            <span>{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}</span>
+                        </button>
+                        {% else %}
+                        <button class="profile-action-btn success save-button" disabled>
+                            <i class="fas fa-save"></i>
+                            <span>{% trans "حفظ التغييرات" %}</span>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- وسيلة إيضاح الصلاحيات -->
+            <div class="user-profile-card mt-4">
+                <div class="user-profile-body">
+                    <h5 class="mb-3">{% trans "مستويات الصلاحيات" %}</h5>
+                    <div class="d-flex align-items-center mb-3">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--primary-color);"></div>
+                        <div class="ms-2">{% trans "صلاحية الاطلاع" %}</div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--success-color);"></div>
+                        <div class="ms-2">{% trans "صلاحية التعديل والإضافة" %}</div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--warning-color);"></div>
+                        <div class="ms-2">{% trans "صلاحية الحذف" %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- صلاحيات المسؤول -->
+        <div class="col-lg-8">
+            <!-- تبويبات الأقسام -->
+            <div class="permissions-tabs">
+                <div class="tab-item active" data-section="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>{% trans "لوحة التحكم" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="reservations">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>{% trans "الحجوزات" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="customers">
+                    <i class="fas fa-users"></i>
+                    <span>{% trans "العملاء" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="vehicles">
+                    <i class="fas fa-car"></i>
+                    <span>{% trans "المركبات" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="custody">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>{% trans "العهدة" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="payments">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>{% trans "المدفوعات" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="archive">
+                    <i class="fas fa-archive"></i>
+                    <span>{% trans "الأرشيف" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="condition">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>{% trans "حالة المركبات" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="repairs">
+                    <i class="fas fa-tools"></i>
+                    <span>{% trans "الإصلاحات" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="analytics">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>{% trans "التحليلات" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="reports">
+                    <i class="fas fa-file-alt"></i>
+                    <span>{% trans "التقارير" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item" data-section="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>{% trans "الإعدادات" %}</span>
+                    <span class="action-count tab-count">0</span>
+                </div>
+                
+                <div class="tab-item utility" id="expand-all">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                    <span>{% trans "فتح الكل" %}</span>
+                </div>
+            </div>
+            
+            <!-- قسم لوحة التحكم -->
+            <div class="permissions-section active" id="section-dashboard">
+                <div class="section-title">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>{% trans "صلاحيات لوحة التحكم" %}</span>
+                </div>
+                
+                <div class="section-actions">
+                    <button class="action-btn outline toggle-section">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <button class="action-btn outline select-all" data-section="dashboard">
+                        <i class="fas fa-check-double"></i>
+                        <span>{% trans "تحديد الكل" %}</span>
+                    </button>
+                    <div class="action-count section-count">0 / 4</div>
+                </div>
+                
+                <div class="section-body">
+                    <div class="permissions-grid">
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">R</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="permission-title">{% trans "عرض لوحة التحكم" %}</div>
+                            <div class="permission-desc">{% trans "عرض الإحصائيات والمؤشرات الرئيسية للنظام" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">R</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="permission-title">{% trans "عرض المواعيد القادمة" %}</div>
+                            <div class="permission-desc">{% trans "عرض الحجوزات والمواعيد المستقبلية" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">R</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="permission-title">{% trans "عرض الإشعارات" %}</div>
+                            <div class="permission-desc">{% trans "استلام وعرض إشعارات النظام" %}</div>
+                        </div>
+                        
+                        <div class="permission-card">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">W</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-cog"></i>
+                            </div>
+                            <div class="permission-title">{% trans "تخصيص لوحة التحكم" %}</div>
+                            <div class="permission-desc">{% trans "تغيير ترتيب ومحتوى لوحة التحكم" %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- قسم الحجوزات -->
+            <div class="permissions-section" id="section-reservations">
+                <div class="section-title">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>{% trans "صلاحيات الحجوزات" %}</span>
+                </div>
+                
+                <div class="section-actions">
+                    <button class="action-btn outline toggle-section">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <button class="action-btn outline select-all" data-section="reservations">
+                        <i class="fas fa-check-double"></i>
+                        <span>{% trans "تحديد الكل" %}</span>
+                    </button>
+                    <div class="action-count section-count">0 / 5</div>
+                </div>
+                
+                <div class="section-body" style="display: none;">
+                    <div class="permissions-grid">
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">R</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="permission-title">{% trans "عرض قائمة الحجوزات" %}</div>
+                            <div class="permission-desc">{% trans "الوصول إلى قائمة جميع الحجوزات" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">R</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="permission-title">{% trans "عرض تفاصيل الحجز" %}</div>
+                            <div class="permission-desc">{% trans "الاطلاع على تفاصيل الحجوزات الكاملة" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">W</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="permission-title">{% trans "تعديل الحجوزات" %}</div>
+                            <div class="permission-desc">{% trans "تغيير بيانات وتفاصيل الحجوزات" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">W</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <div class="permission-title">{% trans "إنشاء حجز جديد" %}</div>
+                            <div class="permission-desc">{% trans "إضافة حجوزات جديدة للعملاء" %}</div>
+                        </div>
+                        
+                        <div class="permission-card">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">D</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-trash-alt"></i>
+                            </div>
+                            <div class="permission-title">{% trans "حذف الحجوزات" %}</div>
+                            <div class="permission-desc">{% trans "حذف حجوزات موجودة من النظام" %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- قسم العملاء -->
+            <div class="permissions-section" id="section-customers">
+                <div class="section-title">
+                    <i class="fas fa-users"></i>
+                    <span>{% trans "صلاحيات العملاء" %}</span>
+                </div>
+                
+                <div class="section-actions">
+                    <button class="action-btn outline toggle-section">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <button class="action-btn outline select-all" data-section="customers">
+                        <i class="fas fa-check-double"></i>
+                        <span>{% trans "تحديد الكل" %}</span>
+                    </button>
+                    <div class="action-count section-count">0 / 5</div>
+                </div>
+                
+                <div class="section-body" style="display: none;">
+                    <div class="permissions-grid">
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">R</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="permission-title">{% trans "عرض قائمة العملاء" %}</div>
+                            <div class="permission-desc">{% trans "الوصول إلى قائمة جميع العملاء" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">R</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="permission-title">{% trans "عرض تفاصيل العميل" %}</div>
+                            <div class="permission-desc">{% trans "الاطلاع على تفاصيل العملاء الكاملة" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">W</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="permission-title">{% trans "تعديل بيانات العملاء" %}</div>
+                            <div class="permission-desc">{% trans "تغيير معلومات وبيانات العملاء" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">W</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div class="permission-title">{% trans "إضافة عميل جديد" %}</div>
+                            <div class="permission-desc">{% trans "تسجيل عملاء جدد في النظام" %}</div>
+                        </div>
+                        
+                        <div class="permission-card">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">D</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-user-times"></i>
+                            </div>
+                            <div class="permission-title">{% trans "حذف العملاء" %}</div>
+                            <div class="permission-desc">{% trans "حذف حسابات العملاء من النظام" %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- قسم المركبات -->
+            <div class="permissions-section" id="section-vehicles">
+                <div class="section-title">
+                    <i class="fas fa-car"></i>
+                    <span>{% trans "صلاحيات المركبات" %}</span>
+                </div>
+                
+                <div class="section-actions">
+                    <button class="action-btn outline toggle-section">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <button class="action-btn outline select-all" data-section="vehicles">
+                        <i class="fas fa-check-double"></i>
+                        <span>{% trans "تحديد الكل" %}</span>
+                    </button>
+                    <div class="action-count section-count">0 / 5</div>
+                </div>
+                
+                <div class="section-body" style="display: none;">
+                    <div class="permissions-grid">
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">R</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="permission-title">{% trans "عرض قائمة المركبات" %}</div>
+                            <div class="permission-desc">{% trans "الوصول إلى قائمة المركبات المتوفرة" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">R</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="permission-title">{% trans "عرض تفاصيل المركبة" %}</div>
+                            <div class="permission-desc">{% trans "الاطلاع على كامل تفاصيل ومواصفات المركبات" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">W</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="permission-title">{% trans "تعديل بيانات المركبات" %}</div>
+                            <div class="permission-desc">{% trans "تغيير معلومات ومواصفات المركبات" %}</div>
+                        </div>
+                        
+                        <div class="permission-card active">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">W</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-car-side"></i>
+                            </div>
+                            <div class="permission-title">{% trans "إضافة مركبة جديدة" %}</div>
+                            <div class="permission-desc">{% trans "إضافة مركبات جديدة إلى أسطول الشركة" %}</div>
+                        </div>
+                        
+                        <div class="permission-card">
+                            <div class="permission-indicator"></div>
+                            <div class="permission-level">D</div>
+                            <div class="permission-icon">
+                                <i class="fas fa-trash-alt"></i>
+                            </div>
+                            <div class="permission-title">{% trans "حذف المركبات" %}</div>
+                            <div class="permission-desc">{% trans "إزالة مركبات من أسطول الشركة" %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- الأقسام الأخرى يمكن إضافتها بنفس النمط -->
+            <!-- ... -->
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/permissions_redesign.js' %}"></script>
+{% endblock %}
