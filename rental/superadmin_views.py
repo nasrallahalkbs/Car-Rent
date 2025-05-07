@@ -313,18 +313,49 @@ def admin_advanced_permissions(request, admin_id):
         return redirect('superadmin_manage_admins')
     
     # الحصول على الصلاحيات الحالية للمسؤول من قاعدة البيانات
-    # يمكن استخدام حقل في نموذج المسؤول أو تخزينها في إعدادات النظام
+    # استخدام SQLite مباشرة للتجنب مشاكل ORM
     admin_permissions = {}
     
     # محاولة الحصول على الصلاحيات المخصصة إذا كانت موجودة
     try:
-        from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT permissions FROM rental_adminpermission WHERE admin_id = %s", [admin_id])
-            result = cursor.fetchone()
-            if result and result[0]:
-                import json
+        import sqlite3
+        import json
+        
+        # الاتصال بقاعدة البيانات مباشرة
+        conn = sqlite3.connect('db.sqlite3')
+        c = conn.cursor()
+        
+        # التحقق من جدول rental_adminpermission
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rental_adminpermission'")
+        if not c.fetchone():
+            print("جدول rental_adminpermission غير موجود، سيتم إنشاؤه...")
+            c.execute('''
+            CREATE TABLE rental_adminpermission (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                admin_id INTEGER NOT NULL,
+                permissions TEXT NOT NULL,
+                UNIQUE(admin_id)
+            )
+            ''')
+            conn.commit()
+            print("تم إنشاء جدول rental_adminpermission")
+        
+        # استعلام عن صلاحيات المسؤول
+        c.execute("SELECT permissions FROM rental_adminpermission WHERE admin_id = ?", (admin_id,))
+        result = c.fetchone()
+        
+        if result and result[0]:
+            try:
                 admin_permissions = json.loads(result[0])
+                print(f"تم تحميل صلاحيات المسؤول {admin_id}:", admin_permissions)
+            except json.JSONDecodeError as json_error:
+                print(f"خطأ في تحليل JSON للصلاحيات: {json_error}")
+        else:
+            print(f"لا توجد صلاحيات مخزنة للمسؤول {admin_id}")
+        
+        # إغلاق الاتصال
+        conn.close()
+        
     except Exception as e:
         print(f"خطأ في قراءة الصلاحيات: {e}")
         admin_permissions = {}
@@ -380,38 +411,38 @@ def admin_advanced_permissions(request, admin_id):
         # طباعة الصلاحيات المحددة للتشخيص
         print("Final Permissions Object:", selected_permissions)
         
-        # حفظ الصلاحيات في قاعدة البيانات باستخدام طريقة مختلفة
+        # حفظ الصلاحيات بواسطة SQLite مباشرة (تجنب استخدام connection والـ ORM)
         try:
-            # استخدام وظيفة آمنة لحفظ JSON
+            # استخدام SQLite مباشرة
             import json
+            import sqlite3
+            
             permissions_json = json.dumps(selected_permissions)
             print("Permissions JSON:", permissions_json)
             
-            # الحفظ المباشر باستخدام SQL مبسط
-            from django.db import connection
+            # الاتصال بقاعدة البيانات مباشرة
+            conn = sqlite3.connect('db.sqlite3')
+            c = conn.cursor()
             
-            # تعديل SQL لتجنب المشاكل
-            with connection.cursor() as cursor:
-                # أولاً حذف السجل الموجود إن وجد
-                cursor.execute("DELETE FROM rental_adminpermission WHERE admin_id = %s", [admin_id])
-                
-                # ثم إضافة سجل جديد
-                cursor.execute(
-                    "INSERT INTO rental_adminpermission (admin_id, permissions) VALUES (%s, %s)",
-                    [admin_id, permissions_json]
-                )
-                
-                # التأكد من التعديل
-                cursor.execute("SELECT permissions FROM rental_adminpermission WHERE admin_id = %s", [admin_id])
-                saved_data = cursor.fetchone()
-                if saved_data:
-                    print("Data saved successfully:", saved_data[0])
-                else:
-                    print("WARNING: No data found after saving")
-
-            # محاولة تنفيذ COMMIT للتأكد من حفظ البيانات
-            connection.commit()
-            print("Database transaction committed")
+            # حذف السجل الموجود للمسؤول إن وجد
+            c.execute("DELETE FROM rental_adminpermission WHERE admin_id = ?", (admin_id,))
+            
+            # إضافة السجل الجديد
+            c.execute("INSERT INTO rental_adminpermission (admin_id, permissions) VALUES (?, ?)", 
+                    (admin_id, permissions_json))
+            
+            # التأكد من الإضافة
+            c.execute("SELECT permissions FROM rental_adminpermission WHERE admin_id = ?", (admin_id,))
+            result = c.fetchone()
+            if result:
+                print(f"✅ تم حفظ الصلاحيات للمسؤول رقم {admin_id}")
+            else:
+                print(f"❌ فشل حفظ الصلاحيات للمسؤول رقم {admin_id}")
+            
+            # حفظ التغييرات وإغلاق الاتصال
+            conn.commit()
+            conn.close()
+            print("تم حفظ الصلاحيات بنجاح في قاعدة البيانات")
             
             # تسجيل نشاط تحديث الصلاحيات
             log_admin_activity(
