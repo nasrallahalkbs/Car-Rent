@@ -1857,105 +1857,11 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- الحل النهائي بطريقة مختلفة - إصدار 3.0 -->
-<script src="{% static 'js/permission_card_injector.js' %}"></script>
-<script src="{% static 'js/permissions_final_fix.js' %}"></script>
-<script src="{% static 'js/permissions_redesign.js' %}"></script>
-<script src="{% static 'js/permissions_state_sync.js' %}"></script>
+<!-- الحل المباشر البسيط - إصدار 4.0 -->
+<script src="{% static 'js/permissions_direct_fix.js' %}"></script>
 
 <!-- تمرير الصلاحيات المحفوظة إلى JavaScript -->
 <input type="hidden" id="saved_permissions_json" value="{{ permissions_json }}" />
 
-<!-- كود لعرض رسالة النجاح وتحديث الصلاحيات بعد إعادة تحميل الصفحة -->
-<script>
-    $(document).ready(function() {
-        // عرض رسالة النجاح إذا كان هناك معلمة success في URL
-        var urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('saved') === 'true') {
-            // إظهار رسالة النجاح في أعلى الصفحة
-            $('<div>').addClass('alert alert-success text-center mx-auto mb-4')
-                .html('<i class="fas fa-check-circle me-2"></i> {% trans "تم حفظ الصلاحيات بنجاح" %}')
-                .css({
-                    'position': 'fixed',
-                    'top': '80px',
-                    'left': '50%',
-                    'transform': 'translateX(-50%)',
-                    'z-index': '9999',
-                    'width': 'auto',
-                    'min-width': '300px',
-                    'padding': '12px 20px',
-                    'border-radius': '8px',
-                    'box-shadow': '0 4px 10px rgba(0,0,0,0.2)',
-                    'background-color': '#d1e7dd',
-                    'color': '#0f5132',
-                    'font-weight': 'bold',
-                    'border': 'none'
-                })
-                .appendTo('body')
-                .delay(3000)
-                .fadeOut(500);
-                
-            // التأكد من تحديث عدادات الصلاحيات
-            setTimeout(function() {
-                // تحديث عدادات الصلاحيات في جميع الأقسام
-                $('.permissions-section').each(function() {
-                    const sectionId = $(this).attr('id').replace('section-', '');
-                    const totalCards = $(this).find('.permission-card').length;
-                    const activeCards = $(this).find('.permission-card.active').length;
-                    
-                    // تحديث عداد الصلاحيات في التبويب
-                    $(`.tab-item[data-section="${sectionId}"] .tab-count`).text(activeCards);
-                    
-                    // تغيير لون العداد إذا كان أكبر من صفر
-                    if (activeCards > 0) {
-                        $(`.tab-item[data-section="${sectionId}"] .tab-count`).addClass('active');
-                    } else {
-                        $(`.tab-item[data-section="${sectionId}"] .tab-count`).removeClass('active');
-                    }
-                });
-            }, 500);
-            
-            // حذف معلمة URL لتجنب ظهور الرسالة مرة أخرى عند تحديث الصفحة
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        
-        // تحديث عدادات الصلاحيات
-        function updatePermissionCounters() {
-            $('.permissions-section').each(function() {
-                var sectionId = $(this).attr('id').replace('section-', '');
-                var activeCount = $(this).find('.permission-card.active').length;
-                
-                // طباعة معلومات التصحيح
-                console.log(`تحديث عداد قسم ${sectionId} - تم العثور على ${activeCount} صلاحية نشطة`);
-                
-                // تحديث عداد علامة التبويب
-                $('.tab-item[data-section="' + sectionId + '"] .tab-count').text(activeCount);
-                
-                // تغيير لون العداد إذا كان أكبر من صفر
-                if (activeCount > 0) {
-                    $('.tab-item[data-section="' + sectionId + '"] .tab-count').addClass('active');
-                } else {
-                    $('.tab-item[data-section="' + sectionId + '"] .tab-count').removeClass('active');
-                }
-            });
-            
-            // إعادة ضبط مصفوفة تتبع التغييرات بعد تحديث العدادات 
-            // (بعد إعادة تحميل الصفحة عقب الحفظ)
-            if (typeof changedPermissionsOnly !== 'undefined') {
-                changedPermissionsOnly = {};
-                if (typeof hasChanges !== 'undefined') {
-                    hasChanges = false;
-                }
-                
-                // إعادة تعريف الحالة الأولية للصلاحيات
-                if (typeof captureInitialPermissionState === 'function') {
-                    captureInitialPermissionState();
-                }
-            }
-        }
-        
-        // تشغيل تحديث العدادات مباشرة عند تحميل الصفحة
-        updatePermissionCounters();
-    });
-</script>
+<!-- عنصر مخفي للصلاحيات (يتم استخدامه عن طريق ملف JS) -->
 {% endblock %}
