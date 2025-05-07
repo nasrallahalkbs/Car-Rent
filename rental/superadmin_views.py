@@ -499,6 +499,9 @@ def admin_advanced_permissions(request, admin_id):
             messages.success(request, _("تم حفظ الصلاحيات بنجاح"))
             admin_permissions = selected_permissions  # تحديث الصلاحيات المعروضة
             
+            # إعادة توجيه مع معلمة نجاح للإشارة إلى الحفظ الناجح
+            return redirect(f"{request.path}?saved=true")
+            
         except Exception as e:
             print(f"خطأ في حفظ الصلاحيات: {e}")
             messages.error(request, _("حدث خطأ أثناء حفظ الصلاحيات"))

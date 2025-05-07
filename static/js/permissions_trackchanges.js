@@ -140,9 +140,34 @@ function updateChangesCounter() {
     // تحديث حالة زر الحفظ
     if (totalChanges > 0) {
         $('#save-all-permissions-btn').addClass('has-changes').find('span').text(`حفظ التغييرات (${totalChanges})`);
+        $('#direct-save-btn').addClass('has-changes').html('<i class="fas fa-save"></i> حفظ التغييرات (' + totalChanges + ')');
     } else {
         $('#save-all-permissions-btn').removeClass('has-changes').find('span').text('حفظ التغييرات');
+        $('#direct-save-btn').removeClass('has-changes').html('<i class="fas fa-save"></i> حفظ التغييرات');
     }
+    
+    // تحديث عدادات الصلاحيات لكل قسم
+    updatePermissionCounters();
+}
+
+/**
+ * تحديث عدادات الصلاحيات في الأقسام
+ */
+function updatePermissionCounters() {
+    $('.permissions-section').each(function() {
+        var sectionId = $(this).attr('id').replace('section-', '');
+        var activeCount = $(this).find('.permission-card.active').length;
+        
+        // تحديث عداد علامة التبويب
+        $('.tab-item[data-section="' + sectionId + '"] .tab-count').text(activeCount);
+        
+        // تغيير لون العداد إذا كان أكبر من صفر
+        if (activeCount > 0) {
+            $('.tab-item[data-section="' + sectionId + '"] .tab-count').addClass('active');
+        } else {
+            $('.tab-item[data-section="' + sectionId + '"] .tab-count').removeClass('active');
+        }
+    });
 }
 
 /**
