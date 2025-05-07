@@ -1,0 +1,476 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة الصلاحيات المتقدمة" %} - {{ admin.user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/permissions_redesign.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- ترويسة الصفحة -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">{% trans "إدارة الصلاحيات المتقدمة" %}</h1>
+            <p class="page-description">{% trans "إدارة صلاحيات وأذونات المسؤول" %} {{ admin.user.get_full_name }}</p>
+        </div>
+        <a href="{% url 'superadmin_manage_admins' %}" class="action-btn outline">
+            <i class="fas fa-arrow-right"></i>
+            <span>{% trans "العودة للمسؤولين" %}</span>
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- معلومات المسؤول والإجراءات -->
+        <div class="col-lg-4">
+            <div class="user-profile-card">
+                <div class="user-profile-header">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="user-name">{{ admin.user.get_full_name }}</h3>
+                    <p class="user-role">
+                        {% if admin.is_superadmin %}
+                            {% trans "مسؤول أعلى" %}
+                        {% else %}
+                            {% trans "مسؤول" %}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="user-profile-info">
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "اسم المستخدم" %}</div>
+                        <div class="info-value">{{ admin.user.username }}</div>
+                    </div>
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "البريد الإلكتروني" %}</div>
+                        <div class="info-value">{{ admin.user.email }}</div>
+                    </div>
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "مستوى الصلاحيات" %}</div>
+                        <div class="info-value">
+                            {% if admin.is_superadmin %}
+                                {% trans "مسؤول أعلى" %}
+                            {% else %}
+                                {% trans "مسؤول عادي" %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "حالة الحساب" %}</div>
+                        <div class="info-value">
+                            <span class="status-badge {% if admin.is_active %}active{% else %}inactive{% endif %}">
+                                {% if admin.is_active %}
+                                    <i class="fas fa-check-circle"></i> {% trans "نشط" %}
+                                {% else %}
+                                    <i class="fas fa-times-circle"></i> {% trans "غير نشط" %}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="user-info-item">
+                        <div class="info-label">{% trans "آخر تسجيل دخول" %}</div>
+                        <div class="info-value">{{ admin.user.last_login|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    
+                    <div class="user-profile-actions">
+                        <a href="{% url 'superadmin_admin_details' admin.id %}" class="profile-action-btn primary">
+                            <i class="fas fa-user-cog"></i>
+                            <span>{% trans "إدارة الملف الشخصي" %}</span>
+                        </a>
+                        
+                        {% if admin.is_superadmin %}
+                        <button class="profile-action-btn disabled">
+                            <i class="fas fa-ban"></i>
+                            <span>{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}</span>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-card mb-4">
+                <div class="info-card-header">
+                    <h4>{% trans "دليل مستويات الصلاحيات" %}</h4>
+                </div>
+                <div class="info-card-body">
+                    <div class="permission-level-guide">
+                        <div class="level-item">
+                            <div class="level-badge r">R</div>
+                            <div>{% trans "صلاحية القراءة والعرض" %}</div>
+                        </div>
+                        <div class="level-item">
+                            <div class="level-badge w">W</div>
+                            <div>{% trans "صلاحية التعديل والإضافة" %}</div>
+                        </div>
+                        <div class="level-item">
+                            <div class="level-badge d">D</div>
+                            <div>{% trans "صلاحية الحذف" %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <div class="info-card-header">
+                    <h4>{% trans "دليل لون الصلاحيات" %}</h4>
+                </div>
+                <div class="info-card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--primary-color);"></div>
+                        <div class="ms-2">{% trans "صلاحية القراءة والعرض" %}</div>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--success-color);"></div>
+                        <div class="ms-2">{% trans "صلاحية التعديل والإضافة" %}</div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--warning-color);"></div>
+                        <div class="ms-2">{% trans "صلاحية الحذف" %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- صلاحيات المسؤول -->
+        <div class="col-lg-8">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} mb-4">
+                        <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="POST" id="permissions-form">
+                {% csrf_token %}
+                
+                <div class="permissions-card">
+                    <div class="card-header">
+                        <h4 class="mb-0">{% trans "تحديد الصلاحيات" %}</h4>
+                        <div class="header-actions">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-save me-1"></i> {% trans "حفظ الصلاحيات" %}
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="select-all-permissions">
+                                <i class="fas fa-check-double me-1"></i> {% trans "تحديد الكل" %}
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="deselect-all-permissions">
+                                <i class="fas fa-times-circle me-1"></i> {% trans "إلغاء التحديد" %}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- تبويبات الأقسام -->
+                    <div class="permissions-tabs">
+                        {% for section, perms in permissions.items %}
+                        <div class="tab-item {% if forloop.first %}active{% endif %}" data-section="{{ section }}">
+                            <i class="fas 
+                                {% if section == 'dashboard' %}fa-tachometer-alt
+                                {% elif section == 'reservations' %}fa-calendar-check
+                                {% elif section == 'confirmation' %}fa-clipboard-check
+                                {% elif section == 'customers' %}fa-users
+                                {% elif section == 'vehicles' %}fa-car
+                                {% elif section == 'custody' %}fa-clipboard-list
+                                {% elif section == 'payments' %}fa-money-bill-wave
+                                {% elif section == 'archive' %}fa-archive
+                                {% elif section == 'archive_folders' %}fa-folder
+                                {% elif section == 'archive_upload' %}fa-file-upload
+                                {% elif section == 'archive_quick_upload' %}fa-cloud-upload-alt
+                                {% elif section == 'condition' %}fa-clipboard-check
+                                {% elif section == 'repairs' %}fa-tools
+                                {% elif section == 'analytics' %}fa-chart-bar
+                                {% elif section == 'reports' %}fa-file-alt
+                                {% elif section == 'dashboard_analytics' %}fa-chart-pie
+                                {% elif section == 'payment_analytics' %}fa-chart-line
+                                {% elif section == 'settings' %}fa-cog
+                                {% elif section == 'reviews' %}fa-star
+                                {% elif section == 'system_logs' %}fa-history
+                                {% elif section == 'backup' %}fa-save
+                                {% elif section == 'diagnostics' %}fa-stethoscope
+                                {% else %}fa-key{% endif %}"></i>
+                            <span>
+                                {% if section == 'dashboard' %}{% trans "لوحة التحكم" %}
+                                {% elif section == 'reservations' %}{% trans "الحجوزات" %}
+                                {% elif section == 'confirmation' %}{% trans "تأكيد الحجوزات" %}
+                                {% elif section == 'customers' %}{% trans "العملاء" %}
+                                {% elif section == 'vehicles' %}{% trans "المركبات" %}
+                                {% elif section == 'custody' %}{% trans "العهدة" %}
+                                {% elif section == 'payments' %}{% trans "المدفوعات" %}
+                                {% elif section == 'archive' %}{% trans "الأرشيف" %}
+                                {% elif section == 'archive_folders' %}{% trans "إدارة المجلدات" %}
+                                {% elif section == 'archive_upload' %}{% trans "رفع وثيقة جديدة" %}
+                                {% elif section == 'archive_quick_upload' %}{% trans "رفع سريع للملفات" %}
+                                {% elif section == 'condition' %}{% trans "حالة المركبات" %}
+                                {% elif section == 'repairs' %}{% trans "الإصلاحات" %}
+                                {% elif section == 'analytics' %}{% trans "التحليلات" %}
+                                {% elif section == 'reports' %}{% trans "التقارير" %}
+                                {% elif section == 'dashboard_analytics' %}{% trans "تحليلات لوحة القيادة" %}
+                                {% elif section == 'payment_analytics' %}{% trans "تقارير المدفوعات" %}
+                                {% elif section == 'settings' %}{% trans "الإعدادات" %}
+                                {% elif section == 'reviews' %}{% trans "التقييمات" %}
+                                {% elif section == 'system_logs' %}{% trans "سجلات النظام" %}
+                                {% elif section == 'backup' %}{% trans "النسخ الاحتياطي" %}
+                                {% elif section == 'diagnostics' %}{% trans "تشخيص وإصلاح" %}
+                                {% else %}{{ section }}{% endif %}
+                            </span>
+                            <span class="action-count tab-count">0</span>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="tab-item utility" id="expand-all">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                            <span>{% trans "فتح الكل" %}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- أقسام الصلاحيات -->
+                    {% for section, perms in permissions.items %}
+                    <div class="permissions-section {% if forloop.first %}active{% endif %}" id="section-{{ section }}">
+                        <div class="section-title">
+                            <i class="fas 
+                                {% if section == 'dashboard' %}fa-tachometer-alt
+                                {% elif section == 'reservations' %}fa-calendar-check
+                                {% elif section == 'confirmation' %}fa-clipboard-check
+                                {% elif section == 'customers' %}fa-users
+                                {% elif section == 'vehicles' %}fa-car
+                                {% elif section == 'custody' %}fa-clipboard-list
+                                {% elif section == 'payments' %}fa-money-bill-wave
+                                {% elif section == 'archive' %}fa-archive
+                                {% elif section == 'archive_folders' %}fa-folder
+                                {% elif section == 'archive_upload' %}fa-file-upload
+                                {% elif section == 'archive_quick_upload' %}fa-cloud-upload-alt
+                                {% elif section == 'condition' %}fa-clipboard-check
+                                {% elif section == 'repairs' %}fa-tools
+                                {% elif section == 'analytics' %}fa-chart-bar
+                                {% elif section == 'reports' %}fa-file-alt
+                                {% elif section == 'dashboard_analytics' %}fa-chart-pie
+                                {% elif section == 'payment_analytics' %}fa-chart-line
+                                {% elif section == 'settings' %}fa-cog
+                                {% elif section == 'reviews' %}fa-star
+                                {% elif section == 'system_logs' %}fa-history
+                                {% elif section == 'backup' %}fa-save
+                                {% elif section == 'diagnostics' %}fa-stethoscope
+                                {% else %}fa-key{% endif %}"></i>
+                            <span>
+                                {% if section == 'dashboard' %}{% trans "صلاحيات لوحة التحكم" %}
+                                {% elif section == 'reservations' %}{% trans "صلاحيات الحجوزات" %}
+                                {% elif section == 'confirmation' %}{% trans "صلاحيات تأكيد الحجوزات" %}
+                                {% elif section == 'customers' %}{% trans "صلاحيات العملاء" %}
+                                {% elif section == 'vehicles' %}{% trans "صلاحيات المركبات" %}
+                                {% elif section == 'custody' %}{% trans "صلاحيات العهدة" %}
+                                {% elif section == 'payments' %}{% trans "صلاحيات المدفوعات" %}
+                                {% elif section == 'archive' %}{% trans "صلاحيات الأرشيف" %}
+                                {% elif section == 'archive_folders' %}{% trans "صلاحيات إدارة المجلدات" %}
+                                {% elif section == 'archive_upload' %}{% trans "صلاحيات رفع الوثائق" %}
+                                {% elif section == 'archive_quick_upload' %}{% trans "صلاحيات الرفع السريع" %}
+                                {% elif section == 'condition' %}{% trans "صلاحيات حالة المركبات" %}
+                                {% elif section == 'repairs' %}{% trans "صلاحيات الإصلاحات" %}
+                                {% elif section == 'analytics' %}{% trans "صلاحيات التحليلات" %}
+                                {% elif section == 'reports' %}{% trans "صلاحيات التقارير" %}
+                                {% elif section == 'dashboard_analytics' %}{% trans "صلاحيات تحليلات لوحة القيادة" %}
+                                {% elif section == 'payment_analytics' %}{% trans "صلاحيات تقارير المدفوعات" %}
+                                {% elif section == 'settings' %}{% trans "صلاحيات الإعدادات" %}
+                                {% elif section == 'reviews' %}{% trans "صلاحيات التقييمات" %}
+                                {% elif section == 'system_logs' %}{% trans "صلاحيات سجلات النظام" %}
+                                {% elif section == 'backup' %}{% trans "صلاحيات النسخ الاحتياطي" %}
+                                {% elif section == 'diagnostics' %}{% trans "صلاحيات التشخيص والإصلاح" %}
+                                {% else %}{{ section }}{% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="section-actions">
+                            <button type="button" class="action-btn outline toggle-section">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <button type="button" class="action-btn outline select-all" data-section="{{ section }}">
+                                <i class="fas fa-check-double"></i>
+                                <span>{% trans "تحديد الكل" %}</span>
+                            </button>
+                            <div class="action-count section-count">0 / {{ perms|length }}</div>
+                        </div>
+                        
+                        <div class="section-body" {% if not forloop.first %}style="display: none;"{% endif %}>
+                            <div class="permissions-grid">
+                                {% for perm in perms %}
+                                <div class="permission-card {% if perm.active %}active{% endif %}">
+                                    <input type="checkbox" name="{{ section }}_{{ perm.name }}" id="{{ section }}_{{ perm.name }}" class="permission-checkbox" style="display: none;" {% if perm.active %}checked{% endif %}>
+                                    <div class="permission-indicator"></div>
+                                    <div class="permission-level">
+                                        {% if 'view' in perm.name or 'read' in perm.name %}R
+                                        {% elif 'delete' in perm.name %}D
+                                        {% else %}W{% endif %}
+                                    </div>
+                                    <div class="permission-icon">
+                                        <i class="fas 
+                                            {% if 'view' in perm.name or 'read' in perm.name %}fa-eye
+                                            {% elif 'create' in perm.name or 'add' in perm.name %}fa-plus-circle
+                                            {% elif 'edit' in perm.name or 'update' in perm.name %}fa-edit
+                                            {% elif 'delete' in perm.name %}fa-trash-alt
+                                            {% elif 'export' in perm.name %}fa-file-export
+                                            {% elif 'import' in perm.name %}fa-file-import
+                                            {% elif 'approve' in perm.name %}fa-check-circle
+                                            {% elif 'reject' in perm.name %}fa-times-circle
+                                            {% elif 'print' in perm.name %}fa-print
+                                            {% elif 'download' in perm.name %}fa-download
+                                            {% elif 'upload' in perm.name %}fa-upload
+                                            {% elif 'manage' in perm.name %}fa-cog
+                                            {% else %}fa-key{% endif %}"></i>
+                                    </div>
+                                    <div class="permission-title">
+                                        {% if perm.name == 'view_dashboard' %}{% trans "عرض لوحة التحكم" %}
+                                        {% elif perm.name == 'view_calendar' %}{% trans "عرض المواعيد القادمة" %}
+                                        {% elif perm.name == 'view_notifications' %}{% trans "عرض الإشعارات" %}
+                                        {% elif perm.name == 'customize_dashboard' %}{% trans "تخصيص لوحة التحكم" %}
+                                        {% else %}{{ perm.name|title|replace:"_":" " }}{% endif %}
+                                    </div>
+                                    <div class="permission-desc">{% trans "وصف الصلاحية" %}</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> {% trans "حفظ الصلاحيات" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/permissions_redesign.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // حساب عدد الصلاحيات المفعلة وتحديث العدادات
+        function updatePermissionCounts() {
+            const sections = document.querySelectorAll('.permissions-section');
+            
+            sections.forEach(section => {
+                const sectionId = section.id;
+                const sectionName = sectionId.replace('section-', '');
+                const cards = section.querySelectorAll('.permission-card');
+                const activeCards = section.querySelectorAll('.permission-card.active');
+                
+                // تحديث عداد القسم
+                const sectionCount = section.querySelector('.section-count');
+                if (sectionCount) {
+                    sectionCount.textContent = `${activeCards.length} / ${cards.length}`;
+                }
+                
+                // تحديث عداد التبويب
+                const tabCount = document.querySelector(`.tab-item[data-section="${sectionName}"] .tab-count`);
+                if (tabCount) {
+                    tabCount.textContent = activeCards.length;
+                }
+            });
+        }
+        
+        // تغيير حالة بطاقة الصلاحية عند النقر عليها
+        document.querySelectorAll('.permission-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                this.classList.toggle('active');
+                checkbox.checked = this.classList.contains('active');
+                updatePermissionCounts();
+            });
+        });
+        
+        // تحديد الكل في قسم معين
+        document.querySelectorAll('.select-all').forEach(button => {
+            button.addEventListener('click', function() {
+                const sectionName = this.getAttribute('data-section');
+                const section = document.getElementById(`section-${sectionName}`);
+                const cards = section.querySelectorAll('.permission-card');
+                const checkboxes = section.querySelectorAll('input[type="checkbox"]');
+                
+                cards.forEach(card => card.classList.add('active'));
+                checkboxes.forEach(checkbox => checkbox.checked = true);
+                
+                updatePermissionCounts();
+            });
+        });
+        
+        // تحديد الكل
+        document.getElementById('select-all-permissions').addEventListener('click', function() {
+            const cards = document.querySelectorAll('.permission-card');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            
+            cards.forEach(card => card.classList.add('active'));
+            checkboxes.forEach(checkbox => checkbox.checked = true);
+            
+            updatePermissionCounts();
+        });
+        
+        // إلغاء تحديد الكل
+        document.getElementById('deselect-all-permissions').addEventListener('click', function() {
+            const cards = document.querySelectorAll('.permission-card');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            
+            cards.forEach(card => card.classList.remove('active'));
+            checkboxes.forEach(checkbox => checkbox.checked = false);
+            
+            updatePermissionCounts();
+        });
+        
+        // التبديل بين التبويبات
+        document.querySelectorAll('.tab-item:not(.utility)').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const sectionName = this.getAttribute('data-section');
+                
+                // إزالة التنشيط من كل التبويبات وإخفاء جميع الأقسام
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.permissions-section').forEach(s => s.classList.remove('active'));
+                document.querySelectorAll('.section-body').forEach(b => b.style.display = 'none');
+                
+                // تنشيط التبويب المحدد وعرض القسم المناظر
+                this.classList.add('active');
+                const section = document.getElementById(`section-${sectionName}`);
+                if (section) {
+                    section.classList.add('active');
+                    section.querySelector('.section-body').style.display = 'block';
+                }
+            });
+        });
+        
+        // فتح/طي قسم
+        document.querySelectorAll('.toggle-section').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const section = this.closest('.permissions-section');
+                const sectionBody = section.querySelector('.section-body');
+                
+                if (sectionBody.style.display === 'none') {
+                    sectionBody.style.display = 'block';
+                    this.innerHTML = '<i class="fas fa-chevron-up"></i>';
+                } else {
+                    sectionBody.style.display = 'none';
+                    this.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                }
+            });
+        });
+        
+        // فتح الكل
+        document.getElementById('expand-all').addEventListener('click', function() {
+            document.querySelectorAll('.section-body').forEach(body => {
+                body.style.display = 'block';
+            });
+            document.querySelectorAll('.toggle-section').forEach(button => {
+                button.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            });
+        });
+        
+        // تحديث العدادات عند تحميل الصفحة
+        updatePermissionCounts();
+    });
+</script>
+{% endblock %}
