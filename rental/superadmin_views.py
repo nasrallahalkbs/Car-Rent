@@ -483,8 +483,8 @@ def admin_advanced_permissions(request, admin_id):
         'permissions_json': json.dumps(admin_permissions)
     }
     
-    # عرض الصفحة
-    return render(request, 'superadmin/admin_advanced_permissions_redesign.html', context)
+    # عرض الصفحة باستخدام القالب المبسط
+    return render(request, 'superadmin/admin_advanced_permissions_simple.html', context)
 
 @superadmin_required
 def add_admin(request):
