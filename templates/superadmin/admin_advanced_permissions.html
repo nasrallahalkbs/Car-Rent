@@ -6,291 +6,696 @@
 
 {% block extra_css %}
 <style>
-    .permission-section {
-        border-radius: 12px;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-        margin-bottom: 1.5rem;
+    :root {
+        --card-radius: 16px;
+        --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.07), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --card-gradient: linear-gradient(145deg, #ffffff, #f5f7fa);
+        --accent-color: 79, 70, 229;
+        --accent-color-light: 99, 102, 241;
+        --success-color: 16, 185, 129;
+        --warning-color: 245, 158, 11;
+        --danger-color: 239, 68, 68;
+        --info-color: 14, 165, 233;
+        --dark-color: 31, 41, 55;
+        --light-color: 249, 250, 251;
+        --transition-normal: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        --transition-bounce: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    /* ===== ألواح القسم الرئيسية ===== */
+    .neo-section {
+        border-radius: var(--card-radius);
+        box-shadow: var(--card-shadow);
+        margin-bottom: 1.75rem;
         overflow: hidden;
-        background-color: #fff;
-        transition: box-shadow 0.3s ease, transform 0.3s ease;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    
-    .permission-section:hover {
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
-        transform: translateY(-3px);
-    }
-    
-    .permission-header {
-        padding: 1.5rem;
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        display: flex;
-        align-items: center;
-    }
-    
-    .permission-header .icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 1.25rem;
-        color: #fff;
-        font-size: 1.4rem;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-    
-    .permission-header .title {
-        flex-grow: 1;
-    }
-    
-    .permission-body {
-        padding: 1.75rem;
-    }
-    
-    .permission-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.25rem;
-    }
-    
-    .permission-card {
-        background: linear-gradient(to bottom, #fafafa, #f8f9fa);
-        border-radius: 10px;
-        padding: 1.25rem;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
+        background-image: var(--card-gradient);
+        transition: var(--transition-normal);
+        border: 1px solid rgba(0, 0, 0, 0.02);
         position: relative;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        cursor: pointer;
     }
     
-    .permission-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+    .neo-section:hover {
+        box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.1), 0 15px 20px -5px rgba(0, 0, 0, 0.06);
+        transform: translateY(-5px);
     }
     
-    .permission-card.active {
-        background: linear-gradient(to bottom, rgba(var(--bs-success-rgb), 0.06), rgba(var(--bs-success-rgb), 0.02));
-        border-color: var(--bs-success);
-        box-shadow: 0 4px 12px rgba(var(--bs-success-rgb), 0.15);
-    }
-    
-    .permission-card.active .permission-name {
-        color: var(--bs-success);
-    }
-    
-    .permission-card .permission-icon {
-        position: absolute;
-        top: 0.75rem;
-        left: 0.75rem;
-        color: rgba(0, 0, 0, 0.2);
-        font-size: 1.2rem;
-        transition: all 0.3s ease;
-    }
-    
-    .permission-card:hover .permission-icon {
-        transform: scale(1.2);
-        color: rgba(var(--bs-primary-rgb), 0.5);
-    }
-    
-    .permission-name {
-        font-weight: 600;
-        margin-bottom: 0.35rem;
-        padding-left: 1.75rem;
-        font-size: 1rem;
-        transition: color 0.3s ease;
-    }
-    
-    .permission-desc {
-        font-size: 0.9rem;
-        color: #6c757d;
-        line-height: 1.4;
-    }
-    
-    .admin-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #4f46e5, #6366f1);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2.75rem;
-        font-weight: bold;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .admin-avatar::after {
+    .neo-section::after {
         content: '';
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        bottom: 0;
-        background: radial-gradient(circle at 70% 30%, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
+        height: 4px;
+        background: linear-gradient(to right, rgba(var(--accent-color), 1), rgba(var(--accent-color-light), 1));
+        opacity: 0;
+        transition: var(--transition-normal);
+    }
+    
+    .neo-section:hover::after {
+        opacity: 1;
+    }
+    
+    .neo-section-header {
+        padding: 1.75rem;
+        position: relative;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    
+    .neo-section-header .neo-icon {
+        --size: 52px;
+        min-width: var(--size);
+        height: var(--size);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        position: relative;
+        z-index: 1;
+        color: white;
+        overflow: hidden;
+    }
+    
+    .neo-section-header .neo-icon::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(145deg, rgba(var(--accent-color-light), 1), rgba(var(--accent-color), 1));
+        z-index: -1;
+    }
+    
+    .neo-section-header .neo-icon::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.25), transparent 70%);
+        z-index: 1;
+    }
+    
+    .neo-section-header .neo-title {
+        flex-grow: 1;
+    }
+    
+    .neo-section-header .neo-title h3 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.25rem;
+        color: rgba(var(--dark-color), 0.9);
+    }
+    
+    .neo-section-header .neo-title p {
+        margin: 0.25rem 0 0;
+        font-size: 0.9rem;
+        color: rgba(var(--dark-color), 0.65);
+    }
+    
+    .neo-section-body {
+        padding: 1.75rem;
+    }
+    
+    /* ===== بطاقات الصلاحيات ===== */
+    .permissions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+    }
+    
+    .permission-card {
+        background: var(--card-gradient);
+        border-radius: calc(var(--card-radius) - 4px);
+        padding: 1.35rem;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        transition: var(--transition-bounce);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+        cursor: pointer;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .permission-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(var(--accent-color), 0.02);
+        opacity: 0;
+        transition: var(--transition-normal);
+        z-index: -1;
+    }
+    
+    .permission-card:hover::before {
+        opacity: 1;
+    }
+    
+    .permission-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 0 50px 50px 0;
+        border-color: transparent transparent transparent transparent;
+        transition: var(--transition-normal);
+        opacity: 0;
+    }
+    
+    .permission-card.active::after {
+        border-color: transparent rgba(var(--success-color), 0.9) transparent transparent;
+        opacity: 1;
+    }
+    
+    .permission-card:hover {
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.08);
+    }
+    
+    .permission-card.active {
+        background: linear-gradient(145deg, rgba(var(--success-color), 0.05), rgba(var(--success-color), 0.02));
+        border: 1px solid rgba(var(--success-color), 0.2);
+    }
+    
+    .permission-card.active .permission-name {
+        color: rgba(var(--success-color), 1);
+        font-weight: 700;
+    }
+    
+    .permission-card .permission-check {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        opacity: 0;
+        transition: var(--transition-normal);
+        font-size: 1.25rem;
+        color: white;
+        z-index: 2;
+        transform: scale(0.5) rotate(-45deg);
+    }
+    
+    .permission-card.active .permission-check {
+        opacity: 1;
+        transform: scale(1) rotate(0);
+    }
+    
+    .permission-card .permission-icon {
+        margin-bottom: 1rem;
+        width: 42px;
+        height: 42px;
+        background-color: rgba(var(--accent-color), 0.08);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(var(--accent-color), 0.9);
+        font-size: 1.25rem;
+        transition: var(--transition-bounce);
+    }
+    
+    .permission-card:hover .permission-icon {
+        transform: scale(1.15) rotate(5deg);
+        background-color: rgba(var(--accent-color), 0.12);
+        color: rgba(var(--accent-color), 1);
+    }
+    
+    .permission-card.active .permission-icon {
+        background-color: rgba(var(--success-color), 0.1);
+        color: rgba(var(--success-color), 0.9);
+    }
+    
+    .permission-name {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 1.05rem;
+        transition: var(--transition-normal);
+        padding-right: 1.75rem;
+    }
+    
+    .permission-desc {
+        font-size: 0.9rem;
+        color: rgba(var(--dark-color), 0.6);
+        line-height: 1.5;
+        margin-top: auto;
+    }
+    
+    /* ===== التبويبات الجانبية ===== */
+    .neo-tabs {
+        display: flex;
+        overflow-x: auto;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        margin-bottom: 1.75rem;
+        border-radius: calc(var(--card-radius) - 6px);
+        background-color: rgba(var(--light-color), 0.6);
+        scrollbar-width: none;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+    }
+    
+    .neo-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .neo-tab {
+        padding: 0.75rem 1.5rem;
+        border-radius: calc(var(--card-radius) - 8px);
+        cursor: pointer;
+        white-space: nowrap;
+        font-weight: 500;
+        transition: var(--transition-bounce);
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .neo-tab::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: rgba(var(--accent-color), 0.05);
+        z-index: -1;
+        opacity: 0;
+        transition: var(--transition-normal);
+    }
+    
+    .neo-tab:hover::before {
+        opacity: 1;
+    }
+    
+    .neo-tab.active {
+        color: white;
+        font-weight: 600;
+    }
+    
+    .neo-tab.active::before {
+        background: linear-gradient(145deg, rgba(var(--accent-color-light), 1), rgba(var(--accent-color), 1));
+        opacity: 1;
+    }
+    
+    .neo-tab .tab-icon {
+        font-size: 1rem;
+        transition: var(--transition-normal);
+    }
+    
+    .neo-tab:hover .tab-icon {
+        transform: scale(1.2);
+    }
+    
+    .neo-tab.active .tab-icon {
+        transform: scale(1.2) rotate(5deg);
+    }
+    
+    .neo-tab:hover:not(.active) {
+        transform: translateY(-2px);
+    }
+    
+    .neo-tab.active {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(var(--accent-color), 0.25);
+    }
+    
+    /* ===== معلومات المسؤول ===== */
+    .admin-avatar {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: conic-gradient(from 225deg, rgba(var(--accent-color), 1), rgba(var(--accent-color-light), 1), rgba(var(--accent-color), 0.8));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: bold;
+        margin-bottom: 1.5rem;
+        position: relative;
+        box-shadow: var(--card-shadow);
+    }
+    
+    .admin-avatar::before {
+        content: '';
+        position: absolute;
+        inset: 5px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.25), transparent 60%);
+    }
+    
+    .admin-avatar::after {
+        content: '';
+        position: absolute;
+        width: calc(100% + 10px);
+        height: calc(100% + 10px);
+        top: -5px;
+        left: -5px;
+        border-radius: 50%;
+        border: 1px solid rgba(var(--accent-color), 0.3);
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+        70% {
+            transform: scale(1.1);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0;
+        }
     }
     
     .admin-info {
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-bottom: 2.5rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .admin-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.35rem;
+        background: linear-gradient(to right, rgba(var(--accent-color), 1), rgba(var(--accent-color-light), 1));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     
     .admin-role {
         display: inline-block;
-        padding: 0.35rem 1rem;
-        border-radius: 50px;
-        background-color: rgba(var(--bs-primary-rgb), 0.1);
-        color: var(--bs-primary);
+        padding: 0.4rem 1.25rem;
+        border-radius: 100px;
+        background-color: rgba(var(--accent-color), 0.1);
+        color: rgba(var(--accent-color), 0.9);
         font-size: 0.875rem;
-        margin-top: 0.75rem;
-        font-weight: 500;
-        box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.1);
+        font-weight: 600;
+        box-shadow: 0 3px 8px rgba(var(--accent-color), 0.15);
+        margin-bottom: 0.5rem;
     }
     
-    .status-badge {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 0.6rem;
-        height: 100%;
-        transition: width 0.3s ease;
-    }
-    
-    .permission-card:hover .status-badge {
-        width: 0.8rem;
-    }
-    
-    .status-badge.read {
-        background: linear-gradient(to bottom, #10b981, #059669);
-    }
-    
-    .status-badge.write {
-        background: linear-gradient(to bottom, #f59e0b, #d97706);
-    }
-    
-    .status-badge.admin {
-        background: linear-gradient(to bottom, #6366f1, #4f46e5);
-    }
-    
-    .status-badge.none {
-        background: linear-gradient(to bottom, #e5e7eb, #d1d5db);
-    }
-    
-    .panel-tabs {
+    .admin-detail {
         display: flex;
-        overflow-x: auto;
-        gap: 0.75rem;
-        padding-bottom: 1.25rem;
-        margin-bottom: 1.75rem;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        scrollbar-width: thin;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.85rem 1rem;
+        margin-bottom: 0.75rem;
+        background-color: rgba(var(--light-color), 0.5);
+        border-radius: calc(var(--card-radius) - 8px);
+        transition: var(--transition-normal);
     }
     
-    .panel-tabs::-webkit-scrollbar {
-        height: 4px;
+    .admin-detail:hover {
+        background-color: rgba(var(--light-color), 0.8);
+        transform: translateX(-5px);
     }
     
-    .panel-tabs::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
+    .admin-detail-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: rgba(var(--dark-color), 0.7);
     }
     
-    .panel-tabs::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 10px;
+    .admin-detail-value {
+        font-size: 0.9rem;
+        padding: 0.25rem 0.85rem;
+        background-color: white;
+        border-radius: 50px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
     
-    .panel-tab {
-        padding: 0.85rem 1.75rem;
-        background: linear-gradient(to bottom, #f8f9fa, #f1f3f5);
-        border-radius: 10px;
-        cursor: pointer;
-        white-space: nowrap;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-        border: 1px solid rgba(0, 0, 0, 0.04);
+    .status-active {
+        background-color: rgba(var(--success-color), 0.1);
+        color: rgba(var(--success-color), 1);
     }
     
-    .panel-tab.active {
-        background: linear-gradient(135deg, #4f46e5, #6366f1);
-        color: white;
-        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
-        border-color: #4f46e5;
-        transform: translateY(-2px);
+    .status-inactive {
+        background-color: rgba(var(--danger-color), 0.1);
+        color: rgba(var(--danger-color), 1);
     }
     
-    .panel-tab:hover:not(.active) {
-        background: linear-gradient(to bottom, #eaeaea, #e2e2e2);
-        transform: translateY(-2px);
+    .admin-detail-value.last-login {
+        font-size: 0.8rem;
     }
     
+    /* ===== الأقسام والحاويات ===== */
     .permissions-container [data-section] {
         display: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
+        animation: fadeOut 0.3s ease forwards;
     }
     
     .permissions-container [data-section].active {
         display: block;
-        opacity: 1;
+        animation: fadeIn 0.5s ease forwards;
     }
     
-    .legend {
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    }
+    
+    /* ===== وسوم تفسيرية للأيقونات ===== */
+    .permission-legend {
         display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
         flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border-radius: calc(var(--card-radius) - 6px);
+        background-color: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
     }
     
     .legend-item {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        transition: var(--transition-normal);
+        background-color: rgba(var(--light-color), 0.5);
+    }
+    
+    .legend-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
     }
     
     .legend-color {
-        width: 0.85rem;
-        height: 0.85rem;
-        border-radius: 4px;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .legend-color::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent 70%);
     }
     
     .legend-color.read {
-        background-color: #10b981;
+        background: linear-gradient(145deg, rgba(var(--success-color), 1), rgba(var(--success-color), 0.7));
     }
     
     .legend-color.write {
-        background-color: #f59e0b;
+        background: linear-gradient(145deg, rgba(var(--warning-color), 1), rgba(var(--warning-color), 0.7));
     }
     
     .legend-color.admin {
-        background-color: #6366f1;
+        background: linear-gradient(145deg, rgba(var(--accent-color), 1), rgba(var(--accent-color), 0.7));
     }
     
     .legend-color.none {
-        background-color: #e5e7eb;
+        background: linear-gradient(145deg, rgba(150, 150, 150, 0.5), rgba(150, 150, 150, 0.3));
     }
     
+    /* ===== أزرار التحكم ===== */
+    .neo-btn {
+        padding: 0.85rem 1.5rem;
+        border-radius: calc(var(--card-radius) - 8px);
+        font-weight: 600;
+        transition: var(--transition-bounce);
+        position: relative;
+        overflow: hidden;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        z-index: 1;
+    }
+    
+    .neo-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        transition: var(--transition-normal);
+    }
+    
+    .neo-btn::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), transparent 60%);
+        z-index: -1;
+    }
+    
+    .neo-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .neo-btn:active {
+        transform: translateY(-2px);
+    }
+    
+    .neo-btn.primary::before {
+        background: linear-gradient(145deg, rgba(var(--accent-color-light), 1), rgba(var(--accent-color), 1));
+    }
+    
+    .neo-btn.primary {
+        color: white;
+        box-shadow: 0 4px 15px rgba(var(--accent-color), 0.25);
+    }
+    
+    .neo-btn.success::before {
+        background: linear-gradient(145deg, rgba(var(--success-color), 0.9), rgba(var(--success-color), 1));
+    }
+    
+    .neo-btn.success {
+        color: white;
+        box-shadow: 0 4px 15px rgba(var(--success-color), 0.25);
+    }
+    
+    .neo-btn.outline {
+        background-color: transparent;
+        box-shadow: inset 0 0 0 2px rgba(var(--accent-color), 0.3);
+        color: rgba(var(--accent-color), 0.9);
+    }
+    
+    .neo-btn.outline:hover {
+        box-shadow: inset 0 0 0 2px rgba(var(--accent-color), 0.5), 0 10px 20px rgba(0, 0, 0, 0.05);
+        color: rgba(var(--accent-color), 1);
+    }
+    
+    .neo-btn.danger::before {
+        background: linear-gradient(145deg, rgba(var(--danger-color), 0.9), rgba(var(--danger-color), 1));
+    }
+    
+    .neo-btn.danger {
+        color: white;
+        box-shadow: 0 4px 15px rgba(var(--danger-color), 0.25);
+    }
+    
+    .neo-btn.disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    .neo-btn-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition-normal);
+    }
+    
+    .neo-btn:hover .neo-btn-icon {
+        transform: scale(1.2);
+    }
+    
+    /* ===== التكييف مع الأجهزة المختلفة ===== */
     @media (max-width: 992px) {
-        .permission-grid {
+        .permissions-grid {
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+        
+        .neo-tab {
+            padding: 0.6rem 1.25rem;
+            font-size: 0.9rem;
         }
     }
     
     @media (max-width: 768px) {
-        .permission-grid {
+        .permissions-grid {
             grid-template-columns: 1fr;
+        }
+        
+        .admin-avatar {
+            width: 120px;
+            height: 120px;
+            font-size: 2.5rem;
+        }
+        
+        .neo-section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 1.5rem;
+        }
+        
+        .neo-section-header .neo-icon {
+            --size: 48px;
+        }
+        
+        .neo-tab {
+            padding: 0.5rem 1rem;
+        }
+        
+        .neo-section-body {
+            padding: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .neo-tabs {
+            gap: 0.35rem;
+            padding: 0.4rem;
+        }
+        
+        .neo-tab {
+            padding: 0.5rem 0.85rem;
+            font-size: 0.85rem;
+        }
+        
+        .neo-tab .tab-icon {
+            font-size: 0.9rem;
         }
         
         .admin-avatar {
@@ -298,164 +703,221 @@
             height: 100px;
             font-size: 2.25rem;
         }
+        
+        .admin-name {
+            font-size: 1.35rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3">{% trans "إدارة الصلاحيات المتقدمة" %}</h1>
-        <p class="text-muted">{% trans "استعراض وإدارة صلاحيات المسؤول" %} {{ admin.user.get_full_name }}</p>
-    </div>
-    <div>
-        <a href="{% url 'superadmin_manage_admins' %}" class="btn btn-outline-primary">
-            <i class="fas fa-arrow-right me-1"></i> {% trans "عودة" %}
+<div class="container-fluid">
+    <!-- ترويسة الصفحة المحسنة -->
+    <div class="d-flex justify-content-between align-items-center py-4 flex-wrap gap-3">
+        <div>
+            <h1 class="h2 mb-1 fw-bold" style="background: linear-gradient(145deg, rgba(79, 70, 229, 1), rgba(99, 102, 241, 0.9)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{% trans "إدارة الصلاحيات المتقدمة" %}</h1>
+            <p class="text-muted mb-0 fs-6">{% trans "إدارة صلاحيات وأذونات المسؤول" %} <span class="fw-semibold text-primary">{{ admin.user.get_full_name }}</span></p>
+        </div>
+        <a href="{% url 'superadmin_manage_admins' %}" class="neo-btn outline">
+            <span class="neo-btn-icon"><i class="fas fa-arrow-right"></i></span>
+            <span>{% trans "عودة للمسؤولين" %}</span>
         </a>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-lg-4 mb-4">
-        <div class="permission-section">
-            <div class="permission-header">
-                <div class="icon" style="background-color: #4f46e5;">
-                    <i class="fas fa-user-shield"></i>
-                </div>
-                <div class="title">
-                    <h5 class="mb-0">{% trans "معلومات المسؤول" %}</h5>
-                    <small class="text-muted">{% trans "البيانات الأساسية وتفاصيل الصلاحيات" %}</small>
-                </div>
-            </div>
-            
-            <div class="permission-body">
-                <div class="admin-info">
-                    <div class="admin-avatar">
-                        {{ admin.user.username|slice:":2"|upper }}
+    <div class="row g-4">
+        <!-- معلومات المسؤول -->
+        <div class="col-lg-4">
+            <div class="neo-section">
+                <div class="neo-section-header">
+                    <div class="neo-icon">
+                        <i class="fas fa-user-shield"></i>
                     </div>
-                    <h4 class="mb-0">{{ admin.user.get_full_name }}</h4>
-                    <span class="admin-role">{{ admin.role.name }}</span>
-                </div>
-                
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-bold text-muted">{% trans "الدور" %}</span>
-                        <span>{{ admin.role.name }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-bold text-muted">{% trans "البريد الإلكتروني" %}</span>
-                        <span>{{ admin.user.email }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-bold text-muted">{% trans "مستوى الوصول" %}</span>
-                        <span>{% if admin.is_superadmin %}{% trans "مسؤول أعلى" %}{% else %}{% trans "مسؤول عادي" %}{% endif %}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-bold text-muted">{% trans "الحالة" %}</span>
-                        <span>{% if admin.is_active %}
-                            <span class="badge bg-success">{% trans "نشط" %}</span>
-                        {% else %}
-                            <span class="badge bg-danger">{% trans "غير نشط" %}</span>
-                        {% endif %}</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="fw-bold text-muted">{% trans "آخر تسجيل دخول" %}</span>
-                        <span>{{ admin.user.last_login }}</span>
+                    <div class="neo-title">
+                        <h3>{% trans "معلومات المسؤول" %}</h3>
+                        <p>{% trans "بيانات وتفاصيل الحساب" %}</p>
                     </div>
                 </div>
                 
-                <div class="d-grid gap-2">
-                    <a href="{% url 'superadmin_admin_details' admin.id %}" class="btn btn-outline-primary">
-                        <i class="fas fa-user me-1"></i> {% trans "عرض الملف الشخصي" %}
-                    </a>
+                <div class="neo-section-body">
+                    <div class="admin-info">
+                        <div class="admin-avatar">
+                            {{ admin.user.username|slice:":2"|upper }}
+                        </div>
+                        <h3 class="admin-name">{{ admin.user.get_full_name }}</h3>
+                        <span class="admin-role">{{ admin.role.name }}</span>
+                    </div>
                     
-                    {% if admin.is_superadmin %}
-                    <a href="#" class="btn btn-outline-danger disabled">
-                        <i class="fas fa-exclamation-triangle me-1"></i> {% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}
-                    </a>
-                    {% else %}
-                    <button class="btn btn-success save-permissions-btn" disabled>
-                        <i class="fas fa-save me-1"></i> {% trans "حفظ التغييرات" %}
-                    </button>
-                    {% endif %}
+                    <div class="admin-details mb-4">
+                        <div class="admin-detail">
+                            <span class="admin-detail-label">{% trans "الدور الوظيفي" %}</span>
+                            <span class="admin-detail-value">{{ admin.role.name }}</span>
+                        </div>
+                        <div class="admin-detail">
+                            <span class="admin-detail-label">{% trans "البريد الإلكتروني" %}</span>
+                            <span class="admin-detail-value">{{ admin.user.email }}</span>
+                        </div>
+                        <div class="admin-detail">
+                            <span class="admin-detail-label">{% trans "مستوى الصلاحيات" %}</span>
+                            <span class="admin-detail-value">{% if admin.is_superadmin %}{% trans "مسؤول أعلى" %}{% else %}{% trans "مسؤول عادي" %}{% endif %}</span>
+                        </div>
+                        <div class="admin-detail">
+                            <span class="admin-detail-label">{% trans "حالة الحساب" %}</span>
+                            <span class="admin-detail-value {% if admin.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                {% if admin.is_active %}
+                                    <i class="fas fa-check-circle me-1"></i> {% trans "نشط" %}
+                                {% else %}
+                                    <i class="fas fa-times-circle me-1"></i> {% trans "غير نشط" %}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="admin-detail">
+                            <span class="admin-detail-label">{% trans "آخر تسجيل دخول" %}</span>
+                            <span class="admin-detail-value last-login">{{ admin.user.last_login|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-3">
+                        <a href="{% url 'superadmin_admin_details' admin.id %}" class="neo-btn primary">
+                            <span class="neo-btn-icon"><i class="fas fa-user-cog"></i></span>
+                            <span>{% trans "إدارة الملف الشخصي" %}</span>
+                        </a>
+                        
+                        {% if admin.is_superadmin %}
+                        <div class="neo-btn danger disabled">
+                            <span class="neo-btn-icon"><i class="fas fa-ban"></i></span>
+                            <span>{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}</span>
+                        </div>
+                        {% else %}
+                        <button class="neo-btn success save-permissions-btn" disabled>
+                            <span class="neo-btn-icon"><i class="fas fa-save"></i></span>
+                            <span>{% trans "حفظ التغييرات" %}</span>
+                        </button>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="col-lg-8">
-        <div class="permission-section">
-            <div class="permission-header">
-                <div class="icon" style="background-color: #0ea5e9;">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <div class="title">
-                    <h5 class="mb-0">{% trans "الصلاحيات المتقدمة" %}</h5>
-                    <small class="text-muted">{% trans "إدارة صلاحيات الوصول لجميع أجزاء النظام" %}</small>
-                </div>
-            </div>
-            
-            <div class="permission-body">
-                {% if admin.is_superadmin %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    {% trans "المسؤول الأعلى يملك وصولاً كاملاً لجميع أجزاء النظام ولا يمكن تعديل صلاحياته" %}
-                </div>
-                {% else %}
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color read"></div>
-                        <span>{% trans "قراءة فقط" %}</span>
+        
+        <!-- الصلاحيات المتقدمة -->
+        <div class="col-lg-8">
+            <div class="neo-section">
+                <div class="neo-section-header">
+                    <div class="neo-icon" style="background: linear-gradient(145deg, #0ea5e9, #0284c7);">
+                        <i class="fas fa-shield-alt"></i>
                     </div>
-                    <div class="legend-item">
-                        <div class="legend-color write"></div>
-                        <span>{% trans "تعديل وكتابة" %}</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color admin"></div>
-                        <span>{% trans "صلاحية إدارية" %}</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color none"></div>
-                        <span>{% trans "غير متاح" %}</span>
+                    <div class="neo-title">
+                        <h3>{% trans "الصلاحيات المتقدمة" %}</h3>
+                        <p>{% trans "إدارة صلاحيات الوصول لأجزاء النظام" %}</p>
                     </div>
                 </div>
                 
-                <div class="panel-tabs">
-                    <div class="panel-tab active" data-target="dashboard">{% trans "لوحة التحكم" %}</div>
-                    <div class="panel-tab" data-target="reservations">{% trans "الحجوزات" %}</div>
-                    <div class="panel-tab" data-target="users">{% trans "المستخدمين" %}</div>
-                    <div class="panel-tab" data-target="cars">{% trans "السيارات" %}</div>
-                    <div class="panel-tab" data-target="custody">{% trans "إدارة العهدة" %}</div>
-                    <div class="panel-tab" data-target="payments">{% trans "المدفوعات" %}</div>
-                    <div class="panel-tab" data-target="archive">{% trans "الأرشيف" %}</div>
-                    <div class="panel-tab" data-target="condition">{% trans "حالة السيارات" %}</div>
-                    <div class="panel-tab" data-target="repairs">{% trans "إدارة الإصلاحات" %}</div>
-                    <div class="panel-tab" data-target="analytics">{% trans "التحليلات" %}</div>
-                    <div class="panel-tab" data-target="roles">{% trans "الأدوار" %}</div>
-                    <div class="panel-tab" data-target="admins">{% trans "المسؤولين" %}</div>
-                    <div class="panel-tab" data-target="profile">{% trans "البروفايل" %}</div>
-                    <div class="panel-tab" data-target="reviews">{% trans "التقييمات" %}</div>
-                    <div class="panel-tab" data-target="backup">{% trans "النسخ الاحتياطي" %}</div>
-                    <div class="panel-tab" data-target="system">{% trans "النظام" %}</div>
-                </div>
-                
-                <div class="permissions-container">
-                    <!-- قسم لوحة التحكم -->
-                    <div data-section="dashboard" class="active">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">{% trans "لوحة التحكم" %}</h5>
-                            <span class="badge bg-primary">{{ dashboard_permissions|length }} {% trans "صلاحية" %}</span>
+                <div class="neo-section-body">
+                    {% if admin.is_superadmin %}
+                    <div class="alert alert-info d-flex align-items-center gap-3" style="border-radius: 12px; border-right: 4px solid #0ea5e9; background-color: rgba(14, 165, 233, 0.1);">
+                        <i class="fas fa-info-circle fs-4" style="color: #0ea5e9;"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color: #0ea5e9;">{% trans "وصول كامل" %}</h6>
+                            <p class="mb-0 text-muted">{% trans "المسؤول الأعلى يملك وصولاً كاملاً لجميع أجزاء النظام ولا يمكن تعديل صلاحياته" %}</p>
                         </div>
-                        
-                        <div class="permission-grid">
-                            <div class="permission-card active">
-                                <div class="status-badge read"></div>
-                                <i class="fas fa-chart-line permission-icon"></i>
-                                <div class="permission-name">{% trans "عرض لوحة التحكم" %}</div>
-                                <div class="permission-desc">{% trans "عرض الإحصائيات والمؤشرات الرئيسية" %}</div>
+                    </div>
+                    {% else %}
+                    <!-- وسوم تفسيرية للألوان -->
+                    <div class="permission-legend">
+                        <div class="legend-item">
+                            <div class="legend-color read"></div>
+                            <span>{% trans "قراءة فقط" %}</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color write"></div>
+                            <span>{% trans "تعديل وكتابة" %}</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color admin"></div>
+                            <span>{% trans "صلاحية إدارية" %}</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color none"></div>
+                            <span>{% trans "غير متاح" %}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- تبويبات محسنة للأقسام -->
+                    <div class="neo-tabs" id="permissionTabs">
+                        <div class="neo-tab active" data-target="dashboard">
+                            <span class="tab-icon"><i class="fas fa-tachometer-alt"></i></span>
+                            <span>{% trans "لوحة التحكم" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="reservations">
+                            <span class="tab-icon"><i class="fas fa-calendar-check"></i></span>
+                            <span>{% trans "الحجوزات" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="users">
+                            <span class="tab-icon"><i class="fas fa-users"></i></span>
+                            <span>{% trans "المستخدمين" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="cars">
+                            <span class="tab-icon"><i class="fas fa-car"></i></span>
+                            <span>{% trans "السيارات" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="custody">
+                            <span class="tab-icon"><i class="fas fa-clipboard-list"></i></span>
+                            <span>{% trans "العهدة" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="payments">
+                            <span class="tab-icon"><i class="fas fa-money-bill-wave"></i></span>
+                            <span>{% trans "المدفوعات" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="archive">
+                            <span class="tab-icon"><i class="fas fa-archive"></i></span>
+                            <span>{% trans "الأرشيف" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="condition">
+                            <span class="tab-icon"><i class="fas fa-clipboard-check"></i></span>
+                            <span>{% trans "حالة السيارات" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="repairs">
+                            <span class="tab-icon"><i class="fas fa-tools"></i></span>
+                            <span>{% trans "الإصلاحات" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="analytics">
+                            <span class="tab-icon"><i class="fas fa-chart-bar"></i></span>
+                            <span>{% trans "التحليلات" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="profile">
+                            <span class="tab-icon"><i class="fas fa-id-card"></i></span>
+                            <span>{% trans "البروفايل" %}</span>
+                        </div>
+                        <div class="neo-tab" data-target="settings">
+                            <span class="tab-icon"><i class="fas fa-cog"></i></span>
+                            <span>{% trans "الإعدادات" %}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- حاوية الصلاحيات -->
+                    <div class="permissions-container">
+                        <!-- قسم لوحة التحكم -->
+                        <div data-section="dashboard" class="active">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="mb-0 fw-bold" style="color: rgba(79, 70, 229, 0.9);">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    {% trans "لوحة التحكم" %}
+                                </h5>
+                                <span class="badge py-2 px-3" style="background-color: rgba(79, 70, 229, 0.9); border-radius: 50px; font-weight: 500;">
+                                    {{ dashboard_permissions|length }} {% trans "صلاحية" %}
+                                </span>
                             </div>
                             
+                            <div class="permissions-grid">
+                                <div class="permission-card active">
+                                    <div class="permission-check"><i class="fas fa-check"></i></div>
+                                    <div class="permission-icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div class="permission-name">{% trans "عرض لوحة التحكم" %}</div>
+                                    <div class="permission-desc">{% trans "عرض الإحصائيات والمؤشرات الرئيسية للنظام" %}</div>
+                                </div>
+                                
                             <div class="permission-card active">
                                 <div class="status-badge read"></div>
                                 <i class="fas fa-calendar-alt permission-icon"></i>
@@ -1637,164 +2099,463 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // مفاتيح الأقسام
-    $('.panel-tab').on('click', function() {
-        const target = $(this).data('target');
-        
-        // تحديث حالة التبويبات مع تأثير انتقالي
-        $('.panel-tab').removeClass('active');
-        $(this).addClass('active');
-        
-        // تحديث القسم المعروض بتأثير التلاشي
-        $('[data-section]').removeClass('active');
-        setTimeout(function() {
-            $(`[data-section="${target}"]`).addClass('active');
-        }, 150);
+    // تأثير ظهور مُبهج عند تحميل الصفحة
+    animateElementsOnLoad();
+    
+    // تحسين تفاعل التبويبات
+    $('.neo-tab').on('click', function() {
+        if (!$(this).hasClass('active')) {
+            const target = $(this).data('target');
+            
+            // تأثير انتقالي لتبديل التبويبات
+            $('.neo-tab').removeClass('active');
+            $(this).addClass('active');
+            
+            // إنتقال سلس بين أقسام الصلاحيات
+            $('[data-section]').removeClass('active');
+            
+            // تأخير قصير ليسمح بالتلاشي قبل إظهار القسم الجديد
+            setTimeout(function() {
+                $(`[data-section="${target}"]`).addClass('active');
+                
+                // تأثير حركي لبطاقات القسم الجديد
+                $(`[data-section="${target}"] .permission-card`).each(function(index) {
+                    const card = $(this);
+                    setTimeout(function() {
+                        card.addClass('entrance-animation');
+                        setTimeout(function() {
+                            card.removeClass('entrance-animation');
+                        }, 800);
+                    }, index * 50);
+                });
+            }, 200);
+            
+            // حفظ التبويب المحدد في التخزين المحلي
+            localStorage.setItem('selectedPermissionTab', target);
+        }
     });
     
-    // تفعيل/إلغاء البطاقات
+    // استعادة التبويب المحدد سابقاً
+    const savedTab = localStorage.getItem('selectedPermissionTab');
+    if (savedTab) {
+        $(`.neo-tab[data-target="${savedTab}"]`).click();
+    }
+    
+    // تفعيل/إلغاء بطاقات الصلاحيات مع تأثيرات بصرية
     $('.permission-card').on('click', function() {
         if ({{ admin.is_superadmin|yesno:"true,false" }}) {
-            return; // لا نسمح بالتعديل للمسؤولين الأعلى
+            showNotificationToast('{% trans "تنبيه" %}', '{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}', 'warning');
+            return;
         }
         
         const card = $(this);
-        // إضافة تأثير النبض عند النقر
-        card.addClass('click-pulse');
-        setTimeout(function() {
-            card.removeClass('click-pulse');
-        }, 300);
+        const isActive = card.hasClass('active');
         
+        // تأثير النقر المرئي
+        card.addClass('click-effect');
+        setTimeout(() => card.removeClass('click-effect'), 300);
+        
+        // تبديل حالة البطاقة بتأثير بصري
         card.toggleClass('active');
         
-        // تحديث مؤشر الحالة مع تأثيرات بصرية
-        const statusBadge = card.find('.status-badge');
-        const permIcon = card.find('.permission-icon');
-        
-        if (card.hasClass('active')) {
-            // تغيير الحالة للقراءة إذا كانت سابقاً "none"
-            if (statusBadge.hasClass('none')) {
-                statusBadge.removeClass('none').addClass('read');
-                // تغيير لون الأيقونة بشكل تدريجي
-                permIcon.animate({
-                    color: 'rgba(16, 185, 129, 0.4)'
-                }, 300);
-            }
+        // التأثيرات البصرية المصاحبة
+        if (!isActive) {
+            // تفعيل الصلاحية
+            activatePermissionCard(card);
         } else {
-            statusBadge.removeClass('read write admin').addClass('none');
-            // إعادة لون الأيقونة للون الأصلي
-            permIcon.animate({
-                color: 'rgba(0, 0, 0, 0.2)'
-            }, 300);
+            // إلغاء تفعيل الصلاحية
+            deactivatePermissionCard(card);
         }
         
-        // تفعيل زر الحفظ مع تأثير بصري
-        if ($('.save-permissions-btn').prop('disabled')) {
-            $('.save-permissions-btn').prop('disabled', false)
-                .addClass('btn-highlight');
-            setTimeout(function() {
-                $('.save-permissions-btn').removeClass('btn-highlight');
-            }, 500);
-        }
+        // تفعيل زر الحفظ مع تأثيرات
+        enableSaveButton();
+        
+        // تحديث عداد الصلاحيات النشطة
+        updateActivePermissionsCount();
     });
     
-    // تطبيق تأثير عائم لبطاقات الصلاحيات
+    // تحسين زر حفظ التغييرات مع تأثيرات متقدمة
+    $('.save-permissions-btn').on('click', function() {
+        if ($(this).hasClass('disabled') || $(this).prop('disabled')) return;
+        
+        savePermissionsWithAnimation($(this));
+    });
+    
+    // تفعيل ميزة البحث السريع عن الصلاحيات
+    initializeQuickSearch();
+    
+    // إضافة تلميحات توضيحية للعناصر المختلفة
+    initializeTooltips();
+    
+    // إضافة التفاعلية لتصفية الصلاحيات
+    setupPermissionFilters();
+});
+
+// دوال الوظائف المختلفة
+function animateElementsOnLoad() {
+    // تأثير لعناصر الهيدر
+    $('.neo-section-header').addClass('fade-in-up');
+    setTimeout(() => $('.neo-section-header').removeClass('fade-in-up'), 1000);
+    
+    // تأثير لمعلومات المسؤول
+    $('.admin-info').addClass('fade-in-up');
+    setTimeout(() => $('.admin-info').removeClass('fade-in-up'), 1000);
+    
+    // تأثير لبطاقات الصلاحيات النشطة
     $('.permission-card.active').each(function(index) {
         const card = $(this);
         setTimeout(function() {
-            card.addClass('highlight-entry');
+            card.addClass('highlight-permission');
+            setTimeout(() => card.removeClass('highlight-permission'), 800);
+        }, 500 + (index * 100));
+    });
+}
+
+function activatePermissionCard(card) {
+    card.find('.permission-check').css({opacity: 1});
+    
+    // تأثير متدرج للتفعيل
+    card.addClass('card-activate');
+    setTimeout(() => card.removeClass('card-activate'), 500);
+    
+    // تغيير لون الأيقونة بشكل تدريجي
+    const permIcon = card.find('.permission-icon');
+    permIcon.addClass('icon-activate');
+    setTimeout(() => permIcon.removeClass('icon-activate'), 500);
+}
+
+function deactivatePermissionCard(card) {
+    card.find('.permission-check').css({opacity: 0});
+    
+    // تأثير متدرج لإلغاء التفعيل
+    card.addClass('card-deactivate');
+    setTimeout(() => card.removeClass('card-deactivate'), 500);
+    
+    // تغيير لون الأيقونة بشكل تدريجي
+    const permIcon = card.find('.permission-icon');
+    permIcon.addClass('icon-deactivate');
+    setTimeout(() => permIcon.removeClass('icon-deactivate'), 500);
+}
+
+function enableSaveButton() {
+    const saveBtn = $('.save-permissions-btn');
+    
+    if (saveBtn.prop('disabled')) {
+        saveBtn.prop('disabled', false);
+        saveBtn.addClass('btn-enabled');
+        
+        setTimeout(() => {
+            saveBtn.removeClass('btn-enabled');
+        }, 800);
+    }
+}
+
+function updateActivePermissionsCount() {
+    // تحديث عداد الصلاحيات النشطة في كل قسم
+    $('.permissions-container [data-section]').each(function() {
+        const section = $(this);
+        const sectionId = section.attr('data-section');
+        const activeCount = section.find('.permission-card.active').length;
+        const totalCount = section.find('.permission-card').length;
+        
+        // تحديث شارة العدد
+        section.find('.active-count').text(activeCount);
+        
+        // تحديث حالة التبويب المناسب
+        $(`.neo-tab[data-target="${sectionId}"]`).toggleClass('has-active', activeCount > 0);
+        
+        // إضافة لمسة إشعار بتغيير العدد
+        const counterBadge = section.find('.permission-counter');
+        counterBadge.addClass('counter-update');
+        setTimeout(() => counterBadge.removeClass('counter-update'), 500);
+    });
+}
+
+function savePermissionsWithAnimation(btn) {
+    // تعطيل الزر وإظهار حالة المعالجة
+    btn.prop('disabled', true)
+       .html(`
+           <span class="neo-btn-icon">
+               <i class="fas fa-spinner fa-spin"></i>
+           </span>
+           <span>{% trans "جاري الحفظ..." %}</span>
+       `);
+    
+    // محاكاة طلب AJAX لحفظ البيانات (في التطبيق الفعلي سيتم استبدالها بطلب حقيقي)
+    setTimeout(function() {
+        // إظهار حالة النجاح على الزر
+        btn.html(`
+            <span class="neo-btn-icon">
+                <i class="fas fa-check-circle"></i>
+            </span>
+            <span>{% trans "تم الحفظ بنجاح" %}</span>
+        `);
+        
+        // عرض رسالة نجاح متحركة
+        showNotificationToast(
+            '{% trans "تم بنجاح" %}', 
+            '{% trans "تم حفظ الصلاحيات المتقدمة بنجاح" %}', 
+            'success'
+        );
+        
+        // أضف تأثير نجاح على كل البطاقات النشطة
+        $('.permission-card.active').each(function(index) {
+            const card = $(this);
             setTimeout(function() {
-                card.removeClass('highlight-entry');
-            }, 600);
-        }, index * 100);
+                card.addClass('permission-saved');
+                setTimeout(() => card.removeClass('permission-saved'), 700);
+            }, index * 50);
+        });
+        
+        // إعادة الزر لحالته الأصلية بعد فترة مناسبة
+        setTimeout(function() {
+            btn.prop('disabled', false).html(`
+                <span class="neo-btn-icon">
+                    <i class="fas fa-save"></i>
+                </span>
+                <span>{% trans "حفظ التغييرات" %}</span>
+            `);
+            
+        }, 3500);
+    }, 1500);
+}
+
+function showNotificationToast(title, message, type = 'success') {
+    // تحديد لون الإشعار بناءً على النوع
+    let bgColor, icon;
+    switch(type) {
+        case 'success':
+            bgColor = 'linear-gradient(145deg, rgba(16, 185, 129, 1), rgba(5, 150, 105, 1))';
+            icon = 'fa-check-circle';
+            break;
+        case 'warning':
+            bgColor = 'linear-gradient(145deg, rgba(245, 158, 11, 1), rgba(217, 119, 6, 1))';
+            icon = 'fa-exclamation-triangle';
+            break;
+        case 'info':
+            bgColor = 'linear-gradient(145deg, rgba(14, 165, 233, 1), rgba(2, 132, 199, 1))';
+            icon = 'fa-info-circle';
+            break;
+        case 'error':
+            bgColor = 'linear-gradient(145deg, rgba(239, 68, 68, 1), rgba(220, 38, 38, 1))';
+            icon = 'fa-times-circle';
+            break;
+    }
+    
+    // إنشاء عنصر الإشعار
+    const toast = $(`
+        <div class="neo-toast" style="background: ${bgColor}">
+            <div class="neo-toast-icon">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="neo-toast-content">
+                <h6 class="neo-toast-title">${title}</h6>
+                <p class="neo-toast-message">${message}</p>
+            </div>
+            <button class="neo-toast-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `);
+    
+    // إضافة الإشعار للصفحة مع التأثيرات
+    toast.appendTo('body').hide().fadeIn(300);
+    
+    // إغلاق الإشعار عند النقر على زر الإغلاق
+    toast.find('.neo-toast-close').on('click', function() {
+        toast.fadeOut(300, function() {
+            $(this).remove();
+        });
     });
     
-    // تحسين زر حفظ التغييرات
-    $('.save-permissions-btn').on('click', function() {
-        const btn = $(this);
-        
-        // تعطيل الزر أثناء المعالجة
-        btn.prop('disabled', true)
-           .html('<i class="fas fa-spinner fa-spin me-1"></i> {% trans "جاري الحفظ..." %}');
-        
-        // محاكاة لعملية الحفظ على الخادم (سيتم استبدالها بطلب AJAX حقيقي)
-        setTimeout(function() {
-            // اظهار تأكيد النجاح
-            btn.removeClass('btn-success').addClass('btn-light')
-               .html('<i class="fas fa-check-circle me-1"></i> {% trans "تم الحفظ بنجاح" %}');
-            
-            // عرض رسالة نجاح متحركة
-            $('<div class="save-success-message"><i class="fas fa-check-circle"></i> {% trans "تم حفظ الصلاحيات بنجاح" %}</div>')
-                .appendTo('body')
-                .fadeIn(300)
-                .delay(2000)
-                .fadeOut(500, function() {
-                    $(this).remove();
-                });
-            
-            // إعادة الزر لحالته الأصلية بعد فترة
-            setTimeout(function() {
-                btn.removeClass('btn-light').addClass('btn-success')
-                   .html('<i class="fas fa-save me-1"></i> {% trans "حفظ التغييرات" %}');
-            }, 3000);
-        }, 1200);
-    });
-});
+    // إخفاء الإشعار تلقائياً بعد فترة
+    setTimeout(function() {
+        toast.fadeOut(300, function() {
+            $(this).remove();
+        });
+    }, 5000);
+}
+
+function initializeQuickSearch() {
+    // سيتم تنفيذ هذه الوظيفة في الإصدار القادم
+}
+
+function initializeTooltips() {
+    // سيتم تنفيذ هذه الوظيفة في الإصدار القادم
+}
+
+function setupPermissionFilters() {
+    // سيتم تنفيذ هذه الوظيفة في الإصدار القادم
+}
 </script>
 
 <style>
     /* تأثيرات بصرية متقدمة */
-    @keyframes float-in {
-        0% { opacity: 0; transform: translateY(10px); }
-        100% { opacity: 1; transform: translateY(0); }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
-    @keyframes click-pulse {
+    @keyframes cardActivate {
+        0% { transform: scale(1); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05); }
+        50% { transform: scale(1.03); box-shadow: 0 15px 25px rgba(16, 185, 129, 0.15); }
+        100% { transform: scale(1); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.1); }
+    }
+    
+    @keyframes cardDeactivate {
+        0% { transform: scale(1); }
+        50% { transform: scale(0.97); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes iconActivate {
+        0% { transform: scale(1); background-color: rgba(79, 70, 229, 0.08); }
+        50% { transform: scale(1.2) rotate(10deg); background-color: rgba(16, 185, 129, 0.15); }
+        100% { transform: scale(1); background-color: rgba(16, 185, 129, 0.1); }
+    }
+    
+    @keyframes iconDeactivate {
+        0% { transform: scale(1); background-color: rgba(16, 185, 129, 0.1); }
+        50% { transform: scale(0.9) rotate(-10deg); background-color: rgba(79, 70, 229, 0.08); }
+        100% { transform: scale(1); background-color: rgba(79, 70, 229, 0.08); }
+    }
+    
+    @keyframes buttonEnabled {
+        0% { transform: scale(1); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.1); }
+        50% { transform: scale(1.05); box-shadow: 0 15px 25px rgba(16, 185, 129, 0.25); }
+        100% { transform: scale(1); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.15); }
+    }
+    
+    @keyframes counterUpdate {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes clickEffect {
         0% { transform: scale(1); }
         50% { transform: scale(0.98); }
         100% { transform: scale(1); }
     }
     
-    @keyframes highlight-animation {
-        0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
-        70% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    @keyframes entranceAnimation {
+        0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     
-    @keyframes btn-highlight-animation {
-        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    @keyframes highlightPermission {
+        0% { box-shadow: 0 5px 15px rgba(16, 185, 129, 0); }
+        50% { box-shadow: 0 5px 25px rgba(16, 185, 129, 0.3); }
+        100% { box-shadow: 0 5px 15px rgba(16, 185, 129, 0); }
+    }
+    
+    @keyframes permissionSaved {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+        70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
         100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
     
-    .highlight-entry {
-        animation: float-in 0.5s ease-out, highlight-animation 1s ease-out;
+    .fade-in-up {
+        animation: fadeInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
     }
     
-    .click-pulse {
-        animation: click-pulse 0.3s ease-out;
+    .card-activate {
+        animation: cardActivate 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
     
-    .btn-highlight {
-        animation: btn-highlight-animation 1s ease-out;
+    .card-deactivate {
+        animation: cardDeactivate 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
     
-    .save-success-message {
+    .icon-activate {
+        animation: iconActivate 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    
+    .icon-deactivate {
+        animation: iconDeactivate 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    
+    .btn-enabled {
+        animation: buttonEnabled 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    
+    .counter-update {
+        animation: counterUpdate 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    
+    .click-effect {
+        animation: clickEffect 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    
+    .entrance-animation {
+        animation: entranceAnimation 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    
+    .highlight-permission {
+        animation: highlightPermission 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    
+    .permission-saved {
+        animation: permissionSaved 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    
+    /* الإشعارات Toast */
+    .neo-toast {
         position: fixed;
         top: 20px;
         right: 20px;
-        background: linear-gradient(135deg, #10b981, #059669);
+        min-width: 300px;
+        max-width: 400px;
+        padding: 1rem;
+        border-radius: 12px;
         color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         z-index: 9999;
-        display: none;
-        font-weight: 500;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
     }
     
-    .save-success-message i {
-        margin-right: 8px;
+    .neo-toast-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    
+    .neo-toast-content {
+        flex-grow: 1;
+    }
+    
+    .neo-toast-title {
+        margin: 0 0 5px;
+        font-weight: 600;
+    }
+    
+    .neo-toast-message {
+        margin: 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .neo-toast-close {
+        background: transparent;
+        border: none;
+        color: white;
+        opacity: 0.7;
+        cursor: pointer;
+        padding: 0;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .neo-toast-close:hover {
+        opacity: 1;
+        transform: scale(1.1);
     }
     
     [data-section].active {
