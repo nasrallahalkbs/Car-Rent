@@ -25,10 +25,14 @@ $(document).ready(function() {
  */
 function initializeTabs() {
     // عند النقر على تبويب
-    $('.tab-item').on('click', function() {
+    $('.tab-item').on('click', function(e) {
+        // منع السلوك الافتراضي
+        e.preventDefault();
+        e.stopPropagation();
+        
         // تجاهل زر فتح الكل لأنه له معالج منفصل
         if ($(this).hasClass('utility')) {
-            return;
+            return false;
         }
         
         // الحصول على القسم المستهدف
@@ -44,6 +48,8 @@ function initializeTabs() {
         
         // حفظ التبويب المحدد في التخزين المحلي
         localStorage.setItem('activePermissionsTab', targetSection);
+        
+        return false;
     });
     
     // تحميل التبويب المختار سابقًا أو التبويب الأول
@@ -60,6 +66,9 @@ function initializeTabs() {
  * تهيئة بطاقات الصلاحيات
  */
 function initializePermissionCards() {
+    // تتبع التغييرات
+    let changesCount = 0;
+    
     // عند النقر على بطاقة صلاحية
     $('.permission-card').on('click', function() {
         // منع التفاعل مع بطاقات الصلاحيات للمسؤول الأعلى
@@ -74,19 +83,127 @@ function initializePermissionCards() {
         // تحديث عدد الصلاحيات المفعلة
         updatePermissionCounts();
         
-        // تفعيل زر الحفظ
-        $('.save-button').prop('disabled', false);
+        // زيادة عداد التغييرات
+        changesCount++;
     });
+    
+    // إضافة زر لحفظ جميع التغييرات في الصفحة
+    if ($('#save-all-permissions-btn').length === 0) {
+        const saveButton = $('<button>').attr({
+            id: 'save-all-permissions-btn',
+            type: 'button',
+            class: 'action-btn primary save-all-btn'
+        }).css({
+            position: 'fixed',
+            bottom: '20px',
+            left: '20px',
+            padding: '10px 15px',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+        }).html('<i class="fas fa-save"></i> <span>حفظ جميع الصلاحيات</span>');
+        
+        // إضافة مؤشر التغييرات
+        const changesIndicator = $('<span>').attr({
+            id: 'changes-counter',
+            class: 'badge badge-light'
+        }).css({
+            display: 'inline-block',
+            minWidth: '20px',
+            height: '20px',
+            lineHeight: '20px',
+            background: '#f8f9fa',
+            color: '#212529',
+            borderRadius: '50%',
+            textAlign: 'center',
+            marginRight: '5px',
+            fontSize: '12px'
+        }).text('0');
+        
+        saveButton.prepend(changesIndicator);
+        
+        // إخفاء الزر في البداية حتى يتم إجراء تغييرات
+        saveButton.hide();
+        
+        // إضافة حدث النقر على زر الحفظ
+        saveButton.on('click', function() {
+            saveAllPermissions();
+            changesCount = 0;
+            $('#changes-counter').text('0');
+            $(this).hide();
+        });
+        
+        // إضافة الزر للصفحة
+        $('body').append(saveButton);
+    }
+    
+    // تحديث عداد التغييرات كل ثانية
+    setInterval(() => {
+        if (changesCount > 0) {
+            $('#save-all-permissions-btn').show();
+            $('#changes-counter').text(changesCount);
+        }
+    }, 1000);
     
     // تحديث عداد الصلاحيات المفعلة عند التحميل
     updatePermissionCounts();
 }
 
 /**
+ * حفظ جميع الصلاحيات
+ */
+function saveAllPermissions() {
+    // إضافة حقول مخفية للصلاحيات المختارة
+    addHiddenPermissionFields();
+    
+    // عرض مؤشر جاري الحفظ
+    const saveNotificationId = 'save-notification';
+    if ($('#' + saveNotificationId).length === 0) {
+        const notification = $('<div>').attr({
+            id: saveNotificationId,
+            class: 'save-indicator'
+        }).css({
+            position: 'fixed',
+            bottom: '70px',
+            left: '20px',
+            background: '#4caf50',
+            color: 'white',
+            padding: '10px 15px',
+            borderRadius: '4px',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            zIndex: 9999
+        }).html('<i class="fas fa-spinner fa-spin"></i> <span>جارِ حفظ التغييرات...</span>');
+        
+        $('body').append(notification);
+        
+        // إرسال النموذج
+        $('#permissions-form').submit();
+        
+        // بعد إتمام الإرسال
+        setTimeout(() => {
+            $('#' + saveNotificationId).html('<i class="fas fa-check-circle"></i> <span>تم حفظ التغييرات</span>');
+            setTimeout(() => {
+                $('#' + saveNotificationId).fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 1500);
+        }, 1000);
+    }
+}
+
+/**
  * تهيئة أزرار تحديد الكل
  */
 function initializeSelectAllButtons() {
-    $('.select-all').on('click', function() {
+    $('.select-all').on('click', function(e) {
+        // منع أي سلوك افتراضي للزر
+        e.preventDefault();
+        e.stopPropagation();
+        
         // منع التفاعل مع الصلاحيات للمسؤول الأعلى
         if ($('#is-superadmin').val() === 'true') {
             showNotification('تنبيه', 'لا يمكن تعديل صلاحيات المسؤول الأعلى', 'warning');
@@ -112,8 +229,11 @@ function initializeSelectAllButtons() {
         // تحديث العداد
         updatePermissionCounts();
         
-        // تفعيل جميع أزرار الحفظ
-        $('.save-button, .submit-button').prop('disabled', false);
+        // زيادة عداد التغييرات
+        const currentCount = parseInt($('#changes-counter').text() || '0');
+        const newCount = currentCount + cards.length;
+        $('#changes-counter').text(newCount);
+        $('#save-all-permissions-btn').show();
         
         // تأكيد للمستخدم
         showNotification(
@@ -121,6 +241,8 @@ function initializeSelectAllButtons() {
             allSelected ? 'تم إلغاء تحديد جميع الصلاحيات' : 'تم تحديد جميع الصلاحيات',
             'success'
         );
+        
+        return false;
     });
 }
 
@@ -260,13 +382,23 @@ function addHiddenPermissionFields() {
  */
 function bindUtilityButtons() {
     // زر فتح جميع البطاقات
-    $('#expand-all').on('click', function() {
+    $('#expand-all').on('click', function(e) {
+        // منع السلوك الافتراضي
+        e.preventDefault();
+        e.stopPropagation();
+        
         $('.section-body').slideDown();
         showNotification('تم', 'تم فتح جميع البطاقات', 'success');
+        
+        return false;
     });
     
     // زر فتح/إغلاق محتوى القسم
-    $('.toggle-section').on('click', function() {
+    $('.toggle-section').on('click', function(e) {
+        // منع السلوك الافتراضي
+        e.preventDefault();
+        e.stopPropagation();
+        
         const sectionBody = $(this).closest('.permissions-section').find('.section-body');
         sectionBody.slideToggle();
         
@@ -277,6 +409,8 @@ function bindUtilityButtons() {
         } else {
             icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
         }
+        
+        return false;
     });
 }
 
