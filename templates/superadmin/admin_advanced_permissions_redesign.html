@@ -184,6 +184,8 @@
     <form method="POST" id="permissions-form" action="{% url 'superadmin_admin_advanced_permissions' admin.id %}" data-admin-id="{{ admin.id }}">
     {% csrf_token %}
     <input type="hidden" id="admin-id" name="admin_id" value="{{ admin.id }}">
+    <!-- حقل مخفي لوضع الحفظ -->
+    <input type="hidden" name="save_changes_only" value="true">
 
     <div class="row">
         <!-- معلومات المسؤول والإجراءات -->
@@ -1750,10 +1752,18 @@
         </div>
     </div>
 
-    <!-- زر حفظ التغييرات الثابت -->
-    <button id="direct-save-btn" type="submit" class="btn btn-primary btn-lg" style="position: fixed; bottom: 20px; left: 20px; z-index: 1000; padding: 15px 25px; border-radius: 8px; font-weight: bold; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-        <i class="fas fa-save"></i> حفظ التغييرات
-    </button>
+    <!-- زر حفظ التغييرات الثابت (تقليدي) -->
+    <div style="position: fixed; bottom: 20px; left: 20px; z-index: 9000;">
+        <button id="direct-save-btn" name="save_changes" value="save" type="submit" class="btn btn-primary btn-lg" style="padding: 15px 25px; border-radius: 8px; font-weight: bold; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background-color: #00796b; border-color: #00796b;">
+            <i class="fas fa-save"></i> حفظ التغييرات
+        </button>
+        
+        <!-- حقل مخفي لتمرير قيمة save_changes_only -->
+        <input type="hidden" name="save_changes_only" value="true">
+        
+        <!-- حقل مخفي لمعرف المسؤول -->
+        <input type="hidden" name="admin_id" value="{{ admin.id }}">
+    </div>
 </form>
 </div>
 {% endblock %}

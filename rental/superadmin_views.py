@@ -390,8 +390,10 @@ def admin_advanced_permissions(request, admin_id):
     # معالجة طلب POST لحفظ الصلاحيات
     if request.method == 'POST':
         # التحقق من نوع الطلب (حفظ كل الصلاحيات أو التغييرات فقط)
-        save_changes_only = request.POST.get('save_changes_only') == 'true'
+        save_changes_only = request.POST.get('save_changes_only') == 'true' or request.POST.get('save_changes') == 'save'
         changes_json = request.POST.get('changes_json')
+        
+        print(f"### بيانات النموذج المرسلة: {dict(request.POST)}")
         
         # طباعة جميع المفاتيح المرسلة للتحقق من وصول البيانات
         print("Keys received in POST:", request.POST.keys())
