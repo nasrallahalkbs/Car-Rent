@@ -312,51 +312,129 @@ def admin_advanced_permissions(request, admin_id):
         messages.error(request, _('المسؤول غير موجود'))
         return redirect('superadmin_manage_admins')
     
-    # الحصول على معلومات الصلاحيات المتقدمة
-    # هذه البيانات ستكون حقيقية في التطبيق الفعلي من خلال جلب صلاحيات المسؤول وأدواره
-    dashboard_permissions = ['view_dashboard', 'view_calendar', 'view_notifications']
-    reservation_permissions = ['view_reservations', 'view_reservation_details', 'edit_reservations', 'create_reservations', 'cancel_reservations', 'extend_reservations']
-    confirmation_permissions = ['view_pending_reservations', 'approve_reservations', 'reject_reservations', 'view_confirmation_history', 'add_confirmation_notes']
-    customer_permissions = ['view_customers', 'view_customer_details', 'edit_customers', 'create_customers']
-    vehicle_permissions = ['view_vehicles', 'view_vehicle_details', 'edit_vehicles', 'create_vehicles', 'maintenance_records']
-    custody_permissions = ['view_custody_items', 'add_custody_items', 'edit_custody_items', 'complete_custody', 'print_custody_document']
-    payment_permissions = ['view_payments', 'view_payment_details', 'create_manual_payments']
-    archive_permissions = ['view_archive', 'view_documents', 'search_archive', 'download_documents', 'archive_settings']
-    folder_permissions = ['view_folders', 'create_folders', 'edit_folders', 'view_folder_tree']
-    document_permissions = ['view_documents', 'upload_documents', 'edit_documents', 'download_documents']
-    condition_permissions = ['view_condition_reports', 'create_inspection_reports', 'edit_inspection_reports', 'manage_vehicle_images', 'export_condition_reports']
-    repairs_permissions = ['view_repairs', 'add_repairs', 'edit_repairs', 'manage_repair_costs']
-    profile_permissions = ['view_profile', 'edit_profile', 'change_password', 'manage_2fa', 'view_activity_logs']
-    report_permissions = ['view_basic_reports']
-    system_permissions = []
+    # الحصول على الصلاحيات الحالية للمسؤول من قاعدة البيانات
+    # يمكن استخدام حقل في نموذج المسؤول أو تخزينها في إعدادات النظام
+    admin_permissions = {}
     
-    # تسجيل نشاط الوصول إلى الصلاحيات المتقدمة
-    log_admin_activity(
-        request.admin_profile,
-        _("عرض الصلاحيات المتقدمة"),
-        _("تم عرض الصلاحيات المتقدمة للمسؤول: %(username)s") % {'username': admin.user.username},
-        request
-    )
+    # محاولة الحصول على الصلاحيات المخصصة إذا كانت موجودة
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT permissions FROM rental_adminpermission WHERE admin_id = %s", [admin_id])
+            result = cursor.fetchone()
+            if result and result[0]:
+                import json
+                admin_permissions = json.loads(result[0])
+    except Exception as e:
+        print(f"خطأ في قراءة الصلاحيات: {e}")
+        admin_permissions = {}
+    
+    # قائمة بجميع الصلاحيات مقسمة حسب الأقسام
+    all_permissions = {
+        'dashboard': ['view_dashboard', 'view_calendar', 'view_notifications', 'customize_dashboard'],
+        'reservations': ['view_reservations', 'view_reservation_details', 'edit_reservations', 'create_reservations', 'cancel_reservations', 'extend_reservations'],
+        'confirmation': ['view_pending_reservations', 'approve_reservations', 'reject_reservations', 'view_confirmation_history', 'add_confirmation_notes'],
+        'customers': ['view_customers', 'view_customer_details', 'edit_customers', 'create_customers', 'delete_customers'],
+        'vehicles': ['view_vehicles', 'view_vehicle_details', 'edit_vehicles', 'create_vehicles', 'delete_vehicles', 'maintenance_records'],
+        'custody': ['view_custody_items', 'add_custody_items', 'edit_custody_items', 'complete_custody', 'print_custody_document'],
+        'payments': ['view_payments', 'view_payment_details', 'create_manual_payments', 'edit_payments', 'delete_payments'],
+        'archive': ['view_archive', 'view_documents', 'search_archive', 'download_documents', 'archive_settings'],
+        'archive_folders': ['view_folders', 'create_folders', 'edit_folders', 'delete_folders'],
+        'archive_upload': ['upload_documents', 'edit_document_metadata', 'replace_document'],
+        'archive_quick_upload': ['batch_upload', 'view_upload_history'],
+        'condition': ['view_condition_reports', 'create_inspection_reports', 'edit_inspection_reports', 'manage_vehicle_images', 'export_condition_reports'],
+        'repairs': ['view_repairs', 'add_repairs', 'edit_repairs', 'manage_repair_costs', 'delete_repairs'],
+        'analytics': ['view_analytics_dashboard', 'view_sales_analytics', 'view_customer_analytics', 'export_analytics'],
+        'reports': ['view_reports', 'export_reports', 'customize_reports', 'schedule_reports'],
+        'dashboard_analytics': ['view_dashboard_analytics', 'customize_analytics_view', 'export_dashboard_analytics'],
+        'payment_analytics': ['view_payment_reports', 'filter_payment_data', 'export_payment_reports'],
+        'profile': ['view_profile', 'edit_profile', 'change_password', 'manage_2fa', 'view_activity_logs'],
+        'settings': ['view_settings', 'edit_general_settings', 'edit_user_settings', 'edit_advanced_settings'],
+        'reviews': ['view_reviews', 'approve_reviews', 'edit_reviews', 'delete_reviews'],
+        'system_logs': ['view_logs', 'filter_search_logs', 'export_logs'],
+        'backup': ['view_backups', 'create_backup', 'download_backup', 'restore_backup'],
+        'diagnostics': ['view_system_status', 'view_technical_reports', 'clean_system_data', 'repair_system_issues']
+    }
+    
+    # معالجة طلب POST لحفظ الصلاحيات
+    if request.method == 'POST':
+        # جمع الصلاحيات المحددة
+        selected_permissions = {}
+        
+        # جمع الصلاحيات المرسلة من النموذج
+        for section, permissions in all_permissions.items():
+            section_permissions = []
+            for perm in permissions:
+                if request.POST.get(f"{section}_{perm}") == 'on':
+                    section_permissions.append(perm)
+            
+            selected_permissions[section] = section_permissions
+        
+        # حفظ الصلاحيات في قاعدة البيانات
+        try:
+            import json
+            permissions_json = json.dumps(selected_permissions)
+            
+            # محاولة حفظ الصلاحيات في قاعدة البيانات
+            from django.db import connection
+            with connection.cursor() as cursor:
+                # التحقق من وجود سجل للمسؤول
+                cursor.execute("SELECT COUNT(*) FROM rental_adminpermission WHERE admin_id = %s", [admin_id])
+                if cursor.fetchone()[0] > 0:
+                    # تحديث السجل الموجود
+                    cursor.execute(
+                        "UPDATE rental_adminpermission SET permissions = %s WHERE admin_id = %s",
+                        [permissions_json, admin_id]
+                    )
+                else:
+                    # إنشاء سجل جديد
+                    cursor.execute(
+                        "INSERT INTO rental_adminpermission (admin_id, permissions) VALUES (%s, %s)",
+                        [admin_id, permissions_json]
+                    )
+            
+            # تسجيل نشاط تحديث الصلاحيات
+            log_admin_activity(
+                request.admin_profile,
+                _("تحديث الصلاحيات المتقدمة"),
+                _("تم تحديث الصلاحيات المتقدمة للمسؤول: %(username)s") % {'username': admin.user.username},
+                request
+            )
+            
+            messages.success(request, _("تم حفظ الصلاحيات بنجاح"))
+            admin_permissions = selected_permissions  # تحديث الصلاحيات المعروضة
+            
+        except Exception as e:
+            print(f"خطأ في حفظ الصلاحيات: {e}")
+            messages.error(request, _("حدث خطأ أثناء حفظ الصلاحيات"))
+    
+    # تحويل قائمة الصلاحيات ليتم عرضها في القالب
+    context_permissions = {}
+    for section, permissions in all_permissions.items():
+        context_permissions[section] = []
+        for perm in permissions:
+            is_active = False
+            if section in admin_permissions and perm in admin_permissions[section]:
+                is_active = True
+            context_permissions[section].append({
+                'name': perm,
+                'active': is_active
+            })
+    
+    # تسجيل نشاط الوصول إلى الصلاحيات المتقدمة (فقط للطلبات GET)
+    if request.method == 'GET':
+        log_admin_activity(
+            request.admin_profile,
+            _("عرض الصلاحيات المتقدمة"),
+            _("تم عرض الصلاحيات المتقدمة للمسؤول: %(username)s") % {'username': admin.user.username},
+            request
+        )
     
     # استخدام user.get_full_name بدلاً من admin.get_full_name
     context = {
         'admin': admin,
         'title': _('إدارة الصلاحيات المتقدمة - ') + admin.user.get_full_name(),
-        'dashboard_permissions': dashboard_permissions,
-        'reservation_permissions': reservation_permissions,
-        'confirmation_permissions': confirmation_permissions,
-        'customer_permissions': customer_permissions,
-        'vehicle_permissions': vehicle_permissions,
-        'custody_permissions': custody_permissions,
-        'payment_permissions': payment_permissions,
-        'archive_permissions': archive_permissions,
-        'folder_permissions': folder_permissions,
-        'document_permissions': document_permissions,
-        'condition_permissions': condition_permissions,
-        'repairs_permissions': repairs_permissions,
-        'profile_permissions': profile_permissions,
-        'report_permissions': report_permissions,
-        'system_permissions': system_permissions,
+        'permissions': context_permissions
     }
     
     return render(request, 'superadmin/admin_advanced_permissions_redesign.html', context)
