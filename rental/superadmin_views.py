@@ -316,10 +316,17 @@ def admin_advanced_permissions(request, admin_id):
     # هذه البيانات ستكون حقيقية في التطبيق الفعلي من خلال جلب صلاحيات المسؤول وأدواره
     dashboard_permissions = ['view_dashboard', 'view_calendar', 'view_notifications']
     reservation_permissions = ['view_reservations', 'view_reservation_details', 'edit_reservations', 'create_reservations', 'cancel_reservations', 'extend_reservations']
+    confirmation_permissions = ['view_pending_reservations', 'approve_reservations', 'reject_reservations', 'view_confirmation_history', 'add_confirmation_notes']
     customer_permissions = ['view_customers', 'view_customer_details', 'edit_customers', 'create_customers']
     vehicle_permissions = ['view_vehicles', 'view_vehicle_details', 'edit_vehicles', 'create_vehicles', 'maintenance_records']
+    custody_permissions = ['view_custody_items', 'add_custody_items', 'edit_custody_items', 'complete_custody', 'print_custody_document']
     payment_permissions = ['view_payments', 'view_payment_details', 'create_manual_payments']
-    archive_permissions = ['view_archive', 'view_documents', 'create_folders', 'upload_documents', 'download_documents']
+    archive_permissions = ['view_archive', 'view_documents', 'search_archive', 'download_documents', 'archive_settings']
+    folder_permissions = ['view_folders', 'create_folders', 'edit_folders', 'view_folder_tree']
+    document_permissions = ['view_documents', 'upload_documents', 'edit_documents', 'download_documents']
+    condition_permissions = ['view_condition_reports', 'create_inspection_reports', 'edit_inspection_reports', 'manage_vehicle_images', 'export_condition_reports']
+    repairs_permissions = ['view_repairs', 'add_repairs', 'edit_repairs', 'manage_repair_costs']
+    profile_permissions = ['view_profile', 'edit_profile', 'change_password', 'manage_2fa', 'view_activity_logs']
     report_permissions = ['view_basic_reports']
     system_permissions = []
     
@@ -337,10 +344,17 @@ def admin_advanced_permissions(request, admin_id):
         'title': _('إدارة الصلاحيات المتقدمة - ') + admin.user.get_full_name(),
         'dashboard_permissions': dashboard_permissions,
         'reservation_permissions': reservation_permissions,
+        'confirmation_permissions': confirmation_permissions,
         'customer_permissions': customer_permissions,
         'vehicle_permissions': vehicle_permissions,
+        'custody_permissions': custody_permissions,
         'payment_permissions': payment_permissions,
         'archive_permissions': archive_permissions,
+        'folder_permissions': folder_permissions,
+        'document_permissions': document_permissions,
+        'condition_permissions': condition_permissions,
+        'repairs_permissions': repairs_permissions,
+        'profile_permissions': profile_permissions,
         'report_permissions': report_permissions,
         'system_permissions': system_permissions,
     }
