@@ -15,11 +15,17 @@ let savedPermissions = {};
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🔄 تم تحميل نظام إدارة الصلاحيات المتقدم (الإصدار النهائي)");
     
-    // استدعاء التهيئة الرئيسية
-    initializeEnhancedPermissions();
-    
-    // محاولة تحميل الصلاحيات من العنصر المخفي
-    loadSavedPermissionsFromHiddenElement();
+    // استدعاء التهيئة الرئيسية بعد تأخير قصير للسماح لـ permission_card_injector.js باستكمال عمله
+    setTimeout(function() {
+        // استدعاء التهيئة الرئيسية
+        initializeEnhancedPermissions();
+        
+        // محاولة تحميل الصلاحيات من العنصر المخفي
+        loadSavedPermissionsFromHiddenElement();
+        
+        // تحديث واجهة المستخدم بناءً على البيانات المخزنة
+        setTimeout(updateUIFromPermissions, 300);
+    }, 100);
 });
 
 /**
@@ -215,10 +221,18 @@ function updateUIFromPermissions() {
     
     // تحديث جميع البطاقات
     const permissionCards = document.querySelectorAll('.permission-card');
+    let updatedCount = 0;
+    let missingDataCount = 0;
     
     permissionCards.forEach(card => {
         const section = card.getAttribute('data-section');
         const permission = card.getAttribute('data-permission');
+        
+        // التحقق من وجود سمات البيانات
+        if (!section || !permission) {
+            missingDataCount++;
+            return; // تخطي هذه البطاقة
+        }
         
         // التحقق من وجود القسم والصلاحية في الصلاحيات المحفوظة
         const isActive = savedPermissions[section] && 
@@ -231,7 +245,34 @@ function updateUIFromPermissions() {
         } else {
             card.classList.remove('active');
         }
+        
+        updatedCount++;
     });
+    
+    console.log(`✅ تم تحديث ${updatedCount} بطاقة (تم تخطي ${missingDataCount} بسبب نقص البيانات)`);
+    
+    // حل بديل للبطاقات التي لا تحتوي على سمات البيانات
+    // البحث عن البطاقات النشطة بناءً على العنوان
+    if (missingDataCount > 0) {
+        console.log("🔍 جارٍ تطبيق حل بديل للبطاقات بدون سمات بيانات...");
+        
+        // لكل قسم من الصلاحيات المحفوظة
+        for (const section in savedPermissions) {
+            // لكل صلاحية في هذا القسم
+            for (const permission of savedPermissions[section]) {
+                // البحث عن البطاقة المطابقة عن طريق النص
+                const titleElements = document.querySelectorAll('.permission-title[data-perm-name="' + permission + '"]');
+                titleElements.forEach(titleEl => {
+                    // العثور على البطاقة الأم
+                    const parentCard = titleEl.closest('.permission-card');
+                    if (parentCard) {
+                        parentCard.classList.add('active');
+                        console.log(`✅ تم تنشيط بطاقة بناءً على العنوان: ${section}_${permission}`);
+                    }
+                });
+            }
+        }
+    }
     
     // تحديث جميع العدادات
     updateAllTabCounters();
@@ -244,18 +285,72 @@ function addHiddenPermissionFields() {
     const form = document.querySelector('form#permissionsForm');
     if (!form) return;
     
-    // إزالة الحقول المخفية السابقة
-    const existingFields = form.querySelectorAll('input[type="hidden"][name^="dashboard_"], input[type="hidden"][name^="reservations_"]');
-    existingFields.forEach(field => {
-        field.remove();
+    // إزالة حقول الصلاحيات المخفية السابقة
+    // نحتاج إلى استهداف جميع أقسام الصلاحيات
+    const sections = [
+        'dashboard', 'reservations', 'confirmation', 'customers', 
+        'vehicles', 'custody', 'payments', 'archive', 'archive_folders',
+        'archive_upload', 'archive_quick_upload', 'condition', 'repairs',
+        'analytics', 'reports', 'dashboard_analytics', 'payment_analytics',
+        'profile', 'settings', 'reviews', 'system_logs', 'backup', 'diagnostics'
+    ];
+    
+    // إزالة حقول الصلاحيات السابقة
+    sections.forEach(section => {
+        const sectionFields = form.querySelectorAll(`input[type="hidden"][name^="${section}_"]`);
+        sectionFields.forEach(field => {
+            field.remove();
+        });
     });
     
     // إضافة حقول مخفية للصلاحيات المحددة
     const activeCards = document.querySelectorAll('.permission-card.active');
+    let addedCount = 0;
+    let missingDataCount = 0;
     
     activeCards.forEach(card => {
         const section = card.getAttribute('data-section');
         const permission = card.getAttribute('data-permission');
+        
+        // التعامل مع البطاقات التي لا تحتوي على سمات بيانات
+        if (!section || !permission) {
+            missingDataCount++;
+            
+            // محاولة استخراج البيانات من العنوان
+            const titleElement = card.querySelector('.permission-title');
+            if (titleElement) {
+                let permissionSection = '';
+                let permissionName = '';
+                
+                // الحصول على سمة data-perm-name من العنوان
+                if (titleElement.hasAttribute('data-perm-name')) {
+                    permissionName = titleElement.getAttribute('data-perm-name');
+                }
+                
+                // محاولة استنتاج اسم القسم من بنية HTML
+                // عادةً ما تكون البطاقة داخل قسم ذي معرّف section-XXX
+                let parentSection = card.closest('.permissions-section');
+                if (parentSection && parentSection.id) {
+                    permissionSection = parentSection.id.replace('section-', '');
+                }
+                
+                if (permissionSection && permissionName) {
+                    // إنشاء حقل جديد باستخدام البيانات المستخرجة
+                    const hiddenField = document.createElement('input');
+                    hiddenField.type = 'hidden';
+                    hiddenField.name = `${permissionSection}_${permissionName}`;
+                    hiddenField.value = 'on';
+                    
+                    // إضافة الحقل إلى النموذج
+                    form.appendChild(hiddenField);
+                    addedCount++;
+                    
+                    console.log(`✅ تمت إضافة حقل مستخرج: ${permissionSection}_${permissionName}`);
+                }
+            }
+            
+            return; // تخطي بقية العملية لهذه البطاقة
+        }
         
         // إنشاء حقل جديد
         const hiddenField = document.createElement('input');
@@ -265,9 +360,10 @@ function addHiddenPermissionFields() {
         
         // إضافة الحقل إلى النموذج
         form.appendChild(hiddenField);
+        addedCount++;
     });
     
-    console.log(`✅ تمت إضافة ${activeCards.length} حقل مخفي للصلاحيات المحددة`);
+    console.log(`✅ تمت إضافة ${addedCount} حقل مخفي للصلاحيات المحددة (${missingDataCount} بطاقة بدون سمات بيانات)`);
 }
 
 /**
