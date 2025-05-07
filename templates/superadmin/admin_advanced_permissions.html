@@ -6,6 +6,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin_permissions_cards.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_cards_fixed.css' %}">
 <style>
     :root {
         --card-radius: 8px;
@@ -725,6 +726,11 @@
                         <div class="neo-tab active" data-target="dashboard">
                             <span class="tab-icon"><i class="fas fa-tachometer-alt"></i></span>
                             <span>{% trans "لوحة التحكم" %}</span>
+                        </div>
+                        <!-- إضافة زر لفتح جميع البطاقات للتصحيح -->
+                        <div class="neo-tab" style="background-color: #16a34a; color: white;" id="openAllCardsBtn">
+                            <span class="tab-icon"><i class="fas fa-check-double"></i></span>
+                            <span>{% trans "فتح الكل" %}</span>
                         </div>
                         <div class="neo-tab" data-target="reservations">
                             <span class="tab-icon"><i class="fas fa-calendar-check"></i></span>
@@ -2588,6 +2594,22 @@ $(document).ready(function() {
     } else {
         // تفعيل التبويب الأول افتراضياً
         $('.neo-tab:first-child').click();
+        
+        // إصلاح لمشكلة عدم ظهور البطاقات
+        setTimeout(function() {
+            // التأكد من أن بطاقة واحدة على الأقل نشطة
+            if ($('.permissions-container [data-section].active').length === 0) {
+                // تنشيط قسم لوحة التحكم
+                $('.permissions-container [data-section="dashboard"]').addClass('active');
+                $('.neo-tab[data-target="dashboard"]').addClass('active');
+            }
+            
+            // إظهار محتويات البطاقات
+            $('.department-body').each(function() {
+                // إعادة تهيئة وعرض البطاقات بشكل صحيح
+                $(this).find('.permissions-grid').css('display', 'grid');
+            });
+        }, 300);
     }
     
     // تفعيل/إلغاء بطاقات الصلاحيات
