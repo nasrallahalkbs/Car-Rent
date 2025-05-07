@@ -39,6 +39,14 @@ $(document).ready(function() {
             if (!changedPermissionsOnly[sectionId].includes(permName)) {
                 changedPermissionsOnly[sectionId].push(permName);
                 console.log(`تم تسجيل تغيير للصلاحية: ${sectionId}_${permName}`);
+                
+                // إضافة تأثير مرئي للبطاقة المتغيرة
+                $(this).addClass('changed');
+                
+                // إضافة شارة التغييرات إذا لم تكن موجودة
+                if ($(this).find('.changes-badge').length === 0) {
+                    $(this).css('position', 'relative').append('<span class="changes-badge">!</span>');
+                }
             }
         } else {
             // إزالة من قائمة التغييرات إذا تم إلغاء التغيير
@@ -46,6 +54,12 @@ $(document).ready(function() {
             if (index > -1) {
                 changedPermissionsOnly[sectionId].splice(index, 1);
                 console.log(`تم إلغاء تغيير الصلاحية: ${sectionId}_${permName}`);
+                
+                // إزالة التأثير المرئي
+                $(this).removeClass('changed');
+                
+                // إزالة شارة التغييرات
+                $(this).find('.changes-badge').remove();
             }
             
             // إزالة المصفوفة الفرعية إذا أصبحت فارغة
@@ -208,4 +222,96 @@ function addChangedPermissionsFields() {
     $('#permissions-form').append(changesField);
     
     console.log('تم إضافة حقول مخفية للتغييرات:', changedPermissionsOnly);
+}
+
+/**
+ * عرض إشعار للمستخدم
+ * @param {string} title عنوان الإشعار
+ * @param {string} message رسالة الإشعار
+ * @param {string} type نوع الإشعار (info, success, warning, error)
+ */
+function showNotification(title, message, type = 'info') {
+    // التحقق من وجود دالة showNotification في النطاق الأصلي
+    if (typeof window.showNotification === 'function') {
+        // استخدام دالة الإشعارات الموجودة في النظام
+        window.showNotification(title, message, type);
+        return;
+    }
+    
+    // دالة بديلة لعرض الإشعارات إذا لم تكن الدالة الأصلية موجودة
+    const notificationId = 'custom-notification-' + new Date().getTime();
+    
+    // تحديد لون الإشعار حسب النوع
+    let bgColor, icon;
+    switch (type) {
+        case 'success':
+            bgColor = '#16a34a';
+            icon = '<i class="fas fa-check-circle"></i>';
+            break;
+        case 'warning':
+            bgColor = '#ea580c';
+            icon = '<i class="fas fa-exclamation-triangle"></i>';
+            break;
+        case 'error':
+            bgColor = '#dc2626';
+            icon = '<i class="fas fa-times-circle"></i>';
+            break;
+        default: // info
+            bgColor = '#3b82f6';
+            icon = '<i class="fas fa-info-circle"></i>';
+    }
+    
+    // إنشاء عنصر الإشعار
+    const notification = $('<div>').attr({
+        id: notificationId,
+        class: 'custom-notification'
+    }).css({
+        position: 'fixed',
+        top: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: bgColor,
+        color: 'white',
+        padding: '12px 20px',
+        borderRadius: '4px',
+        boxShadow: '0 3px 10px rgba(0,0,0,0.2)',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        fontWeight: 'bold',
+        direction: 'rtl',
+        minWidth: '300px',
+        maxWidth: '80%'
+    });
+    
+    // إضافة المحتوى
+    const contentHtml = `
+        <div class="notification-icon" style="font-size: 20px;">${icon}</div>
+        <div class="notification-content" style="flex-grow: 1;">
+            <div class="notification-title" style="font-weight: bold;">${title}</div>
+            <div class="notification-message" style="font-weight: normal; margin-top: 4px;">${message}</div>
+        </div>
+        <div class="notification-close" style="cursor: pointer;">
+            <i class="fas fa-times"></i>
+        </div>
+    `;
+    notification.html(contentHtml);
+    
+    // إضافة الإشعار إلى الصفحة
+    $('body').append(notification);
+    
+    // إضافة حدث إغلاق الإشعار
+    notification.find('.notification-close').on('click', function() {
+        notification.fadeOut(300, function() {
+            $(this).remove();
+        });
+    });
+    
+    // إغلاق الإشعار تلقائياً بعد 4 ثوانٍ
+    setTimeout(() => {
+        notification.fadeOut(300, function() {
+            $(this).remove();
+        });
+    }, 4000);
 }
