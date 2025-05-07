@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الصلاحيات المتقدمة</title>
+    
+    <!-- Bootstrap RTL CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 50px auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        .permission-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #ddd;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .permission-card.active {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        }
+        
+        .permissions-count {
+            margin-right: 5px;
+        }
+        
+        .tab-pane {
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-top: 0;
+            border-radius: 0 0 5px 5px;
+        }
+        
+        #simple-tabs .nav-link {
+            font-weight: bold;
+        }
+        
+        #savePermissionsBtn {
+            padding: 10px 25px;
+            font-size: 16px;
+        }
+        
+        /* حالة التحميل */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="mb-4">إدارة الصلاحيات المتقدمة - {{ admin.user.get_full_name }}</h2>
+
+        <!-- رسالة نجاح ثابتة -->
+        {% if messages %}
+        <div class="row">
+            <div class="col-md-12">
+                {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- النموذج المبسط -->
+        <form id="permissionsForm" method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="admin_id" value="{{ admin.id }}">
+
+            <!-- شريط التنقل المبسط -->
+            <ul class="nav nav-tabs mb-4" id="simple-tabs">
+                {% for section_name, perms in permissions.items %}
+                <li class="nav-item">
+                    <a class="nav-link {% if forloop.first %}active{% endif %}" 
+                       data-section="{{ section_name }}" 
+                       href="#section-{{ section_name }}">
+                        {{ section_name|title }} 
+                        <span class="badge {% if section_name in permissions_json %}bg-success{% else %}bg-secondary{% endif %} permissions-count" id="count-{{ section_name }}">
+                            <!-- سيتم تحديث العدد باستخدام JavaScript -->
+                            0
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <!-- محتوى الأقسام -->
+            <div class="tab-content">
+                {% for section_name, perms in permissions.items %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                     id="section-{{ section_name }}">
+                    
+                    <div class="row">
+                        {% for perm in perms %}
+                        <div class="col-md-3 mb-4">
+                            <div class="card permission-card {% if perm.active %}active{% endif %}" 
+                                 data-section="{{ section_name }}"
+                                 data-permission="{{ perm.name }}">
+                                <div class="card-body text-center">
+                                    <h5 class="permission-title mb-2">{{ perm.name|title }}</h5>
+                                    <input type="checkbox" name="{{ section_name }}_{{ perm.name }}" 
+                                           id="perm_{{ section_name }}_{{ perm.name }}"
+                                           {% if perm.active %}checked{% endif %}
+                                           style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary" id="savePermissionsBtn">
+                        <i class="fas fa-save me-2"></i> حفظ الصلاحيات
+                    </button>
+                    <a href="{% url 'superadmin_admin_details' admin.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right me-2"></i> العودة
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    $(document).ready(function() {
+        console.log("تم تحميل صفحة الصلاحيات المبسطة");
+        
+        // معالج النقر على التبويبات
+        $('#simple-tabs .nav-link').on('click', function(e) {
+            e.preventDefault();
+            
+            // إزالة الفئة النشطة من جميع التبويبات والمحتويات
+            $('#simple-tabs .nav-link').removeClass('active');
+            $('.tab-pane').removeClass('show active');
+            
+            // تنشيط التبويب الحالي
+            $(this).addClass('active');
+            
+            // تنشيط المحتوى المطابق
+            var sectionId = $(this).attr('data-section');
+            $('#section-' + sectionId).addClass('show active');
+        });
+        
+        // معالج النقر على بطاقات الصلاحيات
+        $('.permission-card').on('click', function() {
+            // تبديل حالة البطاقة
+            $(this).toggleClass('active');
+            
+            // الحصول على معلومات الصلاحية
+            var section = $(this).data('section');
+            var permission = $(this).data('permission');
+            
+            // تبديل حالة مربع الاختيار المطابق
+            var checkbox = $('#perm_' + section + '_' + permission);
+            checkbox.prop('checked', $(this).hasClass('active'));
+            
+            // تحديث عدد الصلاحيات النشطة في التبويب
+            updatePermissionCount(section);
+        });
+        
+        // وظيفة لتحديث عدد الصلاحيات في تبويب معين
+        function updatePermissionCount(section) {
+            var activeCount = $('#section-' + section + ' .permission-card.active').length;
+            $('#count-' + section).text(activeCount);
+            
+            // تغيير لون العداد إذا كان هناك صلاحيات نشطة
+            if (activeCount > 0) {
+                $('#count-' + section).removeClass('bg-secondary').addClass('bg-success');
+            } else {
+                $('#count-' + section).removeClass('bg-success').addClass('bg-secondary');
+            }
+        }
+        
+        // معالج إرسال النموذج
+        $('#permissionsForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // إظهار مؤشر التحميل
+            $('body').append('<div id="loadingOverlay"><div><div class="spinner-border" role="status"></div><p class="mt-3">جارٍ حفظ الصلاحيات...</p></div></div>');
+            
+            // إرسال النموذج باستخدام AJAX
+            $.ajax({
+                url: window.location.href,
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    // إزالة مؤشر التحميل
+                    $('#loadingOverlay').remove();
+                    
+                    // عرض رسالة النجاح
+                    $('<div class="alert alert-success" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;">')
+                        .html('<i class="fas fa-check-circle me-2"></i> تم حفظ الصلاحيات بنجاح')
+                        .appendTo('body')
+                        .delay(3000)
+                        .fadeOut(500, function() { $(this).remove(); });
+                        
+                    // إعادة تحميل الصفحة بعد إظهار رسالة النجاح
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 2000);
+                },
+                error: function() {
+                    // إزالة مؤشر التحميل
+                    $('#loadingOverlay').remove();
+                    
+                    // عرض رسالة الخطأ
+                    $('<div class="alert alert-danger" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;">')
+                        .html('<i class="fas fa-exclamation-circle me-2"></i> حدث خطأ أثناء حفظ الصلاحيات')
+                        .appendTo('body')
+                        .delay(3000)
+                        .fadeOut(500, function() { $(this).remove(); });
+                }
+            });
+        });
+        
+        // تحديث جميع عدادات الصلاحيات عند تحميل الصفحة
+        {% for section_name, perms in permissions.items %}
+        updatePermissionCount('{{ section_name }}');
+        {% endfor %}
+    });
+    </script>
+</body>
+</html>
