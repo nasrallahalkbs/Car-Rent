@@ -348,9 +348,9 @@ def notification_settings(request):
 
 @login_required
 def advanced_permissions(request):
-    """إدارة الأذونات المتقدمة على مستوى الحقول"""
+    """إدارة الصلاحيات المتقدمة بواجهة حديثة"""
     if not is_superadmin(request.user):
-        messages.error(request, _('ليس لديك صلاحية الوصول إلى إدارة الأذونات المتقدمة'))
+        messages.error(request, _('ليس لديك صلاحية الوصول إلى إدارة الصلاحيات المتقدمة'))
         return redirect('superadmin_dashboard')
     
     # الحصول على الأدوار والصلاحيات
@@ -365,8 +365,6 @@ def advanced_permissions(request):
         
         if action == 'update_field_permissions':
             role_id = request.POST.get('role_id')
-            model_name = request.POST.get('model_name')
-            field_name = request.POST.get('field_name')
             
             # تهيئة مصفوفة الأذونات المتقدمة إذا لم تكن موجودة
             if not advanced_perms:
@@ -375,22 +373,48 @@ def advanced_permissions(request):
             if role_id not in advanced_perms:
                 advanced_perms[role_id] = {}
             
-            if model_name not in advanced_perms[role_id]:
-                advanced_perms[role_id][model_name] = {}
-            
-            # تعيين إذن الحقل
-            field_perms = {
-                'read': 'read_' + field_name in request.POST,
-                'write': 'write_' + field_name in request.POST
-            }
-            
-            advanced_perms[role_id][model_name][field_name] = field_perms
+            # معالجة صلاحيات جميع النماذج والحقول
+            for key, value in request.POST.items():
+                # معالجة صلاحيات العمليات العامة
+                if key.startswith('permission_') and not key.startswith('permission_field_'):
+                    parts = key.split('_')
+                    if len(parts) >= 3:
+                        model_name = parts[1]
+                        permission_name = parts[2]
+                        
+                        if model_name not in advanced_perms[role_id]:
+                            advanced_perms[role_id][model_name] = {}
+                        
+                        advanced_perms[role_id][model_name][permission_name] = True
+                
+                # معالجة صلاحيات الحقول
+                elif key.startswith('permission_') and '_field_' in key:
+                    parts = key.split('_field_')
+                    if len(parts) == 2:
+                        model_part = parts[0].replace('permission_', '')
+                        field_part = parts[1]
+                        
+                        field_parts = field_part.split('_')
+                        if len(field_parts) >= 2:
+                            field_name = '_'.join(field_parts[:-1])
+                            permission_type = field_parts[-1]  # read or write
+                            
+                            if model_part not in advanced_perms[role_id]:
+                                advanced_perms[role_id][model_part] = {}
+                            
+                            if field_name not in advanced_perms[role_id][model_part]:
+                                advanced_perms[role_id][model_part][field_name] = {}
+                            
+                            if isinstance(advanced_perms[role_id][model_part][field_name], dict):
+                                advanced_perms[role_id][model_part][field_name][permission_type] = True
+                            else:
+                                advanced_perms[role_id][model_part][field_name] = {permission_type: True}
             
             # حفظ الأذونات المتقدمة
             set_system_setting('advanced_permissions', advanced_perms, 'json', 'security',
-                              _('الأذونات المتقدمة على مستوى الحقول'))
+                              _('الصلاحيات المتقدمة'))
             
-            messages.success(request, _('تم حفظ الأذونات المتقدمة بنجاح'))
+            messages.success(request, _('تم حفظ الصلاحيات المتقدمة بنجاح'))
         
         return redirect('superadmin_advanced_permissions')
     
@@ -400,13 +424,64 @@ def advanced_permissions(request):
         'permissions': permissions,
         'advanced_permissions': advanced_perms,
         'available_models': [
-            {'name': 'User', 'fields': ['username', 'email', 'first_name', 'last_name', 'is_active']},
-            {'name': 'Customer', 'fields': ['phone', 'address', 'id_number', 'driver_license']},
-            {'name': 'Reservation', 'fields': ['start_date', 'end_date', 'total_cost', 'status', 'notes']},
-            {'name': 'Vehicle', 'fields': ['brand', 'model', 'year', 'color', 'daily_rate', 'is_available']},
-            {'name': 'Payment', 'fields': ['amount', 'method', 'status', 'transaction_id']},
+            {
+                'name': 'User', 
+                'fields': ['username', 'email', 'first_name', 'last_name', 'is_active'],
+                'special_permissions': [
+                    {'key': 'reset_password', 'name': _('إعادة تعيين كلمة المرور'), 'type': 'admin'},
+                    {'key': 'activate_account', 'name': _('تفعيل/تعطيل الحساب'), 'type': 'admin'}
+                ]
+            },
+            {
+                'name': 'Customer', 
+                'fields': ['phone', 'address', 'id_number', 'driver_license', 'email', 'name'],
+                'special_permissions': [
+                    {'key': 'view_sensitive', 'name': _('عرض المعلومات الحساسة'), 'type': 'admin'}
+                ]
+            },
+            {
+                'name': 'Reservation', 
+                'fields': ['start_date', 'end_date', 'total_cost', 'status', 'notes', 'customer', 'vehicle', 'payment_status'],
+                'special_permissions': [
+                    {'key': 'cancel', 'name': _('إلغاء الحجز'), 'type': 'delete'},
+                    {'key': 'extend', 'name': _('تمديد الحجز'), 'type': 'write'},
+                    {'key': 'discount', 'name': _('تطبيق خصم'), 'type': 'admin'}
+                ]
+            },
+            {
+                'name': 'Vehicle', 
+                'fields': ['brand', 'model', 'year', 'color', 'daily_rate', 'is_available', 'license_plate', 'maintenance_status'],
+                'special_permissions': [
+                    {'key': 'maintenance', 'name': _('تسجيل صيانة'), 'type': 'write'},
+                    {'key': 'update_pricing', 'name': _('تحديث الأسعار'), 'type': 'admin'}
+                ]
+            },
+            {
+                'name': 'Payment', 
+                'fields': ['amount', 'method', 'status', 'transaction_id', 'customer', 'reservation', 'date', 'notes'],
+                'special_permissions': [
+                    {'key': 'refund', 'name': _('إجراء استرداد'), 'type': 'admin'},
+                    {'key': 'manual_payment', 'name': _('تسجيل دفعة يدوية'), 'type': 'write'}
+                ]
+            },
+            {
+                'name': 'Document', 
+                'fields': ['name', 'file', 'folder', 'description', 'created_at', 'size'],
+                'special_permissions': [
+                    {'key': 'download', 'name': _('تنزيل الملفات'), 'type': 'read'},
+                    {'key': 'upload', 'name': _('رفع ملفات'), 'type': 'write'}
+                ]
+            },
+            {
+                'name': 'Report', 
+                'fields': ['title', 'type', 'date_range', 'created_by', 'created_at', 'description'],
+                'special_permissions': [
+                    {'key': 'generate', 'name': _('إنشاء تقارير'), 'type': 'write'},
+                    {'key': 'export', 'name': _('تصدير تقارير'), 'type': 'read'}
+                ]
+            },
         ],
-        'title': _('الأذونات المتقدمة'),
+        'title': _('إدارة الصلاحيات المتقدمة'),
     }
     
-    return render(request, 'superadmin/settings/advanced_permissions.html', context)
+    return render(request, 'superadmin/settings/advanced_permissions_modern.html', context)
