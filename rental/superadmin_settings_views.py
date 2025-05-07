@@ -201,9 +201,6 @@ def security_settings(request):
                               'integer', 'security', _('مدة قفل الحساب بالدقائق'))
 
             set_system_setting('session_timeout_minutes', session_timeout_minutes,
-                              'integer', 'security', _('مدة انتهاء الجلسة بالدقائق'))
-            
-            set_system_setting('session_timeout_minutes', request.POST.get('session_timeout_minutes', '60'),
                               'integer', 'security', _('مدة انتهاء جلسة العمل بالدقائق'))
             
             # طباعة القيم للتأكد من أنها تم حفظها بشكل صحيح
