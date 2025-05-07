@@ -363,7 +363,111 @@ def advanced_permissions(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         
-        if action == 'update_field_permissions':
+        # إنشاء دور جديد
+        if action == 'create_role':
+            role_name = request.POST.get('role_name')
+            role_description = request.POST.get('role_description')
+            role_type = request.POST.get('role_type')
+            copy_from_role = request.POST.get('copy_from_role')
+            
+            # التحقق من تكرار اسم الدور
+            if Role.objects.filter(name=role_name).exists():
+                messages.error(request, _('الدور بهذا الاسم موجود بالفعل'))
+                return redirect('superadmin_advanced_permissions')
+            
+            # تحديد ما إذا كان الدور للمسؤول الأعلى
+            is_superadmin_role = (role_type == 'superadmin')
+            
+            # إنشاء دور جديد
+            new_role = Role.objects.create(
+                name=role_name,
+                description=role_description,
+                is_superadmin_role=is_superadmin_role
+            )
+            
+            # نسخ الصلاحيات من دور موجود
+            if copy_from_role:
+                try:
+                    source_role = Role.objects.get(id=copy_from_role)
+                    
+                    # نسخ الصلاحيات الأساسية
+                    for permission in source_role.permissions.all():
+                        new_role.permissions.add(permission)
+                    
+                    # نسخ الصلاحيات المتقدمة
+                    if advanced_perms and copy_from_role in advanced_perms:
+                        if not advanced_perms.get(str(new_role.id)):
+                            advanced_perms[str(new_role.id)] = {}
+                        
+                        advanced_perms[str(new_role.id)] = advanced_perms[copy_from_role].copy()
+                        
+                        # حفظ الصلاحيات المتقدمة المنسوخة
+                        set_system_setting('advanced_permissions', advanced_perms, 'json', 'security',
+                                         _('الصلاحيات المتقدمة'))
+                except Role.DoesNotExist:
+                    pass
+                
+            messages.success(request, _('تم إنشاء الدور الجديد بنجاح'))
+            return redirect('superadmin_advanced_permissions')
+            
+        # تعديل دور موجود
+        elif action == 'edit_role':
+            role_id = request.POST.get('role_id')
+            role_name = request.POST.get('role_name')
+            role_description = request.POST.get('role_description')
+            is_superadmin_role = request.POST.get('is_superadmin_role') == 'on'
+            
+            try:
+                role = Role.objects.get(id=role_id)
+                
+                # التحقق من تكرار اسم الدور
+                if role.name != role_name and Role.objects.filter(name=role_name).exists():
+                    messages.error(request, _('الدور بهذا الاسم موجود بالفعل'))
+                    return redirect('superadmin_advanced_permissions')
+                
+                # تحديث الدور
+                role.name = role_name
+                role.description = role_description
+                role.is_superadmin_role = is_superadmin_role
+                role.save()
+                
+                messages.success(request, _('تم تحديث الدور بنجاح'))
+            except Role.DoesNotExist:
+                messages.error(request, _('الدور غير موجود'))
+                
+            return redirect('superadmin_advanced_permissions')
+            
+        # حذف دور
+        elif action == 'delete_role':
+            role_id = request.POST.get('role_id')
+            
+            try:
+                role = Role.objects.get(id=role_id)
+                
+                # التحقق مما إذا كان هناك مستخدمون مرتبطون بهذا الدور
+                users_count = role.adminuser_set.count()
+                if users_count > 0:
+                    messages.error(request, _('لا يمكن حذف الدور لأنه مرتبط بـ {} مستخدم').format(users_count))
+                    return redirect('superadmin_advanced_permissions')
+                
+                # حذف الصلاحيات المتقدمة المرتبطة بالدور
+                if advanced_perms and role_id in advanced_perms:
+                    del advanced_perms[role_id]
+                    set_system_setting('advanced_permissions', advanced_perms, 'json', 'security',
+                                     _('الصلاحيات المتقدمة'))
+                
+                # حذف الدور
+                role_name = role.name
+                role.delete()
+                
+                messages.success(request, _('تم حذف الدور {} بنجاح').format(role_name))
+            except Role.DoesNotExist:
+                messages.error(request, _('الدور غير موجود'))
+                
+            return redirect('superadmin_advanced_permissions')
+        
+        # تحديث صلاحيات الحقول
+        elif action == 'update_field_permissions':
             role_id = request.POST.get('role_id')
             
             # تهيئة مصفوفة الأذونات المتقدمة إذا لم تكن موجودة
@@ -372,6 +476,13 @@ def advanced_permissions(request):
             
             if role_id not in advanced_perms:
                 advanced_perms[role_id] = {}
+            
+            # إعادة تعيين الصلاحيات الموجودة للدور (لإزالة الصلاحيات غير المحددة)
+            for model_name in list(advanced_perms[role_id].keys()):
+                advanced_perms[role_id][model_name] = {
+                    k: v for k, v in advanced_perms[role_id][model_name].items()
+                    if isinstance(v, dict)  # الاحتفاظ فقط بالحقول (التي تكون قاموس)
+                }
             
             # معالجة صلاحيات جميع النماذج والحقول
             for key, value in request.POST.items():
@@ -424,60 +535,316 @@ def advanced_permissions(request):
         'permissions': permissions,
         'advanced_permissions': advanced_perms,
         'available_models': [
+            # وحدات المستخدمين والأدوار
             {
                 'name': 'User', 
-                'fields': ['username', 'email', 'first_name', 'last_name', 'is_active'],
+                'fields': ['username', 'email', 'first_name', 'last_name', 'is_active', 'phone', 'address', 'last_login', 'date_joined'],
                 'special_permissions': [
                     {'key': 'reset_password', 'name': _('إعادة تعيين كلمة المرور'), 'type': 'admin'},
-                    {'key': 'activate_account', 'name': _('تفعيل/تعطيل الحساب'), 'type': 'admin'}
+                    {'key': 'activate_account', 'name': _('تفعيل/تعطيل الحساب'), 'type': 'admin'},
+                    {'key': 'two_factor_auth', 'name': _('إدارة المصادقة الثنائية'), 'type': 'admin'},
+                    {'key': 'manage_api_tokens', 'name': _('إدارة رموز API'), 'type': 'admin'},
+                    {'key': 'view_activity_logs', 'name': _('عرض سجلات النشاط'), 'type': 'read'}
                 ]
             },
+            {
+                'name': 'Admin', 
+                'fields': ['username', 'email', 'first_name', 'last_name', 'is_active', 'role', 'is_superadmin', 'phone', 'last_login'],
+                'special_permissions': [
+                    {'key': 'reset_password', 'name': _('إعادة تعيين كلمة المرور'), 'type': 'admin'},
+                    {'key': 'create_admin', 'name': _('إنشاء مسؤول جديد'), 'type': 'admin'},
+                    {'key': 'assign_roles', 'name': _('تعيين الأدوار للمسؤولين'), 'type': 'admin'},
+                    {'key': 'deactivate_admin', 'name': _('تعطيل حساب مسؤول'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'Role', 
+                'fields': ['name', 'description', 'is_superadmin_role', 'created_at', 'updated_at'],
+                'special_permissions': [
+                    {'key': 'create_role', 'name': _('إنشاء دور جديد'), 'type': 'admin'},
+                    {'key': 'edit_role', 'name': _('تعديل دور موجود'), 'type': 'admin'},
+                    {'key': 'delete_role', 'name': _('حذف دور'), 'type': 'delete'},
+                    {'key': 'assign_permissions', 'name': _('تعيين الصلاحيات'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'Permission', 
+                'fields': ['name', 'codename', 'description', 'module'],
+                'special_permissions': [
+                    {'key': 'create_permission', 'name': _('إنشاء صلاحية جديدة'), 'type': 'admin'},
+                    {'key': 'edit_permission', 'name': _('تعديل صلاحية موجودة'), 'type': 'admin'},
+                ]
+            },
+            
+            # وحدات المحتوى الرئيسية
             {
                 'name': 'Customer', 
-                'fields': ['phone', 'address', 'id_number', 'driver_license', 'email', 'name'],
+                'fields': ['phone', 'address', 'id_number', 'driver_license', 'email', 'name', 'nationality', 'dob', 'created_at', 'status'],
                 'special_permissions': [
-                    {'key': 'view_sensitive', 'name': _('عرض المعلومات الحساسة'), 'type': 'admin'}
+                    {'key': 'view_sensitive', 'name': _('عرض المعلومات الحساسة'), 'type': 'admin'},
+                    {'key': 'manage_identity', 'name': _('إدارة وثائق الهوية'), 'type': 'admin'},
+                    {'key': 'block_customer', 'name': _('حظر عميل'), 'type': 'admin'},
+                    {'key': 'export_customers', 'name': _('تصدير بيانات العملاء'), 'type': 'admin'},
                 ]
             },
             {
-                'name': 'Reservation', 
-                'fields': ['start_date', 'end_date', 'total_cost', 'status', 'notes', 'customer', 'vehicle', 'payment_status'],
+                'name': 'CustomerGuarantee', 
+                'fields': ['customer', 'guarantee_type', 'value', 'document', 'expiry_date', 'status', 'notes', 'created_at'],
                 'special_permissions': [
-                    {'key': 'cancel', 'name': _('إلغاء الحجز'), 'type': 'delete'},
-                    {'key': 'extend', 'name': _('تمديد الحجز'), 'type': 'write'},
-                    {'key': 'discount', 'name': _('تطبيق خصم'), 'type': 'admin'}
+                    {'key': 'verify_guarantee', 'name': _('التحقق من الضمان'), 'type': 'admin'},
+                    {'key': 'renew_guarantee', 'name': _('تجديد الضمان'), 'type': 'write'},
                 ]
             },
             {
                 'name': 'Vehicle', 
-                'fields': ['brand', 'model', 'year', 'color', 'daily_rate', 'is_available', 'license_plate', 'maintenance_status'],
+                'fields': ['brand', 'model', 'year', 'color', 'daily_rate', 'is_available', 'license_plate', 'maintenance_status', 'mileage', 'features', 'category', 'insurance_expiry'],
                 'special_permissions': [
                     {'key': 'maintenance', 'name': _('تسجيل صيانة'), 'type': 'write'},
-                    {'key': 'update_pricing', 'name': _('تحديث الأسعار'), 'type': 'admin'}
+                    {'key': 'update_pricing', 'name': _('تحديث الأسعار'), 'type': 'admin'},
+                    {'key': 'mark_unavailable', 'name': _('تعليم كغير متاح'), 'type': 'write'},
+                    {'key': 'manage_images', 'name': _('إدارة صور المركبة'), 'type': 'write'},
+                    {'key': 'manage_documents', 'name': _('إدارة وثائق المركبة'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'VehicleCategory', 
+                'fields': ['name', 'description', 'base_price', 'image', 'created_at'],
+                'special_permissions': [
+                    {'key': 'create_category', 'name': _('إنشاء فئة جديدة'), 'type': 'admin'},
+                    {'key': 'manage_inventory', 'name': _('إدارة المخزون'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'VehicleFeature', 
+                'fields': ['name', 'icon', 'description', 'category', 'is_highlighted'],
+                'special_permissions': [
+                    {'key': 'create_feature', 'name': _('إنشاء ميزة جديدة'), 'type': 'write'},
+                ]
+            },
+            {
+                'name': 'VehicleMaintenance', 
+                'fields': ['vehicle', 'maintenance_type', 'description', 'cost', 'date', 'mileage', 'notes', 'status'],
+                'special_permissions': [
+                    {'key': 'schedule_maintenance', 'name': _('جدولة صيانة'), 'type': 'write'},
+                    {'key': 'approve_costs', 'name': _('الموافقة على التكاليف'), 'type': 'admin'},
+                ]
+            },
+            
+            # وحدات الحجوزات والمدفوعات
+            {
+                'name': 'Reservation', 
+                'fields': ['start_date', 'end_date', 'total_cost', 'status', 'notes', 'customer', 'vehicle', 'payment_status', 'pickup_location', 'return_location', 'additional_services', 'discount'],
+                'special_permissions': [
+                    {'key': 'cancel', 'name': _('إلغاء الحجز'), 'type': 'delete'},
+                    {'key': 'extend', 'name': _('تمديد الحجز'), 'type': 'write'},
+                    {'key': 'discount', 'name': _('تطبيق خصم'), 'type': 'admin'},
+                    {'key': 'expedite', 'name': _('تسريع الموافقة'), 'type': 'admin'},
+                    {'key': 'override_conflict', 'name': _('تجاوز تعارض الحجز'), 'type': 'admin'},
+                    {'key': 'manage_addons', 'name': _('إدارة الإضافات'), 'type': 'write'},
                 ]
             },
             {
                 'name': 'Payment', 
-                'fields': ['amount', 'method', 'status', 'transaction_id', 'customer', 'reservation', 'date', 'notes'],
+                'fields': ['amount', 'method', 'status', 'transaction_id', 'customer', 'reservation', 'date', 'notes', 'payment_gateway', 'currency', 'fees'],
                 'special_permissions': [
                     {'key': 'refund', 'name': _('إجراء استرداد'), 'type': 'admin'},
-                    {'key': 'manual_payment', 'name': _('تسجيل دفعة يدوية'), 'type': 'write'}
+                    {'key': 'manual_payment', 'name': _('تسجيل دفعة يدوية'), 'type': 'write'},
+                    {'key': 'approve_payment', 'name': _('الموافقة على الدفع'), 'type': 'admin'},
+                    {'key': 'view_financial', 'name': _('عرض التقارير المالية'), 'type': 'admin'},
+                    {'key': 'manage_bank_transfers', 'name': _('إدارة التحويلات البنكية'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'Invoice', 
+                'fields': ['number', 'reservation', 'customer', 'total', 'tax', 'discount', 'issue_date', 'due_date', 'status', 'notes'],
+                'special_permissions': [
+                    {'key': 'generate_invoice', 'name': _('إنشاء فاتورة'), 'type': 'write'},
+                    {'key': 'send_reminders', 'name': _('إرسال تذكيرات'), 'type': 'write'},
+                    {'key': 'mark_as_paid', 'name': _('تعليم كمدفوع'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'Discount', 
+                'fields': ['code', 'amount', 'type', 'start_date', 'end_date', 'max_uses', 'current_uses', 'applicable_categories', 'min_days', 'status'],
+                'special_permissions': [
+                    {'key': 'create_discount', 'name': _('إنشاء خصم'), 'type': 'admin'},
+                    {'key': 'apply_manual_discount', 'name': _('تطبيق خصم يدوي'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'AdditionalService', 
+                'fields': ['name', 'price', 'description', 'is_active', 'icon', 'category'],
+                'special_permissions': [
+                    {'key': 'create_service', 'name': _('إنشاء خدمة'), 'type': 'admin'},
+                    {'key': 'update_pricing', 'name': _('تحديث الأسعار'), 'type': 'admin'},
+                ]
+            },
+            
+            # فحص المركبات والتسليم والاستلام
+            {
+                'name': 'VehicleInspection', 
+                'fields': ['reservation', 'vehicle', 'inspection_type', 'inspection_date', 'inspector', 'status', 'notes', 'images', 'damage_reported'],
+                'special_permissions': [
+                    {'key': 'conduct_inspection', 'name': _('إجراء فحص'), 'type': 'write'},
+                    {'key': 'approve_inspection', 'name': _('الموافقة على الفحص'), 'type': 'admin'},
+                    {'key': 'report_damage', 'name': _('الإبلاغ عن ضرر'), 'type': 'write'},
+                ]
+            },
+            {
+                'name': 'InspectionItem', 
+                'fields': ['inspection', 'item_name', 'category', 'status', 'notes', 'images'],
+                'special_permissions': [
+                    {'key': 'customize_checklist', 'name': _('تخصيص قائمة التحقق'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'DamageReport', 
+                'fields': ['inspection', 'description', 'severity', 'repair_cost', 'responsible_party', 'status', 'resolution_date', 'images'],
+                'special_permissions': [
+                    {'key': 'assess_damages', 'name': _('تقييم الأضرار'), 'type': 'admin'},
+                    {'key': 'approve_repair', 'name': _('الموافقة على الإصلاح'), 'type': 'admin'},
+                    {'key': 'bill_customer', 'name': _('محاسبة العميل'), 'type': 'admin'},
+                ]
+            },
+            
+            # إدارة الأرشيف والوثائق
+            {
+                'name': 'ArchiveFolder', 
+                'fields': ['name', 'parent', 'description', 'created_at', 'created_by', 'path', 'is_system_folder'],
+                'special_permissions': [
+                    {'key': 'create_folder', 'name': _('إنشاء مجلد'), 'type': 'write'},
+                    {'key': 'delete_folder', 'name': _('حذف مجلد'), 'type': 'delete'},
+                    {'key': 'move_folder', 'name': _('نقل مجلد'), 'type': 'write'},
+                    {'key': 'manage_system_folders', 'name': _('إدارة المجلدات النظامية'), 'type': 'admin'},
                 ]
             },
             {
                 'name': 'Document', 
-                'fields': ['name', 'file', 'folder', 'description', 'created_at', 'size'],
+                'fields': ['name', 'file', 'folder', 'description', 'created_at', 'created_by', 'size', 'mime_type', 'is_auto_generated'],
                 'special_permissions': [
                     {'key': 'download', 'name': _('تنزيل الملفات'), 'type': 'read'},
-                    {'key': 'upload', 'name': _('رفع ملفات'), 'type': 'write'}
+                    {'key': 'upload', 'name': _('رفع ملفات'), 'type': 'write'},
+                    {'key': 'delete_document', 'name': _('حذف مستند'), 'type': 'delete'},
+                    {'key': 'move_document', 'name': _('نقل مستند'), 'type': 'write'},
+                    {'key': 'generate_document', 'name': _('إنشاء مستند تلقائي'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'DocumentTemplate', 
+                'fields': ['name', 'type', 'content', 'variables', 'created_at', 'updated_at', 'is_active'],
+                'special_permissions': [
+                    {'key': 'create_template', 'name': _('إنشاء قالب'), 'type': 'admin'},
+                    {'key': 'edit_template', 'name': _('تعديل قالب'), 'type': 'admin'},
+                ]
+            },
+            
+            # إدارة النظام والتقارير
+            {
+                'name': 'SystemSetting', 
+                'fields': ['key', 'value', 'value_type', 'group', 'description', 'is_public', 'created_at', 'updated_at'],
+                'special_permissions': [
+                    {'key': 'edit_settings', 'name': _('تعديل الإعدادات'), 'type': 'admin'},
+                    {'key': 'manage_security', 'name': _('إدارة إعدادات الأمان'), 'type': 'admin'},
+                    {'key': 'manage_backups', 'name': _('إدارة النسخ الاحتياطية'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'ScheduledTask', 
+                'fields': ['name', 'task_function', 'cron_expression', 'args', 'kwargs', 'is_active', 'last_run', 'next_run', 'description'],
+                'special_permissions': [
+                    {'key': 'create_task', 'name': _('إنشاء مهمة مجدولة'), 'type': 'admin'},
+                    {'key': 'run_task', 'name': _('تشغيل مهمة'), 'type': 'admin'},
+                    {'key': 'pause_task', 'name': _('إيقاف مهمة مؤقتًا'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'SystemLog', 
+                'fields': ['log_type', 'severity', 'timestamp', 'source', 'message', 'details', 'user'],
+                'special_permissions': [
+                    {'key': 'view_logs', 'name': _('عرض السجلات'), 'type': 'admin'},
+                    {'key': 'clear_logs', 'name': _('مسح السجلات'), 'type': 'admin'},
+                    {'key': 'export_logs', 'name': _('تصدير السجلات'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'Notification', 
+                'fields': ['user', 'title', 'message', 'created_at', 'read_at', 'type', 'link', 'source'],
+                'special_permissions': [
+                    {'key': 'send_notification', 'name': _('إرسال إشعار'), 'type': 'admin'},
+                    {'key': 'manage_templates', 'name': _('إدارة قوالب الإشعارات'), 'type': 'admin'},
                 ]
             },
             {
                 'name': 'Report', 
-                'fields': ['title', 'type', 'date_range', 'created_by', 'created_at', 'description'],
+                'fields': ['title', 'type', 'date_range', 'created_by', 'created_at', 'description', 'is_scheduled', 'schedule', 'parameters', 'output_format'],
                 'special_permissions': [
-                    {'key': 'generate', 'name': _('إنشاء تقارير'), 'type': 'write'},
-                    {'key': 'export', 'name': _('تصدير تقارير'), 'type': 'read'}
+                    {'key': 'generate', 'name': _('إنشاء تقرير'), 'type': 'write'},
+                    {'key': 'export', 'name': _('تصدير تقرير'), 'type': 'read'},
+                    {'key': 'schedule_report', 'name': _('جدولة تقرير'), 'type': 'admin'},
+                    {'key': 'access_financial', 'name': _('الوصول للتقارير المالية'), 'type': 'admin'},
+                ]
+            },
+            
+            # أجزاء موقع الويب
+            {
+                'name': 'WebsiteContent', 
+                'fields': ['key', 'title', 'content', 'language', 'page', 'updated_at', 'updated_by'],
+                'special_permissions': [
+                    {'key': 'edit_content', 'name': _('تعديل المحتوى'), 'type': 'admin'},
+                    {'key': 'publish', 'name': _('نشر التغييرات'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'Review', 
+                'fields': ['customer', 'rating', 'comment', 'status', 'created_at', 'service_type', 'reservation'],
+                'special_permissions': [
+                    {'key': 'approve_review', 'name': _('الموافقة على المراجعة'), 'type': 'admin'},
+                    {'key': 'feature_review', 'name': _('تمييز المراجعة'), 'type': 'admin'},
+                    {'key': 'respond', 'name': _('الرد على المراجعة'), 'type': 'write'},
+                ]
+            },
+            {
+                'name': 'ContactMessage', 
+                'fields': ['name', 'email', 'phone', 'message', 'created_at', 'status', 'assigned_to', 'response'],
+                'special_permissions': [
+                    {'key': 'respond_message', 'name': _('الرد على الرسالة'), 'type': 'write'},
+                    {'key': 'assign_message', 'name': _('تعيين الرسالة'), 'type': 'admin'},
+                ]
+            },
+            
+            # أقسام لوحة التحكم
+            {
+                'name': 'AdminDashboard', 
+                'special_permissions': [
+                    {'key': 'view_dashboard', 'name': _('عرض لوحة التحكم'), 'type': 'read'},
+                    {'key': 'customize_widgets', 'name': _('تخصيص الويدجات'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'SuperAdminDashboard', 
+                'special_permissions': [
+                    {'key': 'view_dashboard', 'name': _('عرض لوحة التحكم'), 'type': 'admin'},
+                    {'key': 'system_overview', 'name': _('نظرة عامة على النظام'), 'type': 'admin'},
+                    {'key': 'performance_metrics', 'name': _('قياسات الأداء'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'Analytics', 
+                'special_permissions': [
+                    {'key': 'view_basic_stats', 'name': _('عرض الإحصائيات الأساسية'), 'type': 'read'},
+                    {'key': 'view_detailed_stats', 'name': _('عرض الإحصائيات المفصلة'), 'type': 'admin'},
+                    {'key': 'generate_custom_reports', 'name': _('إنشاء تقارير مخصصة'), 'type': 'admin'},
+                    {'key': 'export_analytics', 'name': _('تصدير التحليلات'), 'type': 'admin'},
+                ]
+            },
+            {
+                'name': 'Settings', 
+                'special_permissions': [
+                    {'key': 'view_settings', 'name': _('عرض الإعدادات'), 'type': 'read'},
+                    {'key': 'edit_general_settings', 'name': _('تعديل الإعدادات العامة'), 'type': 'admin'},
+                    {'key': 'manage_security_settings', 'name': _('إدارة إعدادات الأمان'), 'type': 'admin'},
+                    {'key': 'manage_notifications', 'name': _('إدارة إعدادات الإشعارات'), 'type': 'admin'},
+                    {'key': 'manage_api_settings', 'name': _('إدارة إعدادات API'), 'type': 'admin'},
                 ]
             },
         ],

@@ -199,6 +199,66 @@
         <h1 class="h3">{% trans "إدارة الصلاحيات المتقدمة" %}</h1>
         <p class="text-muted">{% trans "تكوين صلاحيات متقدمة للأدوار والمستخدمين على مستوى النظام بالكامل" %}</p>
     </div>
+    <div>
+        <button class="btn btn-success" type="button" data-bs-toggle="modal" data-bs-target="#permissionRoleModal">
+            <i class="fas fa-plus-circle me-1"></i> {% trans "إنشاء دور جديد" %}
+        </button>
+    </div>
+</div>
+
+<!-- Modal for creating and editing role -->
+<div class="modal fade" id="permissionRoleModal" tabindex="-1" aria-labelledby="permissionRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="permissionRoleModalLabel">{% trans "إنشاء دور جديد" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'superadmin_advanced_permissions' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_role">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="role_name" class="form-label">{% trans "اسم الدور" %}</label>
+                        <input type="text" class="form-control" id="role_name" name="role_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role_description" class="form-label">{% trans "وصف الدور" %}</label>
+                        <textarea class="form-control" id="role_description" name="role_description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{% trans "النوع" %}</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="role_type" id="admin_role" value="admin" checked>
+                            <label class="form-check-label" for="admin_role">
+                                {% trans "دور مسؤول (يمكنه الوصول إلى لوحة تحكم المسؤول)" %}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="role_type" id="superadmin_role" value="superadmin">
+                            <label class="form-check-label" for="superadmin_role">
+                                {% trans "دور مسؤول أعلى (يمكنه الوصول إلى لوحة تحكم المسؤول الأعلى)" %}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{% trans "النسخ من دور موجود" %}</label>
+                        <select class="form-select" name="copy_from_role">
+                            <option value="">{% trans "- لا تنسخ -" %}</option>
+                            {% for role in roles %}
+                            <option value="{{ role.id }}">{{ role.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">{% trans "اختياري: نسخ الصلاحيات من دور موجود" %}</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "إنشاء الدور" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <div class="permission-section">
@@ -248,6 +308,87 @@
                 <div>
                     <h4 class="mb-0">{% trans "إعدادات الصلاحيات" %} - {{ role.name }}</h4>
                     <small class="text-muted">{{ role.description }}</small>
+                </div>
+                <div class="ms-auto">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editRoleModal-{{ role.id }}">
+                            <i class="fas fa-edit me-1"></i> {% trans "تعديل الدور" %}
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteRoleModal-{{ role.id }}">
+                            <i class="fas fa-trash-alt me-1"></i> {% trans "حذف الدور" %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal for editing role -->
+            <div class="modal fade" id="editRoleModal-{{ role.id }}" tabindex="-1" aria-labelledby="editRoleModalLabel-{{ role.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editRoleModalLabel-{{ role.id }}">{% trans "تعديل الدور" %} - {{ role.name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="post" action="{% url 'superadmin_advanced_permissions' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="edit_role">
+                            <input type="hidden" name="role_id" value="{{ role.id }}">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="role_name_{{ role.id }}" class="form-label">{% trans "اسم الدور" %}</label>
+                                    <input type="text" class="form-control" id="role_name_{{ role.id }}" name="role_name" value="{{ role.name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="role_description_{{ role.id }}" class="form-label">{% trans "وصف الدور" %}</label>
+                                    <textarea class="form-control" id="role_description_{{ role.id }}" name="role_description" rows="3">{{ role.description }}</textarea>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="is_superadmin_role_{{ role.id }}" name="is_superadmin_role" {% if role.is_superadmin_role %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_superadmin_role_{{ role.id }}">{% trans "دور مسؤول أعلى (يمكنه الوصول إلى لوحة تحكم المسؤول الأعلى)" %}</label>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                                <button type="submit" class="btn btn-primary">{% trans "حفظ التغييرات" %}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal for deleting role -->
+            <div class="modal fade" id="deleteRoleModal-{{ role.id }}" tabindex="-1" aria-labelledby="deleteRoleModalLabel-{{ role.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title text-danger" id="deleteRoleModalLabel-{{ role.id }}">{% trans "حذف الدور" %} - {{ role.name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% trans "هل أنت متأكد من رغبتك في حذف هذا الدور؟ هذه العملية لا يمكن التراجع عنها." %}
+                            </div>
+                            
+                            {% if role.adminuser_set.count > 0 %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-ban me-2"></i>
+                                {% trans "لا يمكن حذف هذا الدور لأنه مستخدم من قبل" %} {{ role.adminuser_set.count }} {% trans "مستخدم" %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                            <form method="post" action="{% url 'superadmin_advanced_permissions' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_role">
+                                <input type="hidden" name="role_id" value="{{ role.id }}">
+                                <button type="submit" class="btn btn-danger" {% if role.adminuser_set.count > 0 %}disabled{% endif %}>
+                                    <i class="fas fa-trash-alt me-1"></i> {% trans "حذف الدور" %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -454,6 +595,29 @@
                                 </div>
                                 {% endif %}
                                 
+                                <div class="operation-group">
+                                    <div class="operation-title">
+                                        <i class="fas fa-sitemap me-2"></i>
+                                        {% trans "صلاحيات لوحة التحكم" %}
+                                    </div>
+                                    <div class="switches-container">
+                                        {% if model.name == "AdminDashboard" or model.name == "SuperAdminDashboard" or model.name == "Analytics" or model.name == "Settings" %}
+                                        {% for section in model.dashboard_sections %}
+                                        <div class="permission-switch">
+                                            <div>
+                                                <span class="visual-indicator {{ section.type }}"></span>
+                                                <span>{{ section.name }}</span>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input type="checkbox" class="form-check-input" id="{{ section.key }}_{{ model.name }}" name="permission_{{ model.name }}_{{ section.key }}"
+                                                {% if advanced_permissions and advanced_permissions|get_item:role.id|get_item:model.name|get_item:section.key %}checked{% endif %}>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
                                 <div class="operation-group">
                                     <div class="operation-title">
                                         <i class="fas fa-list me-2"></i>
