@@ -171,7 +171,9 @@ def security_settings(request):
                              'integer', 'security', _('مدة انتهاء جلسة العمل بالدقائق'))
             
             messages.success(request, _('تم تحديث وقت انتهاء الجلسة بنجاح'))
-            return redirect('superadmin_security_settings')
+            # استخدام مسار التوجيه الكامل مع الحفاظ على بادئة اللغة
+            language_code = request.LANGUAGE_CODE
+            return redirect(f'/{language_code}/superadmin/settings/security/')
             
         elif action == 'update_security_settings':
             # طباعة تشخيصية لبيانات الفورم
@@ -209,7 +211,8 @@ def security_settings(request):
                 account_lockout_minutes = int(account_lockout_minutes)
             except ValueError:
                 messages.error(request, _('الرجاء إدخال قيم صحيحة للأرقام'))
-                return redirect('superadmin_security_settings')
+                language_code = request.LANGUAGE_CODE
+                return redirect(f'/{language_code}/superadmin/settings/security/')
 
             # حفظ الإعدادات
             set_system_setting('account_lockout_attempts', account_lockout_attempts,
@@ -228,6 +231,8 @@ def security_settings(request):
             print(f"DEBUG AFTER SAVE: account_lockout_minutes = {get_system_setting('account_lockout_minutes')}")
             
             messages.success(request, _('تم حفظ إعدادات الأمان بنجاح'))
+            language_code = request.LANGUAGE_CODE
+            return redirect(f'/{language_code}/superadmin/settings/security/')
         
         elif action == 'update_two_factor':
             # تحديث إعدادات المصادقة الثنائية
@@ -238,6 +243,8 @@ def security_settings(request):
                               'boolean', 'security', _('المصادقة الثنائية مطلوبة للمسؤولين'))
             
             messages.success(request, _('تم تحديث إعدادات المصادقة الثنائية بنجاح'))
+            language_code = request.LANGUAGE_CODE
+            return redirect(f'/{language_code}/superadmin/settings/security/')
         
         elif action == 'unlock_account':
             # فتح قفل حساب مستخدم
@@ -252,7 +259,8 @@ def security_settings(request):
             else:
                 messages.error(request, _('لم يتم تحديد اسم المستخدم'))
         
-        return redirect('superadmin_security_settings')
+        language_code = request.LANGUAGE_CODE
+        return redirect(f'/{language_code}/superadmin/settings/security/')
     
     # طباعة تشخيصية للإعدادات
     print(f"DEBUG CONTEXT: Found {security_settings.count()} security settings")
@@ -327,7 +335,8 @@ def notification_settings(request):
                           'string', 'notifications', _('عناوين بريد المسؤولين للإشعارات (مفصولة بفواصل)'))
         
         messages.success(request, _('تم حفظ إعدادات الإشعارات بنجاح'))
-        return redirect('superadmin_notification_settings')
+        language_code = request.LANGUAGE_CODE
+        return redirect(f'/{language_code}/superadmin/settings/notifications/')
     
     # إعداد السياق
     context = {
