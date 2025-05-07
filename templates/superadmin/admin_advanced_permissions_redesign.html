@@ -1892,7 +1892,22 @@
                 
             // التأكد من تحديث عدادات الصلاحيات
             setTimeout(function() {
-                updatePermissionCounters();
+                // تحديث عدادات الصلاحيات في جميع الأقسام
+                $('.permissions-section').each(function() {
+                    const sectionId = $(this).attr('id').replace('section-', '');
+                    const totalCards = $(this).find('.permission-card').length;
+                    const activeCards = $(this).find('.permission-card.active').length;
+                    
+                    // تحديث عداد الصلاحيات في التبويب
+                    $(`.tab-item[data-section="${sectionId}"] .tab-count`).text(activeCards);
+                    
+                    // تغيير لون العداد إذا كان أكبر من صفر
+                    if (activeCards > 0) {
+                        $(`.tab-item[data-section="${sectionId}"] .tab-count`).addClass('active');
+                    } else {
+                        $(`.tab-item[data-section="${sectionId}"] .tab-count`).removeClass('active');
+                    }
+                });
             }, 500);
             
             // حذف معلمة URL لتجنب ظهور الرسالة مرة أخرى عند تحديث الصفحة

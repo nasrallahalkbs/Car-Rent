@@ -492,17 +492,17 @@ def admin_advanced_permissions(request, admin_id):
         
         # تجميع الصلاحيات من النموذج (الطريقة المحسنة يدويًا لكافة الحالات)
         if not save_changes_only:
-            # جمع جميع الصلاحيات المحددة من النموذج (الطريقة التقليدية)
+            # جمع جميع الصلاحيات المحددة من النموذج (الطريقة المحسنة)
+            # أولاً نقوم بإنشاء قائمة فارغة لكل قسم للتأكد من تطبيق الإلغاء بشكل صحيح
             selected_permissions = {}
-            
+            for section in all_permissions.keys():
+                selected_permissions[section] = []
+                
+            # الآن نبحث عن الصلاحيات المحددة فقط
             # فحص جميع مفاتيح POST
             for key in request.POST.keys():
                 # البحث عن أنماط أسماء الصلاحيات
                 for section in all_permissions.keys():
-                    # إنشاء مصفوفة فارغة لكل قسم إذا لم تكن موجودة
-                    if section not in selected_permissions:
-                        selected_permissions[section] = []
-                    
                     # فحص نمط section_permission (مثل dashboard_view_dashboard)
                     if key.startswith(f"{section}_") and request.POST.get(key) == 'on':
                         # استخراج اسم الصلاحية من المفتاح
@@ -514,7 +514,7 @@ def admin_advanced_permissions(request, admin_id):
                                 selected_permissions[section].append(permission)
                                 print(f"✅ تمت إضافة الصلاحية: {section}_{permission}")
             
-            # تنظيف الأقسام الفارغة
+            # طباعة تقرير عن الأقسام
             for section in list(selected_permissions.keys()):
                 if not selected_permissions[section]:
                     print(f"🔍 القسم {section} فارغ")
