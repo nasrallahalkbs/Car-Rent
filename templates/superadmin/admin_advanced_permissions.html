@@ -354,16 +354,16 @@
     }
     
     /* ===== الأقسام والحاويات ===== */
-    /* تم تعديل هذه الأنماط لإظهار جميع الأقسام */
-    /*.permissions-container [data-section] {
+    /* تحديث CSS لإظهار/إخفاء الأقسام بشكل صحيح */
+    .permissions-container [data-section] {
         display: none;
         animation: fadeOut 0.3s ease forwards;
     }
     
     .permissions-container [data-section].active {
-        display: block;
+        display: block !important;
         animation: fadeIn 0.5s ease forwards;
-    }*/
+    }
     
     @keyframes fadeIn {
         from {
@@ -2470,9 +2470,18 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/admin_permissions_cards.js' %}"></script>
 <script>
 $(document).ready(function() {
-    // مع تصميم جديد، نحتاج فقط إلى التأكد من أن قسماً واحداً نشط
+    // إضافة معالج لزر فتح كل البطاقات للتصحيح
+    $('#openAllCardsBtn').on('click', function() {
+        // فتح جميع محتويات البطاقات
+        $('.department-body').show();
+        // تغيير أيقونات الأزرار
+        $('.toggle-department-btn i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        // عرض رسالة تأكيد
+        showAlert('{% trans "تم التنفيذ" %}', '{% trans "تم فتح جميع البطاقات" %}', 'success');
+    });
 
     // وظيفة محدثة لتحديث عدد الصلاحيات النشطة في كل قسم
     function updateActiveCounters() {
