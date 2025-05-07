@@ -38,10 +38,11 @@ CSRF_TRUSTED_ORIGINS = [
 # Additional CSRF Settings
 CSRF_COOKIE_SECURE = True  # التشغيل في بيئة HTTPS آمنة
 CSRF_COOKIE_HTTPONLY = False  # السماح للجافا سكريبت بالوصول إلى الكوكي
-CSRF_COOKIE_SAMESITE = 'None'  # تغيير من 'Lax' إلى 'None' للتوافق عبر نطاقات مختلفة
-CSRF_USE_SESSIONS = True  # استخدام الجلسات لتخزين توكن CSRF
+CSRF_COOKIE_SAMESITE = None  # تم تعديله من 'None' إلى None لتجنب المشاكل مع Django 5.2
+CSRF_USE_SESSIONS = False  # تم تعديله للسماح بالعمل بشكل أفضل مع AJAX
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
+CSRF_TRUSTED_ORIGINS = ['https://*.replit.app', 'https://*.repl.co', 'http://localhost:*']
 CSRF_FAILURE_VIEW = 'rental.csrf_debug.csrf_failure'
 CSRF_COOKIE_DOMAIN = None
 CSRF_COOKIE_PATH = '/'
