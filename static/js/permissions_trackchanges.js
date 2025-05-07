@@ -26,6 +26,9 @@ $(document).ready(function() {
         return false;
     });
     
+    // تحديث عدادات الصلاحيات عند التحميل
+    updatePermissionCounters();
+    
     // ربط الزر المباشر في القالب
     $('#direct-save-btn').off('click').on('click', function(e) {
         e.preventDefault();
@@ -287,6 +290,7 @@ function updateSectionCounter(sectionId) {
 
 /**
  * إضافة حقول مخفية للصلاحيات المتغيرة فقط
+ * مع معالجة خاصة لقسم الحجوزات
  */
 function addChangedPermissionsFields() {
     // حذف الحقول المخفية السابقة
@@ -305,6 +309,45 @@ function addChangedPermissionsFields() {
         value: adminId
     });
     $('#permissions-form').append(adminIdInput);
+    
+    // فحص إذا كان قسم الحجوزات فارغاً (جميع الصلاحيات معطلة)
+    const reservationsActiveCount = $('#section-reservations .permission-card.active').length;
+    console.log(`عدد صلاحيات الحجوزات النشطة: ${reservationsActiveCount}`);
+    
+    // إذا كان قسم الحجوزات له حالة أولية وأصبح فارغاً
+    if (initialPermissionState['reservations'] && initialPermissionState['reservations'].length > 0 && reservationsActiveCount === 0) {
+        console.log('تم اكتشاف إلغاء جميع صلاحيات الحجوزات');
+        
+        // إضافة حقل خاص لإشعار الخادم بإلغاء جميع صلاحيات الحجوزات
+        const emptyReservationsField = $('<input>').attr({
+            type: 'hidden',
+            name: 'reservations_empty',
+            value: 'true'
+        });
+        $('#permissions-form').append(emptyReservationsField);
+        
+        // التأكد من إضافة جميع صلاحيات الحجوزات للتغييرات
+        if (!changedPermissionsOnly['reservations']) {
+            changedPermissionsOnly['reservations'] = [];
+            
+            // إضافة جميع الصلاحيات الأولية كتغييرات
+            if (initialPermissionState['reservations']) {
+                initialPermissionState['reservations'].forEach(perm => {
+                    if (!changedPermissionsOnly['reservations'].includes(perm)) {
+                        changedPermissionsOnly['reservations'].push(perm);
+                        
+                        // إضافة حقل مخفي لكل صلاحية تم إلغاؤها
+                        const permField = $('<input>').attr({
+                            type: 'hidden',
+                            name: `reservations_${perm}_changed`,
+                            value: 'off'
+                        });
+                        $('#permissions-form').append(permField);
+                    }
+                });
+            }
+        }
+    }
     
     // إضافة حقول مخفية للصلاحيات المتغيرة
     $('.permissions-section').each(function() {

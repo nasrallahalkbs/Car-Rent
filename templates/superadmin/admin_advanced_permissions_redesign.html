@@ -1883,6 +1883,9 @@
                 var sectionId = $(this).attr('id').replace('section-', '');
                 var activeCount = $(this).find('.permission-card.active').length;
                 
+                // طباعة معلومات التصحيح
+                console.log(`تحديث عداد قسم ${sectionId} - تم العثور على ${activeCount} صلاحية نشطة`);
+                
                 // تحديث عداد علامة التبويب
                 $('.tab-item[data-section="' + sectionId + '"] .tab-count').text(activeCount);
                 
@@ -1893,6 +1896,20 @@
                     $('.tab-item[data-section="' + sectionId + '"] .tab-count').removeClass('active');
                 }
             });
+            
+            // إعادة ضبط مصفوفة تتبع التغييرات بعد تحديث العدادات 
+            // (بعد إعادة تحميل الصفحة عقب الحفظ)
+            if (typeof changedPermissionsOnly !== 'undefined') {
+                changedPermissionsOnly = {};
+                if (typeof hasChanges !== 'undefined') {
+                    hasChanges = false;
+                }
+                
+                // إعادة تعريف الحالة الأولية للصلاحيات
+                if (typeof captureInitialPermissionState === 'function') {
+                    captureInitialPermissionState();
+                }
+            }
         }
         
         // تشغيل تحديث العدادات مباشرة عند تحميل الصفحة

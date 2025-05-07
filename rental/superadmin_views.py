@@ -451,7 +451,13 @@ def admin_advanced_permissions(request, admin_id):
                 
                 # فحص أقسام محددة للتأكد من عدم وجود صلاحيات نشطة
                 # من أجل قسم الحجوزات تحديداً
-                if 'reservations' in changes and len(changes['reservations']) > 0:
+                
+                # التحقق من وجود علامة إلغاء جميع صلاحيات الحجوزات (من JavaScript)
+                if request.POST.get('reservations_empty') == 'true':
+                    selected_permissions['reservations'] = []
+                    print("✅ تم إفراغ قسم الحجوزات باستخدام علامة reservations_empty")
+                # أو البحث عن التغييرات المرسلة في JSON
+                elif 'reservations' in changes and len(changes['reservations']) > 0:
                     # التحقق إذا كانت هناك طلبات POST صريحة لإلغاء الصلاحيات
                     all_deactivated = True
                     for perm in all_permissions.get('reservations', []):
@@ -464,6 +470,15 @@ def admin_advanced_permissions(request, admin_id):
                     if all_deactivated:
                         selected_permissions['reservations'] = []
                         print("All reservations permissions were deactivated, setting to empty list")
+                
+                # فحص جميع الأقسام الأخرى لاكتشاف الأقسام الفارغة
+                for section in all_permissions.keys():
+                    # إذا كان القسم موجود في selected_permissions
+                    if section in selected_permissions:
+                        # إذا كان هناك علامة بإفراغ هذا القسم
+                        if request.POST.get(f"{section}_empty") == 'true':
+                            selected_permissions[section] = []
+                            print(f"✅ تم إفراغ قسم {section} باستخدام علامة {section}_empty")
                 
                 print("Updated permissions after changes:", selected_permissions)
             except json.JSONDecodeError as e:
