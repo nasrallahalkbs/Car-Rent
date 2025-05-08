@@ -584,7 +584,7 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    return render(request, 'admin/reservations_enhanced.html', context)
+    return render(request, 'admin/enhanced/reservations_fixed_sidebar.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status
