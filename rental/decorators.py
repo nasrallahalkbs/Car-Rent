@@ -87,7 +87,8 @@ def permission_required(section, permission):
                     
                     # إذا لم يكن لديه الصلاحية
                     messages.error(request, _("ليس لديك صلاحية للوصول إلى هذه الصفحة"))
-                    return redirect('admin_dashboard')
+                    # إعادة التوجيه إلى الصفحة الرئيسية بدلاً من admin_dashboard
+                    return redirect('index')
                     
             except AdminUser.DoesNotExist:
                 pass

@@ -684,7 +684,7 @@ def update_reservation_status(request, reservation_id, status):
     return redirect('admin_reservations')
 
 @login_required
-@admin_required
+@permission_required("reservations", "edit_reservations")
 def confirm_reservation(request, reservation_id):
     """Admin view to confirm a reservation - simplified URL pattern"""
     reservation = get_object_or_404(Reservation, id=reservation_id)
@@ -708,7 +708,7 @@ def confirm_reservation(request, reservation_id):
     return redirect('admin_reservations')
 
 @login_required
-@admin_required
+@permission_required("reservations", "edit_reservations")
 def cancel_reservation_admin(request, reservation_id):
     """Admin view to cancel a reservation - simplified URL pattern"""
     reservation = get_object_or_404(Reservation, id=reservation_id)
@@ -731,7 +731,7 @@ def cancel_reservation_admin(request, reservation_id):
     return redirect('admin_reservations')
 
 @login_required
-@admin_required
+@permission_required("reservations", "edit_reservations")
 def complete_reservation(request, reservation_id):
     """Admin view to mark a reservation as completed - simplified URL pattern"""
     reservation = get_object_or_404(Reservation, id=reservation_id)
@@ -745,7 +745,7 @@ def complete_reservation(request, reservation_id):
     return redirect('admin_reservations')
     
 @login_required
-@admin_required
+@permission_required("reservations", "view_reservations")
 def admin_reservation_detail(request, reservation_id):
     """Admin view to show reservation details"""
     try:
@@ -1024,7 +1024,7 @@ def delete_document(request, document_id):
     return render(request, 'admin/archive/delete_document.html', context)
 
 @login_required
-@admin_required
+@permission_required("reservations", "delete_reservations")
 def delete_reservation(request, reservation_id):
     """Admin view to permanently delete a reservation"""
     try:
