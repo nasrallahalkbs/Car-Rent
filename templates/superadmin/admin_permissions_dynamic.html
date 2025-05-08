@@ -6,39 +6,429 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/permissions_redesign.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_permissions_cards.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_permissions_redesign.css' %}">
+<style>
+  /* إصلاح فوري للبطاقات */
+  .permission-card {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .permission-card.active {
+    background-color: rgba(79, 70, 229, 0.1);
+    border-color: rgba(79, 70, 229, 0.5);
+  }
+  .permission-level {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    margin-left: 10px;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background-color: #e9ecef;
+    margin-left: 10px;
+  }
+  .permission-info {
+    flex-grow: 1;
+  }
+  .permission-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 3px;
+  }
+  .permission-description {
+    font-size: 12px;
+    color: #6c757d;
+  }
+  
+  /* إصلاح التبويبات */
+  .permissions-tabs {
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
+  }
+  
+  .tab-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  
+  .tab-item:hover {
+    background-color: #f8fafc;
+    color: #334155;
+  }
+  
+  .tab-item.active {
+    color: #4f46e5;
+    border-bottom-color: #4f46e5;
+    background-color: rgba(79, 70, 229, 0.05);
+  }
+  
+  .tab-icon {
+    margin-left: 6px;
+    font-size: 16px;
+  }
+  
+  .tab-count {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background-color: #e2e8f0;
+    color: #334155;
+    font-size: 12px;
+    margin-right: 6px;
+  }
+  
+  .tab-count.empty {
+    background-color: #fee2e2;
+    color: #ef4444;
+  }
+  
+  .tab-item.active .tab-count {
+    background-color: #4f46e5;
+    color: white;
+  }
+
+  /* إضافة أيقونة إلى بطاقات الصلاحيات */
+  .permission-checkbox {
+    position: relative;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
+  }
+  
+  .permission-checkbox input[type="checkbox"] {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .permission-checkbox .checkmark {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .permission-checkbox input[type="checkbox"]:checked ~ .checkmark {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+  }
+  
+  .permission-checkbox .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+  }
+  
+  .permission-checkbox input[type="checkbox"]:checked ~ .checkmark:after {
+    display: block;
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  
+  /* تنسيقات عنوان القسم */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+  }
+  
+  .section-count {
+    margin-right: 10px;
+    background-color: #e2e8f0;
+    color: #334155;
+    padding: 2px 8px;
+    border-radius: 30px;
+    font-size: 0.75rem;
+  }
+  
+  .toggle-section {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .toggle-section:hover {
+    background-color: #f1f5f9;
+    color: #334155;
+  }
+  
+  /* جسم القسم */
+  .section-body {
+    padding: 10px 0;
+  }
+  
+  /* مجموعة الصلاحيات */
+  .permissions-group {
+    margin-bottom: 20px;
+  }
+  
+  .group-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed #e2e8f0;
+  }
+  
+  .group-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #475569;
+  }
+  
+  /* فصل الصلاحيات إلى عدة أعمدة عندما تكون الشاشة كبيرة */
+  @media (min-width: 768px) {
+    .permissions-group .permission-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+  }
+  
+  @media (min-width: 1200px) {
+    .permissions-group .permission-cards {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>
 {% endblock %}
 
 {% block extra_js %}
+<!-- إضافة jQuery إذا لم يكن موجودًا -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'js/permissions_dynamic_handler.js' %}"></script>
 <script src="{% static 'js/permissions_redesign.js' %}"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // حساب عدد الصلاحيات المفعلة وتحديث العدادات
-        function updatePermissionCounts() {
-            // عداد الصلاحيات المفعلة
-            const sections = document.querySelectorAll('.tab-item[data-section]');
-            sections.forEach(section => {
-                const sectionName = section.getAttribute('data-section');
-                const sectionDiv = document.getElementById('section-' + sectionName);
-                if (sectionDiv) {
-                    const activePerms = sectionDiv.querySelectorAll('.permission-card.active');
-                    const count = activePerms.length;
-                    const countElement = section.querySelector('.tab-count');
-                    if (countElement) {
-                        countElement.textContent = count;
-                    }
+    // تعريف وظيفة تحديث عدادات الصلاحيات (متوافقة مع كلا الإصدارين)
+    function updatePermissionCounts() {
+        console.log("📊 تحديث عدادات الصلاحيات...");
+        
+        // تحديث عدادات الأقسام
+        document.querySelectorAll('.permissions-section').forEach(section => {
+            const sectionId = section.id;
+            const sectionName = sectionId.replace('section-', '');
+            
+            // عد البطاقات النشطة في القسم
+            const totalCards = section.querySelectorAll('.permission-card').length;
+            const activeCards = section.querySelectorAll('.permission-card.active').length;
+            
+            console.log(`⚡ تحديث عداد القسم (${sectionName}): عدد الصلاحيات النشطة = ${activeCards}`);
+            
+            // تحديث العداد في عنوان القسم
+            const sectionCount = section.querySelector('.section-count');
+            if (sectionCount) {
+                sectionCount.textContent = `${activeCards} / ${totalCards}`;
+            }
+            
+            // تحديث العداد في التبويب
+            const tabCount = document.querySelector(`.tab-item[data-section="${sectionName}"] .tab-count`);
+            if (tabCount) {
+                tabCount.textContent = activeCards;
+                
+                // إذا كان العدد صفر، أضف تنسيق خاص
+                if (activeCards === 0) {
+                    console.log(`🚨 تصفير عداد قسم ${sectionName}`);
+                    tabCount.classList.add('empty');
+                } else {
+                    tabCount.classList.remove('empty');
                 }
-            });
+            }
+        });
+        
+        // تحديث إحصائيات الحجوزات كمثال
+        const reservationsSection = document.getElementById('section-reservations');
+        if (reservationsSection) {
+            const totalReservations = reservationsSection.querySelectorAll('.permission-card').length;
+            const activeReservations = reservationsSection.querySelectorAll('.permission-card.active').length;
+            console.log(`📊 إحصائيات قسم الحجوزات: إجمالي = ${totalReservations}، نشط = ${activeReservations}`);
+        }
+    }
+
+    // عند تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        // تأكد من أن مكتبة jQuery متاحة
+        if (typeof jQuery === 'undefined') {
+            console.error('jQuery غير متوفر! يرجى التأكد من تضمين مكتبة jQuery.');
         }
         
-        // تحديث العدادات عند تحميل الصفحة
-        updatePermissionCounts();
+        // تحديث العدادات بعد تحميل الصفحة
+        setTimeout(updatePermissionCounts, 500);
         
         // إضافة مستمع للأحداث للتحديث عند تغيير حالة أي صلاحية
         document.querySelectorAll('.permission-card').forEach(card => {
-            card.addEventListener('click', function() {
+            // إزالة أي مستمعي أحداث سابقة لتجنب التداخل
+            const newCard = card.cloneNode(true);
+            card.parentNode.replaceChild(newCard, card);
+            
+            // إضافة مستمع أحداث جديد
+            newCard.addEventListener('click', function(e) {
+                // تجاهل النقر إذا كان على عنصر تفاعلي
+                if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('a') || e.target.closest('button')) {
+                    return;
+                }
+                
+                // تبديل حالة النشاط
+                this.classList.toggle('active');
+                
+                // تحديث حالة مربع الاختيار
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = this.classList.contains('active');
+                }
+                
+                // تحديث العدادات
                 setTimeout(updatePermissionCounts, 100);
             });
+        });
+        
+        // معالجة النقر على التبويبات
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // تجاهل زر فتح الكل
+                if (this.classList.contains('utility')) {
+                    return;
+                }
+                
+                // إزالة الفئة النشطة من جميع التبويبات
+                document.querySelectorAll('.tab-item').forEach(t => {
+                    t.classList.remove('active');
+                });
+                
+                // إضافة الفئة النشطة للتبويب المحدد
+                this.classList.add('active');
+                
+                // الحصول على معرف القسم
+                const sectionName = this.getAttribute('data-section');
+                
+                // إخفاء جميع الأقسام
+                document.querySelectorAll('.permissions-section').forEach(section => {
+                    section.classList.remove('active');
+                    const sectionBody = section.querySelector('.section-body');
+                    if (sectionBody) {
+                        sectionBody.style.display = 'none';
+                    }
+                });
+                
+                // عرض القسم المطلوب
+                const targetSection = document.getElementById('section-' + sectionName);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                    const sectionBody = targetSection.querySelector('.section-body');
+                    if (sectionBody) {
+                        sectionBody.style.display = 'block';
+                    }
+                }
+            });
+        });
+        
+        // معالجة أزرار فتح/طي الأقسام
+        document.querySelectorAll('.toggle-section').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                const section = this.closest('.permissions-section');
+                const sectionBody = section.querySelector('.section-body');
+                
+                if (sectionBody.style.display === 'none') {
+                    // فتح القسم
+                    sectionBody.style.display = 'block';
+                    this.innerHTML = '<i class="fas fa-chevron-up"></i>';
+                } else {
+                    // طي القسم
+                    sectionBody.style.display = 'none';
+                    this.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                }
+            });
+        });
+        
+        // معالجة زر فتح الكل
+        document.getElementById('expand-all').addEventListener('click', function() {
+            document.querySelectorAll('.section-body').forEach(body => {
+                body.style.display = 'block';
+            });
+            
+            document.querySelectorAll('.toggle-section').forEach(button => {
+                button.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            });
+        });
+        
+        // تهيئة زر الحفظ الرئيسي مع دعم AJAX
+        $('#direct-save-btn').off('click').on('click', function(e) {
+            e.preventDefault();
+            
+            console.log('✅ تم تهيئة زر الحفظ الرئيسي مع دعم AJAX');
+            
+            // إضافة المزيد من الكود حسب الحاجة
+            // ...
+            
+            // إرسال النموذج
+            $('#permissions-form').submit();
+            
+            return false;
         });
     });
 </script>
