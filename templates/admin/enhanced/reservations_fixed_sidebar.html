@@ -438,156 +438,131 @@
                   <i class="fas fa-list me-2"></i>
                   قائمة الحجوزات
                 </h5>
-                <div class="btn-group">
-                  <button class="btn btn-sm btn-light" onclick="printTable()">
-                    <i class="fas fa-print {% if LANGUAGE_CODE == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> طباعة
+                <div class="d-flex align-items-center">
+                  <a href="{% url 'admin_create_reservation' %}" class="btn btn-sm btn-light me-2">
+                    <i class="fas fa-plus-circle ms-1"></i> إنشاء حجز
+                  </a>
+                  <button class="btn btn-sm btn-light ms-2" onclick="printTable()">
+                    <i class="fas fa-print ms-1"></i> طباعة
                   </button>
-                  <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown">
-                    <i class="fas fa-sort {% if LANGUAGE_CODE == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> ترتيب حسب
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="?sort=newest">الأحدث أولاً</a></li>
-                    <li><a class="dropdown-item" href="?sort=oldest">الأقدم أولاً</a></li>
-                    <li><a class="dropdown-item" href="?sort=price_high">السعر الأعلى</a></li>
-                    <li><a class="dropdown-item" href="?sort=price_low">السعر الأقل</a></li>
-                  </ul>
                 </div>
               </div>
             </div>
             <div class="card-body p-0">
-              <div class="table-responsive" style="overflow-x: auto !important; width: 100% !important;">
-                <table class="table align-middle mb-0" style="min-width: 1000px; border: 1px solid #eaeaea; overflow: hidden; border-collapse: collapse;">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
                   <thead>
                     <tr style="background-color: #34495e; color: white;">
-                      <th style="padding: 15px 10px; text-align: center; font-weight: 600; white-space: nowrap;">رقم الحجز</th>
-                      <th style="padding: 15px 10px; text-align: center; font-weight: 600; white-space: nowrap;">العميل</th>
-                      <th style="padding: 15px 10px; text-align: center; font-weight: 600; white-space: nowrap;">السيارة</th>
-                      <th style="padding: 15px 10px; text-align: center; font-weight: 600; white-space: nowrap;">التواريخ</th>
-                      <th style="padding: 15px 10px; text-align: center; font-weight: 600; white-space: nowrap;">المبلغ</th>
-                      <th style="padding: 15px 10px; text-align: center; font-weight: 600; white-space: nowrap;">حالة الحجز</th>
-                      <th style="padding: 15px 10px; text-align: center; font-weight: 600; white-space: nowrap;">حالة الدفع</th>
-                      <th style="padding: 15px 10px; text-align: center; font-weight: 600; white-space: nowrap;">تاريخ الإنشاء</th>
-                      <th style="padding: 15px 10px; text-align: center; font-weight: 600; white-space: nowrap;">الإجراءات</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">رقم الحجز</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">العميل</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">السيارة</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">التواريخ</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">المبلغ</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">حالة الحجز</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">حالة الدفع</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">تاريخ الإنشاء</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">الإجراءات</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for reservation in reservations %}
-                    <tr style="transition: all 0.2s ease-in-out; border-bottom: 1px solid #eaeaea;">
-                      <td class="py-3 text-center">
-                        <span class="fw-medium" style="color: #333333; font-size: 0.95rem;">#{{ reservation.id }}</span>
+                    <tr style="border-bottom: 1px solid #eaeaea;">
+                      <td class="text-center" style="padding: 8px;">
+                        <span style="font-weight: 500;">#{{ reservation.id }}</span>
                       </td>
-                      <td class="py-3 text-center">
+                      <td class="text-center" style="padding: 8px;">
                         <div class="d-flex align-items-center justify-content-center">
-                          <div class="me-2" style="width: 38px; height: 38px; border-radius: 50%; background-color: #34495e; display: flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-user text-white"></i>
-                          </div>
-                          <div class="text-start">
-                            <div style="font-weight: 600; font-size: 0.9rem; color: #333;">{{ reservation.user.get_full_name }}</div>
-                            <div style="font-size: 0.8rem; color: #888;">{{ reservation.user.email }}</div>
+                          <div class="text-center">
+                            <div style="font-weight: 500;">{{ reservation.user.get_full_name }}</div>
+                            <div style="font-size: 0.8rem; color: #666;">{{ reservation.user.email }}</div>
                           </div>
                         </div>
                       </td>
-                      <td class="py-3 text-center">
+                      <td class="text-center" style="padding: 8px;">
                         <div class="d-flex align-items-center justify-content-center">
-                          <div class="me-2" style="width: 38px; height: 38px; border-radius: 50%; background-color: #34495e; display: flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-car text-white"></i>
-                          </div>
-                          <div class="text-start">
-                            <div style="font-weight: 600; font-size: 0.9rem; color: #333;">{{ reservation.car.make }} {{ reservation.car.model }}</div>
-                            <div style="font-size: 0.8rem; color: #888;">{{ reservation.car.year }}</div>
+                          <div class="text-center">
+                            <div style="font-weight: 500;">{{ reservation.car.make }} {{ reservation.car.model }}</div>
+                            <div style="font-size: 0.8rem; color: #666;">{{ reservation.car.year }}</div>
                           </div>
                         </div>
                       </td>
-                      <td class="py-3 text-center">
-                        <div style="font-size: 0.85rem; color: #333;">
+                      <td class="text-center" style="padding: 8px;">
+                        <div>
                           {{ reservation.start_date|date:"Y-m-d" }} - {{ reservation.end_date|date:"Y-m-d" }}
-                          <div style="font-size: 0.75rem; color: #888;">{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} يوم</div>
+                          <div style="font-size: 0.8rem; color: #666;">{{ reservation.start_date|timesince:reservation.end_date|slice:":-1" }} يوم</div>
                         </div>
                       </td>
-                      <td class="py-3 text-center">
-                        <div style="font-weight: bold; color: #333; font-size: 0.95rem; direction: ltr;">
+                      <td class="text-center" style="padding: 8px;">
+                        <div style="font-weight: 500; direction: ltr;">
                           {{ reservation.total_price }} د.ك
                         </div>
                       </td>
-                      <td class="py-3 text-center">
+                      <td class="text-center" style="padding: 8px;">
                         {% if reservation.status == 'pending' %}
-                        <div style="display: inline-flex; align-items: center; background-color: #fff8e1; color: #f59e0b; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem;">
+                        <div style="background-color: #fff8e1; color: #f59e0b; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem; display: inline-block;">
                           <i class="fas fa-clock me-1"></i> قيد المراجعة
                         </div>
                         {% elif reservation.status == 'confirmed' %}
-                        <div style="display: inline-flex; align-items: center; background-color: #e8f5e9; color: #22c55e; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem;">
+                        <div style="background-color: #e8f5e9; color: #22c55e; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem; display: inline-block;">
                           <i class="fas fa-check-circle me-1"></i> تمت الموافقة
                         </div>
                         {% elif reservation.status == 'completed' %}
-                        <div style="display: inline-flex; align-items: center; background-color: #e3f2fd; color: #0ea5e9; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem;">
+                        <div style="background-color: #e3f2fd; color: #0ea5e9; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem; display: inline-block;">
                           <i class="fas fa-flag-checkered me-1"></i> مكتمل
                         </div>
                         {% elif reservation.status == 'cancelled' %}
-                        <div style="display: inline-flex; align-items: center; background-color: #fee2e2; color: #ef4444; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem;">
+                        <div style="background-color: #fee2e2; color: #ef4444; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem; display: inline-block;">
                           <i class="fas fa-ban me-1"></i> ملغي
                         </div>
                         {% endif %}
                       </td>
-                      <td class="py-3 text-center">
+                      <td class="text-center" style="padding: 8px;">
                         {% if reservation.payment_status == 'paid' %}
-                        <div style="display: inline-flex; align-items: center; background-color: #e8f5e9; color: #22c55e; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem;">
+                        <div style="background-color: #e8f5e9; color: #22c55e; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem; display: inline-block;">
                           <i class="fas fa-check-square me-1"></i> مدفوع
                         </div>
                         {% elif reservation.payment_status == 'pending' %}
-                        <div style="display: inline-flex; align-items: center; background-color: #fff8e1; color: #f59e0b; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem;">
-                          <i class="fas fa-clock me-1"></i> في انتظار الدفع
+                        <div style="background-color: #fff8e1; color: #f59e0b; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem; display: inline-block;">
+                          <i class="fas fa-clock me-1"></i> انتظار الدفع
                         </div>
                         {% elif reservation.payment_status == 'refunded' %}
-                        <div style="display: inline-flex; align-items: center; background-color: #e3f2fd; color: #0ea5e9; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem;">
+                        <div style="background-color: #e3f2fd; color: #0ea5e9; border-radius: 50px; padding: 5px 10px; font-size: 0.8rem; display: inline-block;">
                           <i class="fas fa-undo me-1"></i> مسترجع
                         </div>
                         {% endif %}
                       </td>
-                      <td class="py-3 text-center">
-                        <div style="font-size: 0.85rem; color: #888;">{{ reservation.created_at|date:"Y-m-d" }}</div>
+                      <td class="text-center" style="padding: 8px;">
+                        <div style="color: #666;">{{ reservation.created_at|date:"Y-m-d" }}</div>
                       </td>
-                      <td class="py-3 text-center">
-                        <div class="d-flex justify-content-center gap-1">
-                          <!-- زر تفاصيل الحجز -->
-                          <a href="{% url 'admin_reservation_detail' reservation.id %}" class="action-icon" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background-color: #e3f2fd; color: #0ea5e9;" data-bs-toggle="tooltip" title="عرض التفاصيل">
+                      <td class="text-center" style="padding: 8px;">
+                        <div style="display: flex; justify-content: center; gap: 4px;">
+                          <a href="{% url 'admin_reservation_detail' reservation.id %}" class="btn btn-sm btn-info" style="padding: 2px 5px;">
                             <i class="fas fa-eye"></i>
                           </a>
-
-                          <!-- زر طباعة -->
-                          <a href="#" class="action-icon" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background-color: #e3f2fd; color: #0ea5e9;" data-bs-toggle="tooltip" title="طباعة">
+                          <a href="#" class="btn btn-sm btn-info" style="padding: 2px 5px;">
                             <i class="fas fa-print"></i>
                           </a>
-
                           {% if reservation.status == 'pending' %}
-                          <!-- زر القبول -->
-                          <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="action-icon" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background-color: #e8f5e9; color: #22c55e;" data-bs-toggle="tooltip" title="قبول الحجز">
+                          <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="btn btn-sm btn-success" style="padding: 2px 5px;">
                             <i class="fas fa-check"></i>
                           </a>
                           {% endif %}
-
                           {% if reservation.status != 'cancelled' and reservation.status != 'completed' %}
-                          <!-- زر الإلغاء -->
-                          <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="action-icon" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background-color: #fee2e2; color: #ef4444;" data-bs-toggle="tooltip" title="إلغاء الحجز">
+                          <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="btn btn-sm btn-danger" style="padding: 2px 5px;">
                             <i class="fas fa-ban"></i>
                           </a>
                           {% endif %}
-
                           {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                          <!-- زر تعيين كمدفوع -->
-                          <a href="{% url 'mark_as_paid' reservation.id %}" class="action-icon" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background-color: #e8f5e9; color: #22c55e;" data-bs-toggle="tooltip" title="تعيين كمدفوع">
+                          <a href="{% url 'mark_as_paid' reservation.id %}" class="btn btn-sm btn-success" style="padding: 2px 5px;">
                             <i class="fas fa-dollar-sign"></i>
                           </a>
                           {% endif %}
-
                           {% if reservation.status == 'confirmed' and reservation.payment_status == 'paid' %}
-                          <!-- زر إكمال الحجز -->
-                          <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="action-icon" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background-color: #e3f2fd; color: #0ea5e9;" data-bs-toggle="tooltip" title="إكمال الحجز">
+                          <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="btn btn-sm btn-info" style="padding: 2px 5px;">
                             <i class="fas fa-flag-checkered"></i>
                           </a>
                           {% endif %}
-
-                          <!-- زر الحذف -->
-                          <a href="{% url 'delete_reservation' reservation.id %}" class="action-icon" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background-color: #fee2e2; color: #ef4444;" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا الحجز بشكل نهائي؟');" data-bs-toggle="tooltip" title="حذف">
+                          <a href="{% url 'delete_reservation' reservation.id %}" class="btn btn-sm btn-danger" style="padding: 2px 5px;" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا الحجز بشكل نهائي؟');">
                             <i class="fas fa-trash-alt"></i>
                           </a>
                         </div>
