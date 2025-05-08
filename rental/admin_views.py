@@ -495,9 +495,17 @@ def delete_car(request, car_id):
 
     return render(request, 'admin/delete_car.html', context)
 
+from .decorators import permission_required, check_permission
+
 @login_required
-@admin_required
+@permission_required("reservations", "view_reservations")
 def admin_reservations(request):
+    # التحقق من وجود تعديلات على الصلاحيات
+    print("Checking permissions for reservations view")
+    has_create = check_permission(request, "reservations", "create_reservations")
+    has_edit = check_permission(request, "reservations", "edit_reservations")
+    has_delete = check_permission(request, "reservations", "delete_reservations")
+
     # الحصول على معلمات التصفية
     status = request.GET.get('status', '')
     payment_status = request.GET.get('payment_status', '')
@@ -607,7 +615,7 @@ def admin_analytics(request):
     return render(request, 'admin/analytics_dashboard.html', context)
 
 @login_required
-@admin_required
+@permission_required("reservations", "edit_reservations")
 def update_reservation_status(request, reservation_id, status):
     """Admin view to update reservation status"""
     # استخدام timezone لضمان استخدام الوقت المناسب مع مراعاة المنطقة الزمنية
