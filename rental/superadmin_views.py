@@ -1098,7 +1098,7 @@ def user_2fa(request, user_id):
         elif action == 'unlock_account':
             result = security_unlock_account(user)
             if result:
-                messages.success(request, _("تم فتح قفل الحساب بنجاح."))
+                admin_success(request, _("تم فتح قفل الحساب بنجاح."))
                 
                 # تسجيل النشاط
                 log_admin_activity(
@@ -1108,13 +1108,13 @@ def user_2fa(request, user_id):
                     request
                 )
             else:
-                messages.error(request, _("حدث خطأ أثناء فتح قفل الحساب."))
+                admin_error(request, _("حدث خطأ أثناء فتح قفل الحساب."))
         
         # إعادة تعيين محاولات تسجيل الدخول
         elif action == 'reset_login_attempts':
             result = reset_failed_login_attempts(user)
             if result:
-                messages.success(request, _("تم إعادة تعيين محاولات تسجيل الدخول بنجاح."))
+                admin_success(request, _("تم إعادة تعيين محاولات تسجيل الدخول بنجاح."))
                 
                 # تسجيل النشاط
                 log_admin_activity(
@@ -1124,13 +1124,13 @@ def user_2fa(request, user_id):
                     request
                 )
             else:
-                messages.error(request, _("حدث خطأ أثناء إعادة تعيين محاولات تسجيل الدخول."))
+                admin_error(request, _("حدث خطأ أثناء إعادة تعيين محاولات تسجيل الدخول."))
         
         # تفعيل الحساب
         elif action == 'activate_account':
             user.is_active = True
             user.save()
-            messages.success(request, _("تم تفعيل الحساب بنجاح."))
+            admin_success(request, _("تم تفعيل الحساب بنجاح."))
             
             # تسجيل النشاط
             log_admin_activity(
@@ -1144,7 +1144,7 @@ def user_2fa(request, user_id):
         elif action == 'deactivate_account':
             user.is_active = False
             user.save()
-            messages.success(request, _("تم تعطيل الحساب بنجاح."))
+            admin_success(request, _("تم تعطيل الحساب بنجاح."))
             
             # تسجيل النشاط
             log_admin_activity(
