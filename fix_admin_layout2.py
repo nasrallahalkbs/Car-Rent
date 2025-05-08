@@ -2,11 +2,10 @@
 إضافة زر تبديل اللغة إلى قالب admin_layout.html
 """
 
-
 def add_language_toggle_to_admin_layout():
     with open('templates/admin_layout.html', 'r') as file:
         content = file.read()
-
+    
     # نبحث عن مكان عنصر التبديل إلى الوضع الداكن
     dark_mode_toggle_section = """                    <!-- Dark Mode Toggle -->
                     <li class="nav-item">
@@ -19,7 +18,7 @@ def add_language_toggle_to_admin_layout():
                         </a>
                     </li>
                     """
-
+    
     # إنشاء عنصر جديد لتبديل اللغة
     language_toggle_section = """                    <!-- Language Toggle -->
                     <li class="nav-item">
@@ -29,19 +28,20 @@ def add_language_toggle_to_admin_layout():
                         </a>
                     </li>
                     """
-
+    
     # إضافة عنصر تبديل اللغة بعد عنصر تبديل الوضع الداكن
     updated_content = content.replace(
         dark_mode_toggle_section,
-        dark_mode_toggle_section + language_toggle_section)
-
+        dark_mode_toggle_section + language_toggle_section
+    )
+    
     # إضافة فئات ms-1 أو me-1 إلى أيقونات القائمة تبعًا للغة
     updated_content = updated_content.replace(
         '<i class="fas fa-home ms-1"></i> الرئيسية',
         '<i class="fas fa-home {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> {% if is_english %}Home{% else %}الرئيسية{% endif %}'
     )
     updated_content = updated_content.replace(
-        '<i class="fas fa-car ms-1"></i> ادارة السيارات',
+        '<i class="fas fa-car ms-1"></i> السيارات',
         '<i class="fas fa-car {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> {% if is_english %}Cars{% else %}السيارات{% endif %}'
     )
     updated_content = updated_content.replace(
@@ -56,14 +56,14 @@ def add_language_toggle_to_admin_layout():
         '<i class="fas fa-envelope ms-1"></i> اتصل بنا',
         '<i class="fas fa-envelope {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> {% if is_english %}Contact Us{% else %}اتصل بنا{% endif %}'
     )
-
+    
     # إضافة فئات ms-1 أو me-1 إلى أيقونات القائمة في الشريط الجانبي الإداري
     updated_content = updated_content.replace(
         '<i class="fas fa-tachometer-alt ms-2"></i> لوحة التحكم',
         '<i class="fas fa-tachometer-alt {% if is_english %}me-2{% else %}ms-2{% endif %}"></i> {% if is_english %}Dashboard{% else %}لوحة التحكم{% endif %}'
     )
     updated_content = updated_content.replace(
-        '<i class="fas fa-car ms-2"></i> ادارة السيارات',
+        '<i class="fas fa-car ms-2"></i> السيارات',
         '<i class="fas fa-car {% if is_english %}me-2{% else %}ms-2{% endif %}"></i> {% if is_english %}Cars{% else %}السيارات{% endif %}'
     )
     updated_content = updated_content.replace(
@@ -82,7 +82,7 @@ def add_language_toggle_to_admin_layout():
         '<i class="fas fa-sign-out-alt ms-2"></i> تسجيل الخروج',
         '<i class="fas fa-sign-out-alt {% if is_english %}me-2{% else %}ms-2{% endif %}"></i> {% if is_english %}Logout{% else %}تسجيل الخروج{% endif %}'
     )
-
+    
     # تحديث الأيقونات في الوضع الداكن
     updated_content = updated_content.replace(
         '<i class="fas fa-sun"></i>',
@@ -92,13 +92,12 @@ def add_language_toggle_to_admin_layout():
         '<i class="fas fa-moon"></i>',
         '<i class="fas fa-moon {% if is_english %}me-1{% else %}ms-1{% endif %}"></i>'
     )
-
+    
     # حفظ الملف بعد التحديث
     with open('templates/admin_layout.html', 'w') as file:
         file.write(updated_content)
-
+    
     print("تم إضافة زر تبديل اللغة إلى قالب admin_layout.html")
-
 
 if __name__ == "__main__":
     add_language_toggle_to_admin_layout()
