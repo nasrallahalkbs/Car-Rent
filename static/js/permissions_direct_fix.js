@@ -7,7 +7,7 @@
 
 $(document).ready(function() {
     console.log("⚡ تم تحميل نظام الصلاحيات البسيط والمباشر");
-    
+
     // استعادة الصلاحيات المحفوظة
     let savedPermissions = {};
     try {
@@ -19,7 +19,7 @@ $(document).ready(function() {
     } catch (error) {
         console.error("❌ خطأ في تحليل الصلاحيات المحفوظة:", error);
     }
-    
+
     // تحسين عرض بطاقات الصلاحيات
     // إضافة معالج نقر للتبويبات
     $('.tab-item').on('click', function(e) {
@@ -63,18 +63,18 @@ $(document).ready(function() {
         $('.section-body').slideDown();
         $('.toggle-section i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
     });
-    
+
     // تحسين زر تحديد الكل
     $('.select-all').on('click', function(e) {
         e.preventDefault();
         const section = $(this).data('section');
         const cards = $(`#section-${section} .permission-card`);
-        
+
         // تحديد/إلغاء تحديد البطاقات
         cards.each(function() {
             $(this).addClass('active');
         });
-        
+
         // تحديث العدادات فقط دون حفظ
         updateAllCounters();
     });
@@ -99,26 +99,26 @@ $(document).ready(function() {
             }
         });
     }
-    
+
 
     // تعليم البطاقات النشطة بناءً على الصلاحيات المحفوظة
     function markActiveCards() {
         // إعادة تعيين حالة جميع البطاقات
         $('.permission-card').removeClass('active');
-        
+
         // تحديد البطاقات النشطة
         for (const section in savedPermissions) {
             if (Array.isArray(savedPermissions[section])) {
                 savedPermissions[section].forEach(permission => {
                     // الطريقة 1: باستخدام سمات البيانات
                     $(`.permission-card[data-section="${section}"][data-permission="${permission}"]`).addClass('active');
-                    
+
                     // الطريقة 2: باستخدام عنوان الصلاحية
                     $(`.permission-card .permission-title[data-perm-name="${permission}"]`).closest('.permission-card').addClass('active');
                 });
             }
         }
-        
+
         // تحديث العدادات
         updateAllCounters();
     }
@@ -136,7 +136,7 @@ $(document).ready(function() {
     // إضافة معالج إرسال النموذج
     $('#permissionsForm').on('submit', function(e) {
         e.preventDefault();
-        
+
         // عرض مؤشر التحميل
         $('<div id="loadingOverlay">')
             .css({
@@ -155,21 +155,21 @@ $(document).ready(function() {
             })
             .html('<div class="spinner-border text-light" role="status"></div><p class="mt-3">جارٍ حفظ الصلاحيات...</p>')
             .appendTo('body');
-        
+
         // إنشاء FormData جديد
         const formData = new FormData(this);
-        
+
         // إضافة حقل مخفي للإشارة إلى استخدام الواجهة المحسنة
         formData.append('use_enhanced_ui', 'true');
-        
+
         // حذف جميع حقول الصلاحيات القديمة
         // ...
-        
+
         // إضافة الصلاحيات النشطة فقط
         $('.permission-card.active').each(function() {
-            let section = '';
-            let permission = '';
-            
+            var section = '';
+            var permission = '';
+
             // محاولة الحصول على البيانات من سمات البيانات
             if ($(this).attr('data-section') && $(this).attr('data-permission')) {
                 section = $(this).attr('data-section');
@@ -179,7 +179,7 @@ $(document).ready(function() {
                 const titleElement = $(this).find('.permission-title');
                 if (titleElement.length > 0 && titleElement.attr('data-perm-name')) {
                     permission = titleElement.attr('data-perm-name');
-                    
+
                     // الحصول على القسم من المعرف
                     const parentSection = $(this).closest('.permissions-section');
                     if (parentSection.length > 0) {
@@ -187,109 +187,59 @@ $(document).ready(function() {
                     }
                 }
             }
-            
+
             // إضافة الصلاحية إلى النموذج إذا تم العثور على القسم والصلاحية
             if (section && permission) {
                 formData.append(`${section}_${permission}`, 'on');
             }
         });
-        
+
         // إرسال النموذج باستخدام AJAX
         $.ajax({
-            url: $(this).attr('action'),
+            url: $('#permissions-form').attr('action'), // Corrected selector
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
             success: function(response) {
-                // إزالة مؤشر التحميل
-                $('#loadingOverlay').remove();
-                
+                // تحديث الواجهة بعد الحفظ الناجح
                 if (response.status === 'success') {
                     // تحديث الصلاحيات المحفوظة
                     if (response.permissions) {
                         savedPermissions = response.permissions;
-                        
-                        // تحديث عنصر الإدخال المخفي
-                        $('#saved_permissions_json').val(JSON.stringify(savedPermissions));
-                        
-                        // تحديث واجهة المستخدم
-                        markActiveCards();
+                        $('#saved-permissions-json').val(JSON.stringify(savedPermissions)); //Corrected selector
+
+                        // تحديث حالة البطاقات
+                        updateUIFromPermissions();
+
+                        // تحديث العدادات
+                        updatePermissionCounts();
                     }
-                    
+
                     // عرض رسالة نجاح
-                    $('<div>')
-                        .addClass('alert alert-success position-fixed')
-                        .css({
-                            top: '80px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            zIndex: 9999,
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                            minWidth: '300px'
-                        })
-                        .html('<i class="fas fa-check-circle me-2"></i> تم حفظ الصلاحيات بنجاح')
-                        .appendTo('body')
-                        .delay(3000)
-                        .fadeOut(500, function() {
-                            $(this).remove();
-                        });
+                    showNotification('تم', 'تم حفظ الصلاحيات بنجاح', 'success');
+
+                    // تعطيل زر الحفظ  (assuming this button exists)
+                    $('#savePermissionsBtn').prop('disabled', true); //Corrected selector
+
                 } else {
-                    // عرض رسالة خطأ
-                    $('<div>')
-                        .addClass('alert alert-danger position-fixed')
-                        .css({
-                            top: '80px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            zIndex: 9999,
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                            minWidth: '300px'
-                        })
-                        .html('<i class="fas fa-exclamation-circle me-2"></i> ' + (response.message || 'حدث خطأ أثناء حفظ الصلاحيات'))
-                        .appendTo('body')
-                        .delay(4000)
-                        .fadeOut(500, function() {
-                            $(this).remove();
-                        });
+                    showNotification('خطأ', 'حدث خطأ أثناء حفظ الصلاحيات', 'error');
                 }
+                $('#loadingOverlay').remove(); //removed loading indicator
             },
-            error: function(xhr, status, error) {
-                // إزالة مؤشر التحميل
-                $('#loadingOverlay').remove();
-                
-                // عرض رسالة خطأ
-                $('<div>')
-                    .addClass('alert alert-danger position-fixed')
-                    .css({
-                        top: '80px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        zIndex: 9999,
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                        minWidth: '300px'
-                    })
-                    .html('<i class="fas fa-exclamation-circle me-2"></i> حدث خطأ أثناء الاتصال بالخادم')
-                    .appendTo('body')
-                    .delay(4000)
-                    .fadeOut(500, function() {
-                        $(this).remove();
-                    });
-                
-                console.error('Error:', error);
+            error: function() {
+                showNotification('خطأ', 'حدث خطأ في الاتصال بالخادم', 'error');
+                $('#loadingOverlay').remove(); //removed loading indicator
             }
         });
     });
-    
+
     // معالج نقر زر الحفظ
     $('#savePermissionsBtn').on('click', function(e) {
         e.preventDefault();
         $('#permissionsForm').submit();
     });
-    
+
     // تنفيذ تعليم البطاقات النشطة عند تحميل الصفحة
     markActiveCards();
     $('.tab-item:not(.utility)').first().click(); //trigger first tab click after page load
