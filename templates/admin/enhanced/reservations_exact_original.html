@@ -1,0 +1,408 @@
+{% extends "admin/enhanced/admin_layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "الحجوزات" %} | {% trans "لوحة التحكم" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* تنسيق الجدول الرئيسي */
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+  }
+  
+  .reservations-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .reservations-table th {
+    background-color: #34495e;
+    color: white;
+    font-weight: 500;
+    text-align: center;
+    padding: 10px;
+    white-space: nowrap;
+  }
+  
+  .reservations-table td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  
+  .reservations-table tr:hover {
+    background-color: #f8f9fa;
+  }
+  
+  /* تنسيق عناصر الفلترة */
+  .filter-section {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .filter-item {
+    display: flex;
+    align-items: center;
+  }
+  
+  .filter-label {
+    margin-left: 10px;
+    font-weight: 500;
+  }
+  
+  .filter-input {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 120px;
+  }
+  
+  /* تنسيق أزرار الإجراءات في الجدول */
+  .action-icons {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+  }
+  
+  .action-btn {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  
+  .action-btn.red {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  .action-btn.blue {
+    background-color: #2196f3;
+    color: white;
+  }
+  
+  .action-btn.yellow {
+    background-color: #ffc107;
+    color: black;
+  }
+  
+  .action-btn.cyan {
+    background-color: #00bcd4;
+    color: white;
+  }
+  
+  /* تنسيق الشارات */
+  .status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .status-badge.pending {
+    background-color: #fff8e1;
+    color: #ffc107;
+    border: 1px solid #ffc107;
+  }
+  
+  .status-badge.confirmed {
+    background-color: #e8f5e9;
+    color: #4caf50;
+    border: 1px solid #4caf50;
+  }
+  
+  .status-badge.cancelled {
+    background-color: #ffebee;
+    color: #f44336;
+    border: 1px solid #f44336;
+  }
+  
+  .status-badge.completed {
+    background-color: #e3f2fd;
+    color: #2196f3;
+    border: 1px solid #2196f3;
+  }
+  
+  /* تنسيق معلومات العميل والسيارة */
+  .user-info, .car-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  
+  .info-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: #34495e;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+  }
+  
+  .info-text {
+    text-align: right;
+  }
+  
+  .info-name {
+    font-weight: 500;
+  }
+  
+  .info-detail {
+    color: #777;
+    font-size: 12px;
+  }
+  
+  /* تنسيق رؤوس الأعمدة */
+  .sticky-header th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  /* تنسيق عنوان الصفحة */
+  .page-header {
+    margin-bottom: 20px;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  
+  .page-subtitle {
+    color: #6c757d;
+  }
+  
+  /* تنسيق أزرار الإضافة والتصدير */
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  /* تنسيق الأزرار الخاصة بالوضع الليلي */
+  @media (prefers-color-scheme: dark) {
+    .reservations-table th {
+      background-color: #1a2635;
+    }
+    
+    .reservations-table tr:hover {
+      background-color: #2c3e50;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- عنوان الصفحة -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0">
+        <i class="fas fa-calendar-alt me-2"></i> الحجوزات
+      </h2>
+      <p class="text-muted mb-0">عرض وإدارة حجوزات العملاء</p>
+    </div>
+    <div>
+      <button class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> إضافة حجز
+      </button>
+    </div>
+  </div>
+  
+  <!-- قسم البحث والتصفية -->
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+      <h5 class="mb-0"><i class="fas fa-filter me-2"></i> خيارات البحث والتصفية</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row">
+        <div class="col-md-3 mb-3">
+          <label class="form-label">حالة الحجز</label>
+          <select name="status" class="form-select">
+            <option value="">كل الحالات</option>
+            <option value="pending" {% if status == 'pending' %}selected{% endif %}>قيد المراجعة</option>
+            <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>تمت الموافقة</option>
+            <option value="completed" {% if status == 'completed' %}selected{% endif %}>مكتمل</option>
+            <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>ملغي</option>
+          </select>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label class="form-label">حالة الدفع</label>
+          <select name="payment_status" class="form-select">
+            <option value="">كل حالات الدفع</option>
+            <option value="pending" {% if payment_status == 'pending' %}selected{% endif %}>في انتظار الدفع</option>
+            <option value="paid" {% if payment_status == 'paid' %}selected{% endif %}>مدفوع</option>
+            <option value="refunded" {% if payment_status == 'refunded' %}selected{% endif %}>مسترجع</option>
+          </select>
+        </div>
+        <div class="col-md-5 mb-3">
+          <label class="form-label">بحث</label>
+          <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="اسم العميل، رقم الحجز، البريد الإلكتروني..." value="{{ search|default:'' }}">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-search me-1"></i> بحث
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- جدول الحجوزات -->
+  <div class="table-container mb-4">
+    <table class="reservations-table">
+      <thead>
+        <tr>
+          <th>رقم الحجز</th>
+          <th>العميل</th>
+          <th>السيارة</th>
+          <th>التواريخ</th>
+          <th>المبلغ</th>
+          <th>حالة الحجز</th>
+          <th>حالة الدفع</th>
+          <th>تاريخ الإنشاء</th>
+          <th>الإجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for reservation in reservations %}
+        <tr>
+          <td>#{{ reservation.id }}</td>
+          <td>
+            <div class="user-info">
+              <div class="info-text">
+                <div class="info-name">{{ reservation.user.get_full_name|default:reservation.user.username }}</div>
+                <div class="info-detail">{{ reservation.user.email }}</div>
+              </div>
+              <div class="info-avatar">
+                <i class="fas fa-user"></i>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="car-info">
+              <div class="info-text">
+                <div class="info-name">{{ reservation.car.make }} {{ reservation.car.model }}</div>
+                <div class="info-detail">{{ reservation.car.year }}</div>
+              </div>
+              <div class="info-avatar">
+                <i class="fas fa-car"></i>
+              </div>
+            </div>
+          </td>
+          <td>
+            {{ reservation.start_date|date:"Y-m-d" }} - {{ reservation.end_date|date:"Y-m-d" }}
+            <div class="info-detail">{{ reservation.duration }} يوم</div>
+          </td>
+          <td>{{ reservation.total_price }} ريال</td>
+          <td>
+            {% if reservation.status == 'pending' %}
+            <span class="status-badge pending">قيد المراجعة</span>
+            {% elif reservation.status == 'confirmed' %}
+            <span class="status-badge confirmed">تمت الموافقة</span>
+            {% elif reservation.status == 'completed' %}
+            <span class="status-badge completed">مكتمل</span>
+            {% elif reservation.status == 'cancelled' %}
+            <span class="status-badge cancelled">ملغي</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if reservation.payment_status == 'pending' %}
+            <span class="status-badge pending">في انتظار الدفع</span>
+            {% elif reservation.payment_status == 'paid' %}
+            <span class="status-badge confirmed">مدفوع</span>
+            {% elif reservation.payment_status == 'refunded' %}
+            <span class="status-badge completed">مسترجع</span>
+            {% endif %}
+          </td>
+          <td>{{ reservation.created_at|date:"Y-m-d" }}</td>
+          <td>
+            <div class="action-icons">
+              <a href="#" class="action-btn red" title="حذف">
+                <i class="fas fa-trash-alt"></i>
+              </a>
+              <a href="#" class="action-btn blue" title="عرض">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="#" class="action-btn yellow" title="طباعة">
+                <i class="fas fa-print"></i>
+              </a>
+              <a href="#" class="action-btn cyan" title="تفاصيل إضافية">
+                <i class="fas fa-info"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center py-5">
+            <div class="empty-state">
+              <i class="fas fa-calendar-times fa-3x mb-3 text-muted"></i>
+              <h5>لا توجد حجوزات</h5>
+              <p class="text-muted mb-3">لم يتم العثور على حجوزات تطابق معايير البحث</p>
+              <a href="{% url 'admin_reservations' %}" class="btn btn-primary">
+                <i class="fas fa-sync-alt me-1"></i> عرض جميع الحجوزات
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- ترقيم الصفحات -->
+  {% if reservations.has_other_pages %}
+  <nav aria-label="Page navigation" class="mb-4">
+    <ul class="pagination justify-content-center">
+      {% if reservations.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ reservations.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo;</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">&laquo;</span>
+      </li>
+      {% endif %}
+      
+      {% for i in reservations.paginator.page_range %}
+        {% if reservations.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% elif i > reservations.number|add:'-3' and i < reservations.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+        </li>
+        {% endif %}
+      {% endfor %}
+      
+      {% if reservations.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ reservations.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&raquo;</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">&raquo;</span>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}
