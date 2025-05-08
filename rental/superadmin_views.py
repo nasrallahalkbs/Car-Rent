@@ -748,7 +748,7 @@ def add_permission(request):
                 request
             )
             
-            messages.success(request, _("تمت إضافة الصلاحية بنجاح"))
+            admin_success(request, _("تمت إضافة الصلاحية بنجاح"))
             return redirect('superadmin_manage_permissions')
     else:
         form = PermissionForm()
@@ -773,7 +773,7 @@ def edit_permission(request, permission_id):
                 request
             )
             
-            messages.success(request, _("تم تحديث الصلاحية بنجاح"))
+            admin_success(request, _("تم تحديث الصلاحية بنجاح"))
             return redirect('superadmin_manage_permissions')
     else:
         form = PermissionForm(instance=permission)
@@ -787,7 +787,7 @@ def delete_permission(request, permission_id):
     
     # التحقق مما إذا كانت الصلاحية مستخدمة من قبل أي دور
     if Role.objects.filter(permissions=permission).exists():
-        messages.error(request, _("لا يمكن حذف الصلاحية لأنها مستخدمة من قبل أدوار حالية"))
+        admin_error(request, _("لا يمكن حذف الصلاحية لأنها مستخدمة من قبل أدوار حالية"))
         return redirect('superadmin_manage_permissions')
     
     if request.method == 'POST':
@@ -800,7 +800,7 @@ def delete_permission(request, permission_id):
         )
         
         permission.delete()
-        messages.success(request, _("تم حذف الصلاحية بنجاح"))
+        admin_success(request, _("تم حذف الصلاحية بنجاح"))
         return redirect('superadmin_manage_permissions')
     
     return render(request, 'superadmin/delete_permission.html', {'permission': permission})
@@ -892,7 +892,7 @@ def review_details(request, review_id):
                 request
             )
             
-            messages.success(request, _("تم تحديث حالة التقييم بنجاح"))
+            admin_success(request, _("تم تحديث حالة التقييم بنجاح"))
             return redirect('superadmin_review_details', review_id=review.id)
     else:
         if review_management:
@@ -938,7 +938,7 @@ def approve_review(request, review_id):
         request
     )
     
-    messages.success(request, _("تمت الموافقة على التقييم بنجاح"))
+    admin_success(request, _("تمت الموافقة على التقييم بنجاح"))
     return redirect('superadmin_manage_reviews')
 
 @superadmin_required
@@ -970,7 +970,7 @@ def reject_review(request, review_id):
         request
     )
     
-    messages.success(request, _("تم رفض التقييم بنجاح"))
+    admin_success(request, _("تم رفض التقييم بنجاح"))
     return redirect('superadmin_manage_reviews')
 
 @superadmin_required
@@ -1055,7 +1055,7 @@ def user_2fa(request, user_id):
             security.two_factor_enabled = True
             security.save(update_fields=['two_factor_enabled'])
             
-            messages.success(request, _("تم إعداد وتفعيل المصادقة الثنائية بنجاح. يرجى مسح رمز QR بتطبيق المصادقة."))
+            admin_success(request, _("تم إعداد وتفعيل المصادقة الثنائية بنجاح. يرجى مسح رمز QR بتطبيق المصادقة."))
             
             # تسجيل النشاط
             log_admin_activity(
@@ -1069,7 +1069,7 @@ def user_2fa(request, user_id):
         elif action == 'disable_2fa':
             result = disable_2fa_for_user(user, force=True)
             if result:
-                messages.success(request, _("تم تعطيل المصادقة الثنائية بنجاح."))
+                admin_success(request, _("تم تعطيل المصادقة الثنائية بنجاح."))
                 
                 # تسجيل النشاط
                 log_admin_activity(
@@ -1079,12 +1079,12 @@ def user_2fa(request, user_id):
                     request
                 )
             else:
-                messages.error(request, _("حدث خطأ أثناء تعطيل المصادقة الثنائية."))
+                admin_error(request, _("حدث خطأ أثناء تعطيل المصادقة الثنائية."))
         
         # إعادة توليد رموز النسخ الاحتياطية
         elif action == 'regenerate_backup_codes':
             backup_codes = generate_backup_codes(user, force_regenerate=True)
-            messages.success(request, _("تم إعادة توليد رموز النسخ الاحتياطية بنجاح."))
+            admin_success(request, _("تم إعادة توليد رموز النسخ الاحتياطية بنجاح."))
             
             # تسجيل النشاط
             log_admin_activity(
