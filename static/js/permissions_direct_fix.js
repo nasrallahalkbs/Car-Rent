@@ -196,40 +196,46 @@ $(document).ready(function() {
 
         // إرسال النموذج باستخدام AJAX
         $.ajax({
-            url: $('#permissions-form').attr('action'), // Corrected selector
+            url: $('#permissionsForm').attr('action'),
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             success: function(response) {
-                // تحديث الواجهة بعد الحفظ الناجح
                 if (response.status === 'success') {
                     // تحديث الصلاحيات المحفوظة
                     if (response.permissions) {
                         savedPermissions = response.permissions;
-                        $('#saved-permissions-json').val(JSON.stringify(savedPermissions)); //Corrected selector
+                        $('#saved_permissions_json').val(JSON.stringify(savedPermissions));
 
-                        // تحديث حالة البطاقات
-                        updateUIFromPermissions();
+                        // إعادة تعليم البطاقات النشطة
+                        markActiveCards();
 
                         // تحديث العدادات
-                        updatePermissionCounts();
+                        updateAllCounters();
+
+                        // تحديث الواجهة بالكامل
+                        $('.permission-card').each(function() {
+                            const section = $(this).closest('.permissions-section').attr('id').replace('section-', '');
+                            const permission = $(this).find('.permission-title').data('perm-name');
+
+                            if (savedPermissions[section] && savedPermissions[section].includes(permission)) {
+                                $(this).addClass('active');
+                            } else {
+                                $(this).removeClass('active');
+                            }
+                        });
                     }
 
-                    // عرض رسالة نجاح
                     showNotification('تم', 'تم حفظ الصلاحيات بنجاح', 'success');
-
-                    // تعطيل زر الحفظ  (assuming this button exists)
-                    $('#savePermissionsBtn').prop('disabled', true); //Corrected selector
-
                 } else {
                     showNotification('خطأ', 'حدث خطأ أثناء حفظ الصلاحيات', 'error');
                 }
-                $('#loadingOverlay').remove(); //removed loading indicator
+                $('#loadingOverlay').remove();
             },
             error: function() {
                 showNotification('خطأ', 'حدث خطأ في الاتصال بالخادم', 'error');
-                $('#loadingOverlay').remove(); //removed loading indicator
+                $('#loadingOverlay').remove();
             }
         });
     });
