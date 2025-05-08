@@ -192,6 +192,30 @@
             text-align: center;
         }
         
+        /* تنسيقات القائمة المنسدلة في الشريط الجانبي */
+        .dropdown-toggle::after {
+            display: none;
+        }
+        
+        .menu-link.dropdown-toggle .fa-chevron-down {
+            transition: transform 0.3s;
+            font-size: 0.8rem;
+        }
+        
+        .menu-link.dropdown-toggle[aria-expanded="true"] .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        
+        .submenu {
+            padding-{% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 2rem;
+            margin-top: 0.5rem;
+        }
+        
+        .submenu .menu-link {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        
         /* Main Content */
         .main-content {
             flex: 1;
@@ -646,10 +670,27 @@
                 <div class="menu-category">{% trans "إدارة المحتوى" %}</div>
                 <ul class="menu-items">
                     <li class="menu-item">
-                        <a href="{% url 'admin_cars' %}" class="menu-link {% if 'cars/manage' in request.path %}active{% endif %}">
+                        <a href="#" class="menu-link dropdown-toggle {% if 'cars' in request.path %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#vehiclesSubmenu" aria-expanded="{% if 'cars' in request.path %}true{% else %}false{% endif %}">
                             <span class="menu-icon"><i class="fas fa-car"></i></span>
                             <span class="menu-text">{% trans "السيارات" %}</span>
+                            <i class="fas fa-chevron-down ms-auto"></i>
                         </a>
+                        <div class="collapse {% if 'cars' in request.path %}show{% endif %}" id="vehiclesSubmenu">
+                            <ul class="menu-items submenu">
+                                <li class="menu-item">
+                                    <a href="{% url 'admin_cars' %}" class="menu-link {% if 'cars/manage' in request.path and not 'add' in request.path %}active{% endif %}">
+                                        <span class="menu-icon"><i class="fas fa-list"></i></span>
+                                        <span class="menu-text">{% trans "عرض السيارات" %}</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{% url 'add_car' %}" class="menu-link {% if 'cars/add' in request.path %}active{% endif %}">
+                                        <span class="menu-icon"><i class="fas fa-plus"></i></span>
+                                        <span class="menu-text">{% trans "إضافة سيارة" %}</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
                     <li class="menu-item">
                         <a href="{% url 'admin_reservations' %}" class="menu-link {% if 'reservations/manage' in request.path and 'archive' not in request.path %}active{% endif %}">
