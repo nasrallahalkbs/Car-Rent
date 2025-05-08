@@ -584,8 +584,7 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    # استخدام القالب القديم الذي كان يعمل
-    print("Reverting to original template:", context.keys())
+    # استخدام القالب المحسن
     return render(request, 'admin/enhanced/reservations_fixed_sidebar.html', context)
 
 def admin_analytics(request):
