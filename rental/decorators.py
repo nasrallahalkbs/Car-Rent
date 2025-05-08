@@ -134,8 +134,12 @@ def permission_required(section, permission):
             except Exception as e:
                 # تسجيل الخطأ فقط دون عرضه للمستخدم
                 logger.error(f"خطأ في التحقق من الصلاحيات: {e}")
-                # إعادة توجيه آمن للصفحة الرئيسية
-                return redirect('index')
+                try:
+                    # محاولة العودة إلى لوحة المسؤول بدلاً من إعادة التوجيه إلى الصفحة الرئيسية
+                    return redirect('admin_index')
+                except:
+                    # إذا كان هناك خطأ في العودة إلى لوحة المسؤول، نعود إلى الرئيسية
+                    return redirect('index')
             
         return _wrapped_view
     
