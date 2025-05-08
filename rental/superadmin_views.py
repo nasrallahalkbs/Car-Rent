@@ -502,8 +502,8 @@ def admin_advanced_permissions(request, admin_id):
         'permissions_json': json.dumps(admin_permissions)
     }
     
-    # عرض الصفحة باستخدام القالب الجديد كما طلب المستخدم
-    return render(request, 'superadmin/admin_advanced_permissions.html', context)
+    # عرض الصفحة باستخدام القالب المطلوب بالتحديد
+    return render(request, 'superadmin/admin_permissions_dynamic.html', context)
 
 @superadmin_required
 def add_admin(request):
