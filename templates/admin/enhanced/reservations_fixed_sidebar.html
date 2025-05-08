@@ -7,25 +7,28 @@
 
 {% block extra_css %}
 <style>
-  /* تصحيح مشكلة تداخل الشريط الجانبي مع المحتوى الرئيسي */
-  @media (min-width: 992px) {
-    .container-fluid.py-4 {
-      margin-{% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 280px;
-      width: calc(100% - 280px) !important;
-    }
+  /* تصحيح مشكلة عرض المحتوى الرئيسي */
+  .main-content {
+    margin-{% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 280px !important;
+    padding-top: 60px !important; /* إضافة مساحة علوية لمنع التداخل مع الشريط العلوي */
+    width: calc(100% - 280px) !important;
+    position: relative;
+    z-index: 1;
   }
   
   @media (max-width: 991px) {
-    .container-fluid.py-4 {
-      margin-{% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 70px;
+    .main-content {
+      margin-{% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 70px !important;
       width: calc(100% - 70px) !important;
     }
   }
 
-  /* تصحيح مشكلة تحرك الشريط العلوي */
+  /* تصحيح موضع الشريط العلوي */
   .topbar {
     width: calc(100% - 280px);
     {% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 280px;
+    position: fixed !important;
+    z-index: 100;
   }
   
   @media (max-width: 991px) {
@@ -33,6 +36,12 @@
       width: calc(100% - 70px);
       {% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 70px;
     }
+  }
+  
+  /* إعادة ضبط الحاويات الداخلية */
+  .container-fluid.py-4 {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
   }
 
   /* الأنماط الأصلية من الصفحة */
