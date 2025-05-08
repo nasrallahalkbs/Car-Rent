@@ -20,76 +20,169 @@ $(document).ready(function() {
 
     // تحديث البطاقات بناءً على الصلاحيات المحفوظة
     function updateCardsFromPermissions(permissions) {
+        // قبل البدء، سجل عدد البطاقات النشطة للمقارنة
+        const activeBefore = $('.permission-card.active').length;
+        console.log(`📊 قبل التحديث: ${activeBefore} بطاقة نشطة`);
+        
         // إزالة جميع الفئات النشطة أولاً
         $('.permission-card').removeClass('active');
         
         console.log("🔄 تحديث البطاقات من الصلاحيات:", permissions);
 
-        // تحديث المتغير العام
+        // تحديث المتغير العام للوصول إليه من أي مكان
         window.savedPermissions = permissions;
         
-        // حفظ في الحقل المخفي
+        // حفظ الصلاحيات في الحقل المخفي لضمان استمراريتها
         $('#saved_permissions_json').val(JSON.stringify(permissions));
 
-        // تحديث البطاقات للأقسام والصلاحيات
-        Object.entries(permissions).forEach(([section, perms]) => {
-            if (Array.isArray(perms)) {
-                perms.forEach(permission => {
-                    console.log(`🔹 تنشيط الصلاحية: ${section}.${permission}`);
+        // تأكد من إزالة الفئة النشطة من جميع البطاقات
+        $('.permission-card').removeClass('active');
+        
+        // طرق متعددة لضمان تحديث جميع البطاقات:
+        
+        // الطريقة 1: دورة خاصة بكل قسم وصلاحية (الطريقة المفضلة)
+        for (const section in permissions) {
+            if (Array.isArray(permissions[section])) {
+                permissions[section].forEach(permission => {
+                    console.log(`🔍 تنشيط الصلاحية: ${section}.${permission}`);
                     
-                    // الطريقة 1: البحث باستخدام السمات
-                    const cards = $(`.permission-card[data-section="${section}"][data-permission="${permission}"]`);
-                    if (cards.length) {
-                        cards.addClass('active');
-                        console.log(`✅ تم العثور على ${cards.length} بطاقة باستخدام السمات المباشرة`);
-                    } else {
-                        console.log(`⚠️ لم يتم العثور على بطاقات باستخدام السمات المباشرة`);
+                    // 1.أ. باستخدام سمات البيانات
+                    const cardsByData = $(`.permission-card[data-section="${section}"][data-permission="${permission}"]`);
+                    if (cardsByData.length) {
+                        cardsByData.addClass('active');
+                        console.log(`✓ تم تفعيل ${cardsByData.length} بطاقة باستخدام السمات`);
                     }
                     
-                    // الطريقة 2: البحث في كل قسم
-                    const sectionContainer = $(`#section-${section}`);
-                    if (sectionContainer.length) {
-                        sectionContainer.find('.permission-card').each(function() {
-                            // محاولات متعددة للعثور على البطاقة المطلوبة
-                            
-                            // أ. باستخدام سمة data-permission
-                            if ($(this).data('permission') === permission) {
-                                $(this).addClass('active');
-                            }
-                            
-                            // ب. باستخدام العنوان
-                            const title = $(this).find('.permission-title');
-                            if (title.length && title.data('perm-name') === permission) {
-                                $(this).addClass('active');
-                            }
-                        });
+                    // 1.ب. باستخدام المحتوى النصي للعنوان
+                    const titleCards = $(`.permission-card .permission-title[data-perm-name="${permission}"]`).closest('.permission-card');
+                    if (titleCards.length) {
+                        titleCards.addClass('active');
+                    }
+                    
+                    // 1.ج. البحث المباشر في القسم
+                    $(`#section-${section} .permission-card`).each(function() {
+                        if ($(this).data('permission') === permission) {
+                            $(this).addClass('active');
+                        }
+                    });
+                });
+            }
+        }
+        
+        // الطريقة 2: تنفيذ تعليم إضافي لكافة البطاقات
+        $('.permissions-section').each(function() {
+            const sectionId = $(this).attr('id').replace('section-', '');
+            if (permissions[sectionId] && Array.isArray(permissions[sectionId])) {
+                const sectionPerms = permissions[sectionId];
+                
+                $(this).find('.permission-card').each(function() {
+                    // أ. تحقق من خاصية data-permission
+                    const permData = $(this).data('permission');
+                    if (permData && sectionPerms.includes(permData)) {
+                        $(this).addClass('active');
+                    }
+                    
+                    // ب. تحقق من عنوان البطاقة
+                    const titleElement = $(this).find('.permission-title');
+                    if (titleElement.length) {
+                        const permName = titleElement.data('perm-name');
+                        if (permName && sectionPerms.includes(permName)) {
+                            $(this).addClass('active');
+                        }
                     }
                 });
             }
         });
+        
+        // حساب عدد البطاقات النشطة بعد التحديث
+        const activeAfter = $('.permission-card.active').length;
+        console.log(`📊 بعد التحديث: ${activeAfter} بطاقة نشطة (تغيير: ${activeAfter - activeBefore})`);
 
-        // تحديث عدادات الأقسام
+        // تحديث عدادات الأقسام والتبويبات
         updateAllCounters();
         
-        console.log("✅ تم الانتهاء من تحديث البطاقات");
+        console.log("✅ تم الانتهاء من تحديث البطاقات بنجاح");
+        
+        // بعد التحديث، تأكد أن عدد البطاقات النشطة يتطابق مع عدد الصلاحيات المحفوظة
+        let totalPermissionsCount = 0;
+        for (const section in permissions) {
+            if (Array.isArray(permissions[section])) {
+                totalPermissionsCount += permissions[section].length;
+            }
+        }
+        
+        console.log(`📊 إحصائيات: ${activeAfter} بطاقة نشطة، ${totalPermissionsCount} صلاحية محفوظة`);
+        if (activeAfter < totalPermissionsCount) {
+            console.warn(`⚠️ تحذير: بعض الصلاحيات (${totalPermissionsCount - activeAfter}) لم يتم تفعيل بطاقاتها`);
+        }
     }
 
     // جمع الصلاحيات النشطة
     function collectActivePermissions() {
         const permissions = {};
 
+        // تهيئة جميع الأقسام بمصفوفات فارغة
         $('.permissions-section').each(function() {
             const sectionId = $(this).attr('id').replace('section-', '');
             permissions[sectionId] = [];
+        });
 
+        // جمع الصلاحيات النشطة من البطاقات
+        $('.permissions-section').each(function() {
+            const sectionId = $(this).attr('id').replace('section-', '');
+            
             $(this).find('.permission-card.active').each(function() {
-                const permission = $(this).data('permission');
-                if (permission) {
-                    permissions[sectionId].push(permission);
+                // عدة طرق للحصول على اسم الصلاحية
+                
+                // 1. من خاصية data-permission
+                let permissionName = $(this).data('permission');
+                
+                // 2. من عنوان الصلاحية data-perm-name
+                if (!permissionName) {
+                    const title = $(this).find('.permission-title');
+                    if (title.length && title.data('perm-name')) {
+                        permissionName = title.data('perm-name');
+                    }
+                }
+                
+                // 3. من نص العنوان كحل أخير
+                if (!permissionName) {
+                    const titleText = $(this).find('.permission-title').text().trim();
+                    if (titleText) {
+                        // تحليل النص للحصول على مفتاح الصلاحية
+                        if (titleText.includes('عرض') || titleText.includes('الاطلاع')) {
+                            permissionName = 'view_' + sectionId;
+                        } else if (titleText.includes('إضافة') || titleText.includes('إنشاء')) {
+                            permissionName = 'create_' + sectionId.replace(/s$/, '');
+                        } else if (titleText.includes('تعديل')) {
+                            permissionName = 'edit_' + sectionId.replace(/s$/, '');
+                        } else if (titleText.includes('حذف')) {
+                            permissionName = 'delete_' + sectionId.replace(/s$/, '');
+                        } else {
+                            // استخراج كلمات المفتاح من النص
+                            permissionName = titleText.toLowerCase()
+                                .replace(/[\u0600-\u06FF]/g, '') // إزالة الحروف العربية
+                                .replace(/[^\w\s]/gi, '') // إزالة العلامات
+                                .trim()
+                                .replace(/\s+/g, '_'); // استبدال المسافات بشرطات سفلية
+                            
+                            // إذا كان المفتاح فارغاً بعد المعالجة، استخدم نوعاً افتراضياً
+                            if (!permissionName) {
+                                permissionName = 'perm_' + Math.floor(Math.random() * 1000);
+                            }
+                        }
+                    }
+                }
+
+                // إضافة الصلاحية للقسم إذا كانت صالحة ولم تتم إضافتها من قبل
+                if (permissionName && !permissions[sectionId].includes(permissionName)) {
+                    permissions[sectionId].push(permissionName);
+                    console.log(`📌 تم جمع الصلاحية "${permissionName}" في قسم "${sectionId}"`);
                 }
             });
         });
 
+        console.log("📝 الصلاحيات المجمعة من واجهة المستخدم:", permissions);
         return permissions;
     }
 
@@ -136,43 +229,172 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             success: function(response) {
-                console.log("استجابة الخادم:", response);
+                console.log("👉 استجابة الخادم:", response);
                 
-                if (response.status === 'success') {
-                    if (response.permissions) {
-                        console.log("الصلاحيات المستلمة من الخادم:", response.permissions);
-                        
-                        // تحديث الصلاحيات المحفوظة في الحقل المخفي
-                        $('#saved_permissions_json').val(JSON.stringify(response.permissions));
-                        
-                        // تحديث المتغير العام للصلاحيات المحفوظة
-                        window.savedPermissions = response.permissions;
-                        
-                        // تحديث واجهة المستخدم مباشرة
-                        updateCardsFromPermissions(response.permissions);
-                        
-                        // تحديث جميع العدادات
-                        updateAllCounters();
-                        
-                        // تحديث الواجهة يدويًا (إعادة تطبيق الفئات النشطة على البطاقات)
-                        markActiveCards();
-                    } else {
-                        console.warn("لم يتم استلام معلومات الصلاحيات في الاستجابة!");
-                        
-                        // استرداد الصلاحيات المجمعة
-                        const activePermissions = collectActivePermissions();
-                        updateCardsFromPermissions(activePermissions);
-                    }
+                // تحقق من نوع الاستجابة (قد تكون JSON أو نص HTML)
+                let responseData = response;
+                if (typeof response === 'string') {
+                    // إذا كانت الاستجابة نصية تحتوي على HTML (صفحة كاملة)
+                    console.log("⚠️ الاستجابة نصية HTML - سنقوم باستخراج permissions_json منها");
                     
-                    showNotification('تم', 'تم حفظ الصلاحيات بنجاح', 'success');
+                    try {
+                        // محاولة استخراج permissions_json من صفحة HTML باستخدام عدة أنماط
+                        console.log("🔍 جاري البحث عن نمط permissions_json في استجابة HTML...");
+                        
+                        // محاولة النمط الأول: value='...'
+                        const jsonMatch1 = response.match(/id="saved_permissions_json" value='(.+?)'/);
+                        if (jsonMatch1 && jsonMatch1[1]) {
+                            const extractedJson = jsonMatch1[1];
+                            responseData = { status: 'success', permissions: JSON.parse(extractedJson) };
+                            console.log("✅ تم استخراج الصلاحيات من HTML (النمط 1):", responseData.permissions);
+                        } 
+                        // محاولة النمط الثاني: value="..."
+                        else {
+                            const jsonMatch2 = response.match(/id="saved_permissions_json" value="(.+?)"/);
+                            if (jsonMatch2 && jsonMatch2[1]) {
+                                const extractedJson = jsonMatch2[1];
+                                responseData = { status: 'success', permissions: JSON.parse(extractedJson) };
+                                console.log("✅ تم استخراج الصلاحيات من HTML (النمط 2):", responseData.permissions);
+                            }
+                            // محاولة النمط الثالث: id="saved_permissions_json" أي نمط
+                            else {
+                                // استخراج جزء من HTML حول العنصر المطلوب
+                                const elementSection = response.match(/id="saved_permissions_json"[^>]*>/)
+                                if (elementSection) {
+                                    console.log("🔍 تم العثور على العنصر، ولكن نحتاج استخراج القيمة:", elementSection[0]);
+                                    
+                                    // محاولة استخراج البيانات من أي نوع من السمات
+                                    const valueMatch = elementSection[0].match(/value=["'](.+?)["']/);
+                                    if (valueMatch && valueMatch[1]) {
+                                        const extractedJson = valueMatch[1];
+                                        responseData = { status: 'success', permissions: JSON.parse(extractedJson) };
+                                        console.log("✅ تم استخراج الصلاحيات من HTML (النمط 3):", responseData.permissions);
+                                    } else {
+                                        throw new Error("تم العثور على العنصر ولكن لا توجد قيمة به");
+                                    }
+                                } else {
+                                    throw new Error("لم نتمكن من العثور على عنصر saved_permissions_json في الاستجابة");
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error("❌ خطأ في معالجة الاستجابة:", e);
+                        console.log("🔍 محتوى استجابة الخادم (جزء):", response.substring(0, 200) + "...");
+                        
+                        // إضافة بعض معلومات التشخيص الإضافية
+                        if (response.includes("<html")) {
+                            console.log("ℹ️ الاستجابة تبدو كصفحة HTML");
+                            
+                            // محاولة معرفة نوع الصفحة
+                            if (response.includes("login") || response.includes("تسجيل الدخول")) {
+                                console.error("⚠️ يبدو أن الاستجابة هي صفحة تسجيل الدخول، قد تكون الجلسة منتهية");
+                            } else if (response.includes("error") || response.includes("خطأ")) {
+                                console.error("⚠️ يبدو أن الاستجابة تحتوي على صفحة خطأ");
+                            }
+                        }
+                        
+                        // البحث عن أي بيانات JSON في الاستجابة
+                        const jsonObjects = response.match(/\{[^\}]+\}/g);
+                        if (jsonObjects && jsonObjects.length) {
+                            console.log("🔍 وجدنا بعض كائنات JSON في الاستجابة:", jsonObjects.slice(0, 3));
+                            
+                            // محاولة تحليل وتخمين الصلاحيات
+                            try {
+                                for (const jsonStr of jsonObjects) {
+                                    const jsonObject = JSON.parse(jsonStr);
+                                    if (jsonObject && (jsonObject.permissions || jsonObject.status)) {
+                                        console.log("✅ وجدنا كائن JSON محتمل:", jsonObject);
+                                        if (jsonObject.permissions) {
+                                            responseData = jsonObject;
+                                            console.log("🎯 استخدام الكائن المكتشف للصلاحيات");
+                                            break;
+                                        }
+                                    }
+                                }
+                            } catch (jsonError) {
+                                console.error("❌ فشلت محاولة تخمين JSON:", jsonError);
+                            }
+                        }
+                        
+                        // إعادة تحميل الصفحة كملاذ أخير إذا لم نتمكن من استخراج الصلاحيات
+                        if (!responseData.permissions) {
+                            console.warn("⚠️ لا يمكن استخراج الصلاحيات، جاري إعادة تحميل الصفحة...");
+                            window.location.reload();
+                            return;
+                        }
+                    }
+                }
+                
+                if (responseData.status === 'success' || responseData.permissions) {
+                    if (responseData.permissions) {
+                        console.log("📄 الصلاحيات المستلمة من الخادم:", responseData.permissions);
+                        
+                        try {
+                            // تحديث الصلاحيات المحفوظة في الحقل المخفي
+                            $('#saved_permissions_json').val(JSON.stringify(responseData.permissions));
+                            
+                            // تحديث المتغير العام للصلاحيات المحفوظة
+                            window.savedPermissions = responseData.permissions;
+                            console.log("💾 تم تحديث المتغير العام savedPermissions:", window.savedPermissions);
+                            
+                            // لضمان التحديث الصحيح - تفرغ جميع البطاقات وتعيين الفعالة منها
+                            $('.permission-card').removeClass('active');
+                            
+                            // تحديث حالة البطاقات بناءً على الصلاحيات المحفوظة
+                            for (const section in responseData.permissions) {
+                                if (Array.isArray(responseData.permissions[section])) {
+                                    responseData.permissions[section].forEach(permission => {
+                                        $(`.permission-card[data-section="${section}"][data-permission="${permission}"]`).addClass('active');
+                                        $(`.permission-card .permission-title[data-perm-name="${permission}"]`).closest('.permission-card').addClass('active');
+                                    });
+                                }
+                            }
+                            
+                            // تحديث العدادات
+                            updateAllCounters();
+                            
+                            // تنفيذ وظيفة تعليم البطاقات الفعالة كتأكيد إضافي
+                            markActiveCards();
+                            
+                            console.log("✅ تم تحديث واجهة المستخدم بنجاح مع الصلاحيات الجديدة");
+                            showNotification('تم', 'تم حفظ الصلاحيات بنجاح وتحديث الواجهة', 'success');
+                        } catch (error) {
+                            console.error("❌ خطأ أثناء تحديث واجهة المستخدم:", error);
+                            showNotification('تحذير', 'تم الحفظ ولكن حدث خطأ في تحديث الواجهة - جاري إعادة التحميل', 'warning');
+                            
+                            // إعادة تحميل الصفحة في حالة حدوث خطأ في التحديث
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        }
+                    } else {
+                        console.warn("⚠️ لم يتم استلام معلومات الصلاحيات في الاستجابة!");
+                        
+                        // استرداد الصلاحيات المحلية
+                        const activePermissions = collectActivePermissions();
+                        console.log("🔄 استخدام الصلاحيات المحلية:", activePermissions);
+                        
+                        updateCardsFromPermissions(activePermissions);
+                        showNotification('تنبيه', 'تم الحفظ ولكن تم استخدام الصلاحيات المحلية للتحديث', 'warning');
+                    }
                 } else {
-                    console.error("خطأ في استجابة الخادم:", response);
+                    console.error("❌ خطأ في استجابة الخادم:", responseData);
                     showNotification('خطأ', 'حدث خطأ أثناء حفظ الصلاحيات', 'error');
+                    
+                    // إعادة تحميل الصفحة بعد فترة كملاذ أخير
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
                 }
             },
-            error: function(xhr) {
-                console.error('خطأ في الحفظ:', xhr);
-                showNotification('خطأ', 'حدث خطأ في الاتصال بالخادم', 'error');
+            error: function(xhr, status, error) {
+                console.error('❌ خطأ في الحفظ:', xhr, status, error);
+                showNotification('خطأ', 'حدث خطأ في الاتصال بالخادم: ' + error, 'error');
+                
+                // إعادة تحميل الصفحة بعد فترة كملاذ أخير
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
             },
             complete: function() {
                 $('#loadingOverlay').remove();
@@ -381,38 +603,133 @@ $(document).ready(function() {
 
 // تعليم البطاقات النشطة بناءً على الصلاحيات المحفوظة
 function markActiveCards() {
+    // قبل التنفيذ سجل المعلومات للمتابعة
+    const activeBefore = $('.permission-card.active').length;
+    console.log(`⏱️ بدء تعليم البطاقات - العدد الحالي: ${activeBefore} بطاقة نشطة`);
+    
     // إعادة تعيين حالة جميع البطاقات
     $('.permission-card').removeClass('active');
 
-    console.log("🔍 تعليم البطاقات النشطة باستخدام:", window.savedPermissions);
-
-    // تحديد البطاقات النشطة
-    for (const section in window.savedPermissions) {
-        if (Array.isArray(window.savedPermissions[section])) {
-            window.savedPermissions[section].forEach(permission => {
-                console.log(`🔸 تعليم الصلاحية: ${section}.${permission}`);
-                
-                // الطريقة 1: باستخدام سمات البيانات
-                $(`.permission-card[data-section="${section}"][data-permission="${permission}"]`).addClass('active');
-
-                // الطريقة 2: باستخدام سمة البيانات على بطاقة الصلاحية
-                $(`.permission-card[data-section="${section}"]`).each(function() {
-                    const permName = $(this).data('permission');
-                    if (permName === permission) {
-                        $(this).addClass('active');
-                    }
-                });
-
-                // الطريقة 3: باستخدام عنوان الصلاحية (احتياطي)
-                $(`.permission-card .permission-title[data-perm-name="${permission}"]`).closest('.permission-card').addClass('active');
-            });
+    // تأكد من وجود الصلاحيات المحفوظة
+    if (!window.savedPermissions) {
+        try {
+            // محاولة استخراج الصلاحيات من الحقل المخفي
+            const savedJson = $('#saved_permissions_json').val();
+            if (savedJson) {
+                window.savedPermissions = JSON.parse(savedJson);
+                console.log("✅ تم استعادة الصلاحيات من الحقل المخفي:", window.savedPermissions);
+            } else {
+                console.warn("⚠️ لا توجد صلاحيات محفوظة في الحقل المخفي");
+                window.savedPermissions = {}; // تعيين كائن فارغ افتراضي
+                return; // توقف إذا لم تكن هناك صلاحيات
+            }
+        } catch (e) {
+            console.error("❌ خطأ في تحليل الصلاحيات المحفوظة:", e);
+            return; // توقف إذا كان هناك خطأ
         }
     }
 
-    // تحديث عدادات الصلاحيات
+    console.log("🔍 تعليم البطاقات النشطة باستخدام:", window.savedPermissions);
+
+    // تنفيذ عدة آليات للتعليم لضمان عمل البطاقات حتى مع هيكل HTML مختلف
+
+    // 1. تعيين علامات البطاقات باستخدام الاختيارات المباشرة
+    let totalMarked = 0;
+    for (const section in window.savedPermissions) {
+        if (Array.isArray(window.savedPermissions[section])) {
+            window.savedPermissions[section].forEach(permission => {
+                let markedCount = 0;
+                
+                console.log(`🔸 تعليم الصلاحية: ${section}.${permission}`);
+                
+                // 1.أ. باستخدام سمات البيانات المباشرة - الطريقة الأكثر دقة
+                const directCards = $(`.permission-card[data-section="${section}"][data-permission="${permission}"]`);
+                if (directCards.length) {
+                    directCards.addClass('active');
+                    markedCount += directCards.length;
+                }
+
+                // 1.ب. تحديد البطاقات في القسم المناسب
+                const sectionCards = $(`#section-${section} .permission-card`);
+                sectionCards.each(function() {
+                    // تحقق مما إذا كانت البطاقة تطابق الصلاحية
+                    const cardPerm = $(this).data('permission');
+                    if (cardPerm === permission && !$(this).hasClass('active')) {
+                        $(this).addClass('active');
+                        markedCount++;
+                    }
+                    
+                    // تحقق من عنوان البطاقة
+                    const titleEl = $(this).find('.permission-title');
+                    if (titleEl.length) {
+                        const permName = titleEl.data('perm-name');
+                        if (permName === permission && !$(this).hasClass('active')) {
+                            $(this).addClass('active');
+                            markedCount++;
+                        }
+                    }
+                });
+
+                // 1.ج. البحث عن طريق عنوان الصلاحية - احتياطي
+                const titleCards = $(`.permission-card .permission-title[data-perm-name="${permission}"]`).closest('.permission-card');
+                if (titleCards.length) {
+                    titleCards.addClass('active');
+                    markedCount += titleCards.length;
+                }
+                
+                totalMarked += markedCount;
+                console.log(`  ┗ تم تعليم ${markedCount} بطاقة للصلاحية ${permission}`);
+            });
+        }
+    }
+    
+    // 2. من أجل البطاقات التي لا تحتوي على سمات بيانات كاملة، استخدم الطريقة الاحتياطية
+    $('.permissions-section').each(function() {
+        const sectionId = $(this).attr('id').replace('section-', '');
+        const sectionPerms = window.savedPermissions[sectionId] || [];
+        
+        if (Array.isArray(sectionPerms) && sectionPerms.length > 0) {
+            $(this).find('.permission-card:not(.active)').each(function() {
+                // محاولة استنتاج الصلاحية من نص البطاقة
+                const titleText = $(this).find('.permission-title').text().trim();
+                const permDesc = $(this).find('.permission-desc').text().trim();
+                
+                // مطابقة أي من الصلاحيات المحفوظة للقسم
+                sectionPerms.forEach(permission => {
+                    // محاولة مطابقة الصلاحية بالنص
+                    if ((titleText && permission.includes(titleText.toLowerCase())) || 
+                        (permDesc && permission.includes(permDesc.toLowerCase()))) {
+                        $(this).addClass('active');
+                        totalMarked++;
+                    }
+                });
+            });
+        }
+    });
+    
+    // حساب التغييرات
+    const activeAfter = $('.permission-card.active').length;
+    console.log(`⏱️ انتهاء تعليم البطاقات - النتيجة: ${activeAfter} بطاقة نشطة (تغيير: ${activeAfter - activeBefore})`);
+    
+    // تحديث عدادات الصلاحيات في كل قسم وتبويب
     updateAllCounters();
     
-    console.log("✅ تم الانتهاء من تعليم البطاقات النشطة");
+    // حساب إجمالي عدد الصلاحيات المحفوظة
+    let totalPermissionsCount = 0;
+    for (const section in window.savedPermissions) {
+        if (Array.isArray(window.savedPermissions[section])) {
+            totalPermissionsCount += window.savedPermissions[section].length;
+        }
+    }
+    
+    // التحقق من تطابق عدد البطاقات النشطة مع عدد الصلاحيات
+    if (activeAfter < totalPermissionsCount) {
+        console.warn(`⚠️ تحذير: ${totalPermissionsCount - activeAfter} صلاحية لم يتم تفعيل بطاقاتها`);
+    } else if (activeAfter > totalPermissionsCount) {
+        console.warn(`⚠️ تحذير: ${activeAfter - totalPermissionsCount} بطاقة زائدة تم تفعيلها`);
+    } else {
+        console.log(`✅ تمت مطابقة جميع الصلاحيات (${totalPermissionsCount}) مع البطاقات النشطة`);
+    }
 }
 
 // تعريف متغير عام على مستوى النافذة
@@ -429,4 +746,63 @@ $(document).ready(function() {
     } catch (error) {
         console.error("❌ خطأ في تحليل الصلاحيات المحفوظة:", error);
     }
+    
+    // تشخيص سمات بطاقات الصلاحيات
+    setTimeout(function() {
+        console.log("🔍 تشخيص بنية بطاقات الصلاحيات...");
+        console.log(`📊 عدد البطاقات الكلي: ${$('.permission-card').length}`);
+        console.log(`📊 عدد البطاقات النشطة: ${$('.permission-card.active').length}`);
+        
+        // فحص سمات البطاقات
+        const cardAttributes = {};
+        $('.permissions-section').each(function() {
+            const sectionId = $(this).attr('id').replace('section-', '');
+            cardAttributes[sectionId] = [];
+            
+            $(this).find('.permission-card').each(function(index) {
+                const card = $(this);
+                const cardData = {
+                    index,
+                    active: card.hasClass('active'),
+                    dataSection: card.data('section'),
+                    dataPermission: card.data('permission'),
+                    titleText: card.find('.permission-title').text().trim(),
+                    titlePerm: card.find('.permission-title').data('perm-name')
+                };
+                
+                // إذا كانت البطاقة نشطة، أضف معلومات إضافية
+                if (cardData.active) {
+                    cardData.activeStyle = true;
+                }
+                
+                // إذا كانت السمات غير متطابقة مع القسم
+                if (cardData.dataSection !== sectionId) {
+                    cardData.sectionMismatch = true;
+                }
+                
+                cardAttributes[sectionId].push(cardData);
+            });
+        });
+        
+        console.log("📝 معلومات بطاقات الصلاحيات حسب الأقسام:", cardAttributes);
+        
+        // طباعة البطاقات التي تفتقد إلى سمات
+        const missingAttributes = $('.permission-card').filter(function() {
+            return !$(this).data('permission') || !$(this).data('section');
+        });
+        
+        if (missingAttributes.length) {
+            console.warn(`⚠️ توجد ${missingAttributes.length} بطاقة بدون سمات بيانات كاملة`);
+            
+            missingAttributes.each(function(index) {
+                console.log(`  بطاقة #${index} بدون سمات كاملة:`, {
+                    title: $(this).find('.permission-title').text().trim(),
+                    dataSection: $(this).data('section'),
+                    dataPermission: $(this).data('permission')
+                });
+            });
+        } else {
+            console.log("✅ جميع البطاقات تحتوي على سمات البيانات المطلوبة");
+        }
+    }, 1000);
 });
