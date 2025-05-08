@@ -63,6 +63,21 @@ $(document).ready(function() {
         $('.section-body').slideDown();
         $('.toggle-section i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
     });
+    
+    // تحسين زر تحديد الكل
+    $('.select-all').on('click', function(e) {
+        e.preventDefault();
+        const section = $(this).data('section');
+        const cards = $(`#section-${section} .permission-card`);
+        
+        // تحديد/إلغاء تحديد البطاقات
+        cards.each(function() {
+            $(this).addClass('active');
+        });
+        
+        // تحديث العدادات فقط دون حفظ
+        updateAllCounters();
+    });
 
     // تحديث عدادات الصلاحيات
     function updateAllCounters() {
