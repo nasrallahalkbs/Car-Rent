@@ -1111,7 +1111,7 @@ def admin_users(request):
     return render(request, 'admin/users_enhanced.html', context)
 
 @login_required
-@admin_required
+@permission_required("payments", "view_payments")
 def admin_payments(request):
     """Admin view to manage payments"""
     # Get filter values from query parameters
@@ -1175,7 +1175,7 @@ def admin_payments(request):
     return render(request, 'admin/payments_django.html', context)
 
 @login_required
-@admin_required
+@permission_required("payments", "view_payments")
 def payment_details(request, payment_id):
     """Admin view to show payment details"""
     payment = get_object_or_404(Reservation, id=payment_id)
@@ -1227,7 +1227,7 @@ def payment_details(request, payment_id):
     return render(request, template_name, context)
 
 @login_required
-@admin_required
+@permission_required("payments", "edit_payments")
 def process_refund(request, payment_id):
     """Process a refund for a payment"""
     payment = get_object_or_404(Reservation, id=payment_id)
@@ -1245,7 +1245,7 @@ def process_refund(request, payment_id):
     return redirect('payment_details', payment_id=payment_id)
 
 @login_required
-@admin_required
+@permission_required("payments", "edit_payments")
 def mark_as_paid(request, payment_id):
     """Mark a pending payment as paid"""
     payment = get_object_or_404(Reservation, id=payment_id)
