@@ -39,7 +39,16 @@ class AdminUser(models.Model):
     notes = models.TextField(blank=True, null=True, verbose_name=_('ملاحظات'))
     access_token = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('رمز الوصول'))
     
+    # الحقول الجديدة
+    full_name = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('الاسم الكامل'))
+    phone_number = models.CharField(max_length=20, blank=True, null=True, verbose_name=_('رقم الهاتف'))
+    current_job = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('الوظيفة الحالية'))
+    qualification = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('المؤهل'))
+    department = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('القسم'))
+    
     def __str__(self):
+        if self.full_name:
+            return self.full_name
         return self.user.username
         
     class Meta:
