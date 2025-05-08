@@ -44,21 +44,38 @@ def admin_required(view_func):
     """
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        # التحقق من أن المستخدم مسجل الدخول وهو مسؤول
+        # التحقق من أن المستخدم مسجل الدخول أولاً قبل فحص أي شيء آخر
         if not request.user.is_authenticated:
-            messages.error(request, "يجب تسجيل الدخول أولاً")
+            # لا نضيف رسالة خطأ عند إعادة توجيه المستخدم لصفحة تسجيل الدخول
             return redirect('login')
 
+        # للتسجيل فقط
+        print(f"Admin check for admin, authenticated: {request.user.is_authenticated}")
+
+        # الفحص إذا كان مسؤول
+        is_admin = False
+        try:
+            # التحقق من نموذج AdminUser
+            admin_user = AdminUser.objects.get(user=request.user)
+            is_admin = True
+        except AdminUser.DoesNotExist:
+            # ليس مسؤولاً من نموذج AdminUser
+            is_admin = False
+        
+        # التحقق من خصائص النظام إذا كانت متوفرة
         if hasattr(request.user, 'is_admin') and request.user.is_admin:
-            # المستخدم مسؤول، السماح بالوصول
+            is_admin = True
+        
+        # التحقق من معلمات Django العادية
+        if request.user.is_staff or request.user.is_superuser:
+            is_admin = True
+        
+        # السماح بالوصول إذا كان مسؤولاً
+        if is_admin:
             return view_func(request, *args, **kwargs)
-        elif request.user.is_staff or request.user.is_superuser:
-            # المستخدم مسؤول نظام، السماح بالوصول
-            return view_func(request, *args, **kwargs)
-        else:
-            # ليس مسؤولاً، منع الوصول وإعادة التوجيه إلى لوحة التحكم
-            messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
-            return redirect('admin_index')
+        
+        # ليس مسؤولاً، نوجهه للصفحة الرئيسية بدون رسائل خطأ
+        return redirect('index')
 
     return _wrapped_view
 
@@ -73,58 +90,48 @@ def permission_required(section, permission):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            # طباعة معلومات التصحيح
+            # للتسجيل فقط: طباعة معلومات التصحيح
             print(f"Admin check for {section}:{permission}, authenticated: {request.user.is_authenticated}")
             
-            # المسؤول الأعلى لديه جميع الصلاحيات
-            try:
-                if request.user.is_authenticated:
-                    admin_user = AdminUser.objects.get(user=request.user)
-                    if admin_user.is_superadmin:
-                        return view_func(request, *args, **kwargs)
-                    
-                    # الحصول على صلاحيات المسؤول
-                    admin_permissions = get_admin_permissions(admin_user.id)
-                    print(f"Admin ID: {admin_user.id}, Permissions: {admin_permissions}")
-                    
-                    # التحقق من الصلاحية
-                    if section in admin_permissions and permission in admin_permissions[section]:
-                        return view_func(request, *args, **kwargs)
-                    
-                    # إذا لم يكن لديه الصلاحية
-                    messages.error(request, _("ليس لديك صلاحية للوصول إلى هذه الصفحة"))
-                    # إعادة التوجيه إلى لوحة تحكم المسؤول بطريقة آمنة
-                    try:
-                        return redirect('admin_index')
-                    except Exception as e:
-                        logger.error(f"فشل في إعادة التوجيه إلى admin_index: {e}")
-                        # إذا فشل، نحاول العودة للصفحة السابقة
-                        referer = request.META.get('HTTP_REFERER')
-                        if referer:
-                            return redirect(referer)
-                        # أو نوجه للصفحة الرئيسية
-                        return redirect('index')
-                    
-            except AdminUser.DoesNotExist:
-                pass
-            except Exception as e:
-                logger.error(f"خطأ في التحقق من الصلاحيات: {e}")
-            
-            # إذا لم يكن مسؤولاً أو ليس لديه صلاحية، نعرض رسالة خطأ
-            messages.error(request, _("يجب تسجيل الدخول كمسؤول أو الحصول على الصلاحيات المناسبة"))
-            # إذا كان مسجل الدخول ومسؤول، نوجهه للوحة التحكم
-            if request.user.is_authenticated and hasattr(request.user, 'is_admin') and request.user.is_admin:
-                try:
-                    return redirect('admin_index')
-                except Exception as e:
-                    logger.error(f"فشل في إعادة التوجيه إلى admin_index: {e}")
-                    # إذا فشل، نحاول العودة للصفحة السابقة
-                    referer = request.META.get('HTTP_REFERER')
-                    if referer:
-                        return redirect(referer)
-                    return redirect('index')
-            else:
+            # التحقق من أن المستخدم مسؤول أولاً
+            if not request.user.is_authenticated:
+                # إذا لم يكن مسجل الدخول، نوجهه لصفحة تسجيل الدخول بدون عرض رسائل خطأ
                 return redirect('login')
+            
+            # تحقق إضافي للمسؤول الأعلى - له جميع الصلاحيات
+            try:
+                admin_user = AdminUser.objects.get(user=request.user)
+                
+                # المسؤول الأعلى لديه جميع الصلاحيات
+                if admin_user.is_superadmin:
+                    return view_func(request, *args, **kwargs)
+                
+                # تحقق من الصلاحية للمسؤول العادي
+                admin_permissions = get_admin_permissions(admin_user.id)
+                print(f"Admin ID: {admin_user.id}, Permissions: {admin_permissions}")
+                
+                # التحقق من الصلاحية (إذا كان لديه الصلاحية المطلوبة)
+                if section in admin_permissions and permission in admin_permissions[section]:
+                    print(f"Checking permissions for {section} {permission}")
+                    return view_func(request, *args, **kwargs)
+                
+                # إذا وصلنا إلى هنا، فالمستخدم مسؤول ولكن ليس لديه الصلاحية
+                if section == "reservations" and permission == "view_reservations":
+                    messages.error(request, _("ليس لديك صلاحية لمشاهدة الحجوزات"))
+                else:
+                    messages.error(request, _("ليس لديك صلاحية للوصول إلى هذه الصفحة"))
+                
+                # نوجهه للوحة تحكم المسؤول
+                return redirect('admin_index')
+                
+            except AdminUser.DoesNotExist:
+                # رجع للصفحة الرئيسية بدون عرض رسالة خطأ - غير مسؤول
+                return redirect('index')
+            except Exception as e:
+                # تسجيل الخطأ فقط دون عرضه للمستخدم
+                logger.error(f"خطأ في التحقق من الصلاحيات: {e}")
+                # إعادة توجيه آمن للصفحة الرئيسية
+                return redirect('index')
             
         return _wrapped_view
     
@@ -143,22 +150,45 @@ def check_permission(request, section, permission):
     - True إذا كان المستخدم يملك الصلاحية
     - False إذا لم يكن المستخدم يملك الصلاحية
     """
-    # المسؤول الأعلى لديه جميع الصلاحيات
+    # إذا لم يكن مسجل الدخول، فليس لديه أي صلاحيات
+    if not request.user.is_authenticated:
+        return False
+    
+    # المسؤول الأعلى والمسؤول العادي
     try:
-        if request.user.is_authenticated:
-            admin_user = AdminUser.objects.get(user=request.user)
-            if admin_user.is_superadmin:
-                return True
+        # الحصول على معلومات المسؤول
+        admin_user = AdminUser.objects.get(user=request.user)
+        
+        # المسؤول الأعلى لديه جميع الصلاحيات
+        if admin_user.is_superadmin:
+            return True
+        
+        # للمسؤول العادي، نتحقق من الصلاحيات المحددة
+        admin_permissions = get_admin_permissions(admin_user.id)
+        
+        # للتصحيح
+        if not admin_permissions:
+            logger.warning(f"لم يتم العثور على صلاحيات للمسؤول {admin_user.id}")
+            return False
             
-            # الحصول على صلاحيات المسؤول
-            admin_permissions = get_admin_permissions(admin_user.id)
+        # التحقق من الصلاحية
+        has_perm = section in admin_permissions and permission in admin_permissions[section]
+        
+        # للتصحيح
+        if not has_perm:
+            logger.debug(f"المسؤول {admin_user.id} ليس لديه صلاحية {section}:{permission}")
             
-            # التحقق من الصلاحية
-            return section in admin_permissions and permission in admin_permissions[section]
-                
+        return has_perm
+        
     except AdminUser.DoesNotExist:
+        # ليس مسؤولاً - ننتقل للفحوصات الإضافية أدناه
         pass
     except Exception as e:
-        logger.error(f"خطأ في التحقق من الصلاحيات: {e}")
+        logger.error(f"خطأ في التحقق من صلاحيات المسؤول: {e}")
     
+    # فحص إضافي لصلاحيات Django المدمجة (superuser و staff)
+    if request.user.is_superuser:
+        return True
+        
+    # إذا وصلنا إلى هنا، فالمستخدم لا يملك الصلاحية المطلوبة
     return False
