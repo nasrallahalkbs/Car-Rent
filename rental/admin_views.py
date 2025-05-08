@@ -584,8 +584,8 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    # استخدام القالب المحسن مع الشريط الجانبي الثابت
-    return render(request, 'admin/enhanced/reservations_fixed_sidebar.html', context)
+    # استخدام القالب النهائي المطابق للصورة المرجعية
+    return render(request, 'admin/enhanced/reservations_final.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status
