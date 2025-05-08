@@ -312,12 +312,72 @@
                                          data-section="{{ section_name }}" 
                                          data-permission="{{ perm.name }}">
                                         <div class="permission-indicator"></div>
-                                        <div class="permission-level">R</div>
+                                        <div class="permission-level">
+                                            {% if "view_" in perm.name %}R{% elif "delete_" in perm.name %}D{% else %}W{% endif %}
+                                        </div>
                                         <div class="permission-icon">
-                                            <i class="fas fa-file-alt"></i>
+                                            {% if "dashboard" in perm.name %}
+                                                <i class="fas fa-tachometer-alt"></i>
+                                            {% elif "reservations" in perm.name or "calendar" in perm.name %}
+                                                <i class="fas fa-calendar-check"></i>
+                                            {% elif "customer" in perm.name or "user" in perm.name %}
+                                                <i class="fas fa-users"></i>
+                                            {% elif "vehicle" in perm.name or "car" in perm.name %}
+                                                <i class="fas fa-car"></i>
+                                            {% elif "payment" in perm.name or "cost" in perm.name %}
+                                                <i class="fas fa-credit-card"></i>
+                                            {% elif "archive" in perm.name or "document" in perm.name or "folder" in perm.name %}
+                                                <i class="fas fa-archive"></i>
+                                            {% elif "analytic" in perm.name or "report" in perm.name %}
+                                                <i class="fas fa-chart-bar"></i>
+                                            {% elif "setting" in perm.name %}
+                                                <i class="fas fa-cog"></i>
+                                            {% elif "log" in perm.name %}
+                                                <i class="fas fa-history"></i>
+                                            {% elif "backup" in perm.name %}
+                                                <i class="fas fa-save"></i>
+                                            {% elif "review" in perm.name %}
+                                                <i class="fas fa-star"></i>
+                                            {% elif "repair" in perm.name or "condition" in perm.name %}
+                                                <i class="fas fa-tools"></i>
+                                            {% elif "export" in perm.name or "import" in perm.name %}
+                                                <i class="fas fa-file-export"></i>
+                                            {% elif "upload" in perm.name %}
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            {% elif "download" in perm.name %}
+                                                <i class="fas fa-cloud-download-alt"></i>
+                                            {% elif "custody" in perm.name %}
+                                                <i class="fas fa-clipboard-list"></i>
+                                            {% elif "notification" in perm.name %}
+                                                <i class="fas fa-bell"></i>
+                                            {% elif "profile" in perm.name or "password" in perm.name %}
+                                                <i class="fas fa-id-card"></i>
+                                            {% elif "2fa" in perm.name %}
+                                                <i class="fas fa-shield-alt"></i>
+                                            {% else %}
+                                                <i class="fas fa-file-alt"></i>
+                                            {% endif %}
                                         </div>
                                         <div class="permission-title">{{ perm.name|title }}</div>
-                                        <div class="permission-desc">{% trans "صلاحية النظام" %}</div>
+                                        <div class="permission-desc">
+                                            {% if "view_" in perm.name %}
+                                                {% trans "صلاحية الاطلاع والعرض" %}
+                                            {% elif "edit_" in perm.name or "create_" in perm.name or "add_" in perm.name %}
+                                                {% trans "صلاحية التعديل والإضافة" %}
+                                            {% elif "delete_" in perm.name or "remove_" in perm.name %}
+                                                {% trans "صلاحية الحذف" %}
+                                            {% elif "approve_" in perm.name %}
+                                                {% trans "صلاحية الموافقة" %}
+                                            {% elif "reject_" in perm.name %}
+                                                {% trans "صلاحية الرفض" %}
+                                            {% elif "export_" in perm.name %}
+                                                {% trans "صلاحية التصدير" %}
+                                            {% elif "import_" in perm.name %}
+                                                {% trans "صلاحية الاستيراد" %}
+                                            {% else %}
+                                                {% trans "صلاحية النظام" %}
+                                            {% endif %}
+                                        </div>
                                         <input type="checkbox" name="{{ section_name }}_{{ perm.name }}" 
                                                id="perm_{{ section_name }}_{{ perm.name }}"
                                                {% if perm.active %}checked{% endif %}
