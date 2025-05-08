@@ -361,8 +361,10 @@ def admin_advanced_permissions(request, admin_id):
             CREATE TABLE rental_adminpermission (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 admin_id INTEGER NOT NULL,
-                permissions TEXT NOT NULL,
-                UNIQUE(admin_id)
+                permissions TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (admin_id) REFERENCES rental_adminuser(id)
             )
             ''')
             conn.commit()
