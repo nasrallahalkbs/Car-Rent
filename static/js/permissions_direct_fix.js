@@ -6,7 +6,122 @@
  */
 
 $(document).ready(function() {
-    console.log("⚡ تم تحميل نظام الصلاحيات البسيط والمباشر");
+    console.log("⚡ تم تحميل نظام الصلاحيات المحسن");
+
+    // تخزين الحالة الأولية للصلاحيات
+    let initialPermissions = {};
+    try {
+        const savedJson = $('#saved_permissions_json').val();
+        initialPermissions = JSON.parse(savedJson || '{}');
+    } catch (e) {
+        console.error('خطأ في تحميل الصلاحيات الأولية:', e);
+    }
+
+    // تحديث البطاقات بناءً على الصلاحيات المحفوظة
+    function updateCardsFromPermissions(permissions) {
+        $('.permission-card').removeClass('active');
+        
+        Object.entries(permissions).forEach(([section, perms]) => {
+            perms.forEach(permission => {
+                $(`.permission-card[data-section="${section}"][data-permission="${permission}"]`).addClass('active');
+                $(`.permission-card .permission-title[data-perm-name="${permission}"]`).closest('.permission-card').addClass('active');
+            });
+        });
+        
+        updateAllCounters();
+    }
+
+    // جمع الصلاحيات النشطة
+    function collectActivePermissions() {
+        const permissions = {};
+        
+        $('.permissions-section').each(function() {
+            const sectionId = $(this).attr('id').replace('section-', '');
+            permissions[sectionId] = [];
+            
+            $(this).find('.permission-card.active').each(function() {
+                const permission = $(this).find('.permission-title').data('perm-name');
+                if (permission) {
+                    permissions[sectionId].push(permission);
+                }
+            });
+        });
+        
+        return permissions;
+    }
+
+    // معالج حفظ الصلاحيات
+    $('#permissionsForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const activePermissions = collectActivePermissions();
+        
+        // إضافة الصلاحيات النشطة للنموذج
+        Object.entries(activePermissions).forEach(([section, permissions]) => {
+            permissions.forEach(permission => {
+                formData.append(`${section}_${permission}`, 'on');
+            });
+        });
+
+        // عرض مؤشر التحميل
+        $('body').append(`
+            <div id="loadingOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;
+                background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;
+                justify-content:center;color:white">
+                <div>
+                    <div class="spinner-border" role="status"></div>
+                    <p class="mt-2">جاري حفظ الصلاحيات...</p>
+                </div>
+            </div>
+        `);
+
+        // إرسال الطلب
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.status === 'success' && response.permissions) {
+                    // تحديث الصلاحيات المحفوظة
+                    $('#saved_permissions_json').val(JSON.stringify(response.permissions));
+                    
+                    // تحديث واجهة المستخدم
+                    updateCardsFromPermissions(response.permissions);
+                    
+                    // عرض رسالة نجاح
+                    showNotification('تم', 'تم حفظ الصلاحيات بنجاح', 'success');
+                }
+            },
+            error: function() {
+                showNotification('خطأ', 'حدث خطأ أثناء حفظ الصلاحيات', 'error');
+            },
+            complete: function() {
+                $('#loadingOverlay').remove();
+            }
+        });
+    });
+
+    // تحديث الواجهة عند التحميل
+    updateCardsFromPermissions(initialPermissions);
+
+    // معالج النقر على البطاقات
+    $('.permission-card').on('click', function(e) {
+        if (!$(e.target).is('a, button') && !$(e.target).parents('a, button').length) {
+            $(this).toggleClass('active');
+            updateAllCounters();
+        }
+    });
+
+    // معالج زر تحديد الكل
+    $('.select-all').on('click', function(e) {
+        e.preventDefault();
+        const section = $(this).data('section');
+        $(`#section-${section} .permission-card`).addClass('active');
+        updateAllCounters();
+    });
 
     // استعادة الصلاحيات المحفوظة
     let savedPermissions = {};
