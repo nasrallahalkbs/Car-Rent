@@ -20,6 +20,72 @@ $(document).ready(function() {
         console.error("❌ خطأ في تحليل الصلاحيات المحفوظة:", error);
     }
     
+    // تحسين عرض بطاقات الصلاحيات
+    // إضافة معالج نقر للتبويبات
+    $('.tab-item').on('click', function(e) {
+        e.preventDefault();
+
+        // تجاهل إذا كان زر فتح الكل
+        if ($(this).hasClass('utility')) {
+            return;
+        }
+
+        const targetSection = $(this).data('section');
+
+        // تحديث حالة التبويبات
+        $('.tab-item').removeClass('active');
+        $(this).addClass('active');
+
+        // إظهار القسم المطلوب
+        $('.permissions-section').removeClass('active');
+        $('#section-' + targetSection).addClass('active');
+
+        // إظهار البطاقات في القسم
+        $('#section-' + targetSection + ' .section-body').show();
+
+        // تحديث العدادات
+        updateAllCounters();
+    });
+
+    // معالج فتح/إغلاق الأقسام
+    $('.toggle-section').on('click', function(e) {
+        e.preventDefault();
+        const sectionBody = $(this).closest('.permissions-section').find('.section-body');
+        sectionBody.slideToggle();
+
+        // تغيير اتجاه السهم
+        const icon = $(this).find('i');
+        icon.toggleClass('fa-chevron-down fa-chevron-up');
+    });
+
+    // زر فتح جميع الأقسام
+    $('#expand-all').on('click', function() {
+        $('.section-body').slideDown();
+        $('.toggle-section i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+    });
+
+    // تحديث عدادات الصلاحيات
+    function updateAllCounters() {
+        $('.permissions-section').each(function() {
+            const sectionId = $(this).attr('id').replace('section-', '');
+            const totalCards = $(this).find('.permission-card').length;
+            const activeCards = $(this).find('.permission-card.active').length;
+
+            // تحديث العداد في التبويب
+            $(`.tab-item[data-section="${sectionId}"] .tab-count`).text(activeCards);
+
+            // تحديث عداد القسم
+            $(this).find('.section-count').text(`${activeCards} / ${totalCards}`);
+
+            if (activeCards > 0) {
+                $(`.tab-item[data-section="${sectionId}"] .tab-count`).addClass('active');
+            } else {
+                $(`.tab-item[data-section="${sectionId}"] .tab-count`).removeClass('active');
+            }
+        });
+    }
+    
+
     // تعليم البطاقات النشطة بناءً على الصلاحيات المحفوظة
     function markActiveCards() {
         // إعادة تعيين حالة جميع البطاقات
@@ -41,51 +107,17 @@ $(document).ready(function() {
         // تحديث العدادات
         updateAllCounters();
     }
-    
-    // تحديث عدادات الصلاحيات
-    function updateAllCounters() {
-        $('.permissions-section').each(function() {
-            const sectionId = $(this).attr('id').replace('section-', '');
-            const activeCards = $(this).find('.permission-card.active').length;
-            
-            // تحديث العداد في التبويب
-            $(`.tab-item[data-section="${sectionId}"] .tab-count`).text(activeCards);
-            
-            if (activeCards > 0) {
-                $(`.tab-item[data-section="${sectionId}"] .tab-count`).addClass('active');
-            } else {
-                $(`.tab-item[data-section="${sectionId}"] .tab-count`).removeClass('active');
-            }
-        });
-    }
-    
-    // إضافة معالج نقر مباشر لجميع البطاقات
+
+    // إضافة معالج نقر لبطاقات الصلاحيات
     $('.permission-card').on('click', function(e) {
-        // توقف النقر إذا كان على زر أو رابط داخل البطاقة
         if ($(e.target).is('a, button') || $(e.target).parents('a, button').length > 0) {
             return;
         }
-        
-        // تبديل حالة البطاقة
+
         $(this).toggleClass('active');
-        
-        // تحديث عداد القسم
-        const section = $(this).closest('.permissions-section');
-        const sectionId = section.attr('id').replace('section-', '');
-        const activeCards = section.find('.permission-card.active').length;
-        
-        // تحديث العداد في التبويب
-        $(`.tab-item[data-section="${sectionId}"] .tab-count`).text(activeCards);
-        
-        if (activeCards > 0) {
-            $(`.tab-item[data-section="${sectionId}"] .tab-count`).addClass('active');
-        } else {
-            $(`.tab-item[data-section="${sectionId}"] .tab-count`).removeClass('active');
-        }
-        
-        console.log(`${$(this).hasClass('active') ? '✅' : '❌'} تم تبديل حالة الصلاحية`);
+        updateAllCounters();
     });
-    
+
     // إضافة معالج إرسال النموذج
     $('#permissionsForm').on('submit', function(e) {
         e.preventDefault();
@@ -245,4 +277,6 @@ $(document).ready(function() {
     
     // تنفيذ تعليم البطاقات النشطة عند تحميل الصفحة
     markActiveCards();
+    $('.tab-item:not(.utility)').first().click(); //trigger first tab click after page load
+
 });
