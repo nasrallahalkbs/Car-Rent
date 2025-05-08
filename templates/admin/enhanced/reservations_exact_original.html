@@ -335,18 +335,29 @@
           <td>{{ reservation.created_at|date:"Y-m-d" }}</td>
           <td>
             <div class="action-icons">
-              <a href="#" class="action-btn red" title="حذف">
-                <i class="fas fa-trash-alt"></i>
+              {% if reservation.status == 'pending' %}
+              <a href="{% url 'confirm_reservation' reservation.id %}" class="action-btn green" title="تأكيد الحجز">
+                <i class="fas fa-check"></i>
               </a>
-              <a href="#" class="action-btn blue" title="عرض">
+              {% endif %}
+              {% if reservation.status != 'cancelled' %}
+              <a href="{% url 'cancel_reservation_admin' reservation.id %}" class="action-btn red" title="إلغاء الحجز" onclick="return confirm('هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟');">
+                <i class="fas fa-times"></i>
+              </a>
+              {% endif %}
+              {% if reservation.status == 'confirmed' %}
+              <a href="{% url 'complete_reservation' reservation.id %}" class="action-btn blue" title="إكمال الحجز">
+                <i class="fas fa-check-double"></i>
+              </a>
+              {% endif %}
+              <a href="{% url 'admin_reservation_detail' reservation.id %}" class="action-btn yellow" title="عرض التفاصيل">
                 <i class="fas fa-eye"></i>
               </a>
-              <a href="#" class="action-btn yellow" title="طباعة">
-                <i class="fas fa-print"></i>
+              {% if reservation.status != 'pending' %}
+              <a href="{% url 'delete_reservation' reservation.id %}" class="action-btn cyan" title="حذف نهائي" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا الحجز بشكل نهائي؟');">
+                <i class="fas fa-trash-alt"></i>
               </a>
-              <a href="#" class="action-btn cyan" title="تفاصيل إضافية">
-                <i class="fas fa-info"></i>
-              </a>
+              {% endif %}
             </div>
           </td>
         </tr>
