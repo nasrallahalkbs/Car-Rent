@@ -15,6 +15,34 @@
     document.addEventListener('DOMContentLoaded', function() {
         // حساب عدد الصلاحيات المفعلة وتحديث العدادات
         function updatePermissionCounts() {
+            // عداد الصلاحيات المفعلة
+            const sections = document.querySelectorAll('.tab-item[data-section]');
+            sections.forEach(section => {
+                const sectionName = section.getAttribute('data-section');
+                const sectionDiv = document.getElementById('section-' + sectionName);
+                if (sectionDiv) {
+                    const activePerms = sectionDiv.querySelectorAll('.permission-card.active');
+                    const count = activePerms.length;
+                    const countElement = section.querySelector('.tab-count');
+                    if (countElement) {
+                        countElement.textContent = count;
+                    }
+                }
+            });
+        }
+        
+        // تحديث العدادات عند تحميل الصفحة
+        updatePermissionCounts();
+        
+        // إضافة مستمع للأحداث للتحديث عند تغيير حالة أي صلاحية
+        document.querySelectorAll('.permission-card').forEach(card => {
+            card.addEventListener('click', function() {
+                setTimeout(updatePermissionCounts, 100);
+            });
+        });
+    });
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
