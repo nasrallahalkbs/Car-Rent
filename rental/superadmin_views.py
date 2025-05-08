@@ -390,11 +390,15 @@ def admin_advanced_permissions(request, admin_id):
         try:
             # قراءة البيانات المرسلة من حقل الإدخال المخفي permissions_data
             permissions_data = request.POST.get('permissions_data', '{}')
+            print(f"[DEBUG] Permissions data received: {permissions_data}")
+            
             selected_permissions = json.loads(permissions_data)
+            print(f"[DEBUG] Permissions JSON parsed: {json.dumps(selected_permissions, indent=2)}")
             
             # التحقق من صحة البيانات المرسلة
             for section, perms in selected_permissions.items():
                 if section not in all_permissions:
+                    print(f"[DEBUG] Invalid section: {section}")
                     selected_permissions[section] = []
                     continue
                     
@@ -403,7 +407,12 @@ def admin_advanced_permissions(request, admin_id):
                 for perm in perms:
                     if perm in all_permissions[section]:
                         valid_perms.append(perm)
+                    else:
+                        print(f"[DEBUG] Invalid permission: {perm} in section {section}")
+                        
                 selected_permissions[section] = valid_perms
+                
+            print(f"[DEBUG] Validated permissions: {json.dumps(selected_permissions, indent=2)}")
                     
         except (json.JSONDecodeError, ValueError):
             # في حالة حدوث خطأ، استخدم الطريقة الاحتياطية القديمة
