@@ -522,8 +522,8 @@ def admin_advanced_permissions(request, admin_id):
         'random': random_value  # إضافة قيمة عشوائية لمنع التخزين المؤقت
     }
     
-    # عرض الصفحة باستخدام القالب المطلوب (تم التحديث لاستخدام قالب admin_advanced_permissions_original.html)
-    return render(request, 'superadmin/admin_advanced_permissions_original.html', context)
+    # عرض الصفحة باستخدام القالب المطوّر بالتصميم المُضمّن (لحل مشكلة فقدان التنسيق)
+    return render(request, 'superadmin/admin_advanced_permissions_embedded.html', context)
 
 @superadmin_required
 def add_admin(request):

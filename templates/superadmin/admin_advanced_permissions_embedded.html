@@ -1,0 +1,892 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة الصلاحيات المتقدمة" %} - {{ admin.user.get_full_name }}{% endblock %}
+
+{% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* تصميم بطاقات الصلاحيات المتقدمة - النسخة المطورة الحديثة ذات الإبداع التقني */
+
+/* القواعد الأساسية للبطاقات */
+.permission-card {
+    position: relative !important;
+    border-radius: 12px !important;
+    padding: 18px !important;
+    background-color: #ffffff !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    border: 1px solid #e9ecef !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+    min-height: 110px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin-bottom: 15px !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+.permission-card:before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%) !important;
+    z-index: 0 !important;
+    opacity: 0 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.permission-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+    border-color: #cbd5e1 !important;
+}
+
+.permission-card:hover:before {
+    opacity: 1 !important;
+}
+
+.permission-card.active {
+    background: linear-gradient(135deg, #eef2ff 0%, #f5f8ff 100%) !important;
+    border-color: #c7d2fe !important;
+    box-shadow: 0 8px 16px rgba(79, 70, 229, 0.1) !important;
+}
+
+/* مؤشر الصلاحية */
+.permission-indicator {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 6px !important;
+    height: 100% !important;
+    background-color: transparent !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    border-radius: 0 12px 12px 0 !important;
+}
+
+.permission-card.active .permission-indicator {
+    background: linear-gradient(to bottom, #6366f1, #4f46e5) !important;
+    box-shadow: 0 0 15px rgba(79, 70, 229, 0.3) !important;
+}
+
+/* مستوى الصلاحية */
+.permission-level {
+    position: absolute !important;
+    top: 10px !important;
+    left: 10px !important;
+    width: 28px !important;
+    height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    background-color: rgba(100, 116, 139, 0.05) !important;
+    color: #64748b !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+    transition: all 0.3s ease !important;
+    border: 1px solid rgba(100, 116, 139, 0.08) !important;
+}
+
+.permission-card:hover .permission-level {
+    transform: scale(1.05) !important;
+}
+
+.permission-card.active .permission-level {
+    background-color: rgba(79, 70, 229, 0.1) !important;
+    color: #4f46e5 !important;
+    border-color: rgba(79, 70, 229, 0.2) !important;
+    box-shadow: 0 2px 10px rgba(79, 70, 229, 0.1) !important;
+}
+
+/* أيقونة الصلاحية */
+.permission-icon {
+    margin-top: 8px !important;
+    margin-bottom: 12px !important;
+    font-size: 1.5rem !important;
+    color: #4f46e5 !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.permission-card:hover .permission-icon {
+    transform: scale(1.1) !important;
+    color: #4338ca !important;
+}
+
+.permission-card.active .permission-icon {
+    text-shadow: 0 0 10px rgba(79, 70, 229, 0.3) !important;
+}
+
+/* عنوان الصلاحية */
+.permission-title {
+    font-weight: 600 !important;
+    margin-bottom: 6px !important;
+    font-size: 0.95rem !important;
+    color: #1e293b !important;
+    position: relative !important;
+    z-index: 1 !important;
+    transition: all 0.3s ease !important;
+}
+
+.permission-card:hover .permission-title {
+    color: #0f172a !important;
+}
+
+.permission-card.active .permission-title {
+    color: #4f46e5 !important;
+}
+
+/* وصف الصلاحية */
+.permission-desc {
+    font-size: 0.8rem !important;
+    color: #64748b !important;
+    line-height: 1.5 !important;
+    position: relative !important;
+    z-index: 1 !important;
+    transition: all 0.3s ease !important;
+}
+
+/* التبويبات */
+.tabs-container {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 10px !important;
+    padding: 16px !important;
+    margin-bottom: 28px !important;
+    background: linear-gradient(to right, #ffffff, #f9fafc) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #e2e8f0 #f8fafc !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+}
+
+.tabs-container::-webkit-scrollbar {
+    height: 6px !important;
+}
+
+.tabs-container::-webkit-scrollbar-track {
+    background: #f8fafc !important;
+    border-radius: 10px !important;
+}
+
+.tabs-container::-webkit-scrollbar-thumb {
+    background-color: #e2e8f0 !important;
+    border-radius: 10px !important;
+    border: 2px solid #f8fafc !important;
+}
+
+.tab-item {
+    padding: 10px 18px !important;
+    border-radius: 12px !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    color: #334155 !important;
+    background-color: #f8fafc !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    border: 1px solid transparent !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.01) !important;
+}
+
+.tab-item:hover {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+.tab-item.active {
+    background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.2) !important;
+}
+
+.tab-count {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    padding: 0 8px !important;
+    border-radius: 12px !important;
+    font-size: 0.8rem !important;
+    background-color: rgba(100, 116, 139, 0.1) !important;
+    transition: all 0.3s ease !important;
+    font-weight: 600 !important;
+}
+
+.tab-item:hover .tab-count {
+    transform: scale(1.05) !important;
+}
+
+.tab-item.active .tab-count {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* قسم الصلاحيات */
+.permissions-section {
+    display: none !important;
+    margin-bottom: 40px !important;
+    transition: opacity 0.5s ease !important;
+    opacity: 0 !important;
+}
+
+.permissions-section.active {
+    display: block !important;
+    opacity: 1 !important;
+    animation: fadeIn 0.5s ease forwards !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.section-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 14px !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6) !important;
+    position: relative !important;
+}
+
+.section-header:after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: -1px !important;
+    left: 0 !important;
+    width: 60px !important;
+    height: 3px !important;
+    background: linear-gradient(90deg, #4f46e5, #6366f1) !important;
+    border-radius: 10px !important;
+}
+
+.section-title {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    position: relative !important;
+}
+
+.section-title:before {
+    content: '' !important;
+    display: inline-block !important;
+    width: 8px !important;
+    height: 24px !important;
+    background: linear-gradient(to bottom, #4f46e5, #6366f1) !important;
+    border-radius: 4px !important;
+    margin-right: 4px !important;
+}
+
+.section-count {
+    background: linear-gradient(to right, #f1f5f9, #f8fafc) !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    transition: all 0.3s ease !important;
+}
+
+.section-count:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03) !important;
+}
+
+.select-all {
+    padding: 8px 16px !important;
+    border-radius: 10px !important;
+    background: linear-gradient(to right, #f8fafc, #f1f5f9) !important;
+    border: 1px solid #e2e8f0 !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+}
+
+.select-all:hover {
+    background: linear-gradient(to right, #f1f5f9, #e2e8f0) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03) !important;
+    border-color: #cbd5e1 !important;
+}
+
+.select-all:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* شبكة الصلاحيات */
+.permissions-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 20px !important;
+    margin-top: 10px !important;
+}
+
+/* زر الحفظ */
+.save-permissions-btn {
+    padding: 14px 28px !important;
+    border-radius: 14px !important;
+    background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+    color: white !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    margin-top: 30px !important;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.save-permissions-btn:before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0) 100%
+    ) !important;
+    transition: all 0.6s ease !important;
+}
+
+.save-permissions-btn:hover {
+    background: linear-gradient(135deg, #4338ca, #4f46e5) !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3) !important;
+}
+
+.save-permissions-btn:hover:before {
+    left: 100% !important;
+}
+
+.save-permissions-btn:active {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2) !important;
+}
+
+/* توافق الشاشات الصغيرة */
+@media (max-width: 992px) {
+    .permissions-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+    }
+    
+    .tabs-container {
+        padding: 12px !important;
+        margin-bottom: 24px !important;
+    }
+    
+    .tab-item {
+        padding: 8px 14px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .section-title {
+        font-size: 1.15rem !important;
+    }
+    
+    .save-permissions-btn {
+        padding: 12px 24px !important;
+        font-size: 1rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .permissions-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+        gap: 15px !important;
+    }
+    
+    .tabs-container {
+        padding: 10px !important;
+        margin-bottom: 20px !important;
+    }
+    
+    .tab-item {
+        padding: 6px 12px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .section-title {
+        font-size: 1.05rem !important;
+    }
+    
+    .section-title:before {
+        width: 6px !important;
+        height: 18px !important;
+    }
+    
+    .section-header {
+        margin-bottom: 16px !important;
+        padding-bottom: 12px !important;
+    }
+    
+    .select-all {
+        padding: 6px 12px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .save-permissions-btn {
+        padding: 10px 20px !important;
+        font-size: 0.95rem !important;
+        border-radius: 12px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .permissions-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .tabs-container {
+        padding: 8px !important;
+        gap: 6px !important;
+        margin-bottom: 16px !important;
+    }
+    
+    .tab-item {
+        padding: 5px 10px !important;
+        font-size: 0.7rem !important;
+    }
+    
+    .tab-count {
+        min-width: 20px !important;
+        height: 20px !important;
+        font-size: 0.7rem !important;
+    }
+    
+    .section-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    
+    .section-title {
+        font-size: 1rem !important;
+    }
+    
+    .select-all {
+        width: 100% !important;
+        justify-content: center !important;
+        margin-top: 5px !important;
+    }
+    
+    .save-permissions-btn {
+        width: 100% !important;
+        padding: 12px !important;
+        font-size: 0.9rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container-fluid py-4">
+        <!-- رسائل النظام -->
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-primary">{% trans "إدارة صلاحيات" %} {{ admin.user.get_full_name }}</h4>
+                        <a href="{% url 'superadmin_admin_details' admin.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-right ml-1"></i>
+                            {% trans "العودة للمستخدم" %}
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <form id="permissionsForm" method="post" action="">
+                            {% csrf_token %}
+                            <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                            <input type="hidden" name="permissions_data" id="permissions_data" value="">
+                            
+                            <!-- تبويبات الأقسام -->
+                            <div class="tabs-container">
+                                {% for section_name, perms in permissions.items %}
+                                <div class="tab-item {% if forloop.first %}active{% endif %}" data-section="{{ section_name }}">
+                                    {% if section_name == 'dashboard' %}
+                                        <i class="fas fa-tachometer-alt"></i>
+                                    {% elif section_name == 'reservations' %}
+                                        <i class="fas fa-calendar-check"></i>
+                                    {% elif section_name == 'customers' %}
+                                        <i class="fas fa-users"></i>
+                                    {% elif section_name == 'vehicles' %}
+                                        <i class="fas fa-car"></i>
+                                    {% elif section_name == 'payments' %}
+                                        <i class="fas fa-credit-card"></i>
+                                    {% elif section_name == 'archive' or 'folder' in section_name %}
+                                        <i class="fas fa-archive"></i>
+                                    {% elif section_name == 'reports' or 'analytics' in section_name %}
+                                        <i class="fas fa-chart-bar"></i>
+                                    {% elif section_name == 'settings' %}
+                                        <i class="fas fa-cog"></i>
+                                    {% elif section_name == 'reviews' %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif section_name == 'profile' %}
+                                        <i class="fas fa-user"></i>
+                                    {% elif section_name == 'system_logs' %}
+                                        <i class="fas fa-history"></i>
+                                    {% elif section_name == 'backup' %}
+                                        <i class="fas fa-database"></i>
+                                    {% else %}
+                                        <i class="fas fa-layer-group"></i>
+                                    {% endif %}
+                                    <span>{{ section_name|title }}</span>
+                                    <span class="tab-count" id="count-{{ section_name }}">0</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- أقسام الصلاحيات -->
+                            {% for section_name, perms in permissions.items %}
+                            <div class="permissions-section {% if forloop.first %}active{% endif %}" id="section-{{ section_name }}">
+                                <div class="section-header">
+                                    <div class="section-title">
+                                        {% if section_name == 'dashboard' %}
+                                            <i class="fas fa-tachometer-alt"></i>
+                                        {% elif section_name == 'reservations' %}
+                                            <i class="fas fa-calendar-check"></i>
+                                        {% elif section_name == 'customers' %}
+                                            <i class="fas fa-users"></i>
+                                        {% elif section_name == 'vehicles' %}
+                                            <i class="fas fa-car"></i>
+                                        {% elif section_name == 'payments' %}
+                                            <i class="fas fa-credit-card"></i>
+                                        {% elif section_name == 'archive' or 'folder' in section_name %}
+                                            <i class="fas fa-archive"></i>
+                                        {% elif section_name == 'reports' or 'analytics' in section_name %}
+                                            <i class="fas fa-chart-bar"></i>
+                                        {% elif section_name == 'settings' %}
+                                            <i class="fas fa-cog"></i>
+                                        {% elif section_name == 'reviews' %}
+                                            <i class="fas fa-star"></i>
+                                        {% elif section_name == 'profile' %}
+                                            <i class="fas fa-user"></i>
+                                        {% elif section_name == 'system_logs' %}
+                                            <i class="fas fa-history"></i>
+                                        {% elif section_name == 'backup' %}
+                                            <i class="fas fa-database"></i>
+                                        {% else %}
+                                            <i class="fas fa-layer-group"></i>
+                                        {% endif %}
+                                        <span>{{ section_name|title }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <div class="section-count me-3" id="section-count-{{ section_name }}">0 / {{ perms|length }}</div>
+                                        <button type="button" class="select-all" data-section="{{ section_name }}">
+                                            <i class="fas fa-check-double"></i>
+                                            <span>{% trans "تحديد الكل" %}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="permissions-grid">
+                                    {% for perm in perms %}
+                                    <div class="permission-card {% if perm.active %}active{% endif %}" 
+                                         data-section="{{ section_name }}" 
+                                         data-permission="{{ perm.name }}">
+                                        <div class="permission-indicator"></div>
+                                        <div class="permission-level">
+                                            {% if "view_" in perm.name %}R{% elif "delete_" in perm.name %}D{% else %}W{% endif %}
+                                        </div>
+                                        <div class="permission-icon">
+                                            {% if "dashboard" in perm.name %}
+                                                <i class="fas fa-tachometer-alt"></i>
+                                            {% elif "reservations" in perm.name or "calendar" in perm.name %}
+                                                <i class="fas fa-calendar-check"></i>
+                                            {% elif "customer" in perm.name or "user" in perm.name %}
+                                                <i class="fas fa-users"></i>
+                                            {% elif "vehicle" in perm.name or "car" in perm.name %}
+                                                <i class="fas fa-car"></i>
+                                            {% elif "payment" in perm.name or "cost" in perm.name %}
+                                                <i class="fas fa-credit-card"></i>
+                                            {% elif "archive" in perm.name or "document" in perm.name or "folder" in perm.name %}
+                                                <i class="fas fa-archive"></i>
+                                            {% elif "analytic" in perm.name or "report" in perm.name %}
+                                                <i class="fas fa-chart-bar"></i>
+                                            {% elif "setting" in perm.name %}
+                                                <i class="fas fa-cog"></i>
+                                            {% elif "log" in perm.name %}
+                                                <i class="fas fa-history"></i>
+                                            {% elif "backup" in perm.name %}
+                                                <i class="fas fa-save"></i>
+                                            {% elif "review" in perm.name %}
+                                                <i class="fas fa-star"></i>
+                                            {% elif "repair" in perm.name or "condition" in perm.name %}
+                                                <i class="fas fa-tools"></i>
+                                            {% elif "export" in perm.name or "import" in perm.name %}
+                                                <i class="fas fa-file-export"></i>
+                                            {% elif "upload" in perm.name %}
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            {% elif "download" in perm.name %}
+                                                <i class="fas fa-cloud-download-alt"></i>
+                                            {% elif "custody" in perm.name %}
+                                                <i class="fas fa-clipboard-list"></i>
+                                            {% elif "notification" in perm.name %}
+                                                <i class="fas fa-bell"></i>
+                                            {% elif "profile" in perm.name or "password" in perm.name %}
+                                                <i class="fas fa-id-card"></i>
+                                            {% elif "2fa" in perm.name %}
+                                                <i class="fas fa-shield-alt"></i>
+                                            {% else %}
+                                                <i class="fas fa-file-alt"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="permission-title">{{ perm.name|title }}</div>
+                                        <div class="permission-desc">
+                                            {% if "view_" in perm.name %}
+                                                {% trans "صلاحية الاطلاع والعرض" %}
+                                            {% elif "edit_" in perm.name or "create_" in perm.name or "add_" in perm.name %}
+                                                {% trans "صلاحية التعديل والإضافة" %}
+                                            {% elif "delete_" in perm.name or "remove_" in perm.name %}
+                                                {% trans "صلاحية الحذف" %}
+                                            {% elif "approve_" in perm.name %}
+                                                {% trans "صلاحية الموافقة" %}
+                                            {% elif "reject_" in perm.name %}
+                                                {% trans "صلاحية الرفض" %}
+                                            {% elif "export_" in perm.name %}
+                                                {% trans "صلاحية التصدير" %}
+                                            {% elif "import_" in perm.name %}
+                                                {% trans "صلاحية الاستيراد" %}
+                                            {% else %}
+                                                {% trans "صلاحية النظام" %}
+                                            {% endif %}
+                                        </div>
+                                        <input type="checkbox" name="{{ section_name }}_{{ perm.name }}" 
+                                               id="perm_{{ section_name }}_{{ perm.name }}"
+                                               {% if perm.active %}checked{% endif %}
+                                               style="display: none;">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                            <button type="submit" class="save-permissions-btn">
+                                <i class="fas fa-save"></i>
+                                <span>{% trans "حفظ الصلاحيات" %}</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// إضافة معرّف فريد لتجنب التداخل مع نسخ أخرى من السكريبت
+const PERMISSIONS_INSTANCE_ID = Date.now() + Math.floor(Math.random() * 10000);
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log(`[صلاحيات متقدمة]: بدء تهيئة السكريبت (${PERMISSIONS_INSTANCE_ID})`);
+    
+    // تحديد العناصر
+    const tabs = document.querySelectorAll('.tab-item[data-section]');
+    const sections = document.querySelectorAll('.permissions-section');
+    const permCards = document.querySelectorAll('.permission-card');
+    const selectAllBtns = document.querySelectorAll('.select-all');
+    const permissionsForm = document.getElementById('permissionsForm');
+    const permissionsDataInput = document.getElementById('permissions_data');
+    
+    console.log(`[صلاحيات متقدمة]: تم العثور على ${tabs.length} تبويب و ${permCards.length} بطاقة صلاحية`);
+    
+    // تهيئة عدادات الصلاحيات
+    updateAllCounters();
+    
+    // معالج النقر على التبويبات
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            console.log(`[صلاحيات متقدمة]: تم النقر على تبويب ${section}`);
+            
+            // إلغاء تنشيط جميع التبويبات والأقسام
+            tabs.forEach(t => t.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            
+            // تنشيط التبويب والقسم المحدد
+            this.classList.add('active');
+            document.getElementById('section-' + section).classList.add('active');
+        });
+    });
+    
+    // معالج النقر على بطاقات الصلاحيات
+    permCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // تبديل حالة البطاقة
+            this.classList.toggle('active');
+            
+            const section = this.getAttribute('data-section');
+            const permission = this.getAttribute('data-permission');
+            console.log(`[صلاحيات متقدمة]: تم تغيير حالة صلاحية ${permission} في القسم ${section}`);
+            
+            // تحديث حالة مربع الاختيار
+            const checkbox = document.getElementById('perm_' + section + '_' + permission);
+            
+            if (checkbox) {
+                checkbox.checked = this.classList.contains('active');
+            }
+            
+            // تحديث العدادات
+            updateSectionCounter(section);
+            updateTabCounter(section);
+        });
+    });
+    
+    // معالج تحديد الكل
+    selectAllBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            const cards = document.querySelectorAll(`.permission-card[data-section="${section}"]`);
+            const allActive = Array.from(cards).every(card => card.classList.contains('active'));
+            
+            console.log(`[صلاحيات متقدمة]: تم النقر على زر تحديد الكل للقسم ${section}, الحالة الحالية: ${allActive ? 'الكل محدد' : 'ليس الكل محدد'}`);
+            
+            // تبديل الحالة بناءً على ما إذا كانت جميع البطاقات نشطة بالفعل
+            cards.forEach(card => {
+                if (allActive) {
+                    card.classList.remove('active');
+                } else {
+                    card.classList.add('active');
+                }
+                
+                // تحديث مربع الاختيار المقابل
+                const permission = card.getAttribute('data-permission');
+                const checkbox = document.getElementById('perm_' + section + '_' + permission);
+                if (checkbox) {
+                    checkbox.checked = !allActive;
+                }
+            });
+            
+            // تحديث العدادات
+            updateSectionCounter(section);
+            updateTabCounter(section);
+        });
+    });
+    
+    // معالج إرسال النموذج
+    permissionsForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log('[صلاحيات متقدمة]: جاري تجهيز النموذج للإرسال');
+        
+        // جمع الصلاحيات النشطة
+        const permissionsData = {};
+        
+        // تهيئة قائمة فارغة لكل قسم
+        tabs.forEach(tab => {
+            const section = tab.getAttribute('data-section');
+            permissionsData[section] = [];
+        });
+        
+        // جمع الصلاحيات النشطة
+        permCards.forEach(card => {
+            const section = card.getAttribute('data-section');
+            
+            if (card.classList.contains('active')) {
+                permissionsData[section].push(card.getAttribute('data-permission'));
+            }
+        });
+        
+        // تحديث حقل الإدخال المخفي بالبيانات المحولة إلى JSON
+        const jsonData = JSON.stringify(permissionsData);
+        permissionsDataInput.value = jsonData;
+        console.log(`[صلاحيات متقدمة]: تم تعيين بيانات JSON (${jsonData.length} حرف)`);
+        
+        // إرسال النموذج
+        console.log('[صلاحيات متقدمة]: إرسال النموذج');
+        this.submit();
+    });
+    
+    // وظيفة لتحديث عداد الصلاحيات في القسم
+    function updateSectionCounter(section) {
+        const cards = document.querySelectorAll(`.permission-card[data-section="${section}"]`);
+        const activeCards = document.querySelectorAll(`.permission-card[data-section="${section}"].active`);
+        const counterElement = document.getElementById('section-count-' + section);
+        
+        if (counterElement) {
+            counterElement.textContent = activeCards.length + ' / ' + cards.length;
+        }
+    }
+    
+    // وظيفة لتحديث عداد الصلاحيات في التبويب
+    function updateTabCounter(section) {
+        const activeCards = document.querySelectorAll(`.permission-card[data-section="${section}"].active`);
+        const counterElement = document.getElementById('count-' + section);
+        
+        if (counterElement) {
+            counterElement.textContent = activeCards.length;
+        }
+    }
+    
+    // وظيفة لتحديث جميع عدادات الصلاحيات
+    function updateAllCounters() {
+        console.log('[صلاحيات متقدمة]: تحديث جميع العدادات');
+        const sections = new Set();
+        
+        permCards.forEach(card => {
+            sections.add(card.getAttribute('data-section'));
+        });
+        
+        sections.forEach(section => {
+            updateSectionCounter(section);
+            updateTabCounter(section);
+        });
+    }
+
+    console.log(`[صلاحيات متقدمة]: اكتملت تهيئة السكريبت (${PERMISSIONS_INSTANCE_ID})`);
+});
+</script>
+{% endblock %}
