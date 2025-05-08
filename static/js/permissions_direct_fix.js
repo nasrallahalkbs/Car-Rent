@@ -821,7 +821,11 @@ function markActiveCards() {
     console.log(`⏱️ انتهاء تعليم البطاقات - النتيجة: ${activeAfter} بطاقة نشطة (تغيير: ${activeAfter - activeBefore})`);
     
     // تحديث عدادات الصلاحيات في كل قسم وتبويب
-    updateAllCounters();
+    if (typeof updateAllCounters === 'function') {
+        updateAllCounters();
+    } else {
+        console.warn("⚠️ الدالة updateAllCounters غير معرفة! تأكد من تضمين ملف permissions_counters.js");
+    }
     
     // حساب إجمالي عدد الصلاحيات المحفوظة
     let totalPermissionsCount = 0;
