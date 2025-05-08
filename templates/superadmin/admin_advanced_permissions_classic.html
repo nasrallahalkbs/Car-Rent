@@ -1,0 +1,630 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة الصلاحيات المتقدمة" %} - {{ admin.user.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1rem;
+        border-radius: 0.25rem;
+    }
+
+    .permissions-container {
+        margin-top: 20px;
+    }
+
+    .tab-nav {
+        display: flex;
+        overflow-x: auto;
+        margin-bottom: 20px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .tab-item {
+        flex: 0 0 auto;
+        padding: 8px 15px;
+        margin-right: 5px;
+        cursor: pointer;
+        border-radius: 4px 4px 0 0;
+        background-color: #f8f9fa;
+        color: #495057;
+        position: relative;
+        white-space: nowrap;
+    }
+
+    .tab-item.active {
+        background-color: #4e46e5;
+        color: white;
+    }
+
+    .tab-item .badge {
+        background-color: rgba(79, 70, 229, 0.9);
+        color: white;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 50px;
+        margin-right: 5px;
+    }
+
+    .tab-item.active .badge {
+        background-color: white;
+        color: #4e46e5;
+    }
+
+    [data-section] {
+        display: none;
+    }
+
+    [data-section].active {
+        display: block;
+    }
+
+    .permission-card {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .permission-card:hover {
+        background-color: #f1f3f5;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    }
+
+    .permission-card.active {
+        background-color: #eef2ff;
+        border-color: #c7d2fe;
+    }
+
+    .permission-card .status-badge {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background-color: #e9ecef;
+    }
+
+    .permission-card .status-badge.read {
+        background-color: #4e46e5;
+    }
+
+    .permission-card .status-badge.write {
+        background-color: #10b981;
+    }
+
+    .permission-card .status-badge.admin {
+        background-color: #f59e0b;
+    }
+
+    .permission-icon {
+        font-size: 18px;
+        color: #6b7280;
+        margin-bottom: 8px;
+    }
+
+    .active .permission-icon {
+        color: #4e46e5;
+    }
+
+    .permission-name {
+        font-weight: 600;
+        font-size: 15px;
+        margin-bottom: 4px;
+    }
+
+    .permission-desc {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .department-card {
+        background-color: #fff;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .department-header {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+    }
+
+    .department-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(79, 70, 229, 0.1);
+        color: #4e46e5;
+        border-radius: 6px;
+        font-size: 16px;
+    }
+
+    .department-body {
+        padding: 15px;
+    }
+
+    .permissions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .save-btn {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        padding: 10px 20px;
+        background-color: #10b981;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 100;
+    }
+
+    .save-btn:hover {
+        background-color: #059669;
+    }
+
+    .save-btn:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
+    }
+
+    .btn-outline-primary {
+        color: #4e46e5;
+        border-color: #4e46e5;
+    }
+    .btn-outline-primary:hover {
+        background-color: #4e46e5;
+        color: #fff;
+    }
+    .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-12">
+            {% if success_message %}
+            <div class="alert alert-success" role="alert">
+                {{ success_message }}
+                <button type="button" class="btn-close float-end" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">{% trans "إدارة الصلاحيات المتقدمة" %}</h2>
+                    <p class="text-muted">{% trans "إدارة صلاحيات وأذونات المسؤول العادي" %}</p>
+                </div>
+                <a href="{% url 'superadmin_admin_details' admin_id=admin.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-right ml-1"></i> {% trans "العودة للمسؤولين" %}
+                </a>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-auto">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem;">
+                                        {{ admin.user.first_name|first|upper }}{{ admin.user.last_name|first|upper }}
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <h4 class="card-title mb-1">{{ admin.user.get_full_name }}</h4>
+                                    <p class="text-muted mb-2">{{ admin.user.email }}</p>
+                                    
+                                    <div class="badge bg-primary mb-2">{{ admin.role.name }}</div>
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex justify-content-between p-2 bg-light rounded mb-2">
+                                                <span>{% trans "الحالة" %}</span>
+                                                <span class="badge {% if admin.user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {% if admin.user.is_active %}{% trans "نشط" %}{% else %}{% trans "معطل" %}{% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex justify-content-between p-2 bg-light rounded mb-2">
+                                                <span>{% trans "آخر دخول" %}</span>
+                                                <span class="badge bg-light text-dark">
+                                                    {% if admin.user.last_login %}
+                                                    {{ admin.user.last_login|date:"Y-m-d H:i" }}
+                                                    {% else %}
+                                                    {% trans "لم يسجل دخول بعد" %}
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-nav">
+                <div class="tab-item active" data-target="dashboard">
+                    <i class="fas fa-tachometer-alt"></i> {% trans "لوحة التحكم" %}
+                    <span class="badge">3</span>
+                </div>
+                <div class="tab-item" data-target="cars">
+                    <i class="fas fa-car"></i> {% trans "المركبات" %}
+                    <span class="badge">4</span>
+                </div>
+                <div class="tab-item" data-target="reservations">
+                    <i class="fas fa-calendar-check"></i> {% trans "الحجوزات" %}
+                    <span class="badge">4</span>
+                </div>
+                <div class="tab-item" data-target="confirmations">
+                    <i class="fas fa-clipboard-check"></i> {% trans "تأكيد الحجوزات" %}
+                    <span class="badge">5</span>
+                </div>
+                <div class="tab-item" data-target="customers">
+                    <i class="fas fa-users"></i> {% trans "العملاء" %}
+                    <span class="badge">4</span>
+                </div>
+                <div class="tab-item" data-target="payments">
+                    <i class="fas fa-credit-card"></i> {% trans "المدفوعات" %}
+                    <span class="badge">5</span>
+                </div>
+                <div class="tab-item" data-target="reports">
+                    <i class="fas fa-chart-bar"></i> {% trans "التقارير" %}
+                    <span class="badge">7</span>
+                </div>
+                <div class="tab-item" data-target="reviews">
+                    <i class="fas fa-star"></i> {% trans "التقييمات" %}
+                    <span class="badge">4</span>
+                </div>
+                <div class="tab-item" data-target="system">
+                    <i class="fas fa-cogs"></i> {% trans "النظام" %}
+                    <span class="badge">4</span>
+                </div>
+                <div class="tab-item" data-target="archive">
+                    <i class="fas fa-archive"></i> {% trans "الأرشيف" %}
+                    <span class="badge">3</span>
+                </div>
+            </div>
+
+            <div class="permissions-container">
+                <form method="post" id="permissions-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                    <input type="hidden" name="permissions" id="permissions-data" value="{{ permissions_json }}">
+
+                    <!-- لوحة التحكم -->
+                    <div data-section="dashboard" class="active">
+                        <div class="department-card">
+                            <div class="department-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="department-icon me-3">
+                                        <i class="fas fa-tachometer-alt"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">{% trans "لوحة التحكم" %}</h5>
+                                        <p class="text-muted mb-0 small">3 {% trans "صلاحية متاحة" %}</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge rounded-pill" style="background-color: rgba(79, 70, 229, 0.9);">
+                                        <span class="active-count">0</span> / 3
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-outline-primary select-all-btn" data-section="dashboard">
+                                        <i class="fas fa-check-double me-1"></i> {% trans "تحديد الكل" %}
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary toggle-department-btn" data-section="dashboard">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="department-body" style="display: none;">
+                                <div class="permissions-grid">
+                                    <div class="permission-card" data-name="view_dashboard">
+                                        <div class="status-badge read"></div>
+                                        <i class="fas fa-tachometer-alt permission-icon"></i>
+                                        <div class="permission-name">{% trans "عرض لوحة التحكم" %}</div>
+                                        <div class="permission-desc">{% trans "الوصول إلى شاشة لوحة التحكم الرئيسية" %}</div>
+                                    </div>
+                                    
+                                    <div class="permission-card" data-name="view_statistics">
+                                        <div class="status-badge read"></div>
+                                        <i class="fas fa-chart-line permission-icon"></i>
+                                        <div class="permission-name">{% trans "عرض الإحصائيات" %}</div>
+                                        <div class="permission-desc">{% trans "عرض إحصائيات النظام والرسوم البيانية" %}</div>
+                                    </div>
+                                    
+                                    <div class="permission-card" data-name="view_calendar">
+                                        <div class="status-badge read"></div>
+                                        <i class="fas fa-calendar permission-icon"></i>
+                                        <div class="permission-name">{% trans "عرض التقويم" %}</div>
+                                        <div class="permission-desc">{% trans "عرض تقويم الحجوزات والمواعيد" %}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- المركبات -->
+                    <div data-section="cars">
+                        <div class="department-card">
+                            <div class="department-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="department-icon me-3">
+                                        <i class="fas fa-car"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">{% trans "المركبات" %}</h5>
+                                        <p class="text-muted mb-0 small">4 {% trans "صلاحية متاحة" %}</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge rounded-pill" style="background-color: rgba(79, 70, 229, 0.9);">
+                                        <span class="active-count">0</span> / 4
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-outline-primary select-all-btn" data-section="cars">
+                                        <i class="fas fa-check-double me-1"></i> {% trans "تحديد الكل" %}
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary toggle-department-btn" data-section="cars">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="department-body" style="display: none;">
+                                <div class="permissions-grid">
+                                    <div class="permission-card" data-name="view_cars">
+                                        <div class="status-badge read"></div>
+                                        <i class="fas fa-car permission-icon"></i>
+                                        <div class="permission-name">{% trans "عرض المركبات" %}</div>
+                                        <div class="permission-desc">{% trans "عرض قائمة المركبات وتفاصيلها" %}</div>
+                                    </div>
+                                    
+                                    <div class="permission-card" data-name="add_car">
+                                        <div class="status-badge write"></div>
+                                        <i class="fas fa-plus-circle permission-icon"></i>
+                                        <div class="permission-name">{% trans "إضافة مركبة" %}</div>
+                                        <div class="permission-desc">{% trans "إضافة مركبات جديدة إلى النظام" %}</div>
+                                    </div>
+                                    
+                                    <div class="permission-card" data-name="edit_car">
+                                        <div class="status-badge write"></div>
+                                        <i class="fas fa-edit permission-icon"></i>
+                                        <div class="permission-name">{% trans "تعديل مركبة" %}</div>
+                                        <div class="permission-desc">{% trans "تعديل بيانات المركبات الموجودة" %}</div>
+                                    </div>
+                                    
+                                    <div class="permission-card" data-name="delete_car">
+                                        <div class="status-badge admin"></div>
+                                        <i class="fas fa-trash-alt permission-icon"></i>
+                                        <div class="permission-name">{% trans "حذف مركبة" %}</div>
+                                        <div class="permission-desc">{% trans "حذف مركبات من النظام" %}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الحجوزات -->
+                    <div data-section="reservations">
+                        <div class="department-card">
+                            <div class="department-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="department-icon me-3">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">{% trans "الحجوزات" %}</h5>
+                                        <p class="text-muted mb-0 small">4 {% trans "صلاحية متاحة" %}</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge rounded-pill" style="background-color: rgba(79, 70, 229, 0.9);">
+                                        <span class="active-count">0</span> / 4
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-outline-primary select-all-btn" data-section="reservations">
+                                        <i class="fas fa-check-double me-1"></i> {% trans "تحديد الكل" %}
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary toggle-department-btn" data-section="reservations">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="department-body" style="display: none;">
+                                <div class="permissions-grid">
+                                    <div class="permission-card" data-name="view_reservations">
+                                        <div class="status-badge read"></div>
+                                        <i class="fas fa-list permission-icon"></i>
+                                        <div class="permission-name">{% trans "عرض قائمة الحجوزات" %}</div>
+                                        <div class="permission-desc">{% trans "الاطلاع على جميع الحجوزات في النظام" %}</div>
+                                    </div>
+                                    
+                                    <div class="permission-card" data-name="view_reservation_details">
+                                        <div class="status-badge read"></div>
+                                        <i class="fas fa-info-circle permission-icon"></i>
+                                        <div class="permission-name">{% trans "عرض تفاصيل الحجوزات" %}</div>
+                                        <div class="permission-desc">{% trans "الاطلاع على تفاصيل حجز معين" %}</div>
+                                    </div>
+                                    
+                                    <div class="permission-card" data-name="add_reservation">
+                                        <div class="status-badge write"></div>
+                                        <i class="fas fa-plus-circle permission-icon"></i>
+                                        <div class="permission-name">{% trans "إضافة حجز" %}</div>
+                                        <div class="permission-desc">{% trans "إنشاء حجوزات جديدة للعملاء" %}</div>
+                                    </div>
+                                    
+                                    <div class="permission-card" data-name="cancel_reservation">
+                                        <div class="status-badge admin"></div>
+                                        <i class="fas fa-ban permission-icon"></i>
+                                        <div class="permission-name">{% trans "إلغاء حجز" %}</div>
+                                        <div class="permission-desc">{% trans "إلغاء حجوزات موجودة" %}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="save-btn" id="save-permissions-btn" disabled>
+                        <i class="fas fa-save me-2"></i>
+                        {% trans "حفظ التغييرات" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // تحديد كل الصلاحيات الفعالة
+    {% for permission_name in permissions %}
+    $(".permission-card[data-name='{{ permission_name }}']").addClass('active');
+    {% endfor %}
+
+    // وظيفة تحديث عداد الصلاحيات النشطة
+    function updateActiveCounters() {
+        $('[data-section]').each(function() {
+            const activeCount = $(this).find('.permission-card.active').length;
+            $(this).find('.active-count').text(activeCount);
+        });
+    }
+
+    // وظيفة تحديث بيانات الصلاحيات المخفية قبل الإرسال
+    function updatePermissionsData() {
+        const activePermissions = [];
+        $('.permission-card.active').each(function() {
+            const permissionName = $(this).data('name');
+            if (permissionName) {
+                activePermissions.push(permissionName);
+            }
+        });
+        $('#permissions-data').val(JSON.stringify(activePermissions));
+        return activePermissions;
+    }
+
+    // تحديث العدادات في بداية التحميل
+    updateActiveCounters();
+
+    // تبديل التبويبات
+    $('.tab-item').on('click', function() {
+        $('.tab-item').removeClass('active');
+        $(this).addClass('active');
+        
+        const targetSection = $(this).data('target');
+        $('[data-section]').removeClass('active');
+        $(`[data-section="${targetSection}"]`).addClass('active');
+    });
+
+    // تبديل عرض/إخفاء قسم الإدارة
+    $('.toggle-department-btn').on('click', function() {
+        const btnIcon = $(this).find('i');
+        const body = $(this).closest('.department-card').find('.department-body');
+        
+        body.slideToggle(200);
+        
+        // تبديل الأيقونة
+        if(btnIcon.hasClass('fa-chevron-down')) {
+            btnIcon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        } else {
+            btnIcon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        }
+    });
+
+    // معالجة النقر على زر "تحديد الكل"
+    $('.select-all-btn').on('click', function() {
+        if ({{ admin.is_superadmin|yesno:"true,false" }}) {
+            alert('{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}');
+            return;
+        }
+        
+        const section = $(this).data('section');
+        const cards = $(`[data-section="${section}"] .permission-card`);
+        
+        // التحقق إذا كانت كل الصلاحيات نشطة
+        const allActive = cards.length === cards.filter('.active').length;
+        
+        if (allActive) {
+            // إزالة التنشيط من الجميع
+            cards.removeClass('active');
+        } else {
+            // تنشيط الجميع
+            cards.addClass('active');
+        }
+        
+        // تحديث العدادات
+        updateActiveCounters();
+        
+        // تفعيل زر الحفظ
+        $('#save-permissions-btn').prop('disabled', false);
+        
+        // تحديث البيانات
+        updatePermissionsData();
+    });
+
+    // معالجة النقر على بطاقة صلاحية
+    $('.permission-card').on('click', function() {
+        if ({{ admin.is_superadmin|yesno:"true,false" }}) {
+            alert('{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}');
+            return;
+        }
+        
+        $(this).toggleClass('active');
+        
+        // تفعيل زر الحفظ
+        $('#save-permissions-btn').prop('disabled', false);
+        
+        // تحديث العدادات
+        updateActiveCounters();
+        
+        // تحديث البيانات
+        updatePermissionsData();
+    });
+
+    // معالجة النموذج قبل الإرسال
+    $('#permissions-form').on('submit', function(e) {
+        if ({{ admin.is_superadmin|yesno:"true,false" }}) {
+            e.preventDefault();
+            alert('{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}');
+            return false;
+        }
+        
+        updatePermissionsData();
+        
+        // تعطيل الزر أثناء الإرسال
+        const saveBtn = $('#save-permissions-btn');
+        saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> {% trans "جاري الحفظ..." %}');
+    });
+});
+</script>
+{% endblock %}

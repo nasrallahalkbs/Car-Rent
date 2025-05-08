@@ -484,7 +484,7 @@ def admin_advanced_permissions(request, admin_id):
     }
     
     # عرض الصفحة باستخدام القالب الأصلي
-    return render(request, 'superadmin/admin_advanced_permissions.html', context)
+    return render(request, 'superadmin/admin_advanced_permissions_original.html', context)
 
 @superadmin_required
 def add_admin(request):
