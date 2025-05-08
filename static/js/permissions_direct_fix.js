@@ -8,6 +8,50 @@
 $(document).ready(function() {
     console.log("⚡ تم تحميل نظام الصلاحيات المحسن");
 
+    // إضافة معرفات واضحة للبطاقات وسمات البيانات
+    console.log("🔧 إضافة معرفات وسمات البيانات إلى بطاقات الصلاحيات...");
+    $('.permissions-section').each(function() {
+        const sectionId = $(this).attr('id').replace('section-', '');
+        
+        // مر على كل بطاقة في هذا القسم
+        $(this).find('.permission-card').each(function(index) {
+            // إنشاء معرّف فريد للبطاقة
+            const cardId = `perm-card-${sectionId}-${index}`;
+            // إضافة المعرّف للبطاقة
+            $(this).attr('id', cardId);
+            
+            // إضافة سمة data-section إذا لم تكن موجودة
+            if (!$(this).data('section')) {
+                $(this).attr('data-section', sectionId);
+            }
+            
+            // إضافة سمة data-permission إذا لم تكن موجودة
+            if (!$(this).data('permission')) {
+                // محاولة استخراج اسم الصلاحية من العنوان
+                const titleText = $(this).find('.permission-title').text().trim();
+                if (titleText) {
+                    // تحويل النص العربي إلى معرّف صالح للصلاحية
+                    let permId = '';
+                    if (titleText.includes('عرض') || titleText.includes('الاطلاع')) {
+                        permId = 'view_' + (sectionId.endsWith('s') ? sectionId.slice(0, -1) : sectionId);
+                    } else if (titleText.includes('إضافة') || titleText.includes('إنشاء')) {
+                        permId = 'create_' + (sectionId.endsWith('s') ? sectionId.slice(0, -1) : sectionId);
+                    } else if (titleText.includes('تعديل')) {
+                        permId = 'edit_' + (sectionId.endsWith('s') ? sectionId.slice(0, -1) : sectionId);
+                    } else if (titleText.includes('حذف')) {
+                        permId = 'delete_' + (sectionId.endsWith('s') ? sectionId.slice(0, -1) : sectionId);
+                    } else {
+                        // استخدام الموقع في القسم
+                        permId = sectionId + '_perm_' + index;
+                    }
+                    
+                    $(this).attr('data-permission', permId);
+                }
+            }
+        });
+    });
+    console.log("✅ تم إضافة المعرفات وسمات البيانات إلى البطاقات");
+
     // تخزين الحالة الأولية للصلاحيات
     let initialPermissions = {};
     try {
@@ -325,66 +369,76 @@ $(document).ready(function() {
                     }
                 }
                 
-                if (responseData.status === 'success' || responseData.permissions) {
-                    if (responseData.permissions) {
-                        console.log("📄 الصلاحيات المستلمة من الخادم:", responseData.permissions);
-                        
-                        try {
-                            // تحديث الصلاحيات المحفوظة في الحقل المخفي
-                            $('#saved_permissions_json').val(JSON.stringify(responseData.permissions));
-                            
-                            // تحديث المتغير العام للصلاحيات المحفوظة
-                            window.savedPermissions = responseData.permissions;
-                            console.log("💾 تم تحديث المتغير العام savedPermissions:", window.savedPermissions);
-                            
-                            // لضمان التحديث الصحيح - تفرغ جميع البطاقات وتعيين الفعالة منها
-                            $('.permission-card').removeClass('active');
-                            
-                            // تحديث حالة البطاقات بناءً على الصلاحيات المحفوظة
-                            for (const section in responseData.permissions) {
-                                if (Array.isArray(responseData.permissions[section])) {
-                                    responseData.permissions[section].forEach(permission => {
-                                        $(`.permission-card[data-section="${section}"][data-permission="${permission}"]`).addClass('active');
-                                        $(`.permission-card .permission-title[data-perm-name="${permission}"]`).closest('.permission-card').addClass('active');
-                                    });
-                                }
-                            }
-                            
-                            // تحديث العدادات
-                            updateAllCounters();
-                            
-                            // تنفيذ وظيفة تعليم البطاقات الفعالة كتأكيد إضافي
-                            markActiveCards();
-                            
-                            console.log("✅ تم تحديث واجهة المستخدم بنجاح مع الصلاحيات الجديدة");
-                            showNotification('تم', 'تم حفظ الصلاحيات بنجاح وتحديث الواجهة', 'success');
-                        } catch (error) {
-                            console.error("❌ خطأ أثناء تحديث واجهة المستخدم:", error);
-                            showNotification('تحذير', 'تم الحفظ ولكن حدث خطأ في تحديث الواجهة - جاري إعادة التحميل', 'warning');
-                            
-                            // إعادة تحميل الصفحة في حالة حدوث خطأ في التحديث
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1500);
-                        }
-                    } else {
-                        console.warn("⚠️ لم يتم استلام معلومات الصلاحيات في الاستجابة!");
-                        
-                        // استرداد الصلاحيات المحلية
-                        const activePermissions = collectActivePermissions();
-                        console.log("🔄 استخدام الصلاحيات المحلية:", activePermissions);
-                        
-                        updateCardsFromPermissions(activePermissions);
-                        showNotification('تنبيه', 'تم الحفظ ولكن تم استخدام الصلاحيات المحلية للتحديث', 'warning');
-                    }
+                // الخطوة 1: تحديث المتغيرات العامة أولاً
+                let updatedPermissions = {};
+                
+                // الحصول على الصلاحيات المحدثة من الاستجابة أو محلياً
+                if (responseData.permissions) {
+                    // استخدام الصلاحيات من استجابة الخادم
+                    updatedPermissions = responseData.permissions;
+                    console.log("📄 تم استلام الصلاحيات من الخادم:", updatedPermissions);
                 } else {
-                    console.error("❌ خطأ في استجابة الخادم:", responseData);
-                    showNotification('خطأ', 'حدث خطأ أثناء حفظ الصلاحيات', 'error');
+                    // استخدام الصلاحيات المحلية كبديل
+                    updatedPermissions = collectActivePermissions();
+                    console.log("⚠️ استخدام الصلاحيات المحلية كبديل:", updatedPermissions);
                     
-                    // إعادة تحميل الصفحة بعد فترة كملاذ أخير
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
+                    if (Object.keys(updatedPermissions).length === 0) {
+                        console.warn("⚠️ الصلاحيات المحلية فارغة - سنحاول استخدام القيم المحفوظة مسبقاً");
+                        
+                        // محاولة استخدام الصلاحيات المحفوظة مسبقاً
+                        try {
+                            const savedJson = $('#saved_permissions_json').val();
+                            if (savedJson) {
+                                updatedPermissions = JSON.parse(savedJson);
+                                console.log("🔄 استخدام الصلاحيات المحفوظة مسبقاً:", updatedPermissions);
+                            }
+                        } catch (e) {
+                            console.error("❌ فشل استرداد الصلاحيات المحفوظة:", e);
+                        }
+                    }
+                }
+                
+                // الخطوة 2: تحديث الأشياء الثابتة
+                
+                // حفظ الصلاحيات في متغير عام
+                window.savedPermissions = updatedPermissions;
+                
+                // حفظ في الحقل المخفي
+                $('#saved_permissions_json').val(JSON.stringify(updatedPermissions));
+                
+                // الخطوة 3: مباشرة بالتحديث الفعلي لواجهة المستخدم
+                try {
+                    console.log("🔄 جاري تحديث واجهة المستخدم مع الصلاحيات الجديدة...");
+                    
+                    // التحديث بطريقة مباشرة ومحسنة
+                    updatePermissionCardsDirectly(updatedPermissions);
+                    
+                    console.log("✅ تم تحديث واجهة المستخدم بنجاح");
+                    showNotification('تم', 'تم حفظ الصلاحيات بنجاح وتحديث الواجهة', 'success');
+                } catch (error) {
+                    console.error("❌ خطأ أثناء تحديث واجهة المستخدم:", error);
+                    
+                    // المحاولة بطريقة بديلة قبل إعادة التحميل
+                    try {
+                        console.log("🔄 محاولة تحديث بطريقة بديلة...");
+                        
+                        // إعادة تعيين البطاقات
+                        $('.permission-card').removeClass('active');
+                        
+                        // تنفيذ تعليم البطاقات (الطريقة الاحتياطية)
+                        markActiveCards();
+                        
+                        console.log("✓ تم استخدام الطريقة البديلة بنجاح");
+                        showNotification('تنبيه', 'تم الحفظ وتم استخدام طريقة بديلة للتحديث', 'warning');
+                    } catch (fallbackError) {
+                        console.error("❌ فشلت الطريقة البديلة أيضاً:", fallbackError);
+                        showNotification('تحذير', 'تم الحفظ ولكن فشل تحديث الواجهة - جاري إعادة التحميل', 'warning');
+                        
+                        // إعادة تحميل الصفحة كملاذ أخير
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
                 }
             },
             error: function(xhr, status, error) {
@@ -594,6 +648,61 @@ $(document).ready(function() {
         updateAllCounters();
     });
 
+
+    // دالة تحديث مباشر للبطاقات
+    function updatePermissionCardsDirectly(permissions) {
+        console.log("🎯 بدء التحديث المباشر للبطاقات باستخدام:", permissions);
+        
+        // 1. تفريغ حالة البطاقات أولاً
+        $('.permission-card').removeClass('active');
+        
+        // 2. حلقة مباشرة على كل البطاقات
+        $('.permission-card').each(function() {
+            const card = $(this);
+            const section = card.data('section');
+            const permission = card.data('permission');
+            
+            // التحقق من وجود سمات البيانات
+            if (!section || !permission) {
+                console.log(`⚠️ البطاقة تفتقد إلى سمات البيانات id=${card.attr('id')}`);
+                return; // تخطي هذه البطاقة
+            }
+            
+            // التحقق من وجود الصلاحية في المصفوفة
+            if (permissions[section] && 
+                Array.isArray(permissions[section]) && 
+                permissions[section].includes(permission)) {
+                // تنشيط البطاقة
+                card.addClass('active');
+                console.log(`✓ تم تنشيط البطاقة: ${section}.${permission}`);
+            }
+        });
+        
+        // 3. تحديث العدادات
+        updateAllCounters();
+        
+        // 4. إحصائيات للمتابعة
+        const activeCount = $('.permission-card.active').length;
+        const totalCount = $('.permission-card').length;
+        console.log(`📊 إحصائيات التحديث المباشر: ${activeCount} بطاقة نشطة من أصل ${totalCount}`);
+        
+        // 5. التحقق من مجموع العدادات
+        let permissionSum = 0;
+        for (const section in permissions) {
+            if (Array.isArray(permissions[section])) {
+                permissionSum += permissions[section].length;
+            }
+        }
+        
+        // مقارنة الأرقام
+        if (activeCount < permissionSum) {
+            console.warn(`⚠️ تحذير: ${permissionSum - activeCount} صلاحية لم يتم العثور على بطاقاتها`);
+        } else if (activeCount > permissionSum) {
+            console.warn(`⚠️ تحذير: ${activeCount - permissionSum} بطاقة زائدة تم تنشيطها`);
+        } else {
+            console.log(`✅ تطابق تام: ${permissionSum} صلاحية مع ${activeCount} بطاقة نشطة`);
+        }
+    }
 
     // تنفيذ تعليم البطاقات النشطة عند تحميل الصفحة
     markActiveCards();
