@@ -473,8 +473,8 @@ def admin_advanced_permissions(request, admin_id):
                     'permissions': selected_permissions
                 })
             else:
-                # رسالة نجاح للطلبات العادية
-                messages.success(request, _("تم حفظ الصلاحيات بنجاح"))
+                # رسالة نجاح للطلبات العادية (آمنة للمسؤولين فقط)
+                admin_success(request, _("تم حفظ الصلاحيات بنجاح"))
                 return redirect(f"{request.path}?saved=true")
                 
         except Exception as e:
@@ -486,8 +486,8 @@ def admin_advanced_permissions(request, admin_id):
                     'message': _("حدث خطأ أثناء حفظ الصلاحيات")
                 }, status=500)
             else:
-                # رسالة خطأ للطلبات العادية
-                messages.error(request, _("حدث خطأ أثناء حفظ الصلاحيات"))
+                # رسالة خطأ للطلبات العادية (آمنة للمسؤولين فقط)
+                admin_error(request, _("حدث خطأ أثناء حفظ الصلاحيات"))
     
     # تحضير الصلاحيات للعرض في القالب
     context_permissions = {}
@@ -555,7 +555,7 @@ def add_admin(request):
                     request
                 )
                 
-                messages.success(request, _("تمت إضافة المسؤول بنجاح"))
+                admin_success(request, _("تمت إضافة المسؤول بنجاح"))
                 return redirect('superadmin_manage_admins')
     else:
         form = AdminUserForm(new_user=True)
@@ -593,7 +593,7 @@ def edit_admin(request, admin_id):
                     request
                 )
                 
-                messages.success(request, _("تم تحديث معلومات المسؤول بنجاح"))
+                admin_success(request, _("تم تحديث معلومات المسؤول بنجاح"))
                 return redirect('superadmin_admin_details', admin_id=admin_user.id)
     else:
         form = AdminUserForm(instance=admin_user)
@@ -619,11 +619,11 @@ def toggle_admin_status(request, admin_id):
         request
     )
     
-    # رسالة نجاح
+    # رسالة نجاح (آمنة للمسؤولين فقط)
     if user.is_active:
-        messages.success(request, _("تم تفعيل حساب المسؤول بنجاح"))
+        admin_success(request, _("تم تفعيل حساب المسؤول بنجاح"))
     else:
-        messages.success(request, _("تم تعطيل حساب المسؤول بنجاح"))
+        admin_success(request, _("تم تعطيل حساب المسؤول بنجاح"))
     
     return redirect('superadmin_admin_details', admin_id=admin_user.id)
 
@@ -669,7 +669,7 @@ def add_role(request):
                 request
             )
             
-            messages.success(request, _("تمت إضافة الدور بنجاح"))
+            admin_success(request, _("تمت إضافة الدور بنجاح"))
             return redirect('superadmin_manage_roles')
     else:
         form = RoleForm()
@@ -694,7 +694,7 @@ def edit_role(request, role_id):
                 request
             )
             
-            messages.success(request, _("تم تحديث الدور بنجاح"))
+            admin_success(request, _("تم تحديث الدور بنجاح"))
             return redirect('superadmin_role_details', role_id=role.id)
     else:
         form = RoleForm(instance=role)
@@ -708,7 +708,7 @@ def delete_role(request, role_id):
     
     # التحقق مما إذا كان هناك مسؤولون يستخدمون هذا الدور
     if AdminUser.objects.filter(role=role).exists():
-        messages.error(request, _("لا يمكن حذف الدور لأنه مستخدم من قبل مسؤولين حاليين"))
+        admin_error(request, _("لا يمكن حذف الدور لأنه مستخدم من قبل مسؤولين حاليين"))
         return redirect('superadmin_role_details', role_id=role.id)
     
     if request.method == 'POST':
