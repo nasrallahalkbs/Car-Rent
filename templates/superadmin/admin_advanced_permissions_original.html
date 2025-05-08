@@ -9,7 +9,67 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin_permissions_original.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_permissions_original_v2.css' %}?v={{ random }}">
+<style>
+/* تصميم إضافي للتأكد من تطبيق التحديثات */
+.permission-card {
+    position: relative;
+    border-radius: 12px;
+    padding: 18px;
+    background-color: #ffffff;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: 1px solid #e9ecef;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    backdrop-filter: blur(8px);
+}
+
+.permission-card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.permission-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+}
+
+.permission-card:hover:before {
+    opacity: 1;
+}
+
+.permission-card.active {
+    background: linear-gradient(135deg, #eef2ff 0%, #f5f8ff 100%);
+    border-color: #c7d2fe;
+    box-shadow: 0 8px 16px rgba(79, 70, 229, 0.1);
+}
+
+.tab-item.active {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.2);
+}
+
+.save-permissions-btn {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -295,6 +355,55 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // إضافة تأثيرات حركية متقدمة للصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        // إضافة تأثير لمطابقة الألوان
+        const cards = document.querySelectorAll('.permission-card');
+        cards.forEach(card => {
+            // إضافة تأثير حركي عند التحميل
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1)';
+                }, 50);
+            }, Math.random() * 300);
+        });
+        
+        // إضافة تأثير لزر الحفظ
+        const saveBtn = document.querySelector('.save-permissions-btn');
+        if (saveBtn) {
+            saveBtn.style.position = 'relative';
+            saveBtn.style.overflow = 'hidden';
+            
+            // إضافة الوميض
+            setInterval(() => {
+                const shine = document.createElement('div');
+                shine.style.position = 'absolute';
+                shine.style.top = '0';
+                shine.style.left = '-100%';
+                shine.style.width = '100%';
+                shine.style.height = '100%';
+                shine.style.background = 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%)';
+                shine.style.transition = 'all 1s ease';
+                shine.style.pointerEvents = 'none';
+                
+                saveBtn.appendChild(shine);
+                
+                setTimeout(() => {
+                    shine.style.left = '100%';
+                    setTimeout(() => {
+                        if (shine && shine.parentNode) {
+                            shine.parentNode.removeChild(shine);
+                        }
+                    }, 1000);
+                }, 50);
+            }, 5000);
+        }
+    });
+
     // معالج إرسال النموذج
     permissionsForm.addEventListener('submit', function(e) {
         e.preventDefault();
