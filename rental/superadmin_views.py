@@ -306,6 +306,10 @@ def admin_details(request, admin_id):
 @superadmin_required
 def admin_advanced_permissions(request, admin_id):
     """إدارة الصلاحيات المتقدمة للمسؤول - الإصدار المبسط جداً"""
+    # إضافة قيمة عشوائية لمنع التخزين المؤقت للموارد
+    import random
+    import time
+    
     try:
         admin = get_object_or_404(AdminUser, id=admin_id)
     except AdminUser.DoesNotExist:
@@ -505,16 +509,20 @@ def admin_advanced_permissions(request, admin_id):
             request
         )
     
+    # إنشاء قيمة عشوائية لمنع التخزين المؤقت
+    random_value = int(time.time() * 1000) + random.randint(1000, 9999)
+    
     # إعداد محتوى الصفحة
     context = {
         'admin': admin,
         'title': _('إدارة الصلاحيات المتقدمة - ') + admin.user.get_full_name(),
         'permissions': context_permissions,
-        'permissions_json': json.dumps(admin_permissions)
+        'permissions_json': json.dumps(admin_permissions),
+        'random': random_value  # إضافة قيمة عشوائية لمنع التخزين المؤقت
     }
     
-    # عرض الصفحة باستخدام القالب المطلوب (تم التحديث لاستخدام قالب admin_advanced_permissions_redesign.html)
-    return render(request, 'superadmin/admin_advanced_permissions_redesign.html', context)
+    # عرض الصفحة باستخدام القالب المطلوب (تم التحديث لاستخدام قالب admin_advanced_permissions_original.html)
+    return render(request, 'superadmin/admin_advanced_permissions_original.html', context)
 
 @superadmin_required
 def add_admin(request):
