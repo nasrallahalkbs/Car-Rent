@@ -10,6 +10,7 @@ from django.utils import timezone
 from functools import wraps
 from django.db import transaction
 from django.contrib.auth.hashers import make_password
+from .admin_messages import admin_error, admin_warning, admin_info, admin_success, is_admin_user
 
 from .models import User, Review
 from .models_superadmin import Permission, Role, AdminUser, AdminActivity, ReviewManagement
@@ -73,19 +74,19 @@ def superadmin_required(function):
     def wrapper(request, *args, **kwargs):
         # التحقق من تسجيل الدخول
         if not request.user.is_authenticated:
-            messages.error(request, _("يجب تسجيل الدخول للوصول إلى لوحة تحكم المسؤول الأعلى"))
+            admin_error(request, _("يجب تسجيل الدخول للوصول إلى لوحة تحكم المسؤول الأعلى"))
             return redirect('superadmin_login')
         
         # التحقق من وجود بروفايل مسؤول
         try:
             admin_profile = request.user.admin_profile
         except:
-            messages.error(request, _("ليس لديك صلاحيات الوصول إلى لوحة تحكم المسؤول الأعلى"))
+            admin_error(request, _("ليس لديك صلاحيات الوصول إلى لوحة تحكم المسؤول الأعلى"))
             return redirect('index')
         
         # التحقق من صلاحيات المسؤول الأعلى
         if not admin_profile.is_superadmin:
-            messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
+            admin_error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
             return redirect('index')
             
         request.admin_profile = admin_profile
@@ -313,7 +314,7 @@ def admin_advanced_permissions(request, admin_id):
     try:
         admin = get_object_or_404(AdminUser, id=admin_id)
     except AdminUser.DoesNotExist:
-        messages.error(request, _('المسؤول غير موجود'))
+        admin_error(request, _('المسؤول غير موجود'))
         return redirect('superadmin_manage_admins')
     
     # قائمة بجميع الصلاحيات مقسمة حسب الأقسام

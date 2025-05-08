@@ -9,6 +9,7 @@ from django.utils.translation import gettext as _
 from functools import wraps
 from .models_superadmin import AdminUser
 from .admin_permissions_helpers import get_admin_permissions
+from .admin_messages import admin_error, admin_warning, admin_info, admin_success, is_admin_user
 import logging
 
 # إعداد التسجيل
@@ -19,21 +20,24 @@ def superadmin_required(function):
     def wrapper(request, *args, **kwargs):
         # التحقق من تسجيل الدخول
         if not request.user.is_authenticated:
-            messages.error(request, _("يجب تسجيل الدخول للوصول إلى لوحة تحكم المسؤول الأعلى"))
+            # استخدام رسالة آمنة (تظهر فقط للمسؤولين)
+            admin_error(request, _("يجب تسجيل الدخول للوصول إلى لوحة تحكم المسؤول الأعلى"))
             return redirect('superadmin_login')
 
         # التحقق من وجود بروفايل مسؤول أعلى صالح
         try:
             admin_profile = AdminUser.objects.get(user=request.user)
             if not admin_profile.is_superadmin:
-                messages.error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
+                # استخدام رسالة آمنة (تظهر فقط للمسؤولين)
+                admin_error(request, _("ليس لديك صلاحيات المسؤول الأعلى"))
                 return redirect('index')
                 
             # إضافة معلومات المسؤول للطلب حتى تكون متاحة في القوالب
             request.admin_profile = admin_profile
             return function(request, *args, **kwargs)
         except AdminUser.DoesNotExist:
-            messages.error(request, _("ليس لديك حساب مسؤول أعلى"))
+            # استخدام رسالة آمنة (تظهر فقط للمسؤولين)
+            admin_error(request, _("ليس لديك حساب مسؤول أعلى"))
             return redirect('index')
     
     return wrapper
@@ -117,9 +121,9 @@ def permission_required(section, permission):
                 
                 # إذا وصلنا إلى هنا، فالمستخدم مسؤول ولكن ليس لديه الصلاحية
                 if section == "reservations" and permission == "view_reservations":
-                    messages.error(request, _("ليس لديك صلاحية لمشاهدة الحجوزات"))
+                    admin_error(request, _("ليس لديك صلاحية لمشاهدة الحجوزات"))
                 else:
-                    messages.error(request, _("ليس لديك صلاحية للوصول إلى هذه الصفحة"))
+                    admin_error(request, _("ليس لديك صلاحية للوصول إلى هذه الصفحة"))
                 
                 # نوجهه للوحة تحكم المسؤول
                 return redirect('admin_index')
