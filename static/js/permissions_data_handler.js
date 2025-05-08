@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    console.log('تم تحميل معالج بيانات الصلاحيات');
+    console.log('⚡ تم تحميل معالج بيانات الصلاحيات - الإصدار المحسن');
     
     // تهيئة كائن البيانات
     let permissionsData = {};
@@ -23,9 +23,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // محاولة تحميل البيانات الموجودة
     try {
         permissionsData = JSON.parse(permissionsDataField.value || '{}');
-        console.log('تم تحميل البيانات الموجودة:', permissionsData);
+        console.log('✅ تم تحميل البيانات الموجودة:', permissionsData);
     } catch (error) {
-        console.error('خطأ في تحليل بيانات الصلاحيات:', error);
+        console.error('❌ خطأ في تحليل بيانات الصلاحيات:', error);
         permissionsData = {};
     }
     
@@ -34,15 +34,21 @@ document.addEventListener('DOMContentLoaded', function() {
     if (savedPermissionsJson) {
         try {
             const savedData = JSON.parse(savedPermissionsJson.value || '{}');
-            console.log('تم تحميل البيانات المحفوظة سابقًا:', savedData);
+            console.log('✅ تم تحميل البيانات المحفوظة سابقًا:', savedData);
+            
+            // نسخ البيانات المحفوظة إلى المتغير العام
+            if (typeof window.savedPermissions !== 'undefined') {
+                window.savedPermissions = savedData;
+                console.log('✅ تم تحديث المتغير العام savedPermissions');
+            }
             
             // استخدام البيانات المحفوظة لوضع الحالة الأولية إذا لم تكن البيانات موجودة
             if (Object.keys(permissionsData).length === 0) {
                 permissionsData = savedData;
-                console.log('تم استخدام البيانات المحفوظة لتهيئة الحالة الأولية');
+                console.log('✅ تم استخدام البيانات المحفوظة لتهيئة الحالة الأولية');
             }
         } catch (error) {
-            console.error('خطأ في تحليل البيانات المحفوظة:', error);
+            console.error('❌ خطأ في تحليل البيانات المحفوظة:', error);
         }
     }
     
