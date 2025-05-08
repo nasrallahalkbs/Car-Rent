@@ -1,0 +1,485 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة الصلاحيات المتقدمة" %} - {{ admin.user.get_full_name }}{% endblock %}
+
+{% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* تنسيقات CSS لصفحة الصلاحيات المتقدمة */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --accent-color: #1abc9c;
+    --danger-color: #e74c3c;
+    --success-color: #28a745;
+    --warning-color: #f1c40f;
+    --light-gray: #f8f9fa;
+    --dark-gray: #343a40;
+}
+
+/* تنسيق بطاقات الصلاحيات */
+.permission-card {
+    position: relative;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background-color: white;
+}
+
+.permission-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.permission-card.active {
+    background-color: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+}
+
+.permission-indicator {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #ccc;
+}
+
+.permission-card.active .permission-indicator {
+    background-color: white;
+}
+
+.permission-level {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    background-color: rgba(52, 152, 219, 0.1);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.permission-card.active .permission-level {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.permission-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.permission-card.active .permission-icon {
+    color: white;
+}
+
+.permission-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.permission-desc {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+/* تنسيق أقسام الصلاحيات */
+.permissions-section {
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.section-title {
+    padding: 1rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+}
+
+.section-title i {
+    margin-left: 10px;
+    color: var(--primary-color);
+}
+
+.section-actions {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.action-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    margin-left: 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.action-btn i {
+    margin-left: 6px;
+}
+
+.action-btn.outline {
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.action-count {
+    padding: 0.25rem 0.6rem;
+    background-color: #f0f0f0;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    margin-right: auto;
+}
+
+.section-body {
+    padding: 1.25rem;
+}
+
+.permissions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+/* تنسيق تبويبات الأقسام */
+.permissions-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.5rem;
+    margin-bottom: 1.5rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.tab-item {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin: 0.25rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.tab-item i {
+    margin-left: 8px;
+    font-size: 1rem;
+}
+
+.tab-item:hover {
+    background-color: #f5f5f5;
+}
+
+.tab-item.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.tab-count {
+    margin-right: auto;
+    font-size: 0.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 11px;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.tab-item.active .tab-count {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.tab-item.utility {
+    background-color: #f9f9f9;
+}
+
+/* زر حفظ الصلاحيات */
+.save-permissions-btn {
+    background-color: var(--success-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.save-permissions-btn i {
+    margin-left: 8px;
+}
+
+.save-permissions-btn:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رسائل النظام -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-12">
+            <form id="permissionsForm" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                <input type="hidden" name="permissions_data" id="permissions_data" value="">
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0 text-primary">{% trans "إدارة صلاحيات" %} {{ admin.user.get_full_name }}</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="permissions-tabs">
+                                    {% for section_name, perms in permissions.items %}
+                                    <div class="tab-item {% if forloop.first %}active{% endif %}" data-section="{{ section_name }}">
+                                        <i class="fas fa-folder"></i>
+                                        <span>{{ section_name|title }}</span>
+                                        <span class="tab-count" id="count-{{ section_name }}">0</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% for section_name, perms in permissions.items %}
+                        <div class="permissions-section {% if forloop.first %}active{% endif %}" id="section-{{ section_name }}">
+                            <div class="section-title">
+                                <i class="fas fa-folder"></i>
+                                <span>{{ section_name|title }}</span>
+                            </div>
+
+                            <div class="section-actions">
+                                <button type="button" class="action-btn outline select-all" data-section="{{ section_name }}">
+                                    <i class="fas fa-check-double"></i>
+                                    <span>{% trans "تحديد الكل" %}</span>
+                                </button>
+                                <div class="action-count section-count" id="section-count-{{ section_name }}">0 / {{ perms|length }}</div>
+                            </div>
+
+                            <div class="section-body">
+                                <div class="permissions-grid">
+                                    {% for perm in perms %}
+                                    <div class="permission-card {% if perm.active %}active{% endif %}" 
+                                         data-section="{{ section_name }}" 
+                                         data-permission="{{ perm.name }}">
+                                        <div class="permission-indicator"></div>
+                                        <div class="permission-level">R</div>
+                                        <div class="permission-icon">
+                                            <i class="fas fa-file-alt"></i>
+                                        </div>
+                                        <div class="permission-title">{{ perm.name|title }}</div>
+                                        <div class="permission-desc">{% trans "صلاحية النظام" %}</div>
+                                        <input type="checkbox" name="{{ section_name }}_{{ perm.name }}" 
+                                               id="perm_{{ section_name }}_{{ perm.name }}"
+                                               {% if perm.active %}checked{% endif %}
+                                               style="display: none;">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <button type="submit" class="save-permissions-btn">
+                            <i class="fas fa-save"></i>
+                            <span>{% trans "حفظ الصلاحيات" %}</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديد العناصر
+    const tabs = document.querySelectorAll('.tab-item[data-section]');
+    const sections = document.querySelectorAll('.permissions-section');
+    const permCards = document.querySelectorAll('.permission-card');
+    const selectAllBtns = document.querySelectorAll('.select-all');
+    const permissionsForm = document.getElementById('permissionsForm');
+    const permissionsDataInput = document.getElementById('permissions_data');
+    
+    // تهيئة عدادات الصلاحيات
+    updateAllCounters();
+    
+    // معالج النقر على التبويبات
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            
+            // إلغاء تنشيط جميع التبويبات والأقسام
+            tabs.forEach(t => t.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            
+            // تنشيط التبويب والقسم المحدد
+            this.classList.add('active');
+            document.getElementById('section-' + section).classList.add('active');
+        });
+    });
+    
+    // معالج النقر على بطاقات الصلاحيات
+    permCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // تبديل حالة البطاقة
+            this.classList.toggle('active');
+            
+            // تحديث حالة مربع الاختيار
+            const section = this.getAttribute('data-section');
+            const permission = this.getAttribute('data-permission');
+            const checkbox = document.getElementById('perm_' + section + '_' + permission);
+            
+            if (checkbox) {
+                checkbox.checked = this.classList.contains('active');
+            }
+            
+            // تحديث العدادات
+            updateSectionCounter(section);
+            updateTabCounter(section);
+        });
+    });
+    
+    // معالج تحديد الكل
+    selectAllBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            const cards = document.querySelectorAll(`.permission-card[data-section="${section}"]`);
+            const allActive = Array.from(cards).every(card => card.classList.contains('active'));
+            
+            // تبديل الحالة بناءً على ما إذا كانت جميع البطاقات نشطة بالفعل
+            cards.forEach(card => {
+                if (allActive) {
+                    card.classList.remove('active');
+                } else {
+                    card.classList.add('active');
+                }
+                
+                // تحديث مربع الاختيار المقابل
+                const permission = card.getAttribute('data-permission');
+                const checkbox = document.getElementById('perm_' + section + '_' + permission);
+                if (checkbox) {
+                    checkbox.checked = !allActive;
+                }
+            });
+            
+            // تحديث العدادات
+            updateSectionCounter(section);
+            updateTabCounter(section);
+        });
+    });
+    
+    // معالج إرسال النموذج
+    permissionsForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // جمع بيانات الصلاحيات
+        const permissionsData = {};
+        
+        tabs.forEach(tab => {
+            const section = tab.getAttribute('data-section');
+            permissionsData[section] = [];
+            
+            const cards = document.querySelectorAll(`.permission-card[data-section="${section}"]`);
+            cards.forEach(card => {
+                if (card.classList.contains('active')) {
+                    permissionsData[section].push(card.getAttribute('data-permission'));
+                }
+            });
+        });
+        
+        // تحديث حقل الإدخال المخفي بالبيانات المحولة إلى JSON
+        permissionsDataInput.value = JSON.stringify(permissionsData);
+        
+        // إرسال النموذج
+        this.submit();
+    });
+    
+    // وظيفة لتحديث عداد الصلاحيات في القسم
+    function updateSectionCounter(section) {
+        const cards = document.querySelectorAll(`.permission-card[data-section="${section}"]`);
+        const activeCards = document.querySelectorAll(`.permission-card[data-section="${section}"].active`);
+        const counterElement = document.getElementById('section-count-' + section);
+        
+        if (counterElement) {
+            counterElement.textContent = activeCards.length + ' / ' + cards.length;
+        }
+    }
+    
+    // وظيفة لتحديث عداد الصلاحيات في التبويب
+    function updateTabCounter(section) {
+        const activeCards = document.querySelectorAll(`.permission-card[data-section="${section}"].active`);
+        const counterElement = document.getElementById('count-' + section);
+        
+        if (counterElement) {
+            counterElement.textContent = activeCards.length;
+        }
+    }
+    
+    // وظيفة لتحديث جميع عدادات الصلاحيات
+    function updateAllCounters() {
+        const sections = new Set();
+        
+        permCards.forEach(card => {
+            sections.add(card.getAttribute('data-section'));
+        });
+        
+        sections.forEach(section => {
+            updateSectionCounter(section);
+            updateTabCounter(section);
+        });
+    }
+});
+</script>
+{% endblock %}
