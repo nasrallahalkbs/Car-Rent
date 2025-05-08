@@ -1,0 +1,360 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "إدارة الصلاحيات المتقدمة" %} - {{ admin.user.get_full_name }}{% endblock %}
+
+{% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_permissions_original.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container-fluid py-4">
+        <!-- رسائل النظام -->
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-primary">{% trans "إدارة صلاحيات" %} {{ admin.user.get_full_name }}</h4>
+                        <a href="{% url 'superadmin_admin_details' admin.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-right ml-1"></i>
+                            {% trans "العودة للمستخدم" %}
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <form id="permissionsForm" method="post" action="">
+                            {% csrf_token %}
+                            <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                            <input type="hidden" name="permissions_data" id="permissions_data" value="">
+                            
+                            <!-- تبويبات الأقسام -->
+                            <div class="tabs-container">
+                                {% for section_name, perms in permissions.items %}
+                                <div class="tab-item {% if forloop.first %}active{% endif %}" data-section="{{ section_name }}">
+                                    {% if section_name == 'dashboard' %}
+                                        <i class="fas fa-tachometer-alt"></i>
+                                    {% elif section_name == 'reservations' %}
+                                        <i class="fas fa-calendar-check"></i>
+                                    {% elif section_name == 'customers' %}
+                                        <i class="fas fa-users"></i>
+                                    {% elif section_name == 'vehicles' %}
+                                        <i class="fas fa-car"></i>
+                                    {% elif section_name == 'payments' %}
+                                        <i class="fas fa-credit-card"></i>
+                                    {% elif section_name == 'archive' or 'folder' in section_name %}
+                                        <i class="fas fa-archive"></i>
+                                    {% elif section_name == 'reports' or 'analytics' in section_name %}
+                                        <i class="fas fa-chart-bar"></i>
+                                    {% elif section_name == 'settings' %}
+                                        <i class="fas fa-cog"></i>
+                                    {% elif section_name == 'reviews' %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif section_name == 'profile' %}
+                                        <i class="fas fa-user"></i>
+                                    {% elif section_name == 'system_logs' %}
+                                        <i class="fas fa-history"></i>
+                                    {% elif section_name == 'backup' %}
+                                        <i class="fas fa-database"></i>
+                                    {% else %}
+                                        <i class="fas fa-layer-group"></i>
+                                    {% endif %}
+                                    <span>{{ section_name|title }}</span>
+                                    <span class="tab-count" id="count-{{ section_name }}">0</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- أقسام الصلاحيات -->
+                            {% for section_name, perms in permissions.items %}
+                            <div class="permissions-section {% if forloop.first %}active{% endif %}" id="section-{{ section_name }}">
+                                <div class="section-header">
+                                    <div class="section-title">
+                                        {% if section_name == 'dashboard' %}
+                                            <i class="fas fa-tachometer-alt"></i>
+                                        {% elif section_name == 'reservations' %}
+                                            <i class="fas fa-calendar-check"></i>
+                                        {% elif section_name == 'customers' %}
+                                            <i class="fas fa-users"></i>
+                                        {% elif section_name == 'vehicles' %}
+                                            <i class="fas fa-car"></i>
+                                        {% elif section_name == 'payments' %}
+                                            <i class="fas fa-credit-card"></i>
+                                        {% elif section_name == 'archive' or 'folder' in section_name %}
+                                            <i class="fas fa-archive"></i>
+                                        {% elif section_name == 'reports' or 'analytics' in section_name %}
+                                            <i class="fas fa-chart-bar"></i>
+                                        {% elif section_name == 'settings' %}
+                                            <i class="fas fa-cog"></i>
+                                        {% elif section_name == 'reviews' %}
+                                            <i class="fas fa-star"></i>
+                                        {% elif section_name == 'profile' %}
+                                            <i class="fas fa-user"></i>
+                                        {% elif section_name == 'system_logs' %}
+                                            <i class="fas fa-history"></i>
+                                        {% elif section_name == 'backup' %}
+                                            <i class="fas fa-database"></i>
+                                        {% else %}
+                                            <i class="fas fa-layer-group"></i>
+                                        {% endif %}
+                                        <span>{{ section_name|title }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <div class="section-count me-3" id="section-count-{{ section_name }}">0 / {{ perms|length }}</div>
+                                        <button type="button" class="select-all" data-section="{{ section_name }}">
+                                            <i class="fas fa-check-double"></i>
+                                            <span>{% trans "تحديد الكل" %}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="permissions-grid">
+                                    {% for perm in perms %}
+                                    <div class="permission-card {% if perm.active %}active{% endif %}" 
+                                         data-section="{{ section_name }}" 
+                                         data-permission="{{ perm.name }}">
+                                        <div class="permission-indicator"></div>
+                                        <div class="permission-level">
+                                            {% if "view_" in perm.name %}R{% elif "delete_" in perm.name %}D{% else %}W{% endif %}
+                                        </div>
+                                        <div class="permission-icon">
+                                            {% if "dashboard" in perm.name %}
+                                                <i class="fas fa-tachometer-alt"></i>
+                                            {% elif "reservations" in perm.name or "calendar" in perm.name %}
+                                                <i class="fas fa-calendar-check"></i>
+                                            {% elif "customer" in perm.name or "user" in perm.name %}
+                                                <i class="fas fa-users"></i>
+                                            {% elif "vehicle" in perm.name or "car" in perm.name %}
+                                                <i class="fas fa-car"></i>
+                                            {% elif "payment" in perm.name or "cost" in perm.name %}
+                                                <i class="fas fa-credit-card"></i>
+                                            {% elif "archive" in perm.name or "document" in perm.name or "folder" in perm.name %}
+                                                <i class="fas fa-archive"></i>
+                                            {% elif "analytic" in perm.name or "report" in perm.name %}
+                                                <i class="fas fa-chart-bar"></i>
+                                            {% elif "setting" in perm.name %}
+                                                <i class="fas fa-cog"></i>
+                                            {% elif "log" in perm.name %}
+                                                <i class="fas fa-history"></i>
+                                            {% elif "backup" in perm.name %}
+                                                <i class="fas fa-save"></i>
+                                            {% elif "review" in perm.name %}
+                                                <i class="fas fa-star"></i>
+                                            {% elif "repair" in perm.name or "condition" in perm.name %}
+                                                <i class="fas fa-tools"></i>
+                                            {% elif "export" in perm.name or "import" in perm.name %}
+                                                <i class="fas fa-file-export"></i>
+                                            {% elif "upload" in perm.name %}
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            {% elif "download" in perm.name %}
+                                                <i class="fas fa-cloud-download-alt"></i>
+                                            {% elif "custody" in perm.name %}
+                                                <i class="fas fa-clipboard-list"></i>
+                                            {% elif "notification" in perm.name %}
+                                                <i class="fas fa-bell"></i>
+                                            {% elif "profile" in perm.name or "password" in perm.name %}
+                                                <i class="fas fa-id-card"></i>
+                                            {% elif "2fa" in perm.name %}
+                                                <i class="fas fa-shield-alt"></i>
+                                            {% else %}
+                                                <i class="fas fa-file-alt"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="permission-title">{{ perm.name|title }}</div>
+                                        <div class="permission-desc">
+                                            {% if "view_" in perm.name %}
+                                                {% trans "صلاحية الاطلاع والعرض" %}
+                                            {% elif "edit_" in perm.name or "create_" in perm.name or "add_" in perm.name %}
+                                                {% trans "صلاحية التعديل والإضافة" %}
+                                            {% elif "delete_" in perm.name or "remove_" in perm.name %}
+                                                {% trans "صلاحية الحذف" %}
+                                            {% elif "approve_" in perm.name %}
+                                                {% trans "صلاحية الموافقة" %}
+                                            {% elif "reject_" in perm.name %}
+                                                {% trans "صلاحية الرفض" %}
+                                            {% elif "export_" in perm.name %}
+                                                {% trans "صلاحية التصدير" %}
+                                            {% elif "import_" in perm.name %}
+                                                {% trans "صلاحية الاستيراد" %}
+                                            {% else %}
+                                                {% trans "صلاحية النظام" %}
+                                            {% endif %}
+                                        </div>
+                                        <input type="checkbox" name="{{ section_name }}_{{ perm.name }}" 
+                                               id="perm_{{ section_name }}_{{ perm.name }}"
+                                               {% if perm.active %}checked{% endif %}
+                                               style="display: none;">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                            <button type="submit" class="save-permissions-btn">
+                                <i class="fas fa-save"></i>
+                                <span>{% trans "حفظ الصلاحيات" %}</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديد العناصر
+    const tabs = document.querySelectorAll('.tab-item[data-section]');
+    const sections = document.querySelectorAll('.permissions-section');
+    const permCards = document.querySelectorAll('.permission-card');
+    const selectAllBtns = document.querySelectorAll('.select-all');
+    const permissionsForm = document.getElementById('permissionsForm');
+    const permissionsDataInput = document.getElementById('permissions_data');
+    
+    // تهيئة عدادات الصلاحيات
+    updateAllCounters();
+    
+    // معالج النقر على التبويبات
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            
+            // إلغاء تنشيط جميع التبويبات والأقسام
+            tabs.forEach(t => t.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            
+            // تنشيط التبويب والقسم المحدد
+            this.classList.add('active');
+            document.getElementById('section-' + section).classList.add('active');
+        });
+    });
+    
+    // معالج النقر على بطاقات الصلاحيات
+    permCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // تبديل حالة البطاقة
+            this.classList.toggle('active');
+            
+            // تحديث حالة مربع الاختيار
+            const section = this.getAttribute('data-section');
+            const permission = this.getAttribute('data-permission');
+            const checkbox = document.getElementById('perm_' + section + '_' + permission);
+            
+            if (checkbox) {
+                checkbox.checked = this.classList.contains('active');
+            }
+            
+            // تحديث العدادات
+            updateSectionCounter(section);
+            updateTabCounter(section);
+        });
+    });
+    
+    // معالج تحديد الكل
+    selectAllBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            const cards = document.querySelectorAll(`.permission-card[data-section="${section}"]`);
+            const allActive = Array.from(cards).every(card => card.classList.contains('active'));
+            
+            // تبديل الحالة بناءً على ما إذا كانت جميع البطاقات نشطة بالفعل
+            cards.forEach(card => {
+                if (allActive) {
+                    card.classList.remove('active');
+                } else {
+                    card.classList.add('active');
+                }
+                
+                // تحديث مربع الاختيار المقابل
+                const permission = card.getAttribute('data-permission');
+                const checkbox = document.getElementById('perm_' + section + '_' + permission);
+                if (checkbox) {
+                    checkbox.checked = !allActive;
+                }
+            });
+            
+            // تحديث العدادات
+            updateSectionCounter(section);
+            updateTabCounter(section);
+        });
+    });
+    
+    // معالج إرسال النموذج
+    permissionsForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // جمع بيانات الصلاحيات
+        const permissionsData = {};
+        
+        tabs.forEach(tab => {
+            const section = tab.getAttribute('data-section');
+            permissionsData[section] = [];
+            
+            const cards = document.querySelectorAll(`.permission-card[data-section="${section}"]`);
+            cards.forEach(card => {
+                if (card.classList.contains('active')) {
+                    permissionsData[section].push(card.getAttribute('data-permission'));
+                }
+            });
+        });
+        
+        // تحديث حقل الإدخال المخفي بالبيانات المحولة إلى JSON
+        permissionsDataInput.value = JSON.stringify(permissionsData);
+        
+        // إرسال النموذج
+        this.submit();
+    });
+    
+    // وظيفة لتحديث عداد الصلاحيات في القسم
+    function updateSectionCounter(section) {
+        const cards = document.querySelectorAll(`.permission-card[data-section="${section}"]`);
+        const activeCards = document.querySelectorAll(`.permission-card[data-section="${section}"].active`);
+        const counterElement = document.getElementById('section-count-' + section);
+        
+        if (counterElement) {
+            counterElement.textContent = activeCards.length + ' / ' + cards.length;
+        }
+    }
+    
+    // وظيفة لتحديث عداد الصلاحيات في التبويب
+    function updateTabCounter(section) {
+        const activeCards = document.querySelectorAll(`.permission-card[data-section="${section}"].active`);
+        const counterElement = document.getElementById('count-' + section);
+        
+        if (counterElement) {
+            counterElement.textContent = activeCards.length;
+        }
+    }
+    
+    // وظيفة لتحديث جميع عدادات الصلاحيات
+    function updateAllCounters() {
+        const sections = new Set();
+        
+        permCards.forEach(card => {
+            sections.add(card.getAttribute('data-section'));
+        });
+        
+        sections.forEach(section => {
+            updateSectionCounter(section);
+            updateTabCounter(section);
+        });
+    }
+});
+</script>
+{% endblock %}
