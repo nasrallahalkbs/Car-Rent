@@ -49,11 +49,17 @@ def admin_required(view_func):
             messages.error(request, "يجب تسجيل الدخول أولاً")
             return redirect('login')
 
-        if not request.user.is_staff and not request.user.is_superuser:
+        if hasattr(request.user, 'is_admin') and request.user.is_admin:
+            # المستخدم مسؤول، السماح بالوصول
+            return view_func(request, *args, **kwargs)
+        elif request.user.is_staff or request.user.is_superuser:
+            # المستخدم مسؤول نظام، السماح بالوصول
+            return view_func(request, *args, **kwargs)
+        else:
+            # ليس مسؤولاً، منع الوصول وإعادة التوجيه إلى لوحة التحكم
             messages.error(request, "ليس لديك صلاحية للوصول إلى هذه الصفحة")
-            return redirect('index')
+            return redirect('admin_index')
 
-        return view_func(request, *args, **kwargs)
     return _wrapped_view
 
 def permission_required(section, permission):
@@ -87,17 +93,38 @@ def permission_required(section, permission):
                     
                     # إذا لم يكن لديه الصلاحية
                     messages.error(request, _("ليس لديك صلاحية للوصول إلى هذه الصفحة"))
-                    # إعادة التوجيه إلى لوحة تحكم المسؤول
-                    return redirect('admin_dashboard')
+                    # إعادة التوجيه إلى لوحة تحكم المسؤول بطريقة آمنة
+                    try:
+                        return redirect('admin_index')
+                    except Exception as e:
+                        logger.error(f"فشل في إعادة التوجيه إلى admin_index: {e}")
+                        # إذا فشل، نحاول العودة للصفحة السابقة
+                        referer = request.META.get('HTTP_REFERER')
+                        if referer:
+                            return redirect(referer)
+                        # أو نوجه للصفحة الرئيسية
+                        return redirect('index')
                     
             except AdminUser.DoesNotExist:
                 pass
             except Exception as e:
                 logger.error(f"خطأ في التحقق من الصلاحيات: {e}")
             
-            # إذا لم يكن مسؤولاً أو ليس لديه صلاحية، نعيده إلى صفحة تسجيل الدخول
+            # إذا لم يكن مسؤولاً أو ليس لديه صلاحية، نعرض رسالة خطأ
             messages.error(request, _("يجب تسجيل الدخول كمسؤول أو الحصول على الصلاحيات المناسبة"))
-            return redirect('login')
+            # إذا كان مسجل الدخول ومسؤول، نوجهه للوحة التحكم
+            if request.user.is_authenticated and hasattr(request.user, 'is_admin') and request.user.is_admin:
+                try:
+                    return redirect('admin_index')
+                except Exception as e:
+                    logger.error(f"فشل في إعادة التوجيه إلى admin_index: {e}")
+                    # إذا فشل، نحاول العودة للصفحة السابقة
+                    referer = request.META.get('HTTP_REFERER')
+                    if referer:
+                        return redirect(referer)
+                    return redirect('index')
+            else:
+                return redirect('login')
             
         return _wrapped_view
     
