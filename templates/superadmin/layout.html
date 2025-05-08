@@ -206,7 +206,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem 2rem;
+            padding: 0.5rem 2rem;
             background-color: white;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
             position: sticky;
@@ -232,7 +232,7 @@
         }
         
         .topbar-search input {
-            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            padding: 0.5rem 2.5rem 0.5rem 1rem;
             border-radius: var(--border-radius);
             border: 1px solid #e2e8f0;
             width: 100%;
@@ -241,7 +241,7 @@
         
         .topbar-search i {
             position: absolute;
-            left: 1rem;
+            {% if LANGUAGE_CODE == 'ar' %}left: auto; right: 1rem;{% else %}left: 1rem; right: auto;{% endif %}
             top: 50%;
             transform: translateY(-50%);
             color: #94a3b8;
@@ -259,17 +259,19 @@
             cursor: pointer;
             transition: var(--transition);
             position: relative;
+            text-decoration: none;
         }
         
         .topbar-icon:hover {
             background-color: #e2e8f0;
             color: #334155;
+            text-decoration: none;
         }
         
         .notification-badge {
             position: absolute;
             top: -5px;
-            right: -5px;
+            {% if LANGUAGE_CODE == 'ar' %}left: -5px;{% else %}right: -5px;{% endif %}
             background-color: var(--danger-color);
             color: white;
             border-radius: 50%;
@@ -845,29 +847,66 @@
         
         <!-- Main Content -->
         <main class="main-content">
-            <header class="topbar">
+            <div class="topbar">
                 <div class="topbar-left">
-                    <button class="sidebar-toggle d-lg-none">
+                    <button class="d-lg-none sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
                     <div class="topbar-search">
+                        <input type="text" placeholder="{% trans 'ابحث هنا...' %}" class="form-control">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="{% trans 'بحث...' %}" class="form-control">
                     </div>
                 </div>
                 
                 <div class="topbar-right">
                     <div class="topbar-icon">
-                        <i class="far fa-bell"></i>
+                        <a href="/{% if LANGUAGE_CODE %}{{ LANGUAGE_CODE }}/{% endif %}" class="text-reset" title="{% trans 'الصفحة الرئيسية للموقع' %}">
+                            <i class="fas fa-globe"></i>
+                        </a>
+                    </div>
+                    
+                    <!-- رابط الملف الشخصي -->
+                    <div class="topbar-icon">
+                        <a href="/{% if LANGUAGE_CODE %}{{ LANGUAGE_CODE }}/{% endif %}profile/" class="text-reset" title="{% trans 'الملف الشخصي' %}">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="topbar-icon">
+                        <i class="fas fa-bell"></i>
                         <span class="notification-badge">3</span>
                     </div>
                     
                     <div class="dropdown">
-                        <button class="btn dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                        <div class="topbar-icon" data-bs-toggle="dropdown">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <input type="hidden" name="language" value="ar">
+                                    <button type="submit" class="dropdown-item">العربية</button>
+                                </form>
+                            </li>
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <input type="hidden" name="language" value="en">
+                                    <button type="submit" class="dropdown-item">English</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <div class="topbar-icon" data-bs-toggle="dropdown">
                             <div class="avatar">
                                 {{ request.user.username|first|upper }}
                             </div>
-                        </button>
+                        </div>
                         <ul class="dropdown-menu dropdown-menu-end shadow">
                             <li><a class="dropdown-item" href="#"><i class="fas fa-user {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i> {% trans "الملف الشخصي" %}</a></li>
                             <li><a class="dropdown-item" href="#"><i class="fas fa-cog {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i> {% trans "الإعدادات" %}</a></li>
@@ -876,7 +915,7 @@
                         </ul>
                     </div>
                 </div>
-            </header>
+            </div>
             
             <div class="content-wrapper">
                 {% if messages %}
@@ -948,7 +987,7 @@
             // Toggle sidebar on mobile
             $('.sidebar-toggle').on('click', function() {
                 $('.superadmin-sidebar').toggleClass('d-none d-lg-block');
-                $('.main-content').toggleClass('ms-0 ms-lg-280');
+                $('.main-content').toggleClass('{% if LANGUAGE_CODE == 'ar' %}me-0 me-lg-280{% else %}ms-0 ms-lg-280{% endif %}');
             });
             
             // Password visibility toggle
