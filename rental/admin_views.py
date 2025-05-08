@@ -585,7 +585,7 @@ def admin_reservations(request):
     }
     
     # استخدام القالب المحسن
-    return render(request, 'admin/enhanced/reservations_fixed_sidebar.html', context)
+    return render(request, 'admin/reservations_new.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status
