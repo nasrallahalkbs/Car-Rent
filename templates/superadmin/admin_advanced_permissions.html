@@ -668,10 +668,16 @@
                             <span>{% trans "لا يمكن تعديل صلاحيات المسؤول الأعلى" %}</span>
                         </div>
                         {% else %}
-                        <button class="neo-btn success save-permissions-btn" disabled>
-                            <span class="neo-btn-icon"><i class="fas fa-save"></i></span>
-                            <span>{% trans "حفظ التغييرات" %}</span>
-                        </button>
+                        <!-- إضافة نموذج مخفي لإرسال البيانات -->
+                        <form id="permissions_form" method="post" action="{{ request.path }}">
+                            {% csrf_token %}
+                            <input type="hidden" id="permissions_data" name="permissions_data" value="{{ permissions_json }}">
+                            
+                            <button type="button" class="neo-btn success save-permissions-btn" disabled>
+                                <span class="neo-btn-icon"><i class="fas fa-save"></i></span>
+                                <span>{% trans "حفظ التغييرات" %}</span>
+                            </button>
+                        </form>
                         {% endif %}
                     </div>
                 </div>
@@ -2827,24 +2833,26 @@ function savePermissions(btn) {
        .html(`<span class="neo-btn-icon"><i class="fas fa-spinner fa-spin"></i></span>
               <span>{% trans "جاري الحفظ..." %}</span>`);
     
-    // محاكاة لعملية الحفظ (في التطبيق الفعلي ستكون طلب AJAX)
-    setTimeout(function() {
-        // إظهار حالة النجاح
-        btn.html(`<span class="neo-btn-icon"><i class="fas fa-check-circle"></i></span>
-                  <span>{% trans "تم الحفظ بنجاح" %}</span>`);
+    // جمع الصلاحيات من البطاقات النشطة
+    const selectedPermissions = {};
+    
+    // تجميع الصلاحيات حسب الأقسام
+    $('.permissions-section').each(function() {
+        const section = $(this).data('section');
+        selectedPermissions[section] = [];
         
-        // عرض رسالة نجاح
-        showAlert('{% trans "تم بنجاح" %}', 
-                  '{% trans "تم حفظ الصلاحيات المتقدمة بنجاح" %}', 
-                  'success');
-        
-        // إعادة الزر لحالته الأصلية بعد فترة
-        setTimeout(function() {
-            btn.html(`<span class="neo-btn-icon"><i class="fas fa-save"></i></span>
-                      <span>{% trans "حفظ التغييرات" %}</span>`);
-            btn.prop('disabled', false);
-        }, 2000);
-    }, 1000);
+        // جمع كل بطاقات الصلاحيات النشطة في هذا القسم
+        $(this).find('.permission-card.active').each(function() {
+            const permission = $(this).data('permission');
+            selectedPermissions[section].push(permission);
+        });
+    });
+    
+    // تحديث قيمة الحقل المخفي بالبيانات المجمعة
+    $('#permissions_data').val(JSON.stringify(selectedPermissions));
+    
+    // إرسال النموذج
+    $('#permissions_form').submit();
 }
 
 // عرض رسالة تنبيه أو إشعار
