@@ -146,7 +146,7 @@ $(document).ready(function() {
                         $('#saved_permissions_json').val(JSON.stringify(response.permissions));
                         
                         // تحديث المتغير العام للصلاحيات المحفوظة
-                        savedPermissions = response.permissions;
+                        window.savedPermissions = response.permissions;
                         
                         // تحديث واجهة المستخدم مباشرة
                         updateCardsFromPermissions(response.permissions);
@@ -216,68 +216,95 @@ $(document).ready(function() {
     // تهيئة الواجهة
     updateCardsFromPermissions(initialPermissions);
 
-    // إضافة دالة إظهار الإشعارات إذا لم تكن موجودة
+    // إضافة دالة إظهار الإشعارات المحسنة إذا لم تكن موجودة
     if (typeof showNotification !== 'function') {
-        window.showNotification = function(title, message, type = 'info') {
-            // التحقق من وجود عنصر الإشعارات
-            let notificationContainer = $('#notification-container');
-            if (notificationContainer.length === 0) {
-                notificationContainer = $('<div id="notification-container">').css({
-                    position: 'fixed',
-                    top: '20px',
-                    left: '20px',
-                    zIndex: 9999,
-                    maxWidth: '400px'
-                });
-                $('body').append(notificationContainer);
+        window.showNotification = function(title, message, type = 'success') {
+            // تحديد لون خلفية الإشعار
+            let bgColor, color, icon;
+            switch (type) {
+                case 'success':
+                    bgColor = '#d1e7dd';
+                    color = '#0f5132';
+                    icon = 'fas fa-check-circle';
+                    break;
+                case 'warning':
+                    bgColor = '#fff3cd';
+                    color = '#856404';
+                    icon = 'fas fa-exclamation-triangle';
+                    break;
+                case 'error':
+                    bgColor = '#f8d7da';
+                    color = '#842029';
+                    icon = 'fas fa-times-circle';
+                    break;
+                default:
+                    bgColor = '#cfe2ff';
+                    color = '#084298';
+                    icon = 'fas fa-info-circle';
             }
-
-            // إنشاء الإشعار
-            const notificationId = 'notification-' + new Date().getTime();
-            const notification = $('<div>').attr({
-                id: notificationId,
-                class: 'alert alert-' + (type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info')
-            }).css({
-                margin: '0 0 10px 0',
-                padding: '12px 15px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                animation: 'fadeIn 0.3s ease'
-            });
-
-            // إضافة محتوى الإشعار
-            const content = $('<div>').html(`
-                <strong>${title}</strong>
-                <p style="margin: 5px 0 0 0; font-size: 0.9rem;">${message}</p>
-            `);
             
-            // إضافة زر الإغلاق
-            const closeBtn = $('<button>').attr({
-                type: 'button',
-                class: 'close',
-                'aria-label': 'Close'
-            }).html('&times;').css({
-                marginLeft: '15px',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                color: '#666'
-            }).on('click', function() {
-                $('#' + notificationId).fadeOut(300, function() { $(this).remove(); });
-            });
+            // إنشاء عنصر الإشعار
+            const notificationId = 'notification-' + Date.now();
+            const notification = `
+                <div id="${notificationId}" class="notification" style="
+                    position: fixed;
+                    top: 20px;
+                    left: 20px;
+                    max-width: 350px;
+                    background-color: ${bgColor};
+                    color: ${color};
+                    padding: 15px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    z-index: 1000;
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 10px;
+                    transform: translateX(-100%);
+                    opacity: 0;
+                    transition: all 0.3s ease;
+                ">
+                    <div style="font-size: 1.2rem;"><i class="${icon}"></i></div>
+                    <div style="flex-grow: 1;">
+                        <div style="font-weight: 600; margin-bottom: 5px;">${title}</div>
+                        <div style="font-size: 0.9rem;">${message}</div>
+                    </div>
+                    <button onclick="document.getElementById('${notificationId}').remove()" style="
+                        background: none;
+                        border: none;
+                        cursor: pointer;
+                        color: inherit;
+                        opacity: 0.7;
+                        font-size: 1.2rem;
+                        padding: 0;
+                        margin-left: 10px;
+                    ">×</button>
+                </div>
+            `;
             
-            // تجميع الإشعار
-            notification.append(content).append(closeBtn);
-            notificationContainer.prepend(notification);
+            // إضافة الإشعار إلى الصفحة
+            $('body').append(notification);
             
-            // إخفاء تلقائي بعد 5 ثوان
-            setTimeout(function() {
-                $('#' + notificationId).fadeOut(500, function() { $(this).remove(); });
-            }, 5000);
+            // تفعيل الإشعار
+            setTimeout(() => {
+                $(`#${notificationId}`).css({
+                    transform: 'translateX(0)',
+                    opacity: 1
+                });
+                
+                // إخفاء الإشعار تلقائياً بعد 5 ثوان
+                setTimeout(() => {
+                    $(`#${notificationId}`).css({
+                        transform: 'translateX(-100%)',
+                        opacity: 0
+                    });
+                    
+                    // إزالة الإشعار من DOM بعد انتهاء الانتقال
+                    setTimeout(() => {
+                        $(`#${notificationId}`).remove();
+                    }, 300);
+                }, 5000);
+            }, 100);
         }
     }
 
