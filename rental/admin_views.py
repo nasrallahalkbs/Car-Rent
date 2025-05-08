@@ -1263,7 +1263,7 @@ def mark_as_paid(request, payment_id):
     return redirect('payment_details', payment_id=payment_id)
 
 @login_required
-@admin_required
+@permission_required("payments", "delete_payments")
 def cancel_payment(request, payment_id):
     """Cancel a pending payment and completely remove it from payment records"""
     payment = get_object_or_404(Reservation, id=payment_id)
@@ -1297,7 +1297,7 @@ def cancel_payment(request, payment_id):
     return redirect('admin_payments')
 
 @login_required
-@admin_required
+@permission_required("payments", "view_payments")
 def print_receipt(request, payment_id):
     """Show a printable receipt"""
     from django.utils.translation import get_language
@@ -1345,7 +1345,7 @@ def print_receipt(request, payment_id):
     return render(request, 'admin/payment_receipt_printable.html', context)
 
 @login_required
-@admin_required
+@permission_required("payments", "view_payments")
 def download_receipt(request, payment_id):
     """Generate a PDF receipt for download"""
     import io
@@ -1500,7 +1500,7 @@ def download_receipt(request, payment_id):
         return response
 
 @login_required
-@admin_required
+@permission_required("payments", "create_payments")
 def add_manual_payment(request):
     """Add a manual payment entry"""
     # Add debugging output
@@ -1738,7 +1738,7 @@ def edit_user(request, user_id):
     return render(request, 'admin/edit_user_form.html', context)
 
 @login_required
-@admin_required
+@permission_required("payments", "view_payments")
 def get_user_reservations(request, user_id):
     """API to get reservations for a specific user"""
     # Print debugging information
