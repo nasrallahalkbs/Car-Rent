@@ -584,9 +584,16 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    # استخدام القالب الجديد المحسن الذي قمنا بتحديثه
-    print("Rendering enhanced reservations template with context:", context.keys())
-    return render(request, 'admin/enhanced/reservations_fixed_sidebar.html', context)
+    # استخدام القالب الجديد المحسن الذي قمنا بتحديثه - تم تعديله لتحسين الشكل
+    print("Rendering enhanced reservations template v2 with context:", context.keys())
+    
+    # تعديل ليدعم صفحة جديدة
+    if request.GET.get('new_design', 'true') == 'true':
+        # استخدام التصميم الجديد المحسن 
+        return render(request, 'admin/reservations.html', context)
+    else:
+        # الاحتفاظ بالقالب القديم كنسخة احتياطية
+        return render(request, 'admin/enhanced/reservations_fixed_sidebar.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status
