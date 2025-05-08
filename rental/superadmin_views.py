@@ -385,18 +385,37 @@ def admin_advanced_permissions(request, admin_id):
     
     # معالجة طلب حفظ الصلاحيات
     if request.method == 'POST':
-        # جمع صلاحيات المسؤول من النموذج المرسل
-        selected_permissions = {}
-        for section in all_permissions:
-            selected_permissions[section] = []
+        try:
+            # قراءة البيانات المرسلة من حقل الإدخال المخفي permissions_data
+            permissions_data = request.POST.get('permissions_data', '{}')
+            selected_permissions = json.loads(permissions_data)
             
-        # البحث عن الصلاحيات المحددة في النموذج
-        for key, value in request.POST.items():
+            # التحقق من صحة البيانات المرسلة
+            for section, perms in selected_permissions.items():
+                if section not in all_permissions:
+                    selected_permissions[section] = []
+                    continue
+                    
+                # التحقق من أن جميع الصلاحيات المحددة متوافقة مع القائمة المتاحة
+                valid_perms = []
+                for perm in perms:
+                    if perm in all_permissions[section]:
+                        valid_perms.append(perm)
+                selected_permissions[section] = valid_perms
+                    
+        except (json.JSONDecodeError, ValueError):
+            # في حالة حدوث خطأ، استخدم الطريقة الاحتياطية القديمة
+            selected_permissions = {}
             for section in all_permissions:
-                if key.startswith(f"{section}_") and value == 'on':
-                    permission = key.replace(f"{section}_", "")
-                    if permission in all_permissions[section]:
-                        selected_permissions[section].append(permission)
+                selected_permissions[section] = []
+                
+            # البحث عن الصلاحيات المحددة في النموذج
+            for key, value in request.POST.items():
+                for section in all_permissions:
+                    if key.startswith(f"{section}_") and value == 'on':
+                        permission = key.replace(f"{section}_", "")
+                        if permission in all_permissions[section]:
+                            selected_permissions[section].append(permission)
         
         # حفظ الصلاحيات في قاعدة البيانات
         try:
