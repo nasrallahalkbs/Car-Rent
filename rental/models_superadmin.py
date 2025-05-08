@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from .models import User
+from django.conf import settings
 
 class Permission(models.Model):
     """نموذج الصلاحيات الخاصة بالنظام"""
@@ -32,7 +32,7 @@ class Role(models.Model):
 
 class AdminUser(models.Model):
     """نموذج معلومات إضافية للمسؤولين"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile', verbose_name=_('المستخدم'))
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='admin_profile', verbose_name=_('المستخدم'))
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, verbose_name=_('الدور'))
     is_superadmin = models.BooleanField(default=False, verbose_name=_('مسؤول أعلى'))
     last_login_ip = models.GenericIPAddressField(null=True, blank=True, verbose_name=_('آخر IP للدخول'))
