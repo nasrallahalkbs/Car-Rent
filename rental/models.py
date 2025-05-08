@@ -8,6 +8,8 @@ from django.conf import settings
 
 # استيراد نموذج العهدة
 from .models_custody import CustomerGuarantee
+# استيراد موديل AdminUser
+from .models_superadmin import AdminUser
 
 class User(AbstractUser):
     """Extended User model for car rental app"""
@@ -1108,7 +1110,7 @@ class CustomerSignature(models.Model):
 
 class AdminPermission(models.Model):
     # إدارة الصلاحيات المتقدمة للمسؤولين
-    admin = models.OneToOneField('rental.AdminUser', on_delete=models.CASCADE, related_name='admin_permissions')
+    admin = models.OneToOneField(AdminUser, on_delete=models.CASCADE, related_name='admin_permissions')
     permissions = models.TextField(null=True, blank=True)  # JSON سيتم تخزين الصلاحيات بتنسيق
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
