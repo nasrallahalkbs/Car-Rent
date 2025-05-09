@@ -17,6 +17,16 @@ class User(AbstractUser):
     is_admin = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
+    # الحقول الجديدة المطلوبة
+    GENDER_CHOICES = [
+        ('male', 'ذكر'),
+        ('female', 'أنثى'),
+    ]
+    
+    age = models.PositiveIntegerField(null=True, blank=True, verbose_name='العمر')
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True, verbose_name='النوع')
+    nationality = models.CharField(max_length=50, blank=True, null=True, verbose_name='الجنسية')
+    
     def __str__(self):
         return f"{self.username}"
 

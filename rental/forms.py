@@ -22,14 +22,26 @@ class LoginForm(AuthenticationForm):
 
 class RegisterForm(UserCreationForm):
     """User registration form"""
-    first_name = forms.CharField(max_length=30, required=True)
-    last_name = forms.CharField(max_length=30, required=True)
-    email = forms.EmailField(required=True)
-    phone = forms.CharField(max_length=20, required=True)
+    first_name = forms.CharField(max_length=30, required=True, label=_("الاسم الأول"))
+    last_name = forms.CharField(max_length=30, required=True, label=_("الاسم الأخير"))
+    email = forms.EmailField(required=True, label=_("البريد الإلكتروني"))
+    phone = forms.CharField(max_length=20, required=True, label=_("رقم الهاتف"))
+    
+    # الحقول الجديدة المطلوبة
+    GENDER_CHOICES = [
+        ('', '-- اختر النوع --'),
+        ('male', 'ذكر'),
+        ('female', 'أنثى'),
+    ]
+    
+    age = forms.IntegerField(required=False, min_value=18, max_value=100, label=_("العمر"))
+    gender = forms.ChoiceField(choices=GENDER_CHOICES, required=False, label=_("النوع"))
+    nationality = forms.CharField(max_length=50, required=False, label=_("الجنسية"))
     
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'password1', 'password2']
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 
+                 'age', 'gender', 'nationality', 'password1', 'password2']
 
 class CarSearchForm(forms.Form):
     """Form for searching cars"""
