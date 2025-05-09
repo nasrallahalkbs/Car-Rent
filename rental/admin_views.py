@@ -584,8 +584,8 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    # استخدام القالب الجديد المحسن للحجوزات
-    return render(request, 'admin/reservations_new.html', context)
+    # استخدام القالب المطابق للصورة المرفقة مع الحفاظ على وظائف الأزرار
+    return render(request, 'admin/reservations_exact.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status

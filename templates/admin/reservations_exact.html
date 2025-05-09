@@ -1,0 +1,879 @@
+{% extends 'admin/enhanced/admin_layout.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "الحجوزات" %} | {% trans "لوحة الإدارة" %}{% endblock %}
+
+{% block custom_css %}
+<style>
+  /* تصميم جدول الحجوزات المطابق للصورة المرفقة */
+  .reservations-container {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin: 20px 0;
+    overflow: hidden;
+  }
+  
+  /* رأس الصفحة */
+  .page-header {
+    background-color: #34495e;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px 10px 0 0;
+  }
+  
+  .filter-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .filter-item {
+    display: flex;
+    align-items: center;
+  }
+  
+  .filter-item label {
+    margin-right: 10px;
+    color: #495057;
+    font-weight: 500;
+  }
+  
+  .filter-select {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background-color: white;
+  }
+  
+  .search-bar {
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+  
+  .search-input {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 5px 10px;
+    padding-left: 30px;
+    width: 250px;
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    color: #6c757d;
+  }
+  
+  /* زر إضافة حجز */
+  .add-reservation-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 15px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  .add-reservation-btn i {
+    margin-right: 5px;
+  }
+  
+  /* تنسيق جدول الحجوزات */
+  .reservations-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .reservations-table th {
+    background-color: #f8f9fa;
+    color: #34495e;
+    font-weight: 600;
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .reservations-table td {
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid #edf2f7;
+    vertical-align: middle;
+  }
+  
+  .reservations-table tr:hover {
+    background-color: #f8f9fa;
+  }
+  
+  /* أعمدة خاصة */
+  .user-column {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  
+  .user-avatar i {
+    color: #6c757d;
+    font-size: 20px;
+  }
+  
+  .user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .user-details {
+    text-align: right;
+  }
+  
+  .user-name {
+    font-weight: 500;
+    color: #212529;
+    margin-bottom: 3px;
+  }
+  
+  .user-email {
+    font-size: 12px;
+    color: #6c757d;
+  }
+  
+  /* تنسيق شارات الحالة */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  
+  .status-badge i {
+    margin-right: 5px;
+    font-size: 11px;
+  }
+  
+  .status-badge.pending {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid #ffc107;
+  }
+  
+  .status-badge.confirmed {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    border: 1px solid #28a745;
+  }
+  
+  .status-badge.completed {
+    background-color: rgba(13, 110, 253, 0.2);
+    color: #0d6efd;
+    border: 1px solid #0d6efd;
+  }
+  
+  .status-badge.cancelled {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+    border: 1px solid #dc3545;
+  }
+  
+  /* تنسيق أزرار الإجراءات */
+  .action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+  }
+  
+  .action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    font-size: 12px;
+  }
+  
+  .action-btn-delete {
+    background-color: #fff;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+  }
+  
+  .action-btn-view {
+    background-color: #fff;
+    color: #0d6efd;
+    border: 1px solid #0d6efd;
+  }
+  
+  .action-btn-edit {
+    background-color: #fff;
+    color: #28a745;
+    border: 1px solid #28a745;
+  }
+  
+  .action-btn-cancel {
+    background-color: #fff;
+    color: #ffc107;
+    border: 1px solid #ffc107;
+  }
+  
+  .action-btn-pay {
+    background-color: #fff;
+    color: #17a2b8;
+    border: 1px solid #17a2b8;
+  }
+  
+  /* تنسيق عرض التاريخ */
+  .date-range {
+    font-size: 13px;
+    color: #495057;
+  }
+  
+  .date-divider {
+    color: #6c757d;
+    margin: 0 5px;
+  }
+  
+  /* تنسيق عرض السعر */
+  .price-display {
+    font-weight: 600;
+    color: #212529;
+  }
+  
+  /* معالجة الصفحة بشكل عام */
+  .main-container {
+    padding: 20px;
+  }
+  
+  /* تحسين توافق RTL */
+  [dir="rtl"] .user-column {
+    flex-direction: row-reverse;
+  }
+  
+  [dir="rtl"] .user-avatar {
+    margin-right: 0;
+    margin-left: 10px;
+  }
+  
+  [dir="rtl"] .user-details {
+    text-align: right;
+  }
+  
+  [dir="rtl"] .status-badge i {
+    margin-right: 0;
+    margin-left: 5px;
+  }
+  
+  [dir="rtl"] .add-reservation-btn i {
+    margin-right: 0;
+    margin-left: 5px;
+  }
+  
+  /* تصميم مطابق للصورة */
+  .exact-table {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  
+  .exact-table th {
+    background-color: #34495e !important;
+    color: white !important;
+    font-weight: 500;
+    padding: 12px 15px;
+    text-align: center;
+    border: none;
+  }
+  
+  .exact-table td {
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+  }
+  
+  .exact-table tr:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .exact-action-buttons {
+    display: flex;
+    justify-content: flex-start;
+    gap: 5px;
+  }
+  
+  .exact-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    border: none;
+    font-size: 12px;
+  }
+  
+  .btn-red {
+    background-color: #dc3545;
+  }
+  
+  .btn-blue {
+    background-color: #0d6efd;
+  }
+  
+  .btn-yellow {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .btn-cyan {
+    background-color: #17a2b8;
+  }
+  
+  .reservations-wrapper {
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .action-column {
+    display: flex;
+    justify-content: flex-start;
+    gap: 5px;
+  }
+  
+  .id-badge {
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-weight: 500;
+    font-size: 12px;
+  }
+  
+  /* أزرار الإجراءات المخصصة */
+  .custom-action-buttons {
+    display: flex;
+    gap: 3px;
+  }
+  
+  .action-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .action-icon:hover {
+    opacity: 0.8;
+  }
+  
+  .action-icon-red {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .action-icon-blue {
+    background-color: #0d6efd;
+    color: white;
+  }
+  
+  .action-icon-yellow {
+    background-color: #ffc107;
+    color: white;
+  }
+  
+  .action-icon-cyan {
+    background-color: #17a2b8;
+    color: white;
+  }
+  
+  /* مطابق للصورة المرفقة */
+  .exact-match-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .exact-match-table th {
+    background-color: #f8f9fa;
+    color: #004aad;
+    font-weight: 500;
+    padding: 10px;
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .exact-match-table td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #333;
+  }
+  
+  .status-badge-exact {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: normal;
+    display: inline-block;
+    text-align: center;
+  }
+  
+  .status-confirmed {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    border: 1px solid #28a745;
+  }
+  
+  .status-pending {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #d39e00;
+    border: 1px solid #ffc107;
+  }
+  
+  .car-model {
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .car-year {
+    color: #777;
+    font-size: 12px;
+  }
+  
+  .exact-action-color {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    margin: 0 2px;
+  }
+  
+  .action-red {
+    background-color: #dc3545;
+  }
+  
+  .action-blue {
+    background-color: #17a2b8;
+  }
+  
+  .action-yellow {
+    background-color: #ffc107;
+  }
+  
+  /* تحسينات إضافية */
+  .simple-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .simple-table th {
+    background-color: #34495e;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-weight: 500;
+  }
+  
+  .simple-table td {
+    padding: 8px 10px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .simple-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .simple-table tr:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .action-icons {
+    display: flex;
+    gap: 5px;
+  }
+  
+  .action-btn-simple {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    color: white;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+  <!-- رأس الصفحة مع خيارات البحث والفلترة -->
+  <div class="reservations-wrapper mb-4">
+    <div class="page-header">
+      <h4 class="m-0">{% trans "الحجوزات" %}</h4>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-item">
+        <label for="status-filter">{% trans "كل الحالات" %}</label>
+        <select id="status-filter" class="filter-select">
+          <option>{% trans "الكل" %}</option>
+          <option>{% trans "قيد المراجعة" %}</option>
+          <option>{% trans "تمت الموافقة" %}</option>
+          <option>{% trans "مكتمل" %}</option>
+          <option>{% trans "ملغي" %}</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label for="payment-filter">{% trans "حالة الدفع" %}</label>
+        <select id="payment-filter" class="filter-select">
+          <option>{% trans "الكل" %}</option>
+          <option>{% trans "مدفوع" %}</option>
+          <option>{% trans "غير مدفوع" %}</option>
+        </select>
+      </div>
+      <div class="search-bar">
+        <input type="text" class="search-input" placeholder="{% trans 'اسم العميل، رقم الحجز...' %}">
+        <i class="fas fa-search search-icon"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- إحصائيات الحجوزات -->
+  <div class="d-flex justify-content-between mb-4">
+    <div class="card border-0 shadow-sm" style="width: 23%;">
+      <div class="card-body text-center py-3">
+        <div class="d-flex align-items-center justify-content-center mb-2" style="height: 40px;">
+          <i class="fas fa-hourglass-half text-warning" style="font-size: 24px;"></i>
+        </div>
+        <h6 class="mb-1 text-muted">{% trans "قيد المراجعة" %}</h6>
+        <h4 class="mb-0 fw-bold text-warning">{{ pending_count }}</h4>
+        <small class="text-muted">{% trans "حجز" %}</small>
+      </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm" style="width: 23%;">
+      <div class="card-body text-center py-3">
+        <div class="d-flex align-items-center justify-content-center mb-2" style="height: 40px;">
+          <i class="fas fa-check-circle text-success" style="font-size: 24px;"></i>
+        </div>
+        <h6 class="mb-1 text-muted">{% trans "تمت الموافقة" %}</h6>
+        <h4 class="mb-0 fw-bold text-success">{{ confirmed_count }}</h4>
+        <small class="text-muted">{% trans "حجز" %}</small>
+      </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm" style="width: 23%;">
+      <div class="card-body text-center py-3">
+        <div class="d-flex align-items-center justify-content-center mb-2" style="height: 40px;">
+          <i class="fas fa-check-double text-primary" style="font-size: 24px;"></i>
+        </div>
+        <h6 class="mb-1 text-muted">{% trans "مكتمل" %}</h6>
+        <h4 class="mb-0 fw-bold text-primary">{{ completed_count }}</h4>
+        <small class="text-muted">{% trans "حجز" %}</small>
+      </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm" style="width: 23%;">
+      <div class="card-body text-center py-3">
+        <div class="d-flex align-items-center justify-content-center mb-2" style="height: 40px;">
+          <i class="fas fa-ban text-danger" style="font-size: 24px;"></i>
+        </div>
+        <h6 class="mb-1 text-muted">{% trans "ملغي" %}</h6>
+        <h4 class="mb-0 fw-bold text-danger">{{ cancelled_count }}</h4>
+        <small class="text-muted">{% trans "حجز" %}</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- جدول الحجوزات (مطابق للصورة المرفقة) -->
+  <div class="table-responsive">
+    <table class="simple-table">
+      <thead>
+        <tr>
+          <th>{% trans "رقم الحجز" %}</th>
+          <th>{% trans "العميل" %}</th>
+          <th>{% trans "السيارة" %}</th>
+          <th>{% trans "التاريخ" %}</th>
+          <th>{% trans "المبلغ" %}</th>
+          <th>{% trans "حالة الحجز" %}</th>
+          <th>{% trans "حالة الدفع" %}</th>
+          <th>{% trans "تاريخ الإنشاء" %}</th>
+          <th>{% trans "الإجراءات" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for reservation in reservations %}
+        <tr>
+          <td>
+            <span class="fw-bold" style="color: #2d3748;">#{{ reservation.id }}</span>
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #34495e; display: flex; align-items: center; justify-content: center; margin-right: 8px;">
+                <i class="fas fa-user text-white" style="font-size: 14px;"></i>
+              </div>
+              <div style="text-align: right;">
+                {% if reservation.user %}
+                <div style="font-weight: 500; font-size: 14px;">{{ reservation.user.name }}</div>
+                <div style="font-size: 12px; color: #6c757d;">{{ reservation.user.email }}</div>
+                {% else %}
+                <div style="font-weight: 500; font-size: 14px;">{{ reservation.full_name }}</div>
+                <div style="font-size: 12px; color: #6c757d;">{{ reservation.email }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="text-align: center;">
+              <div style="font-weight: 500; font-size: 14px;">{{ reservation.car.make }} {{ reservation.car.model }}</div>
+              <div style="font-size: 12px; color: #6c757d;">{{ reservation.car.year }}</div>
+            </div>
+          </td>
+          <td>
+            <div style="font-size: 14px;">
+              <div>{{ reservation.start_date|date:"Y/m/d" }} - {{ reservation.end_date|date:"Y/m/d" }}</div>
+              <div style="font-size: 12px; color: #6c757d;">{{ reservation.days_count }} {% trans "يوم" %}</div>
+            </div>
+          </td>
+          <td>
+            <span style="font-weight: 600; font-size: 14px;">{{ reservation.total_price }} {% trans "د.ك" %}</span>
+          </td>
+          <td>
+            {% if reservation.status == 'pending' %}
+            <span style="background-color: rgba(255, 193, 7, 0.2); color: #ffc107; border-radius: 4px; padding: 5px 10px; font-size: 12px; display: inline-block;">
+              <i class="fas fa-hourglass-half me-1"></i> {% trans "قيد المراجعة" %}
+            </span>
+            {% elif reservation.status == 'confirmed' %}
+            <span style="background-color: rgba(40, 167, 69, 0.2); color: #28a745; border-radius: 4px; padding: 5px 10px; font-size: 12px; display: inline-block;">
+              <i class="fas fa-check-circle me-1"></i> {% trans "تمت الموافقة" %}
+            </span>
+            {% elif reservation.status == 'completed' %}
+            <span style="background-color: rgba(13, 110, 253, 0.2); color: #0d6efd; border-radius: 4px; padding: 5px 10px; font-size: 12px; display: inline-block;">
+              <i class="fas fa-check-double me-1"></i> {% trans "مكتمل" %}
+            </span>
+            {% elif reservation.status == 'cancelled' %}
+            <span style="background-color: rgba(220, 53, 69, 0.2); color: #dc3545; border-radius: 4px; padding: 5px 10px; font-size: 12px; display: inline-block;">
+              <i class="fas fa-ban me-1"></i> {% trans "ملغي" %}
+            </span>
+            {% endif %}
+          </td>
+          <td>
+            {% if reservation.payment_status == 'paid' %}
+            <span style="background-color: rgba(40, 167, 69, 0.2); color: #28a745; border-radius: 4px; padding: 5px 10px; font-size: 12px; display: inline-block;">
+              <i class="fas fa-check-square me-1"></i> {% trans "مدفوع" %}
+            </span>
+            {% elif reservation.payment_status == 'pending' %}
+            <span style="background-color: rgba(255, 193, 7, 0.2); color: #ffc107; border-radius: 4px; padding: 5px 10px; font-size: 12px; display: inline-block;">
+              <i class="fas fa-clock me-1"></i> {% trans "في انتظار الدفع" %}
+            </span>
+            {% elif reservation.payment_status == 'refunded' %}
+            <span style="background-color: rgba(13, 110, 253, 0.2); color: #0d6efd; border-radius: 4px; padding: 5px 10px; font-size: 12px; display: inline-block;">
+              <i class="fas fa-undo me-1"></i> {% trans "مسترجع" %}
+            </span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-size: 13px; color: #6c757d;">{{ reservation.created_at|date:"Y/m/d" }}</span>
+          </td>
+          <td>
+            <div style="display: flex; justify-content: center;">
+              <!-- الحفاظ على نفس أزرار الإجراءات كما هي موجودة في القالب الأصلي، مع تحديث المظهر فقط -->
+              <a href="{% url 'admin_reservation_detail' reservation.id %}" class="btn" style="width: 28px; height: 28px; padding: 0; margin: 0 2px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: white; background-color: #0d6efd;" data-bs-toggle="tooltip" title="{% trans 'عرض التفاصيل' %}">
+                <i class="fas fa-eye" style="font-size: 12px;"></i>
+              </a>
+
+              {% if reservation.status == 'pending' %}
+              <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="btn" style="width: 28px; height: 28px; padding: 0; margin: 0 2px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: white; background-color: #28a745;" data-bs-toggle="tooltip" title="{% trans 'قبول الحجز' %}">
+                <i class="fas fa-check" style="font-size: 12px;"></i>
+              </a>
+              {% endif %}
+
+              {% if reservation.status != 'cancelled' and reservation.status != 'completed' %}
+              <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="btn" style="width: 28px; height: 28px; padding: 0; margin: 0 2px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: #212529; background-color: #ffc107;" data-bs-toggle="tooltip" title="{% trans 'إلغاء الحجز' %}">
+                <i class="fas fa-ban" style="font-size: 12px;"></i>
+              </a>
+              {% endif %}
+
+              {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
+              <a href="{% url 'mark_as_paid' reservation.id %}" class="btn" style="width: 28px; height: 28px; padding: 0; margin: 0 2px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: white; background-color: #17a2b8;" data-bs-toggle="tooltip" title="{% trans 'تعيين كمدفوع' %}">
+                <i class="fas fa-dollar-sign" style="font-size: 12px;"></i>
+              </a>
+              {% endif %}
+
+              {% if reservation.status == 'confirmed' and reservation.payment_status == 'paid' %}
+              <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="btn" style="width: 28px; height: 28px; padding: 0; margin: 0 2px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: white; background-color: #17a2b8;" data-bs-toggle="tooltip" title="{% trans 'إكمال الحجز' %}">
+                <i class="fas fa-flag-checkered" style="font-size: 12px;"></i>
+              </a>
+              {% endif %}
+
+              <a href="{% url 'delete_reservation' reservation.id %}" class="btn" style="width: 28px; height: 28px; padding: 0; margin: 0 2px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: white; background-color: #dc3545;" onclick="return confirm('{% trans "هل أنت متأكد من رغبتك في حذف هذا الحجز بشكل نهائي؟" %}');" data-bs-toggle="tooltip" title="{% trans 'حذف' %}">
+                <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center py-4">
+            <div class="py-4">
+              <i class="fas fa-calendar-times mb-3" style="font-size: 40px; color: #d3d3d3;"></i>
+              <h5 class="mb-2" style="color: #6c757d;">{% trans "لا توجد حجوزات" %}</h5>
+              <p class="text-muted">{% trans "لم يتم العثور على أي حجوزات مطابقة للمعايير المحددة." %}</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ترقيم الصفحات -->
+  {% if reservations.has_other_pages %}
+  <div class="d-flex justify-content-center mt-4">
+    <ul class="pagination">
+      {% if reservations.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ reservations.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="fas fa-chevron-left"></i>
+        </span>
+      </li>
+      {% endif %}
+      
+      {% for i in reservations.paginator.page_range %}
+      {% if reservations.number == i %}
+      <li class="page-item active">
+        <span class="page-link">{{ i }}</span>
+      </li>
+      {% else %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ i }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ i }}</a>
+      </li>
+      {% endif %}
+      {% endfor %}
+      
+      {% if reservations.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ reservations.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <i class="fas fa-chevron-right"></i>
+        </span>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  // تفعيل tooltips
+  document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // تفعيل البحث في الجدول
+    document.querySelector('.search-input').addEventListener('keyup', function(e) {
+      if (e.key === 'Enter') {
+        window.location.href = '?search=' + this.value;
+      }
+    });
+    
+    // تفعيل تغيير الحالة
+    document.querySelector('#status-filter').addEventListener('change', function() {
+      const status = this.value;
+      if (status === 'الكل' || status === 'All') {
+        window.location.href = '?';
+      } else {
+        let statusMap = {
+          'قيد المراجعة': 'pending',
+          'تمت الموافقة': 'confirmed',
+          'مكتمل': 'completed',
+          'ملغي': 'cancelled',
+          'Pending': 'pending',
+          'Confirmed': 'confirmed',
+          'Completed': 'completed',
+          'Cancelled': 'cancelled'
+        };
+        window.location.href = '?status=' + statusMap[status];
+      }
+    });
+    
+    // تفعيل تغيير حالة الدفع
+    document.querySelector('#payment-filter').addEventListener('change', function() {
+      const status = this.value;
+      if (status === 'الكل' || status === 'All') {
+        window.location.href = '?';
+      } else {
+        let statusMap = {
+          'مدفوع': 'paid',
+          'غير مدفوع': 'pending',
+          'Paid': 'paid',
+          'Unpaid': 'pending'
+        };
+        window.location.href = '?payment_status=' + statusMap[status];
+      }
+    });
+  });
+  
+  // وظيفة الطباعة
+  function printTable() {
+    var printContents = document.querySelector('.table-responsive').innerHTML;
+    var originalContents = document.body.innerHTML;
+    
+    document.body.innerHTML = '<div class="container mt-4"><h2 class="text-center mb-4">تقرير الحجوزات</h2>' + printContents + '</div>';
+    
+    window.print();
+    
+    document.body.innerHTML = originalContents;
+    location.reload();
+  }
+</script>
+{% endblock %}
