@@ -1,0 +1,1333 @@
+/* تصميم خيالي لجدول الحجوزات - صمم بواسطة خبير تجربة المستخدم */
+
+:root {
+    /* الألوان الأساسية */
+    --primary-color: #6c5ce7;
+    --primary-light: #a29bfe;
+    --primary-dark: #4834d4;
+    --success: #00b894;
+    --warning: #fdcb6e;
+    --danger: #d63031;
+    --info: #0984e3;
+    
+    /* ألوان التدرج */
+    --gradient-primary: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    --gradient-success: linear-gradient(135deg, #00b894 0%, #55efc4 100%);
+    --gradient-warning: linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%);
+    --gradient-danger: linear-gradient(135deg, #d63031 0%, #ff7675 100%);
+    --gradient-info: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%);
+    
+    /* ألوان الثيمات */
+    --dark: #2d3436;
+    --gray: #636e72;
+    --light-gray: #dfe6e9;
+    --white: #ffffff;
+    --background: #f8f9fa;
+    
+    /* التصميم */
+    --border-radius: 12px;
+    --card-border-radius: 16px;
+    --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05), 0 6px 6px rgba(0, 0, 0, 0.02);
+    --card-box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08), 0 10px 10px rgba(0, 0, 0, 0.03);
+    --button-box-shadow: 0 4px 6px rgba(108, 92, 231, 0.2);
+    --transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* تصميم الخلفية */
+body {
+    background-color: var(--background);
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(108, 92, 231, 0.05) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(0, 184, 148, 0.05) 0%, transparent 20%),
+        radial-gradient(circle at 50% 50%, rgba(253, 203, 110, 0.03) 0%, transparent 30%);
+    background-attachment: fixed;
+}
+
+/* تنسيق الصفحة */
+.container-fluid {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* العنوان والوصف */
+.dashboard-header {
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 5;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.02em;
+    display: inline-block;
+}
+
+.dashboard-subtitle {
+    font-size: 1.125rem;
+    color: var(--gray);
+    max-width: 600px;
+    line-height: 1.6;
+}
+
+/* بطاقات الإحصائيات */
+.stats-card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.stats-card {
+    position: relative;
+    padding: 2rem;
+    border-radius: var(--card-border-radius);
+    background-color: var(--white);
+    box-shadow: var(--card-box-shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+    z-index: 2;
+}
+
+.stats-card:hover {
+    transform: translateY(-7px) scale(1.03);
+    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.1), 0 15px 15px rgba(0, 0, 0, 0.04);
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    border-radius: 20px 20px 0 0;
+}
+
+.stats-card.pending::before {
+    background: var(--gradient-warning);
+}
+
+.stats-card.confirmed::before {
+    background: var(--gradient-primary);
+}
+
+.stats-card.completed::before {
+    background: var(--gradient-success);
+}
+
+.stats-card.cancelled::before {
+    background: var(--gradient-danger);
+}
+
+.stats-card-title {
+    font-size: 1.125rem;
+    color: var(--gray);
+    margin-bottom: 1rem;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.stats-card-title::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--light-gray);
+    border-radius: 3px;
+}
+
+.stats-card-value {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--dark);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.stats-card-icon {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    height: 3.5rem;
+    width: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.5rem;
+    opacity: 0.9;
+    z-index: 1;
+}
+
+.stats-card.pending .stats-card-icon {
+    background: var(--gradient-warning);
+    color: #b57614;
+}
+
+.stats-card.confirmed .stats-card-icon {
+    background: var(--gradient-primary);
+    color: #ffffff;
+}
+
+.stats-card.completed .stats-card-icon {
+    background: var(--gradient-success);
+    color: #ffffff;
+}
+
+.stats-card.cancelled .stats-card-icon {
+    background: var(--gradient-danger);
+    color: #ffffff;
+}
+
+.stats-card-bottom {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    color: var(--gray);
+    font-size: 0.925rem;
+}
+
+.stats-card-bottom i {
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* فلاتر البحث والتصفية */
+.filters-container {
+    background-color: var(--white);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.filters-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23f0f3f5' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.filters-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.75rem;
+    cursor: pointer;
+    border-radius: var(--card-border-radius);
+    background-color: var(--white);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    position: relative;
+    z-index: 2;
+    transition: var(--transition);
+}
+
+.filters-toggle:hover {
+    background-color: #f9fafc;
+}
+
+.filters-toggle-text {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+}
+
+.filters-toggle-text i {
+    margin-left: 0.75rem;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    background-color: rgba(108, 92, 231, 0.1);
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.filters-toggle:hover .filters-toggle-text i {
+    transform: rotate(5deg);
+}
+
+.filters-toggle-icon {
+    transition: var(--transition);
+    background-color: rgba(108, 92, 231, 0.1);
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.filters-toggle-icon i {
+    transition: var(--transition);
+}
+
+.filters-content {
+    padding: 1.75rem;
+    border-top: 1px solid var(--light-gray);
+    display: none;
+}
+
+.filters-content.open {
+    display: block;
+    animation: slideDown 0.4s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.filters-row:last-child {
+    margin-bottom: 0;
+}
+
+.filter-group {
+    flex: 1 1 220px;
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gray);
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+}
+
+.filter-label i {
+    margin-left: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--primary-light);
+}
+
+.filter-select, .filter-input {
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--light-gray);
+    border-radius: 12px;
+    background-color: var(--white);
+    color: var(--dark);
+    font-size: 0.95rem;
+    transition: var(--transition);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c5ce7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.filter-input {
+    background-image: none;
+    padding-right: 1rem;
+}
+
+.filter-select:focus, .filter-input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
+}
+
+.filter-select:hover, .filter-input:hover {
+    border-color: var(--primary-light);
+}
+
+.filter-button {
+    padding: 0.9rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: auto;
+    box-shadow: var(--button-box-shadow);
+}
+
+.filter-button {
+    background: var(--gradient-primary);
+    color: var(--white);
+}
+
+.filter-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(108, 92, 231, 0.3);
+}
+
+.filter-button.secondary {
+    background: #f5f4fe;
+    color: var(--primary-color);
+    box-shadow: none;
+    border: 1px solid rgba(108, 92, 231, 0.2);
+}
+
+.filter-button.secondary:hover {
+    background: #eae8fd;
+    box-shadow: 0 4px 6px rgba(108, 92, 231, 0.1);
+}
+
+.filter-button i {
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* فلاتر RTL */
+[dir="rtl"] .filter-select {
+    background-position: left 1rem center;
+    padding-right: 1rem;
+    padding-left: 2.5rem;
+}
+
+/* جدول الحجوزات */
+.table-container {
+    background-color: var(--white);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--card-box-shadow);
+    overflow: hidden;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.table-container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to top, var(--white), transparent);
+    pointer-events: none;
+    opacity: 0;
+    transition: var(--transition);
+    z-index: 3;
+}
+
+.table-container:hover::after {
+    opacity: 0.03;
+}
+
+.reservation-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    position: relative;
+}
+
+.reservation-table th, .reservation-table td {
+    padding: 1.25rem;
+    text-align: right;
+    border-bottom: 1px solid var(--light-gray);
+    position: relative;
+}
+
+.reservation-table th {
+    background: linear-gradient(to bottom, #f0ecfe, #f8f7fe);
+    color: var(--primary-dark);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+.reservation-table tr:last-child td {
+    border-bottom: none;
+}
+
+.reservation-table tbody tr {
+    transition: var(--transition);
+}
+
+.reservation-table tbody tr:hover {
+    background-color: #f8f7fe;
+    transform: scale(1.005);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    z-index: 5;
+}
+
+/* تصميم عناصر الحجز */
+.reservation-id {
+    font-weight: 700;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: var(--transition);
+    font-size: 1.1rem;
+    position: relative;
+    display: inline-block;
+}
+
+.reservation-id::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    transition: var(--transition);
+}
+
+.reservation-id:hover::after {
+    width: 100%;
+}
+
+.customer-info, .car-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.customer-name, .car-name {
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 0.3rem;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.customer-name::before, .car-name::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background-color: var(--primary-light);
+    border-radius: 50%;
+    margin-left: 0.5rem;
+    display: inline-block;
+}
+
+.customer-email, .car-model {
+    font-size: 0.875rem;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+}
+
+.customer-email i, .car-model i {
+    margin-left: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--primary-light);
+    opacity: 0.7;
+}
+
+.reservation-date {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.date-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(108, 92, 231, 0.05);
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.date-item:hover {
+    background-color: rgba(108, 92, 231, 0.1);
+}
+
+.date-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.date-label i {
+    margin-left: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.date-value {
+    font-weight: 500;
+    color: var(--dark);
+    font-size: 0.9rem;
+}
+
+.duration-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: linear-gradient(135deg, #f0ecfe, #f8f7fe);
+    padding: 0.75rem;
+    border-radius: 10px;
+}
+
+.duration-value {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+.duration-days {
+    font-size: 0.875rem;
+    color: var(--gray);
+    font-weight: 500;
+}
+
+.price-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.price-amount {
+    font-weight: 700;
+    color: var(--dark);
+    font-size: 1.2rem;
+    position: relative;
+    padding-left: 0.5rem;
+}
+
+.price-amount::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: var(--success);
+    border-radius: 3px;
+}
+
+.price-details {
+    font-size: 0.8rem;
+    color: var(--gray);
+    margin-top: 0.3rem;
+}
+
+/* شارات الحالة */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.status-badge i {
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.badge-pending {
+    background: linear-gradient(135deg, rgba(253, 203, 110, 0.2), rgba(253, 203, 110, 0.4));
+    color: #b57614;
+    border: 1px solid rgba(253, 203, 110, 0.3);
+}
+
+.badge-confirmed {
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.2), rgba(108, 92, 231, 0.4));
+    color: var(--primary-dark);
+    border: 1px solid rgba(108, 92, 231, 0.3);
+}
+
+.badge-completed {
+    background: linear-gradient(135deg, rgba(0, 184, 148, 0.2), rgba(0, 184, 148, 0.4));
+    color: #00896c;
+    border: 1px solid rgba(0, 184, 148, 0.3);
+}
+
+.badge-cancelled {
+    background: linear-gradient(135deg, rgba(214, 48, 49, 0.2), rgba(214, 48, 49, 0.4));
+    color: #b52a2b;
+    border: 1px solid rgba(214, 48, 49, 0.3);
+}
+
+.status-badge.paid {
+    background: linear-gradient(135deg, rgba(0, 184, 148, 0.2), rgba(0, 184, 148, 0.4));
+    color: #00896c;
+    border: 1px solid rgba(0, 184, 148, 0.3);
+}
+
+.status-badge.unpaid {
+    background: linear-gradient(135deg, rgba(214, 48, 49, 0.2), rgba(214, 48, 49, 0.4));
+    color: #b52a2b;
+    border: 1px solid rgba(214, 48, 49, 0.3);
+}
+
+.status-badge.partial {
+    background: linear-gradient(135deg, rgba(253, 203, 110, 0.2), rgba(253, 203, 110, 0.4));
+    color: #b57614;
+    border: 1px solid rgba(253, 203, 110, 0.3);
+}
+
+/* أزرار الإجراءات */
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.action-button {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background-color: var(--white);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: var(--transition);
+    text-decoration: none;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.action-button:before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    opacity: 0;
+    transition: var(--transition);
+    transform: scale(0.5);
+    border-radius: 12px;
+}
+
+.action-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+}
+
+.action-button:hover:before {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.action-button i {
+    z-index: 2;
+    transition: var(--transition);
+}
+
+.action-button:hover i {
+    transform: scale(1.2);
+}
+
+.action-button.view {
+    color: var(--primary-color);
+}
+
+.action-button.view:before {
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.2), rgba(108, 92, 231, 0.4));
+}
+
+.action-button.confirm {
+    color: var(--success);
+}
+
+.action-button.confirm:before {
+    background: linear-gradient(135deg, rgba(0, 184, 148, 0.2), rgba(0, 184, 148, 0.4));
+}
+
+.action-button.edit {
+    color: var(--info);
+}
+
+.action-button.edit:before {
+    background: linear-gradient(135deg, rgba(9, 132, 227, 0.2), rgba(9, 132, 227, 0.4));
+}
+
+.action-button.cancel {
+    color: var(--warning);
+}
+
+.action-button.cancel:before {
+    background: linear-gradient(135deg, rgba(253, 203, 110, 0.2), rgba(253, 203, 110, 0.4));
+}
+
+.action-button.delete {
+    color: var(--danger);
+}
+
+.action-button.delete:before {
+    background: linear-gradient(135deg, rgba(214, 48, 49, 0.2), rgba(214, 48, 49, 0.4));
+}
+
+/* ترقيم الصفحات */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.pagination-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 12px;
+    background-color: var(--white);
+    color: var(--dark);
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.pagination-link:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: var(--transition);
+    z-index: 0;
+}
+
+.pagination-link:hover:before {
+    opacity: 0.1;
+}
+
+.pagination-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+}
+
+.pagination-link i,
+.pagination-link span {
+    position: relative;
+    z-index: 1;
+}
+
+.pagination-link.active {
+    background: var(--gradient-primary);
+    color: var(--white);
+    box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+}
+
+.pagination-link.active:before {
+    opacity: 0;
+}
+
+.pagination-link.disabled {
+    background-color: var(--light-gray);
+    color: var(--gray);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.pagination-link.disabled:hover {
+    transform: none;
+}
+
+/* تصميم افتقاد البيانات */
+.alert-info {
+    background: linear-gradient(135deg, #f0ecfe, #f8f7fe);
+    border: none;
+    border-radius: var(--card-border-radius);
+    padding: 3rem 2rem;
+    box-shadow: var(--card-box-shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.alert-info:before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%236c5ce7' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+    pointer-events: none;
+}
+
+.alert-info h5 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 0.75rem;
+    color: var(--primary-color);
+}
+
+.alert-info p {
+    font-size: 1.1rem;
+    color: var(--gray);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.alert-info i {
+    font-size: 3.5rem;
+    color: var(--primary-light);
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.2), rgba(108, 92, 231, 0.4));
+    width: 7rem;
+    height: 7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-bottom: 1.5rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* تحسينات للأجهزة المحمولة */
+@media (max-width: 992px) {
+    .container-fluid {
+        padding: 1.5rem;
+    }
+    
+    .dashboard-title {
+        font-size: 2rem;
+    }
+    
+    .stats-card-container {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    
+    .stats-card {
+        padding: 1.5rem;
+    }
+    
+    .stats-card-icon {
+        top: 1.5rem;
+        right: 1.5rem;
+        height: 3rem;
+        width: 3rem;
+    }
+    
+    .stats-card-value {
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-group {
+        flex: 1 1 100%;
+    }
+    
+    .filter-button {
+        width: 100%;
+    }
+    
+    .action-buttons {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .reservation-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .dashboard-title {
+        font-size: 1.75rem;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 1rem;
+    }
+    
+    .reservation-table th, .reservation-table td {
+        padding: 1rem;
+    }
+}
+
+/* تصميم مراعي للـ RTL */
+[dir="rtl"] .date-label,
+[dir="rtl"] .filters-toggle-text i,
+[dir="rtl"] .filter-label i,
+[dir="rtl"] .status-badge i,
+[dir="rtl"] .customer-name::before, 
+[dir="rtl"] .car-name::before,
+[dir="rtl"] .filter-button i {
+    margin-left: 0;
+    margin-right: 0.5rem;
+}
+
+[dir="rtl"] .customer-email i, 
+[dir="rtl"] .car-model i {
+    margin-left: 0;
+    margin-right: 0.35rem;
+}
+
+/* تمييز الصفوف بشكل متناوب */
+.reservation-table tbody tr:nth-child(even) {
+    background-color: #fcfbff;
+}
+
+.reservation-table tbody tr:nth-child(even):hover {
+    background-color: #f8f7fe;
+}
+
+/* تأثيرات متحركة إضافية */
+@keyframes float {
+    0% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    33% {
+        transform: translateY(-8px) rotate(2deg);
+    }
+    66% {
+        transform: translateY(-4px) rotate(-2deg);
+    }
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes gradientFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes slideFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes rotate3D {
+    0% {
+        transform: perspective(1000px) rotateY(0deg);
+    }
+    100% {
+        transform: perspective(1000px) rotateY(360deg);
+    }
+}
+
+/* تطبيق التأثيرات */
+.dashboard-title {
+    background-size: 200% auto;
+    background-image: linear-gradient(90deg, #6c5ce7 0%, #a29bfe 50%, #6c5ce7 100%);
+    animation: gradientFlow 4s linear infinite;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.stats-card {
+    animation: fadeIn 0.6s ease-out forwards;
+}
+
+.stats-card-icon {
+    animation: float 8s ease-in-out infinite;
+}
+
+.stats-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.stats-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.stats-card:nth-child(2) .stats-card-icon {
+    animation-delay: 1.5s;
+}
+
+.stats-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.stats-card:nth-child(3) .stats-card-icon {
+    animation-delay: 3s;
+}
+
+.stats-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.stats-card:nth-child(4) .stats-card-icon {
+    animation-delay: 4.5s;
+}
+
+.stats-card:hover .stats-card-icon {
+    animation-play-state: paused;
+}
+
+.filters-container {
+    animation: fadeIn 0.8s ease-out forwards;
+    animation-delay: 0.5s;
+    opacity: 0;
+    animation-fill-mode: forwards;
+}
+
+.filters-content.open {
+    animation: slideDown 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.table-container {
+    animation: fadeIn 1s ease-out forwards;
+    animation-delay: 0.7s;
+    opacity: 0;
+    animation-fill-mode: forwards;
+}
+
+.reservation-table tbody tr {
+    animation: fadeIn 0.5s ease-out forwards;
+    opacity: 0;
+    animation-fill-mode: forwards;
+}
+
+.reservation-table tbody tr:nth-child(1) { animation-delay: 0.8s; }
+.reservation-table tbody tr:nth-child(2) { animation-delay: 0.85s; }
+.reservation-table tbody tr:nth-child(3) { animation-delay: 0.9s; }
+.reservation-table tbody tr:nth-child(4) { animation-delay: 0.95s; }
+.reservation-table tbody tr:nth-child(5) { animation-delay: 1s; }
+.reservation-table tbody tr:nth-child(6) { animation-delay: 1.05s; }
+.reservation-table tbody tr:nth-child(7) { animation-delay: 1.1s; }
+.reservation-table tbody tr:nth-child(8) { animation-delay: 1.15s; }
+.reservation-table tbody tr:nth-child(9) { animation-delay: 1.2s; }
+.reservation-table tbody tr:nth-child(10) { animation-delay: 1.25s; }
+
+.reservation-table th {
+    background-size: 300% 300%;
+    background-image: linear-gradient(120deg, #f0ecfe, #f8f7fe, #e9e4fe, #f0ecfe);
+    animation: gradientFlow 15s ease infinite;
+}
+
+.pagination {
+    animation: fadeIn 1s ease-out forwards;
+    animation-delay: 1.3s;
+    opacity: 0;
+    animation-fill-mode: forwards;
+}
+
+.status-badge {
+    position: relative;
+    overflow: hidden;
+}
+
+.status-badge::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0) 0%, 
+        rgba(255,255,255,0.2) 50%, 
+        rgba(255,255,255,0) 100%);
+    animation: shimmer 3s infinite;
+}
+
+.action-button {
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.action-button:hover {
+    transform: translateY(-5px) scale(1.2);
+}
+
+.reservation-id:hover {
+    animation: pulse 1s infinite;
+}
+
+/* تأثير الدوران عند تحريك الماوس على الأيقونات */
+.filter-label i {
+    transition: transform 0.3s ease;
+}
+
+.filter-group:hover .filter-label i {
+    transform: rotate(20deg) scale(1.2);
+}
+
+/* تأثير السطوع المتحرك على أزرار الإجراءات */
+.action-button i {
+    position: relative;
+    z-index: 2;
+}
+
+/* إضافة تصميمات فريدة */
+.stats-card-value::after {
+    content: attr(data-label);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gray);
+    margin-right: 0.5rem;
+    position: relative;
+    bottom: 0.25rem;
+}
+
+/* تحسينات لوضع الظلام */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --white: #1a1b2e;
+        --background: #13141f;
+        --dark: #eef1f8;
+        --gray: #a9b4d4;
+        --light-gray: #2d2e46;
+    }
+    
+    .stats-card, .filters-container, .table-container, .reservation-table th {
+        background-color: #1a1b2e;
+    }
+    
+    .filters-toggle {
+        background-color: #1a1b2e;
+    }
+    
+    .reservation-table tbody tr:nth-child(even) {
+        background-color: #1d1e32;
+    }
+    
+    .reservation-table tbody tr:hover {
+        background-color: #292a41;
+    }
+    
+    .filter-select, .filter-input {
+        background-color: #1a1b2e;
+        color: #eef1f8;
+        border-color: #2d2e46;
+    }
+    
+    .reservation-table th {
+        background: linear-gradient(to bottom, #292a41, #1d1e32);
+    }
+    
+    .alert-info {
+        background: linear-gradient(135deg, #1d1e32, #292a41);
+    }
+}
+
+/* زخارف إضافية */
+.glowing-effect {
+    position: absolute;
+    top: -150px;
+    right: -150px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(108, 92, 231, 0.15), transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.table-container::before {
+    content: '';
+    position: absolute;
+    bottom: -150px;
+    left: -150px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(0, 184, 148, 0.1), transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+}
