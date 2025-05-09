@@ -70,58 +70,72 @@
     </div>
   </div>
 
-  <!-- فلاتر وبحث -->
+  <!-- فلاتر وبحث - واجهة منسدلة -->
   <div class="filters-container mb-4">
-    <form method="get" action="{% url 'admin_reservations' %}">
-      <div class="filters-row">
-        <div class="filter-group">
-          <label for="status" class="filter-label">{% trans "حالة الحجز" %}</label>
-          <select name="status" id="status" class="filter-select">
-            <option value="" {% if not status %}selected{% endif %}>{% trans "الكل" %}</option>
-            <option value="pending" {% if status == 'pending' %}selected{% endif %}>{% trans "قيد المراجعة" %}</option>
-            <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>{% trans "مؤكد" %}</option>
-            <option value="completed" {% if status == 'completed' %}selected{% endif %}>{% trans "مكتمل" %}</option>
-            <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>{% trans "ملغي" %}</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label for="payment_status" class="filter-label">{% trans "حالة الدفع" %}</label>
-          <select name="payment_status" id="payment_status" class="filter-select">
-            <option value="" {% if not payment_status %}selected{% endif %}>{% trans "الكل" %}</option>
-            <option value="pending" {% if payment_status == 'pending' %}selected{% endif %}>{% trans "غير مدفوع" %}</option>
-            <option value="paid" {% if payment_status == 'paid' %}selected{% endif %}>{% trans "مدفوع" %}</option>
-            <option value="partial" {% if payment_status == 'partial' %}selected{% endif %}>{% trans "مدفوع جزئي" %}</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label for="start_date" class="filter-label">{% trans "من تاريخ" %}</label>
-          <input type="date" name="start_date" id="start_date" class="filter-input" value="{{ start_date }}">
-        </div>
-        
-        <div class="filter-group">
-          <label for="end_date" class="filter-label">{% trans "إلى تاريخ" %}</label>
-          <input type="date" name="end_date" id="end_date" class="filter-input" value="{{ end_date }}">
-        </div>
+    <div class="filters-toggle">
+      <div class="filters-toggle-text">
+        <i class="fas fa-filter"></i> {% trans "فلترة وبحث الحجوزات" %}
+        {% if status or payment_status or start_date or end_date or search %}
+        <span class="badge bg-primary ms-2">{{ pending_count + confirmed_count + cancelled_count + completed_count }}</span>
+        {% endif %}
       </div>
-      
-      <div class="filters-row">
-        <div class="filter-group">
-          <label for="search" class="filter-label">{% trans "بحث" %}</label>
-          <input type="text" name="search" id="search" class="filter-input" placeholder="{% trans 'اسم العميل، رقم الحجز، موديل السيارة...' %}" value="{{ search }}">
+      <div class="filters-toggle-icon">
+        <i class="fas fa-chevron-down"></i>
+      </div>
+    </div>
+    
+    <div class="filters-content{% if status or payment_status or start_date or end_date or search %} open{% endif %}">
+      <form method="get" action="{% url 'admin_reservations' %}">
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="status" class="filter-label">{% trans "حالة الحجز" %}</label>
+            <select name="status" id="status" class="filter-select">
+              <option value="" {% if not status %}selected{% endif %}>{% trans "الكل" %}</option>
+              <option value="pending" {% if status == 'pending' %}selected{% endif %}>{% trans "قيد المراجعة" %}</option>
+              <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>{% trans "مؤكد" %}</option>
+              <option value="completed" {% if status == 'completed' %}selected{% endif %}>{% trans "مكتمل" %}</option>
+              <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>{% trans "ملغي" %}</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="payment_status" class="filter-label">{% trans "حالة الدفع" %}</label>
+            <select name="payment_status" id="payment_status" class="filter-select">
+              <option value="" {% if not payment_status %}selected{% endif %}>{% trans "الكل" %}</option>
+              <option value="pending" {% if payment_status == 'pending' %}selected{% endif %}>{% trans "غير مدفوع" %}</option>
+              <option value="paid" {% if payment_status == 'paid' %}selected{% endif %}>{% trans "مدفوع" %}</option>
+              <option value="partial" {% if payment_status == 'partial' %}selected{% endif %}>{% trans "مدفوع جزئي" %}</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="start_date" class="filter-label">{% trans "من تاريخ" %}</label>
+            <input type="date" name="start_date" id="start_date" class="filter-input" value="{{ start_date }}">
+          </div>
+          
+          <div class="filter-group">
+            <label for="end_date" class="filter-label">{% trans "إلى تاريخ" %}</label>
+            <input type="date" name="end_date" id="end_date" class="filter-input" value="{{ end_date }}">
+          </div>
         </div>
         
-        <div class="filter-group d-flex align-items-end">
-          <button type="submit" class="filter-button me-2">
-            <i class="fas fa-search me-1"></i> {% trans "بحث" %}
-          </button>
-          <a href="{% url 'admin_reservations' %}" class="filter-button secondary">
-            <i class="fas fa-sync-alt me-1"></i> {% trans "إعادة تعيين" %}
-          </a>
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="search" class="filter-label">{% trans "بحث" %}</label>
+            <input type="text" name="search" id="search" class="filter-input" placeholder="{% trans 'اسم العميل، رقم الحجز، موديل السيارة...' %}" value="{{ search }}">
+          </div>
+          
+          <div class="filter-group d-flex align-items-end">
+            <button type="submit" class="filter-button me-2">
+              <i class="fas fa-search me-1"></i> {% trans "بحث" %}
+            </button>
+            <a href="{% url 'admin_reservations' %}" class="filter-button secondary">
+              <i class="fas fa-sync-alt me-1"></i> {% trans "إعادة تعيين" %}
+            </a>
+          </div>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
 
   <!-- جدول الحجوزات -->
@@ -279,13 +293,26 @@
   {% endif %}
 </div>
 
-<!-- سكريبت لتفعيل tooltips -->
+<!-- سكريبت لتفعيل tooltips والفلاتر المنسدلة -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // تفعيل tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+    
+    // تفعيل الفلاتر المنسدلة
+    var filtersToggle = document.querySelector('.filters-toggle');
+    var filtersContent = document.querySelector('.filters-content');
+    var filtersToggleIcon = document.querySelector('.filters-toggle-icon');
+    
+    if (filtersToggle) {
+      filtersToggle.addEventListener('click', function() {
+        filtersContent.classList.toggle('open');
+        filtersToggleIcon.classList.toggle('open');
+      });
+    }
   });
 </script>
 {% endblock %}
