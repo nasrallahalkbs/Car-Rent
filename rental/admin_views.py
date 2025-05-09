@@ -1070,6 +1070,22 @@ def delete_reservation(request, reservation_id):
 @admin_required
 def admin_users(request):
     """Admin view to manage users"""
+    # التعامل مع طلب حذف المستخدم
+    delete_user_id = request.GET.get('delete_user')
+    if delete_user_id:
+        try:
+            user = get_object_or_404(User, id=delete_user_id, is_admin=False)
+            username = user.username
+            
+            # حذف المستخدم
+            user.delete()
+            
+            messages.success(request, f"تم حذف المستخدم '{username}' بنجاح")
+            return redirect('admin_users')
+        except Exception as e:
+            messages.error(request, f"حدث خطأ أثناء محاولة حذف المستخدم: {str(e)}")
+            return redirect('admin_users')
+    
     # Get filter values from query parameters
     user_type = request.GET.get('user_type', '')
     search = request.GET.get('search', '')

@@ -331,8 +331,8 @@
                     <a href="{% url 'edit_user' user.id %}" class="btn btn-outline-info" data-bs-toggle="tooltip" title="تعديل">
                       <i class="fas fa-edit"></i>
                     </a>
-                    <a href="{% url 'get_user_reservations' user.id %}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="حجوزات المستخدم">
-                      <i class="fas fa-calendar-check"></i>
+                    <a href="#" onclick="confirmDelete({{ user.id }}, '{{ user.username|escapejs }}')" class="btn btn-outline-danger" data-bs-toggle="tooltip" title="حذف المستخدم">
+                      <i class="fas fa-trash-alt"></i>
                     </a>
                   </div>
                 </td>
@@ -440,5 +440,40 @@
       location.reload();
     }
   });
+  
+  // تأكيد حذف المستخدم
+  function confirmDelete(userId, username) {
+    // عرض المودال وتعيين قيم المستخدم
+    document.getElementById('userNameToDelete').textContent = username;
+    
+    // تعيين معالج النقر لزر التأكيد
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+      window.location.href = '{% url "admin_users" %}?delete_user=' + userId;
+    };
+    
+    // عرض المودال
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+    deleteModal.show();
+  }
 </script>
+
+<!-- Modal لتأكيد حذف المستخدم -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteUserModalLabel">تأكيد حذف المستخدم</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <p>هل أنت متأكد من حذف المستخدم <span id="userNameToDelete" class="fw-bold"></span>؟</p>
+        <p class="text-danger">هذا الإجراء لا يمكن التراجع عنه وسيؤدي إلى حذف كافة بيانات المستخدم.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <a href="#" id="confirmDeleteBtn" class="btn btn-danger">تأكيد الحذف</a>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
