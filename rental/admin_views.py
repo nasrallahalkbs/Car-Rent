@@ -1030,7 +1030,7 @@ def delete_document(request, document_id):
     return render(request, 'admin/archive/delete_document.html', context)
 
 @login_required
-@permission_required("reservations", "delete_reservations")
+@permission_required("reservations", "edit_reservations")
 def delete_reservation(request, reservation_id):
     """Admin view to permanently delete a reservation"""
     try:
