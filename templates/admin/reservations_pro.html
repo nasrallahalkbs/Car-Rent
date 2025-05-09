@@ -76,7 +76,16 @@
       <div class="filters-toggle-text">
         <i class="fas fa-filter"></i> {% trans "فلترة وبحث الحجوزات" %}
         {% if status or payment_status or start_date or end_date or search %}
-        <span class="badge bg-primary ms-2">{{ pending_count + confirmed_count + cancelled_count + completed_count }}</span>
+        <span class="badge bg-primary ms-2">
+        {% with total_filters=0 %}
+          {% if status %}{% with total_filters=total_filters|add:1 %}{% endwith %}{% endif %}
+          {% if payment_status %}{% with total_filters=total_filters|add:1 %}{% endwith %}{% endif %}
+          {% if start_date %}{% with total_filters=total_filters|add:1 %}{% endwith %}{% endif %}
+          {% if end_date %}{% with total_filters=total_filters|add:1 %}{% endwith %}{% endif %}
+          {% if search %}{% with total_filters=total_filters|add:1 %}{% endwith %}{% endif %}
+          {{ total_filters }}
+        {% endwith %}
+        </span>
         {% endif %}
       </div>
       <div class="filters-toggle-icon">
@@ -305,14 +314,50 @@
     // تفعيل الفلاتر المنسدلة
     var filtersToggle = document.querySelector('.filters-toggle');
     var filtersContent = document.querySelector('.filters-content');
-    var filtersToggleIcon = document.querySelector('.filters-toggle-icon');
+    var filtersToggleIcon = document.querySelector('.filters-toggle-icon i');
     
     if (filtersToggle) {
       filtersToggle.addEventListener('click', function() {
         filtersContent.classList.toggle('open');
-        filtersToggleIcon.classList.toggle('open');
+        
+        // تغيير أيقونة السهم عند فتح/إغلاق الفلاتر
+        if (filtersContent.classList.contains('open')) {
+          filtersToggleIcon.classList.remove('fa-chevron-down');
+          filtersToggleIcon.classList.add('fa-chevron-up');
+        } else {
+          filtersToggleIcon.classList.remove('fa-chevron-up');
+          filtersToggleIcon.classList.add('fa-chevron-down');
+        }
       });
     }
+    
+    // تأكد من فتح الفلاتر تلقائيًا إذا كانت هناك تصفيات مُطبقة
+    var hasFilters = {% if status or payment_status or start_date or end_date or search %}true{% else %}false{% endif %};
+    
+    if (hasFilters && filtersContent) {
+      filtersContent.classList.add('open');
+      if (filtersToggleIcon) {
+        filtersToggleIcon.classList.remove('fa-chevron-down');
+        filtersToggleIcon.classList.add('fa-chevron-up');
+      }
+    }
+    
+    // تحسين تجربة المستخدم في حقول التاريخ
+    var dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(function(input) {
+      input.addEventListener('change', function() {
+        if (this.value) {
+          this.classList.add('has-value');
+        } else {
+          this.classList.remove('has-value');
+        }
+      });
+      
+      // تطبيق الفئة الأولية إذا كان الحقل يحتوي على قيمة
+      if (input.value) {
+        input.classList.add('has-value');
+      }
+    });
   });
 </script>
 {% endblock %}
