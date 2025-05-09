@@ -579,7 +579,7 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    return render(request, 'admin/reservations_django.html', context)
+    return render(request, 'admin/reservations.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status

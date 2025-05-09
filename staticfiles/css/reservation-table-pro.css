@@ -1,0 +1,455 @@
+/* تصميم احترافي لجدول الحجوزات */
+
+:root {
+    --primary-color: #3361ff;
+    --primary-light: #f0f5ff;
+    --primary-dark: #1947d1;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --dark: #1e293b;
+    --light: #f8fafc;
+    --gray: #64748b;
+    --gray-light: #e2e8f0;
+    --white: #ffffff;
+    --border-radius: 8px;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --transition: all 0.3s ease;
+}
+
+/* تنسيق الإحصائيات */
+.stats-card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stats-card {
+    flex: 1;
+    min-width: 200px;
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    border-top: 4px solid var(--primary-color);
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+}
+
+.stats-card.pending {
+    border-top-color: var(--warning);
+}
+
+.stats-card.confirmed {
+    border-top-color: var(--primary-color);
+}
+
+.stats-card.completed {
+    border-top-color: var(--success);
+}
+
+.stats-card.cancelled {
+    border-top-color: var(--danger);
+}
+
+.stats-card-title {
+    font-size: 1.1rem;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.stats-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.stats-card-icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 1.5rem;
+    opacity: 0.2;
+    color: var(--dark);
+}
+
+/* تنسيق الفلاتر والبحث */
+.filters-container {
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--dark);
+}
+
+.filter-select,
+.filter-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--gray-light);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.filter-select:focus,
+.filter-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(51, 97, 255, 0.1);
+}
+
+.filter-button {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.filter-button:hover {
+    background-color: var(--primary-dark);
+}
+
+.filter-button.secondary {
+    background-color: var(--gray-light);
+    color: var(--dark);
+}
+
+.filter-button.secondary:hover {
+    background-color: var(--gray);
+    color: var(--white);
+}
+
+/* تنسيق الجدول */
+.table-container {
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+}
+
+.reservation-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.reservation-table th {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    font-weight: 600;
+    text-align: right;
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-light);
+}
+
+.reservation-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-light);
+    vertical-align: middle;
+    text-align: right;
+}
+
+.reservation-table tbody tr {
+    transition: var(--transition);
+}
+
+.reservation-table tbody tr:hover {
+    background-color: var(--light);
+}
+
+/* تنسيق البيانات في الجدول */
+.reservation-id {
+    font-weight: 600;
+    color: var(--primary-color);
+    text-decoration: none;
+    display: inline-block;
+    transition: var(--transition);
+}
+
+.reservation-id:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-name {
+    font-weight: 500;
+    color: var(--dark);
+}
+
+.user-email {
+    font-size: 0.85rem;
+    color: var(--gray);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.status-badge.pending {
+    background-color: #fff8e6;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.status-badge.confirmed {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.status-badge.completed {
+    background-color: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.status-badge.cancelled {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.status-badge.paid {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.status-badge.unpaid {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.status-badge.partial {
+    background-color: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+/* تنسيق الأزرار */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.action-button.view {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.action-button.view:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.action-button.edit {
+    background-color: #f0f9ff;
+    color: #0369a1;
+    border-color: #bae6fd;
+}
+
+.action-button.edit:hover {
+    background-color: #0369a1;
+    color: var(--white);
+}
+
+.action-button.confirm {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+.action-button.confirm:hover {
+    background-color: #065f46;
+    color: var(--white);
+}
+
+.action-button.cancel {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.action-button.cancel:hover {
+    background-color: #991b1b;
+    color: var(--white);
+}
+
+.action-button.delete {
+    background-color: #fff1f2;
+    color: #be123c;
+    border-color: #fecdd3;
+}
+
+.action-button.delete:hover {
+    background-color: #be123c;
+    color: var(--white);
+}
+
+.action-button i {
+    margin-left: 0.25rem;
+}
+
+/* تنسيق ترقيم الصفحات */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.pagination-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--border-radius);
+    background-color: var(--white);
+    color: var(--dark);
+    font-weight: 500;
+    text-decoration: none;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+}
+
+.pagination-link:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+}
+
+.pagination-link.active {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.pagination-link.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* تأثيرات متحركة */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stats-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.stats-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.stats-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.stats-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.stats-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+/* تخصيص للغة العربية */
+[dir="rtl"] .stats-card-icon {
+    right: auto;
+    left: 15px;
+}
+
+[dir="rtl"] .reservation-table th,
+[dir="rtl"] .reservation-table td {
+    text-align: right;
+}
+
+[dir="rtl"] .action-button i {
+    margin-left: 0;
+    margin-right: 0.25rem;
+}
+
+/* تخصيص للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .stats-card {
+        min-width: 100%;
+    }
+    
+    .filter-group {
+        min-width: 100%;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+    }
+}
