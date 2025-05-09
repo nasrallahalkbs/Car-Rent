@@ -6,453 +6,497 @@
 
 {% block custom_css %}
 <style>
-  /* تصميم محسن للجدول - نسخة 3.0 (احترافي ومطابق للصورة) */
+  /* تصميم احترافي مطور للجدول - تصميم احترافي جديد 4.0 */
+  
+  /* إعدادات عامة */
+  :root {
+    --primary-color: #3b82f6;
+    --secondary-color: #10b981;
+    --dark-color: #1e293b;
+    --light-color: #f1f5f9;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --info-color: #06b6d4;
+    --success-color: #10b981;
+    --pending-color: #f59e0b;
+    --completed-color: #3b82f6;
+    --cancelled-color: #ef4444;
+    --confirmed-color: #10b981;
+    --border-radius: 0.5rem;
+    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+    --transition: all 0.3s ease;
+  }
+  
+  /* بطاقات لوحة المعلومات */
   .dashboard-card {
-    border-radius: 8px;
+    border-radius: var(--border-radius);
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--card-shadow);
     background-color: #fff;
-    transition: all 0.3s;
+    transition: var(--transition);
     height: 100%;
     border: none;
+    border-top: 4px solid transparent;
   }
   
   .dashboard-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
   
-  /* إحصائيات الحجوزات */
-  .stats-wrapper {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 25px;
-    flex-wrap: wrap;
-  }
-  
-  .stat-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 15px 25px;
-    border-radius: 8px;
-    min-width: 180px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    background-color: #fff;
+  /* بطاقات الإحصائيات */
+  .dashboard-card .stats-card {
+    padding: 1.5rem;
+    text-align: center;
     position: relative;
     overflow: hidden;
   }
   
-  .stat-box .stat-icon {
-    font-size: 20px;
-    margin-bottom: 8px;
-    height: 40px;
-    width: 40px;
+  .pending-card {
+    border-top-color: var(--pending-color);
+  }
+  
+  .confirmed-card {
+    border-top-color: var(--confirmed-color);
+  }
+  
+  .completed-card {
+    border-top-color: var(--completed-color);
+  }
+  
+  .cancelled-card {
+    border-top-color: var(--cancelled-color);
+  }
+  
+  .stats-card .stats-icon {
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin: 0 auto 1rem;
     border-radius: 50%;
+    font-size: 1.5rem;
+    background-color: var(--light-color);
+    position: relative;
+    z-index: 1;
   }
   
-  .stat-box .stat-label {
-    font-size: 14px;
-    color: #6c757d;
-    margin-bottom: 5px;
+  .stats-card .stats-icon::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+    z-index: -1;
+    opacity: 0.6;
   }
   
-  .stat-box .stat-value {
-    font-size: 24px;
+  .pending-card .stats-icon {
+    color: var(--pending-color);
+    background-color: rgba(245, 158, 11, 0.1);
+  }
+  
+  .confirmed-card .stats-icon {
+    color: var(--confirmed-color);
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+  
+  .completed-card .stats-icon {
+    color: var(--completed-color);
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  
+  .cancelled-card .stats-icon {
+    color: var(--cancelled-color);
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+  
+  .stats-card .card-title {
+    font-size: 0.875rem;
+    color: var(--dark-color);
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  
+  .stats-card .card-number {
+    font-size: 2rem;
     font-weight: 700;
-    line-height: 1.2;
+    margin-bottom: 0.25rem;
+    line-height: 1;
   }
   
-  .stat-box .stat-unit {
-    font-size: 12px;
-    color: #adb5bd;
+  .pending-card .card-number {
+    color: var(--pending-color);
   }
   
-  /* ألوان الإحصائيات */
-  .pending-stat .stat-icon {
-    background-color: rgba(255, 193, 7, 0.15);
-    color: #ffc107;
+  .confirmed-card .card-number {
+    color: var(--confirmed-color);
   }
   
-  .pending-stat .stat-value {
-    color: #ffc107;
+  .completed-card .card-number {
+    color: var(--completed-color);
   }
   
-  .confirmed-stat .stat-icon {
-    background-color: rgba(40, 167, 69, 0.15);
-    color: #28a745;
+  .cancelled-card .card-number {
+    color: var(--cancelled-color);
   }
   
-  .confirmed-stat .stat-value {
-    color: #28a745;
+  .stats-card .text-muted {
+    font-size: 0.75rem;
+    color: #6b7280;
   }
   
-  .completed-stat .stat-icon {
-    background-color: rgba(13, 110, 253, 0.15);
-    color: #0d6efd;
+  /* تصميم قسم الفلاتر */
+  .filter-section {
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--card-shadow);
   }
   
-  .completed-stat .stat-value {
-    color: #0d6efd;
+  .filter-section .form-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.5rem;
   }
   
-  .cancelled-stat .stat-icon {
-    background-color: rgba(220, 53, 69, 0.15);
-    color: #dc3545;
+  .filter-section .form-control,
+  .filter-section .form-select {
+    border-radius: 0.375rem;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   }
   
-  .cancelled-stat .stat-value {
-    color: #dc3545;
+  .filter-section .form-control:focus,
+  .filter-section .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
-
-  /* تصميم الجدول المطور */
-  .table-responsive {
-    overflow-x: auto;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  
+  .filter-section .btn {
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: var(--transition);
+  }
+  
+  /* تصميم الجدول الاحترافي */
+  .table-container {
+    background-color: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 1.5rem;
   }
   
   .reservations-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    border: 1px solid #34495e;
-    background-color: #fff;
     margin-bottom: 0;
   }
   
   .reservations-table thead th {
-    background-color: #34495e;
+    background: var(--dark-color);
     color: white;
-    padding: 12px 10px;
+    padding: 1rem 0.75rem;
     text-align: center;
     font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.025em;
     border: none;
     white-space: nowrap;
-    font-size: 14px;
     position: sticky;
     top: 0;
-    z-index: 1;
-    vertical-align: middle;
+    z-index: 10;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.05);
   }
   
-  .reservations-table tbody td {
-    padding: 10px;
-    text-align: center;
-    border-bottom: 1px solid #eaedf1;
-    font-size: 14px;
-    vertical-align: middle;
-    white-space: nowrap;
+  .reservations-table thead th:first-child {
+    border-top-right-radius: 0.375rem;
+  }
+  
+  .reservations-table thead th:last-child {
+    border-top-left-radius: 0.375rem;
+  }
+  
+  .reservations-table tbody tr {
+    transition: var(--transition);
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .reservations-table tbody tr:last-child {
+    border-bottom: none;
   }
   
   .reservations-table tbody tr:hover {
-    background-color: #f8fafe;
+    background-color: #f8fafc;
   }
   
-  .reservations-table tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  /* شريط الأدوات */
-  .table-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
+  .reservations-table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    color: #334155;
+    font-size: 0.875rem;
+    text-align: center;
   }
   
-  .table-toolbar .search-box {
-    position: relative;
-    max-width: 350px;
-    width: 100%;
+  /* تصميم حقول الجدول */
+  .reservation-id {
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--dark-color);
+    background-color: #f1f5f9;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    display: inline-block;
   }
   
-  .table-toolbar .search-box .form-control {
-    padding-right: 40px;
-    border-radius: 5px;
-    border: 1px solid #dce0e5;
-    height: 40px;
-    font-size: 14px;
+  .customer-info,
+  .car-info {
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
-  .table-toolbar .search-box .search-icon {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #adb5bd;
-  }
-  
-  /* فلاتر الجدول */
-  .filters-row {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 0 -5px 15px;
-    align-items: flex-end;
-  }
-  
-  .filters-row .form-group {
-    padding: 0 5px;
-    margin-bottom: 10px;
-    flex: 1 1 200px;
-  }
-  
-  .filters-row .form-label {
-    font-size: 13px;
-    margin-bottom: 5px;
-    color: #6c757d;
-  }
-  
-  .filters-row .form-control,
-  .filters-row .form-select {
-    height: 40px;
-    font-size: 14px;
-    border-radius: 5px;
-    border: 1px solid #dce0e5;
-  }
-  
-  .filters-row .form-control:focus,
-  .filters-row .form-select:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
-  }
-  
-  .filters-row .btn-group {
-    padding: 0 5px;
-    margin-bottom: 10px;
-  }
-  
-  .filter-section {
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-    border: 1px solid #eaedf1;
-  }
-  
-  .filter-section .collapse-btn {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    text-align: left;
+  .customer-name,
+  .car-name {
     font-weight: 600;
-    color: #343a40;
-    padding: 8px 0;
-    background: none;
-    border: none;
-    cursor: pointer;
+    color: #334155;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    display: block;
   }
   
-  .filter-section .collapse-content {
-    margin-top: 10px;
+  .customer-email,
+  .car-model {
+    color: #64748b;
+    font-size: 0.75rem;
+    display: block;
   }
   
-  /* تصميم الأزرار الإجرائية */
-  .action-buttons {
+  .reservation-date {
     display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  
-  .action-buttons .btn {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    display: inline-flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    border-radius: 5px;
-    margin: 0 2px;
-    font-size: 13px;
-    transition: all 0.2s;
-    border: none;
   }
   
-  .action-buttons .btn-action-view {
-    background-color: #007bff;
-    color: white;
+  .date-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
   }
   
-  .action-buttons .btn-action-edit {
-    background-color: #17a2b8;
-    color: white;
+  .date-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-left: 0.25rem;
   }
   
-  .action-buttons .btn-action-delete {
-    background-color: #dc3545;
-    color: white;
+  .date-value {
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.8rem;
   }
   
-  .action-buttons .btn-action-cancel {
-    background-color: #ffc107;
-    color: #212529;
+  .duration-value {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--dark-color);
   }
   
-  .action-buttons .btn-action-complete {
-    background-color: #28a745;
-    color: white;
+  .duration-days {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-right: 0.25rem;
   }
   
-  .action-buttons .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    opacity: 0.9;
+  .price-amount {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #334155;
+  }
+  
+  .price-currency {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-right: 0.25rem;
   }
   
   /* شارات الحالة */
   .status-badge {
-    padding: 6px 12px;
-    border-radius: 50px;
-    font-size: 12px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-width: 90px;
-    text-align: center;
-  }
-  
-  .status-badge.badge-pending {
-    background-color: rgba(255, 193, 7, 0.15);
-    color: #ffc107;
-    border: 1px solid rgba(255, 193, 7, 0.3);
-  }
-  
-  .status-badge.badge-confirmed {
-    background-color: rgba(40, 167, 69, 0.15);
-    color: #28a745;
-    border: 1px solid rgba(40, 167, 69, 0.3);
-  }
-  
-  .status-badge.badge-completed {
-    background-color: rgba(13, 110, 253, 0.15);
-    color: #0d6efd;
-    border: 1px solid rgba(13, 110, 253, 0.3);
-  }
-  
-  .status-badge.badge-cancelled {
-    background-color: rgba(220, 53, 69, 0.15);
-    color: #dc3545;
-    border: 1px solid rgba(220, 53, 69, 0.3);
   }
   
   .status-badge i {
-    margin-right: 4px;
-    font-size: 10px;
+    margin-left: 0.35rem;
+    font-size: 0.7rem;
   }
   
-  /* تصميم بيانات الحجز */
-  .reservation-id {
-    font-weight: 600;
-    color: #495057;
+  .status-badge.badge-pending {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: var(--pending-color);
+    border: 1px solid rgba(245, 158, 11, 0.3);
   }
   
-  .customer-name {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 150px;
+  .status-badge.badge-confirmed {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--confirmed-color);
+    border: 1px solid rgba(16, 185, 129, 0.3);
   }
   
-  .customer-email {
-    font-size: 12px;
-    color: #6c757d;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 150px;
+  .status-badge.badge-completed {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--completed-color);
+    border: 1px solid rgba(59, 130, 246, 0.3);
   }
   
-  .car-info {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 150px;
+  .status-badge.badge-cancelled {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--cancelled-color);
+    border: 1px solid rgba(239, 68, 68, 0.3);
   }
   
-  .car-year {
-    font-size: 12px;
-    color: #6c757d;
-  }
-  
-  .date-label {
-    font-size: 12px;
-    color: #6c757d;
-    margin-right: 5px;
-  }
-  
-  .date-value {
-    font-weight: 500;
-    color: #495057;
-  }
-  
-  .duration-days {
-    font-weight: 600;
-    color: #495057;
-  }
-  
-  .duration-unit {
-    font-size: 12px;
-    color: #6c757d;
-    margin-right: 3px;
-  }
-  
-  .price-value {
-    font-weight: 700;
-    color: #495057;
-    font-size: 16px;
-  }
-  
-  .price-currency {
-    font-size: 12px;
-    color: #6c757d;
-    margin-right: 3px;
-  }
-  
-  /* حالة فارغة */
-  .empty-state {
-    padding: 40px 20px;
-    text-align: center;
-    border: 1px dashed #dce0e5;
-    border-radius: 8px;
-    margin: 20px 0;
-  }
-  
-  .empty-state .empty-icon {
-    font-size: 40px;
-    color: #adb5bd;
-    margin-bottom: 15px;
-  }
-  
-  .empty-state h5 {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 10px;
-  }
-  
-  .empty-state p {
-    color: #6c757d;
-    margin-bottom: 20px;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  
-  /* ترقيم الصفحات */
-  .pagination-wrapper {
-    margin-top: 20px;
+  /* أزرار الإجراءات */
+  .action-buttons {
     display: flex;
     justify-content: center;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+  }
+  
+  .action-buttons .btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    border: 1px solid;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  
+  .action-buttons .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: currentColor;
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.2s ease;
+  }
+  
+  .action-buttons .btn:hover::before {
+    opacity: 0.1;
+  }
+  
+  .action-buttons .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .action-buttons .btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .action-buttons .btn-outline-success {
+    color: var(--success-color);
+    border-color: var(--success-color);
+  }
+  
+  .action-buttons .btn-outline-warning {
+    color: var(--warning-color);
+    border-color: var(--warning-color);
+  }
+  
+  .action-buttons .btn-outline-danger {
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+  }
+  
+  .action-buttons .btn-outline-info {
+    color: var(--info-color);
+    border-color: var(--info-color);
+  }
+  
+  .action-buttons .btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+  
+  /* تصميم متوافق مع الهواتف */
+  @media (max-width: 991px) {
+    .action-buttons {
+      flex-wrap: wrap;
+    }
+    
+    .action-buttons .btn {
+      margin-bottom: 0.35rem;
+    }
+    
+    .reservations-table td,
+    .reservations-table th {
+      padding: 0.75rem 0.5rem;
+    }
+  }
+  
+  @media (max-width: 767px) {
+    .dashboard-card {
+      margin-bottom: 1rem;
+    }
+    
+    .filter-section {
+      padding: 1rem;
+    }
+    
+    .reservation-id,
+    .customer-name,
+    .car-name,
+    .price-amount {
+      font-size: 0.8rem;
+    }
+    
+    .customer-email,
+    .car-model,
+    .duration-days,
+    .price-currency {
+      font-size: 0.7rem;
+    }
+  }
+  
+  /* ترقيم صفحات جديد */
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
   }
   
   .custom-pagination {
@@ -460,143 +504,132 @@
     list-style: none;
     padding: 0;
     margin: 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
   
   .custom-pagination li {
-    margin: 0 3px;
+    margin: 0;
   }
   
   .custom-pagination li a {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 36px;
-    min-width: 36px;
-    border-radius: 5px;
-    border: 1px solid #dce0e5;
-    color: #495057;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    padding: 0 0.75rem;
+    color: #4b5563;
+    background-color: white;
+    font-size: 0.875rem;
     font-weight: 500;
-    font-size: 14px;
-    text-decoration: none;
+    border: 1px solid #e5e7eb;
+    margin-right: -1px;
     transition: all 0.2s;
+    text-decoration: none;
+  }
+  
+  .custom-pagination li:first-child a {
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+  }
+  
+  .custom-pagination li:last-child a {
+    border-top-left-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
   }
   
   .custom-pagination li.active a {
-    background-color: #007bff;
-    border-color: #007bff;
+    background-color: var(--primary-color);
     color: white;
+    border-color: var(--primary-color);
+    z-index: 1;
   }
   
   .custom-pagination li a:hover:not(.active) {
-    background-color: #f8f9fa;
-  }
-  
-  /* تصميم متوافق مع الهواتف */
-  @media (max-width: 767px) {
-    .stat-box {
-      margin-bottom: 10px;
-      min-width: 140px;
-    }
-    
-    .table-toolbar {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    
-    .table-toolbar .search-box {
-      margin-bottom: 10px;
-      max-width: 100%;
-    }
-    
-    .filters-row .form-group {
-      flex: 1 1 100%;
-    }
-    
-    .action-buttons .btn {
-      margin-bottom: 5px;
-    }
+    background-color: #f3f4f6;
   }
   
   /* تحسينات أخرى */
-  .main-container {
-    padding: 20px;
-    background-color: #f8f9fa;
-    min-height: calc(100vh - 60px);
+  .empty-state {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    border: 2px dashed #e2e8f0;
+    border-radius: 0.5rem;
+    margin: 1.5rem 0;
+    background-color: #f8fafc;
   }
   
-  .section-header {
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .empty-state .empty-icon {
+    font-size: 3rem;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+    opacity: 0.7;
   }
   
-  .section-title {
-    font-size: 20px;
+  .empty-state h5 {
     font-weight: 600;
-    color: #343a40;
-    margin: 0;
+    color: #334155;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
   }
   
-  .btn-refresh {
-    height: 36px;
-    width: 36px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 5px;
-    color: #6c757d;
-    border: 1px solid #dce0e5;
-    background-color: white;
-    transition: all 0.2s;
+  .empty-state p {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    max-width: 32rem;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 0.875rem;
+    line-height: 1.5;
   }
   
-  .btn-refresh:hover {
-    background-color: #f8f9fa;
-    color: #343a40;
+  /* الأزرار وعناصر التحكم */
+  .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
   }
   
-  .table-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 15px;
-    color: #6c757d;
-    font-size: 13px;
+  .btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
   }
   
-  .text-right {
-    text-align: right;
+  .btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
   }
   
-  .rtl-support [dir="rtl"] .text-right {
-    text-align: left;
+  .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
   }
   
-  /* تنسيق للصورة المرفقة */
-  .colored-action-buttons .btn-outline-primary {
-    color: #007bff;
-    border-color: #007bff;
-  }
-  
-  .colored-action-buttons .btn-outline-success {
-    color: #28a745;
-    border-color: #28a745;
-  }
-  
-  .colored-action-buttons .btn-outline-warning {
-    color: #ffc107;
-    border-color: #ffc107;
-  }
-  
-  .colored-action-buttons .btn-outline-danger {
-    color: #dc3545;
-    border-color: #dc3545;
-  }
-  
-  .colored-action-buttons .btn-outline-info {
-    color: #17a2b8;
-    border-color: #17a2b8;
+  /* تنسيق الطباعة */
+  @media print {
+    .dashboard-card,
+    .filter-section,
+    .pagination-container,
+    .action-buttons .btn:not(.btn-outline-primary) {
+      display: none !important;
+    }
+    
+    .table-container {
+      box-shadow: none;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .reservations-table thead th {
+      background-color: #f1f5f9 !important;
+      color: #1e293b !important;
+      box-shadow: none !important;
+    }
+    
+    .action-buttons .btn-outline-primary {
+      border: none;
+    }
   }
 </style>
 {% endblock %}
@@ -815,36 +848,42 @@
                     <small class="text-muted">{{ reservation.created_at|date:"Y/m/d" }}</small>
                   </td>
                   <td class="py-3 text-center">
-                    <div class="action-buttons d-flex justify-content-center">
-                      <a href="{% url 'admin_reservation_detail' reservation.id %}" class="btn btn-outline-primary" style="width: 40px; height: 40px; margin: 0 3px;" data-bs-toggle="tooltip" title="عرض التفاصيل">
+                    <div class="action-buttons">
+                      <!-- زر عرض التفاصيل -->
+                      <a href="{% url 'admin_reservation_detail' reservation.id %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="عرض التفاصيل">
                         <i class="fas fa-eye"></i>
                       </a>
 
                       {% if reservation.status == 'pending' %}
-                      <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="btn btn-outline-success" style="width: 40px; height: 40px; margin: 0 3px;" data-bs-toggle="tooltip" title="قبول الحجز">
+                      <!-- زر قبول الحجز -->
+                      <a href="{% url 'update_reservation_status' reservation.id 'confirmed' %}" class="btn btn-outline-success" data-bs-toggle="tooltip" title="قبول الحجز">
                         <i class="fas fa-check"></i>
                       </a>
                       {% endif %}
 
                       {% if reservation.status != 'cancelled' and reservation.status != 'completed' %}
-                      <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="btn btn-outline-warning" style="width: 40px; height: 40px; margin: 0 3px;" data-bs-toggle="tooltip" title="إلغاء الحجز">
+                      <!-- زر إلغاء الحجز -->
+                      <a href="{% url 'update_reservation_status' reservation.id 'cancelled' %}" class="btn btn-outline-warning" data-bs-toggle="tooltip" title="إلغاء الحجز">
                         <i class="fas fa-ban"></i>
                       </a>
                       {% endif %}
 
                       {% if reservation.status == 'confirmed' and reservation.payment_status == 'pending' %}
-                      <a href="{% url 'mark_as_paid' reservation.id %}" class="btn btn-outline-info" style="width: 40px; height: 40px; margin: 0 3px;" data-bs-toggle="tooltip" title="تعيين كمدفوع">
+                      <!-- زر تعيين كمدفوع -->
+                      <a href="{% url 'mark_as_paid' reservation.id %}" class="btn btn-outline-info" data-bs-toggle="tooltip" title="تعيين كمدفوع">
                         <i class="fas fa-dollar-sign"></i>
                       </a>
                       {% endif %}
 
                       {% if reservation.status == 'confirmed' and reservation.payment_status == 'paid' %}
-                      <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="btn btn-outline-info" style="width: 40px; height: 40px; margin: 0 3px;" data-bs-toggle="tooltip" title="إكمال الحجز">
+                      <!-- زر إكمال الحجز -->
+                      <a href="{% url 'update_reservation_status' reservation.id 'completed' %}" class="btn btn-outline-info" data-bs-toggle="tooltip" title="إكمال الحجز">
                         <i class="fas fa-flag-checkered"></i>
                       </a>
                       {% endif %}
 
-                      <a href="{% url 'delete_reservation' reservation.id %}" class="btn btn-outline-danger" style="width: 40px; height: 40px; margin: 0 3px;" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا الحجز بشكل نهائي؟');" data-bs-toggle="tooltip" title="حذف">
+                      <!-- زر حذف الحجز -->
+                      <a href="{% url 'delete_reservation' reservation.id %}" class="btn btn-outline-danger" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا الحجز بشكل نهائي؟');" data-bs-toggle="tooltip" title="حذف">
                         <i class="fas fa-trash-alt"></i>
                       </a>
                     </div>
