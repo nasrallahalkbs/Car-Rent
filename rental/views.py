@@ -408,6 +408,7 @@ def login_view(request):
 def logout_view(request):
     """User logout view"""
     # تخزين اللغة قبل تسجيل الخروج
+    from django.utils.translation import get_language
     current_language = get_language()
     
     # تسجيل الخروج
