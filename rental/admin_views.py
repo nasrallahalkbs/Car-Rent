@@ -569,6 +569,10 @@ def admin_reservations(request):
     current_language = get_language()
     is_english = current_language == 'en'
     
+    # إضافة متغير timestamps للتأكد من عدم تخزين الملفات في ذاكرة التخزين المؤقت
+    from datetime import datetime
+    timestamp = datetime.now().timestamp()
+    
     context = {
         'reservations': reservations,
         'pending_count': pending_count,
@@ -581,9 +585,11 @@ def admin_reservations(request):
         'end_date': end_date_str,
         'search': search,
         'is_english': is_english,
-        'is_rtl': current_language == 'ar'
+        'is_rtl': current_language == 'ar',
+        'timestamp': timestamp  # إضافة الختم الزمني للسياق
     }
     
+    # استخدام قالب مباشر عوضاً عن استخدام دالة get_template_by_language
     return render(request, 'admin/reservations_compact.html', context)
 
 def admin_analytics(request):

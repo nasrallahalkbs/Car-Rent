@@ -407,9 +407,20 @@ def login_view(request):
 
 def logout_view(request):
     """User logout view"""
+    # تخزين اللغة قبل تسجيل الخروج
+    current_language = get_language()
+    
+    # تسجيل الخروج
     logout(request)
+    
+    # إضافة رسالة نجاح
     messages.info(request, "تم تسجيل الخروج!")
-    return redirect('index')
+    
+    # التأكد من عدم فقدان ملفات الأنماط - ضبط الكوكيز للمحافظة على اللغة
+    response = redirect('index')
+    response.set_cookie('django_language', current_language)
+    
+    return response
 
 @login_required
 def profile_view(request):
