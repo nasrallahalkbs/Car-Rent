@@ -260,9 +260,28 @@ class CarForm(forms.ModelForm):
 
 class ProfileForm(forms.ModelForm):
     """Form for updating user profile"""
+    GENDER_CHOICES = [
+        ('', '-- اختر النوع --'),
+        ('male', 'ذكر'),
+        ('female', 'أنثى'),
+    ]
+    
+    gender = forms.ChoiceField(choices=GENDER_CHOICES, required=False, label=_("النوع"))
+    
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'phone']
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 
+                 'age', 'gender', 'nationality']
+        
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'age': forms.NumberInput(attrs={'class': 'form-control', 'min': 18, 'max': 100}),
+            'nationality': forms.TextInput(attrs={'class': 'form-control'}),
+        }
 
 class PasswordChangeForm(forms.Form):
     """Form for changing user password"""
