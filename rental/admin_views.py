@@ -498,11 +498,8 @@ def delete_car(request, car_id):
 from .decorators import permission_required, check_permission
 
 @login_required
-@permission_required("reservations", "view_reservations")
+@admin_required
 def admin_reservations(request):
-    # التحقق من صلاحيات المستخدم
-    if not is_admin(request):
-        return redirect('home')
     
     # الحصول على معلمات التصفية
     status = request.GET.get('status', '')
