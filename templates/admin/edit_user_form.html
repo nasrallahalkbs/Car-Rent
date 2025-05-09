@@ -1,10 +1,10 @@
-<!-- CACHE_BUSTER 1746751077 --><!-- CACHE_BUSTER 1746750932 --><!-- CACHE_BUSTER 1746744425 --><!-- CACHE_BUSTER 1746744425 --><!-- CACHE_BUSTER 1746744425 --><!-- CACHE_BUSTER 1746744425 -->{% extends "admin/index.html" %}
+<!-- CACHE_BUSTER 1746751077 --><!-- CACHE_BUSTER 1746750932 --><!-- CACHE_BUSTER 1746744425 --><!-- CACHE_BUSTER 1746744425 --><!-- CACHE_BUSTER 1746744425 --><!-- CACHE_BUSTER 1746744425 -->{% extends 'admin/enhanced/admin_layout.html' %}
 {% load i18n %}
 {% load crispy_forms_tags %}
 
-{% block title %}{{ title }} - لوحة التحكم{% endblock %}
+{% block title %}{{ title }} - {% trans "لوحة التحكم" %}{% endblock %}
 
-{% block admin_content %}
+{% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="section-heading mb-0">{{ title }}</h2>
@@ -21,10 +21,23 @@
 </div>
 
 <div class="dashboard-card mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold">
+            <i class="fas fa-user-edit me-2 text-primary"></i>
+            تعديل بيانات المستخدم
+        </h5>
+    </div>
     <div class="card-body p-4">
-        <form method="post" novalidate>
+        <form method="post" novalidate class="form-with-floating-labels">
             {% csrf_token %}
-            <div class="row g-3">
+            <!-- المعلومات الأساسية -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="section-subtitle mb-3">
+                        <i class="fas fa-id-card-alt text-secondary me-2"></i>
+                        المعلومات الأساسية
+                    </h6>
+                </div>
                 <div class="col-md-6">
                     {{ form.username|as_crispy_field }}
                 </div>
@@ -41,6 +54,25 @@
                     {{ form.phone|as_crispy_field }}
                 </div>
             </div>
+            
+            <!-- المعلومات الشخصية -->
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="section-subtitle mb-3">
+                        <i class="fas fa-user-tag text-secondary me-2"></i>
+                        المعلومات الشخصية
+                    </h6>
+                </div>
+                <div class="col-md-4">
+                    {{ form.age|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.gender|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.nationality|as_crispy_field }}
+                </div>
+            </div>
 
             <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                 <a href="{% url 'admin_users' %}" class="btn btn-outline-secondary">
@@ -53,4 +85,26 @@
         </form>
     </div>
 </div>
+
+<!-- إضافة أنماط CSS خاصة بصفحة تعديل المستخدم -->
+<style>
+    .section-subtitle {
+        color: #5a5c69;
+        font-size: 1rem;
+        position: relative;
+    }
+    
+    .form-with-floating-labels .asteriskField {
+        color: #e74a3b;
+    }
+    
+    .form-with-floating-labels .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    /* تحسين شكل مدخلات النموذج */
+    .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 0.25rem rgba(58, 134, 255, 0.15);
+    }
+</style>
 {% endblock %}
