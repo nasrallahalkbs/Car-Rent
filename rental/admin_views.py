@@ -500,12 +500,10 @@ from .decorators import permission_required, check_permission
 @login_required
 @permission_required("reservations", "view_reservations")
 def admin_reservations(request):
-    # التحقق من وجود تعديلات على الصلاحيات
-    print("Checking permissions for reservations view")
-    has_create = check_permission(request, "reservations", "create_reservations")
-    has_edit = check_permission(request, "reservations", "edit_reservations")
-    has_delete = check_permission(request, "reservations", "delete_reservations")
-
+    # التحقق من صلاحيات المستخدم
+    if not is_admin(request):
+        return redirect('home')
+    
     # الحصول على معلمات التصفية
     status = request.GET.get('status', '')
     payment_status = request.GET.get('payment_status', '')
@@ -528,14 +526,14 @@ def admin_reservations(request):
     if start_date_str:
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            reservations = reservations.filter(start_date__gte=start_date)
+            reservations = reservations.filter(pickup_date__gte=start_date)
         except ValueError:
             pass
     
     if end_date_str:
         try:
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            reservations = reservations.filter(end_date__lte=end_date)
+            reservations = reservations.filter(return_date__lte=end_date)
         except ValueError:
             pass
     
@@ -584,8 +582,7 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    # استخدام القالب المطابق للصورة المرفقة مع الحفاظ على وظائف الأزرار
-    return render(request, 'admin/reservations_exact.html', context)
+    return render(request, 'admin/reservations_django.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status

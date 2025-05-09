@@ -1,38 +1,52 @@
-"""
-تطبيق التغييرات الجديدة في القوالب عبر تحديث معرف التخزين المؤقت
-"""
 
 import os
 import time
-import re
 
-def update_cache_buster():
-    """تحديث معرف التخزين المؤقت في ملفات القوالب"""
-    templates_dir = "templates"
+def force_update_templates():
+    '''
+    Add timestamp comment to template files to force browser reload
+    '''
+    templates_dir = 'templates/admin'
     timestamp = int(time.time())
     
-    # البحث في جميع ملفات القوالب
-    for root, _, files in os.walk(templates_dir):
+    for root, dirs, files in os.walk(templates_dir):
         for file in files:
             if file.endswith('.html'):
-                filepath = os.path.join(root, file)
-                
-                # قراءة محتوى الملف
-                with open(filepath, 'r', encoding='utf-8') as f:
+                file_path = os.path.join(root, file)
+                with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
-                # إضافة أو تحديث معرف التخزين المؤقت
-                if 'CACHE_BUSTER' in content:
-                    content = re.sub(r'<!-- CACHE_BUSTER \d+ -->', f'<!-- CACHE_BUSTER {timestamp} -->', content, count=1)
-                else:
-                    content = f'<!-- CACHE_BUSTER {timestamp} -->{content}'
+                # Remove previous cache buster comments
+                content = content.replace('<!-- CACHE_BUSTER -->', '')
                 
-                # كتابة المحتوى المحدث
-                with open(filepath, 'w', encoding='utf-8') as f:
+                # Add new timestamp comment
+                content = f'<!-- CACHE_BUSTER {timestamp} -->' + content
+                
+                with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(content)
-                    
-                print(f"تم تحديث الملف: {filepath}")
+                
+                print(f"Updated {file_path}")
+    
+    # Update CSS files too
+    css_dir = 'static/css'
+    if os.path.exists(css_dir):
+        for file in os.listdir(css_dir):
+            if file.endswith('.css'):
+                file_path = os.path.join(css_dir, file)
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Remove previous cache buster comments
+                content = content.replace('/* CACHE_BUSTER */', '')
+                
+                # Add new timestamp comment
+                content = f'/* CACHE_BUSTER {timestamp} */\n' + content
+                
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                
+                print(f"Updated {file_path}")
 
 if __name__ == "__main__":
-    update_cache_buster()
-    print("تم تحديث جميع ملفات القوالب بنجاح!")
+    force_update_templates()
+    print("All files updated successfully. Please restart the server and reload the page.")
