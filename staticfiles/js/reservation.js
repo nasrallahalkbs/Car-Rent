@@ -78,16 +78,53 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+
     // Remove item from cart confirmation
     const removeButtons = document.querySelectorAll('.remove-from-cart');
     removeButtons.forEach(button => {
         button.addEventListener('click', function(e) {
-            if (!confirm('Are you sure you want to remove this item from your cart?')) {
+            // Check HTML dir attribute to determine language
+            const isRTL = document.documentElement.dir === 'rtl';
+            const confirmMessage = isRTL 
+                ? 'هل أنت متأكد من رغبتك في إزالة هذا العنصر من سلة التسوق؟'
+                : 'Are you sure you want to remove this item from your cart?';
+            
+            if (!confirm(confirmMessage)) {
                 e.preventDefault();
             }
         });
     });
+    });
     
+
+            // Check HTML dir attribute to determine language
+            const isRTL = document.documentElement.dir === 'rtl';
+            
+            let isValid = true;
+            
+            // Validate card number (simple check for 16 digits)
+            if (cardNumber && !/^\d{16}$/.test(cardNumber.value)) {
+                isValid = false;
+                showError(cardNumber, isRTL ? 'الرجاء إدخال رقم بطاقة صالح (16 رقم)' : 'Please enter a valid 16-digit card number');
+            } else if (cardNumber) {
+                clearError(cardNumber);
+            }
+            
+            // Validate card name
+            if (cardName && cardName.value.trim() === '') {
+                isValid = false;
+                showError(cardName, isRTL ? 'الرجاء إدخال الاسم الموجود على البطاقة' : 'Please enter the name on card');
+            } else if (cardName) {
+                clearError(cardName);
+            }
+            
+            // Validate CVV (3-4 digits)
+            if (cvv && !/^\d{3,4}$/.test(cvv.value)) {
+                isValid = false;
+                showError(cvv, isRTL ? 'الرجاء إدخال رمز التحقق CVV صالح (3-4 أرقام)' : 'Please enter a valid 3 or 4 digit CVV');
+            } else if (cvv) {
+                clearError(cvv);
+            }
     // Payment form validation
     const paymentForm = document.getElementById('payment-form');
     if (paymentForm) {
@@ -96,30 +133,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const cardName = document.getElementById('card_name');
             const cvv = document.getElementById('cvv');
             
-            let isValid = true;
-            
-            // Validate card number (simple check for 16 digits)
-            if (cardNumber && !/^\d{16}$/.test(cardNumber.value)) {
-                isValid = false;
-                showError(cardNumber, 'Please enter a valid 16-digit card number');
-            } else if (cardNumber) {
-                clearError(cardNumber);
-            }
-            
-            // Validate card name
-            if (cardName && cardName.value.trim() === '') {
-                isValid = false;
-                showError(cardName, 'Please enter the name on card');
-            } else if (cardName) {
-                clearError(cardName);
-            }
-            
-            // Validate CVV (3-4 digits)
-            if (cvv && !/^\d{3,4}$/.test(cvv.value)) {
-                isValid = false;
-                showError(cvv, 'Please enter a valid 3 or 4 digit CVV');
-            } else if (cvv) {
-                clearError(cvv);
             }
             
             if (!isValid) {

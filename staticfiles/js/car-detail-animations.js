@@ -1,109 +1,97 @@
 /**
- * Car Detail Page Animations
+ * سكربت التأثيرات الإضافية لصفحة تفاصيل السيارة
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Add classes to elements for animations
-    const carImage = document.querySelector('.car-detail-image');
-    const specItems = document.querySelectorAll('.car-spec-item');
-    const featureItems = document.querySelectorAll('.feature-item, .features-list li');
-    const reserveButton = document.querySelector('.reserve-button');
-    const priceTag = document.querySelector('.price');
-    const reviewItems = document.querySelectorAll('.review-item');
-    const stars = document.querySelectorAll('.rating i');
-
-    // Apply custom animations based on scroll position
-    function animateOnScroll() {
-        const scrollY = window.scrollY;
-        const reviewSection = document.querySelector('.review-item')?.closest('.card');
-        
-        if (reviewSection) {
-            const reviewSectionTop = reviewSection.getBoundingClientRect().top;
-            
-            // Animate reviews when they come into view
-            if (reviewSectionTop < window.innerHeight * 0.8) {
-                reviewItems.forEach((item, index) => {
-                    setTimeout(() => {
-                        item.style.animationDelay = '0s';
-                        item.style.opacity = '1';
-                        item.classList.add('animate__animated', 'animate__fadeIn');
-                    }, index * 150);
-                });
-            }
-        }
-    }
-
-    // Add interactive effects
-    function addInteractiveEffects() {
-        // Hover effect for car image
-        if (carImage) {
-            carImage.addEventListener('mouseenter', function() {
-                this.style.transform = 'scale(1.02)';
-                this.style.transition = 'transform 0.3s ease';
-            });
-            
-            carImage.addEventListener('mouseleave', function() {
-                this.style.transform = 'scale(1)';
-            });
-        }
-        
-        // Reservation button effect
-        if (reserveButton) {
-            reserveButton.addEventListener('mouseenter', function() {
-                this.classList.add('pulse-animation');
-            });
-            
-            reserveButton.addEventListener('mouseleave', function() {
-                this.classList.remove('pulse-animation');
-            });
-        }
-        
-        // Price tag animation on hover
-        if (priceTag) {
-            priceTag.addEventListener('mouseenter', function() {
-                this.style.transform = 'scale(1.1)';
-                this.style.transition = 'transform 0.2s ease';
-                this.style.color = '#ff6b6b';
-            });
-            
-            priceTag.addEventListener('mouseleave', function() {
-                this.style.transform = 'scale(1)';
-                this.style.color = '';
-            });
-        }
-    }
-
-    // Apply dark mode specific animations
-    function applyDarkModeAnimations() {
-        const isDarkMode = document.body.classList.contains('dark-mode');
-        const animationContainer = document.querySelector('.car-detail-container');
-        
-        if (animationContainer) {
-            if (isDarkMode) {
-                animationContainer.classList.add('dark-mode-animations');
-            } else {
-                animationContainer.classList.remove('dark-mode-animations');
-            }
-        }
-    }
+    // إضافة تأثيرات عند التمرير
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+    };
     
-    // Initialize animations
-    function init() {
-        // Add window scroll listener for scroll-based animations
-        window.addEventListener('scroll', animateOnScroll);
-        
-        // Apply interactive effects
-        addInteractiveEffects();
-        
-        // Apply dark mode animations
-        applyDarkModeAnimations();
-        
-        // Trigger initial animation on page load
-        animateOnScroll();
-        
-        // Listen for dark mode toggle
-        document.addEventListener('dark-mode-toggled', applyDarkModeAnimations);
-    }
+    // تأثيرات الظهور عند التمرير
+    const appearOnScroll = new IntersectionObserver(function(entries, observer) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
     
-    // Run init function
-    init();
+    // تطبيق التأثيرات على أقسام الصفحة
+    document.querySelectorAll('.car-detail-panel, .reservation-card, .direct-booking-form').forEach(el => {
+        appearOnScroll.observe(el);
+    });
+    
+    // تحسين تجربة حقول التاريخ
+    const today = new Date();
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    
+    dateInputs.forEach(input => {
+        // تعيين الحد الأدنى للتاريخ ليكون اليوم الحالي
+        input.min = today.toISOString().split('T')[0];
+        
+        // إضافة تأثير عند التركيز
+        input.addEventListener('focus', function() {
+            this.parentElement.classList.add('is-focused');
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.classList.remove('is-focused');
+        });
+    });
+    
+    // تحسين عرض المعلومات
+    const specItems = document.querySelectorAll('.spec-item');
+    specItems.forEach((item, index) => {
+        // إضافة تأخير مختلف لكل عنصر
+        item.style.animationDelay = `${0.1 + (index * 0.05)}s`;
+    });
+    
+    // تحسين التفاعل مع الأزرار
+    const actionButtons = document.querySelectorAll('.action-button');
+    actionButtons.forEach(button => {
+        button.addEventListener('mouseover', function() {
+            this.classList.add('pulse');
+        });
+        
+        button.addEventListener('animationend', function() {
+            this.classList.remove('pulse');
+        });
+    });
+    
+    // تأثير التحميل اللطيف
+    setTimeout(() => {
+        document.body.classList.add('content-loaded');
+    }, 500);
 });
+
+// تحسين حساب السعر الإجمالي
+function calculateTotalPrice(startDate, endDate, dailyRate) {
+    if (!startDate || !endDate) return 0;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // التحقق من صحة التواريخ
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+    
+    // حساب عدد الأيام
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // تحسين عرض عدد الأيام بالعربية
+    const daysText = diffDays === 1 ? 'يوم واحد' : 
+                     diffDays === 2 ? 'يومان' : 
+                     diffDays > 10 ? `${diffDays} يوم` : 
+                     `${diffDays} أيام`;
+    
+    document.getElementById('direct-booking-days').textContent = daysText;
+    
+    // حساب السعر الإجمالي مع تنسيق العملة
+    const totalPrice = diffDays * parseFloat(dailyRate);
+    document.getElementById('direct-booking-total').textContent = `${totalPrice.toFixed(2)} د.ك`;
+    
+    return totalPrice;
+}
