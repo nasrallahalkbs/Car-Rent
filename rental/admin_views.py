@@ -511,6 +511,11 @@ def admin_reservations(request):
     # تصفية الحجوزات
     reservations = Reservation.objects.all().order_by('-created_at')
     
+    # إضافة عدد أيام الحجز لكل حجز
+    for reservation in reservations:
+        if hasattr(reservation, 'pickup_date') and hasattr(reservation, 'return_date'):
+            reservation.days = (reservation.return_date - reservation.pickup_date).days + 1
+    
     # تطبيق التصفية حسب الحالة
     if status:
         reservations = reservations.filter(status=status)
@@ -579,7 +584,7 @@ def admin_reservations(request):
         'is_rtl': current_language == 'ar'
     }
     
-    return render(request, 'admin/reservations.html', context)
+    return render(request, 'admin/reservations_pro.html', context)
 
 def admin_analytics(request):
     # Get all reservations count by status

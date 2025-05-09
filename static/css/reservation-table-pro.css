@@ -8,88 +8,98 @@
     --warning: #f59e0b;
     --danger: #ef4444;
     --dark: #1e293b;
-    --light: #f8fafc;
     --gray: #64748b;
-    --gray-light: #e2e8f0;
+    --light-gray: #e2e8f0;
     --white: #ffffff;
     --border-radius: 8px;
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --transition: all 0.3s ease;
 }
 
-/* تنسيق الإحصائيات */
+/* بطاقات الإحصائيات */
 .stats-card-container {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1rem;
     margin-bottom: 2rem;
 }
 
 .stats-card {
-    flex: 1;
-    min-width: 200px;
-    background-color: var(--white);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    transition: var(--transition);
     position: relative;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    background-color: var(--white);
+    box-shadow: var(--box-shadow);
     overflow: hidden;
-    border-top: 4px solid var(--primary-color);
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
 }
 
 .stats-card:hover {
     transform: translateY(-5px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.stats-card.pending {
-    border-top-color: var(--warning);
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 4px;
+    width: 100%;
 }
 
-.stats-card.confirmed {
-    border-top-color: var(--primary-color);
+.stats-card.pending::before {
+    background-color: var(--warning);
 }
 
-.stats-card.completed {
-    border-top-color: var(--success);
+.stats-card.confirmed::before {
+    background-color: var(--primary-color);
 }
 
-.stats-card.cancelled {
-    border-top-color: var(--danger);
+.stats-card.completed::before {
+    background-color: var(--success);
+}
+
+.stats-card.cancelled::before {
+    background-color: var(--danger);
 }
 
 .stats-card-title {
-    font-size: 1.1rem;
-    color: var(--dark);
-    margin-bottom: 0.5rem;
-    font-weight: 600;
+    font-size: 1rem;
+    color: var(--gray);
+    margin-bottom: 0.75rem;
 }
 
 .stats-card-value {
-    font-size: 2rem;
+    font-size: 2.25rem;
     font-weight: 700;
     color: var(--dark);
+    line-height: 1;
 }
 
 .stats-card-icon {
     position: absolute;
-    top: 15px;
-    right: 15px;
-    font-size: 1.5rem;
-    opacity: 0.2;
-    color: var(--dark);
+    top: 1.5rem;
+    right: 1.5rem;
+    height: 2.5rem;
+    width: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-light);
+    border-radius: 50%;
+    color: var(--primary-color);
 }
 
-/* تنسيق الفلاتر والبحث */
+/* فلاتر البحث والتصفية */
 .filters-container {
     background-color: var(--white);
     border-radius: var(--border-radius);
     padding: 1.5rem;
+    box-shadow: var(--box-shadow);
     margin-bottom: 1.5rem;
-    box-shadow: var(--shadow-sm);
 }
 
 .filters-row {
@@ -99,45 +109,53 @@
     margin-bottom: 1rem;
 }
 
+.filters-row:last-child {
+    margin-bottom: 0;
+}
+
 .filter-group {
-    flex: 1;
-    min-width: 200px;
+    flex: 1 1 200px;
+    display: flex;
+    flex-direction: column;
 }
 
 .filter-label {
-    display: block;
-    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    color: var(--dark);
+    color: var(--gray);
+    margin-bottom: 0.5rem;
 }
 
-.filter-select,
-.filter-input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--gray-light);
-    border-radius: var(--border-radius);
-    font-size: 1rem;
+.filter-select, .filter-input {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--light-gray);
+    border-radius: calc(var(--border-radius) / 2);
+    background-color: var(--white);
+    color: var(--dark);
+    font-size: 0.9rem;
     transition: var(--transition);
 }
 
-.filter-select:focus,
-.filter-input:focus {
-    outline: none;
+.filter-select:focus, .filter-input:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(51, 97, 255, 0.1);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
 .filter-button {
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: calc(var(--border-radius) / 2);
     background-color: var(--primary-color);
     color: var(--white);
-    border: none;
-    border-radius: var(--border-radius);
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
     font-weight: 500;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: auto;
 }
 
 .filter-button:hover {
@@ -145,21 +163,21 @@
 }
 
 .filter-button.secondary {
-    background-color: var(--gray-light);
-    color: var(--dark);
+    background-color: var(--white);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
 }
 
 .filter-button.secondary:hover {
-    background-color: var(--gray);
-    color: var(--white);
+    background-color: var(--primary-light);
 }
 
-/* تنسيق الجدول */
+/* جدول الحجوزات */
 .table-container {
     background-color: var(--white);
     border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
     margin-bottom: 1.5rem;
 }
 
@@ -169,20 +187,23 @@
     border-spacing: 0;
 }
 
-.reservation-table th {
-    background-color: var(--primary-light);
-    color: var(--primary-color);
-    font-weight: 600;
-    text-align: right;
+.reservation-table th, .reservation-table td {
     padding: 1rem;
-    border-bottom: 1px solid var(--gray-light);
+    text-align: right;
+    border-bottom: 1px solid var(--light-gray);
 }
 
-.reservation-table td {
-    padding: 1rem;
-    border-bottom: 1px solid var(--gray-light);
-    vertical-align: middle;
-    text-align: right;
+.reservation-table th {
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.reservation-table tr:last-child td {
+    border-bottom: none;
 }
 
 .reservation-table tbody tr {
@@ -190,15 +211,14 @@
 }
 
 .reservation-table tbody tr:hover {
-    background-color: var(--light);
+    background-color: var(--primary-light);
 }
 
-/* تنسيق البيانات في الجدول */
+/* تصميم عناصر الحجز */
 .reservation-id {
     font-weight: 600;
     color: var(--primary-color);
     text-decoration: none;
-    display: inline-block;
     transition: var(--transition);
 }
 
@@ -207,173 +227,176 @@
     text-decoration: underline;
 }
 
-.user-info {
+.customer-info, .car-info, .reservation-date {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    flex-direction: column;
 }
 
-.user-name {
+.customer-name, .car-name {
+    font-weight: 500;
+    color: var(--dark);
+    margin-bottom: 0.25rem;
+}
+
+.customer-email, .car-model {
+    font-size: 0.875rem;
+    color: var(--gray);
+}
+
+.reservation-date .date-item {
+    display: flex;
+    margin-bottom: 0.25rem;
+    align-items: center;
+}
+
+.reservation-date .date-label {
+    font-size: 0.875rem;
+    color: var(--gray);
+    margin-left: 0.5rem;
+    min-width: 2rem;
+}
+
+.reservation-date .date-value {
     font-weight: 500;
     color: var(--dark);
 }
 
-.user-email {
-    font-size: 0.85rem;
-    color: var(--gray);
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 0.4rem 0.8rem;
-    border-radius: 50px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    text-align: center;
-    text-transform: uppercase;
-}
-
-.status-badge.pending {
-    background-color: #fff8e6;
-    color: #b45309;
-    border: 1px solid #fde68a;
-}
-
-.status-badge.confirmed {
-    background-color: #ecfdf5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
-}
-
-.status-badge.completed {
-    background-color: #f0f9ff;
-    color: #0369a1;
-    border: 1px solid #bae6fd;
-}
-
-.status-badge.cancelled {
-    background-color: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-}
-
-.status-badge.paid {
-    background-color: #ecfdf5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
-}
-
-.status-badge.unpaid {
-    background-color: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-}
-
-.status-badge.partial {
-    background-color: #fffbeb;
-    color: #92400e;
-    border: 1px solid #fde68a;
-}
-
-/* تنسيق الأزرار */
-.action-buttons {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-}
-
-.action-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem;
-    border-radius: var(--border-radius);
-    transition: var(--transition);
-    font-size: 0.9rem;
-    cursor: pointer;
-    border: 1px solid transparent;
-}
-
-.action-button.view {
-    background-color: var(--primary-light);
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-}
-
-.action-button.view:hover {
-    background-color: var(--primary-color);
-    color: var(--white);
-}
-
-.action-button.edit {
-    background-color: #f0f9ff;
-    color: #0369a1;
-    border-color: #bae6fd;
-}
-
-.action-button.edit:hover {
-    background-color: #0369a1;
-    color: var(--white);
-}
-
-.action-button.confirm {
-    background-color: #ecfdf5;
-    color: #065f46;
-    border-color: #a7f3d0;
-}
-
-.action-button.confirm:hover {
-    background-color: #065f46;
-    color: var(--white);
-}
-
-.action-button.cancel {
-    background-color: #fef2f2;
-    color: #991b1b;
-    border-color: #fecaca;
-}
-
-.action-button.cancel:hover {
-    background-color: #991b1b;
-    color: var(--white);
-}
-
-.action-button.delete {
-    background-color: #fff1f2;
-    color: #be123c;
-    border-color: #fecdd3;
-}
-
-.action-button.delete:hover {
-    background-color: #be123c;
-    color: var(--white);
-}
-
-.action-button i {
+.duration-value {
+    font-weight: 600;
+    color: var(--dark);
     margin-left: 0.25rem;
 }
 
-/* تنسيق ترقيم الصفحات */
+.duration-days {
+    font-size: 0.875rem;
+    color: var(--gray);
+}
+
+.price-amount {
+    font-weight: 600;
+    color: var(--dark);
+    margin-left: 0.25rem;
+}
+
+.price-currency {
+    font-size: 0.875rem;
+    color: var(--gray);
+}
+
+/* شارات الحالة */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.825rem;
+    font-weight: 500;
+}
+
+.status-badge i {
+    margin-left: 0.35rem;
+}
+
+.badge-pending {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+.badge-confirmed {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--primary-color);
+}
+
+.badge-completed {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.badge-cancelled {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.status-badge.paid {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.status-badge.unpaid {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.status-badge.partial {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+/* أزرار الإجراءات */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-button {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--white);
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-button.view {
+    background-color: var(--primary-color);
+}
+
+.action-button.confirm {
+    background-color: var(--success);
+}
+
+.action-button.edit {
+    background-color: var(--primary-color);
+}
+
+.action-button.cancel {
+    background-color: var(--warning);
+}
+
+.action-button.delete {
+    background-color: var(--danger);
+}
+
+/* ترقيم الصفحات */
 .pagination {
     display: flex;
     justify-content: center;
     gap: 0.5rem;
     margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .pagination-link {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 2.25rem;
+    height: 2.25rem;
     border-radius: var(--border-radius);
     background-color: var(--white);
     color: var(--dark);
     font-weight: 500;
     text-decoration: none;
+    box-shadow: var(--box-shadow);
     transition: var(--transition);
-    box-shadow: var(--shadow-sm);
 }
 
 .pagination-link:hover {
@@ -387,69 +410,79 @@
 }
 
 .pagination-link.disabled {
-    opacity: 0.5;
+    background-color: var(--light-gray);
+    color: var(--gray);
     cursor: not-allowed;
 }
 
-/* تأثيرات متحركة */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
+/* تحسينات للأجهزة المحمولة */
+@media (max-width: 768px) {
+    .filter-group {
+        flex: 1 1 100%;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    
+    .action-buttons {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .reservation-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
     }
 }
 
-.stats-card {
-    animation: fadeIn 0.3s ease-out;
+/* تحسينات لوضع الظلام */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-light: #1e293b;
+        --white: #0f172a;
+        --dark: #e2e8f0;
+        --gray: #94a3b8;
+        --light-gray: #334155;
+    }
+    
+    .stats-card, .filters-container, .table-container, .reservation-table th {
+        background-color: #1e293b;
+    }
+    
+    .reservation-table tbody tr:hover {
+        background-color: #334155;
+    }
+    
+    .filter-select, .filter-input {
+        background-color: #1e293b;
+        color: #e2e8f0;
+    }
 }
 
-.stats-card:nth-child(1) {
-    animation-delay: 0.1s;
+/* تمييز الصفوف بشكل متناوب */
+.reservation-table tbody tr:nth-child(even) {
+    background-color: #f8fafc;
 }
 
-.stats-card:nth-child(2) {
-    animation-delay: 0.2s;
+.reservation-table tbody tr:nth-child(even):hover {
+    background-color: var(--primary-light);
 }
 
-.stats-card:nth-child(3) {
-    animation-delay: 0.3s;
+/* تصميم مراعي للـ RTL */
+[dir="rtl"] .reservation-date .date-label {
+    margin-left: 0;
+    margin-right: 0.5rem;
 }
 
-.stats-card:nth-child(4) {
-    animation-delay: 0.4s;
+[dir="rtl"] .status-badge i {
+    margin-left: 0;
+    margin-right: 0.35rem;
 }
 
-/* تخصيص للغة العربية */
-[dir="rtl"] .stats-card-icon {
-    right: auto;
-    left: 15px;
-}
-
-[dir="rtl"] .reservation-table th,
-[dir="rtl"] .reservation-table td {
-    text-align: right;
-}
-
-[dir="rtl"] .action-button i {
+[dir="rtl"] .duration-value {
     margin-left: 0;
     margin-right: 0.25rem;
 }
 
-/* تخصيص للشاشات الصغيرة */
-@media (max-width: 768px) {
-    .stats-card {
-        min-width: 100%;
-    }
-    
-    .filter-group {
-        min-width: 100%;
-    }
-    
-    .table-container {
-        overflow-x: auto;
-    }
+[dir="rtl"] .price-amount {
+    margin-left: 0;
+    margin-right: 0.25rem;
 }
