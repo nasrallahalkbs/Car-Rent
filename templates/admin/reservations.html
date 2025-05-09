@@ -6,73 +6,113 @@
 
 {% block custom_css %}
 <style>
-  /* تصميم محسن للجدول - نسخة 2.0 */
+  /* تصميم محسن للجدول - نسخة 3.0 (احترافي ومطابق للصورة) */
   .dashboard-card {
-    border-radius: 12px;
+    border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     background-color: #fff;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: all 0.3s;
     height: 100%;
     border: none;
   }
   
   .dashboard-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   }
   
-  .stats-card {
-    text-align: center;
-    padding: 20px;
-    border-bottom: 4px solid transparent;
-    transition: all 0.3s;
+  /* إحصائيات الحجوزات */
+  .stats-wrapper {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
   }
   
-  .stats-card .card-title {
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-    color: #64748b;
-    font-weight: 600;
+  .stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 25px;
+    border-radius: 8px;
+    min-width: 180px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+    position: relative;
+    overflow: hidden;
   }
   
-  .stats-card .card-number {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-  
-  .stats-icon {
-    font-size: 1.5rem;
-    width: 50px;
-    height: 50px;
+  .stat-box .stat-icon {
+    font-size: 20px;
+    margin-bottom: 8px;
+    height: 40px;
+    width: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 15px;
-    border-radius: 12px;
+    border-radius: 50%;
   }
   
-  .pending-card { border-color: #f59e0b; }
-  .pending-card .card-number { color: #f59e0b; }
-  .pending-card .stats-icon { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+  .stat-box .stat-label {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 5px;
+  }
   
-  .confirmed-card { border-color: #10b981; }
-  .confirmed-card .card-number { color: #10b981; }
-  .confirmed-card .stats-icon { background-color: rgba(16, 185, 129, 0.1); color: #10b981; }
+  .stat-box .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
   
-  .completed-card { border-color: #3b82f6; }
-  .completed-card .card-number { color: #3b82f6; }
-  .completed-card .stats-icon { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+  .stat-box .stat-unit {
+    font-size: 12px;
+    color: #adb5bd;
+  }
   
-  .cancelled-card { border-color: #ef4444; }
-  .cancelled-card .card-number { color: #ef4444; }
-  .cancelled-card .stats-icon { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
+  /* ألوان الإحصائيات */
+  .pending-stat .stat-icon {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+  }
+  
+  .pending-stat .stat-value {
+    color: #ffc107;
+  }
+  
+  .confirmed-stat .stat-icon {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+  }
+  
+  .confirmed-stat .stat-value {
+    color: #28a745;
+  }
+  
+  .completed-stat .stat-icon {
+    background-color: rgba(13, 110, 253, 0.15);
+    color: #0d6efd;
+  }
+  
+  .completed-stat .stat-value {
+    color: #0d6efd;
+  }
+  
+  .cancelled-stat .stat-icon {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+  }
+  
+  .cancelled-stat .stat-value {
+    color: #dc3545;
+  }
 
-  /* تصميم الجدول المحسن */
-  .table-container {
+  /* تصميم الجدول المطور */
+  .table-responsive {
     overflow-x: auto;
-    border-radius: 12px;
+    border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   }
   
@@ -82,161 +122,481 @@
     border-spacing: 0;
     border: 1px solid #34495e;
     background-color: #fff;
+    margin-bottom: 0;
   }
   
-  .reservations-table th {
+  .reservations-table thead th {
     background-color: #34495e;
     color: white;
-    padding: 15px;
+    padding: 12px 10px;
     text-align: center;
     font-weight: 600;
     border: none;
     white-space: nowrap;
-  }
-  
-  .reservations-table td {
-    padding: 15px;
-    text-align: center;
-    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
     vertical-align: middle;
   }
   
+  .reservations-table tbody td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #eaedf1;
+    font-size: 14px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  
   .reservations-table tbody tr:hover {
-    background-color: #f8fafc;
+    background-color: #f8fafe;
   }
   
   .reservations-table tbody tr:last-child td {
     border-bottom: none;
   }
+
+  /* شريط الأدوات */
+  .table-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+  
+  .table-toolbar .search-box {
+    position: relative;
+    max-width: 350px;
+    width: 100%;
+  }
+  
+  .table-toolbar .search-box .form-control {
+    padding-right: 40px;
+    border-radius: 5px;
+    border: 1px solid #dce0e5;
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  .table-toolbar .search-box .search-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #adb5bd;
+  }
+  
+  /* فلاتر الجدول */
+  .filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -5px 15px;
+    align-items: flex-end;
+  }
+  
+  .filters-row .form-group {
+    padding: 0 5px;
+    margin-bottom: 10px;
+    flex: 1 1 200px;
+  }
+  
+  .filters-row .form-label {
+    font-size: 13px;
+    margin-bottom: 5px;
+    color: #6c757d;
+  }
+  
+  .filters-row .form-control,
+  .filters-row .form-select {
+    height: 40px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: 1px solid #dce0e5;
+  }
+  
+  .filters-row .form-control:focus,
+  .filters-row .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+  }
+  
+  .filters-row .btn-group {
+    padding: 0 5px;
+    margin-bottom: 10px;
+  }
+  
+  .filter-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #eaedf1;
+  }
+  
+  .filter-section .collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-align: left;
+    font-weight: 600;
+    color: #343a40;
+    padding: 8px 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .filter-section .collapse-content {
+    margin-top: 10px;
+  }
   
   /* تصميم الأزرار الإجرائية */
+  .action-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
   .action-buttons .btn {
-    transition: all 0.2s;
+    width: 34px;
+    height: 34px;
+    padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    margin: 0 3px;
+    border-radius: 5px;
+    margin: 0 2px;
+    font-size: 13px;
+    transition: all 0.2s;
+    border: none;
+  }
+  
+  .action-buttons .btn-action-view {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .action-buttons .btn-action-edit {
+    background-color: #17a2b8;
+    color: white;
+  }
+  
+  .action-buttons .btn-action-delete {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .action-buttons .btn-action-cancel {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .action-buttons .btn-action-complete {
+    background-color: #28a745;
+    color: white;
   }
   
   .action-buttons .btn:hover {
     transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    opacity: 0.9;
   }
   
-  /* تصميم البحث والفلترة */
-  .filter-section {
-    background-color: #f8fafc;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid #e5e7eb;
-  }
-  
-  .filter-section .form-control, 
-  .filter-section .form-select {
-    border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    padding: 10px 15px;
-  }
-  
-  .filter-section .form-control:focus, 
-  .filter-section .form-select:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-  
-  .filter-section .btn {
-    border-radius: 8px;
-    padding: 10px 20px;
-  }
-  
-  /* تصميم شارات الحالة */
+  /* شارات الحالة */
   .status-badge {
-    padding: 8px 15px;
+    padding: 6px 12px;
     border-radius: 50px;
-    display: inline-block;
-    font-weight: 500;
-    min-width: 120px;
-    font-size: 0.9rem;
-  }
-  
-  /* زر إضافة حجز جديد */
-  .add-reservation-btn {
-    padding: 10px 25px;
+    font-size: 12px;
     font-weight: 600;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s;
-  }
-  
-  .add-reservation-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08);
-  }
-  
-  /* تصميم حالة فارغة */
-  .empty-state {
-    padding: 30px;
+    display: inline-block;
+    min-width: 90px;
     text-align: center;
   }
   
+  .status-badge.badge-pending {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+  }
+  
+  .status-badge.badge-confirmed {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+  }
+  
+  .status-badge.badge-completed {
+    background-color: rgba(13, 110, 253, 0.15);
+    color: #0d6efd;
+    border: 1px solid rgba(13, 110, 253, 0.3);
+  }
+  
+  .status-badge.badge-cancelled {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+  }
+  
+  .status-badge i {
+    margin-right: 4px;
+    font-size: 10px;
+  }
+  
+  /* تصميم بيانات الحجز */
+  .reservation-id {
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .customer-name {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+  
+  .customer-email {
+    font-size: 12px;
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+  
+  .car-info {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+  
+  .car-year {
+    font-size: 12px;
+    color: #6c757d;
+  }
+  
+  .date-label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-right: 5px;
+  }
+  
+  .date-value {
+    font-weight: 500;
+    color: #495057;
+  }
+  
+  .duration-days {
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .duration-unit {
+    font-size: 12px;
+    color: #6c757d;
+    margin-right: 3px;
+  }
+  
+  .price-value {
+    font-weight: 700;
+    color: #495057;
+    font-size: 16px;
+  }
+  
+  .price-currency {
+    font-size: 12px;
+    color: #6c757d;
+    margin-right: 3px;
+  }
+  
+  /* حالة فارغة */
+  .empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    border: 1px dashed #dce0e5;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  
+  .empty-state .empty-icon {
+    font-size: 40px;
+    color: #adb5bd;
+    margin-bottom: 15px;
+  }
+  
   .empty-state h5 {
-    color: #4b5563;
+    font-weight: 600;
+    color: #495057;
     margin-bottom: 10px;
   }
   
   .empty-state p {
-    color: #9ca3af;
+    color: #6c757d;
     margin-bottom: 20px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
   }
   
   /* ترقيم الصفحات */
-  .pagination {
-    margin-top: 30px;
+  .pagination-wrapper {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
   }
   
-  .pagination .page-link {
-    width: 40px;
-    height: 40px;
+  .custom-pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .custom-pagination li {
+    margin: 0 3px;
+  }
+  
+  .custom-pagination li a {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    margin: 0 3px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 5px;
+    border: 1px solid #dce0e5;
+    color: #495057;
     font-weight: 500;
-    color: #4b5563;
-    border: 1px solid #e5e7eb;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.2s;
   }
   
-  .pagination .page-item.active .page-link {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
+  .custom-pagination li.active a {
+    background-color: #007bff;
+    border-color: #007bff;
     color: white;
   }
   
-  .pagination .page-link:hover:not(.active) {
-    background-color: #f8fafc;
+  .custom-pagination li a:hover:not(.active) {
+    background-color: #f8f9fa;
   }
   
   /* تصميم متوافق مع الهواتف */
   @media (max-width: 767px) {
-    .stats-card {
-      margin-bottom: 15px;
-    }
-    
-    .filter-section .form-control,
-    .filter-section .form-select,
-    .filter-section .btn {
+    .stat-box {
       margin-bottom: 10px;
+      min-width: 140px;
     }
     
-    .reservations-table th,
-    .reservations-table td {
-      padding: 10px;
+    .table-toolbar {
+      flex-direction: column;
+      align-items: stretch;
     }
+    
+    .table-toolbar .search-box {
+      margin-bottom: 10px;
+      max-width: 100%;
+    }
+    
+    .filters-row .form-group {
+      flex: 1 1 100%;
+    }
+    
+    .action-buttons .btn {
+      margin-bottom: 5px;
+    }
+  }
+  
+  /* تحسينات أخرى */
+  .main-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 60px);
+  }
+  
+  .section-header {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #343a40;
+    margin: 0;
+  }
+  
+  .btn-refresh {
+    height: 36px;
+    width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    color: #6c757d;
+    border: 1px solid #dce0e5;
+    background-color: white;
+    transition: all 0.2s;
+  }
+  
+  .btn-refresh:hover {
+    background-color: #f8f9fa;
+    color: #343a40;
+  }
+  
+  .table-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    color: #6c757d;
+    font-size: 13px;
+  }
+  
+  .text-right {
+    text-align: right;
+  }
+  
+  .rtl-support [dir="rtl"] .text-right {
+    text-align: left;
+  }
+  
+  /* تنسيق للصورة المرفقة */
+  .colored-action-buttons .btn-outline-primary {
+    color: #007bff;
+    border-color: #007bff;
+  }
+  
+  .colored-action-buttons .btn-outline-success {
+    color: #28a745;
+    border-color: #28a745;
+  }
+  
+  .colored-action-buttons .btn-outline-warning {
+    color: #ffc107;
+    border-color: #ffc107;
+  }
+  
+  .colored-action-buttons .btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+  }
+  
+  .colored-action-buttons .btn-outline-info {
+    color: #17a2b8;
+    border-color: #17a2b8;
   }
 </style>
 {% endblock %}
