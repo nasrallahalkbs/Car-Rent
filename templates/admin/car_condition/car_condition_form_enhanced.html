@@ -1,0 +1,743 @@
+{% extends "admin/enhanced/admin_layout.html" %}
+{% load static %}
+{% load i18n %}
+{% load rental_extras %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<style>
+    /* سيتم التحكم بإظهار وإخفاء أقسام الفحص من خلال جافاسكريبت */
+    .fuel-level-selector {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    
+    .fuel-level-option {
+        text-align: center;
+        cursor: pointer;
+    }
+    
+    .fuel-level-option.selected {
+        font-weight: bold;
+    }
+    
+    .fuel-gauge {
+        width: 100%;
+        background-color: #f5f5f5;
+        border-radius: 5px;
+        overflow: hidden;
+        height: 20px;
+    }
+    
+    .fuel-gauge-fill {
+        height: 100%;
+        background-color: #28a745;
+        transition: width 0.3s;
+    }
+    
+    /* أنماط الهيكل الخارجي */
+    .image-input-container {
+        width: 100%;
+        height: 150px;
+        border: 2px dashed #ced4da;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        overflow: hidden;
+        background-color: #f8f9fa;
+        position: relative;
+        transition: all 0.3s;
+    }
+    
+    .image-input-container:hover {
+        border-color: #6c757d;
+        background-color: #f2f2f2;
+    }
+    
+    .upload-placeholder {
+        text-align: center;
+    }
+    
+    .preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    
+    /* أنماط قسم الصور الجديدة */
+    .car-image-section {
+        margin-bottom: 10px;
+    }
+    
+    .car-image-container {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 8px;
+        height: 100%;
+        background-color: #f8f9fa;
+        transition: all 0.2s;
+    }
+    
+    .car-image-container:hover {
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    
+    .car-image-box {
+        width: 40px; /* عرض ثابت - 4 سم */
+        height: 60px; /* ارتفاع ثابت - 6 سم */
+        margin: 0 auto; /* توسيط العنصر */
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        position: relative;
+        background-color: #fff;
+        overflow: hidden; /* منع تجاوز المحتوى للحدود */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .car-image-box:hover {
+        border-color: #6c757d;
+        box-shadow: 0 0 3px rgba(0,0,0,0.1);
+    }
+    
+    .car-image-box i {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1rem; /* تصغير أيقونة الكاميرا للتناسب مع الحجم الجديد */
+        color: #adb5bd;
+        z-index: 1;
+    }
+    
+    .car-image-preview {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* تغطية المساحة بشكل كامل */
+        display: none; /* سيتم تغييره إلى block عبر JavaScript عند تحديد صورة */
+        z-index: 2; /* ضمان أن الصورة فوق أيقونة الكاميرا */
+        padding: 0; /* إزالة الهامش الداخلي تماماً */
+        border-radius: 2px; /* حواف مستديرة للصورة */
+    }
+    
+    /* أنماط النافذة المنبثقة لعرض الصورة بالحجم الكامل */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.8);
+        overflow: auto;
+    }
+    
+    .image-modal-content {
+        margin: auto;
+        display: block;
+        width: 80%;
+        max-width: 600px;
+        max-height: 80vh;
+        object-fit: contain;
+        padding: 10px;
+        animation: zoom 0.3s;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    
+    @keyframes zoom {
+        from {transform: scale(0.1)} 
+        to {transform: scale(1)}
+    }
+    
+    .image-modal-close {
+        position: absolute;
+        top: 20px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+    
+    .image-modal-close:hover {
+        color: #bbb;
+    }
+    
+    .image-preview-container {
+        position: relative;
+    }
+    
+    .fullscreen-hint {
+        position: absolute;
+        bottom: 1px;
+        right: 1px;
+        background-color: rgba(0,0,0,0.5);
+        color: white;
+        border-radius: 50%;
+        width: 8px;
+        height: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        font-size: 0.4rem;
+        cursor: pointer;
+    }
+    
+    .car-image-box:hover .fullscreen-hint {
+        opacity: 1;
+    }
+    
+    /* عند تحميل الصورة سيظهر كود المعاينة */
+    .car-image-preview.show {
+        display: block !important;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+    
+    /* عند تحميل صورة، إخفاء أيقونة الكاميرا */
+    .car-image-box.has-image i.fa-camera {
+        display: none;
+    }
+    
+    .car-image-notes {
+        font-size: 0.8rem;
+        color: #495057;
+        margin-top: 2px;
+        padding: 2px 5px;
+        height: 22px;
+        min-height: 22px;
+    }
+    
+    /* تأثير النبض على قسم الفحص الإلكتروني النشط */
+    @keyframes pulse-animation {
+        0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.5); }
+        70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+    }
+    
+    .pulse-animation {
+        animation: pulse-animation 2s infinite;
+    }
+    
+    /* تحسين أسلوب زر الحفظ */
+    button[type="submit"] {
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    button[type="submit"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    button[type="submit"]:active {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+
+    /* أنماط إضافية لقسم معلومات السيارة والعميل */
+    .car-details-box, .customer-details-box {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .car-details-box {
+        background-color: #e8f4ff;
+        border: 1px solid #c8e1ff;
+    }
+    
+    .customer-details-box {
+        background-color: #f0f8ea;
+        border: 1px solid #d0e8c0;
+    }
+    
+    .details-title {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding-bottom: 5px;
+    }
+    
+    .detail-row {
+        margin-bottom: 5px;
+        display: flex;
+    }
+    
+    .detail-label {
+        font-weight: bold;
+        min-width: 120px;
+    }
+    
+    .detail-value {
+        flex: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<script>
+// تحديث بيانات السيارة والعميل عند اختيار الحجز
+$(document).ready(function() {
+    console.log('تهيئة صفحة إنشاء تقرير حالة السيارة المحسنة');
+    
+    // إزالة معلومات العميل والسيارة عند تحميل الصفحة أول مرة إذا لم يتم تحديد حجز
+    if ($('#reservation-select').val() === '') {
+        $('.car-details-box, .customer-details-box').remove();
+    }
+
+    $('#reservation-select').change(function() {
+        var reservationId = $(this).val();
+        console.log('تم اختيار الحجز: ' + reservationId);
+        
+        // إزالة أي معلومات سابقة (كل من معلومات العميل والسيارة)
+        $('.car-details-box, .customer-details-box').remove();
+        
+        if (reservationId) {
+            console.log('إرسال طلب AJAX للحصول على بيانات الحجز');
+            
+            // عرض مؤشر تحميل
+            var loadingIndicator = '<div class="text-center mt-3 loading-indicator"><i class="fas fa-spinner fa-spin"></i> جاري تحميل البيانات...</div>';
+            $('#reservation-select').after(loadingIndicator);
+            
+            $.ajax({
+                url: "{% url 'get_car_by_reservation_ar' %}",
+                data: {
+                    'reservation_id': reservationId
+                },
+                dataType: 'json',
+                success: function(data) {
+                    console.log('استجابة AJAX:', data);
+                    
+                    // إزالة مؤشر التحميل
+                    $('.loading-indicator').remove();
+                    
+                    // نفحص محتوى البيانات للتصحيح
+                    console.log('معرف السيارة:', data.car_id);
+                    console.log('بيانات السيارة:', data.car_details);
+                    console.log('بيانات العميل:', data.customer);
+                    console.log('حالة الاستجابة:', data.status);
+                    
+                    if (data.status === 'success') {
+                        // تحديث اختيار السيارة
+                        if (data.car_id) {
+                            $('#car-select').val(data.car_id);
+                            console.log('تم تعيين السيارة بنجاح');
+                            
+                            // إضافة معلومات السيارة المفصلة
+                            var carDetailsHtml = '<div class="car-details-box">' +
+                                '<h5 class="details-title"><i class="fas fa-car me-2"></i>معلومات السيارة</h5>';
+                                
+                            if (data.car_details) {
+                                carDetailsHtml += '<div class="detail-row"><span class="detail-label">الماركة/الموديل:</span> <span class="detail-value">' + data.car_details.make + ' ' + data.car_details.model + '</span></div>';
+                                carDetailsHtml += '<div class="detail-row"><span class="detail-label">سنة الصنع:</span> <span class="detail-value">' + data.car_details.year + '</span></div>';
+                                carDetailsHtml += '<div class="detail-row"><span class="detail-label">رقم اللوحة:</span> <span class="detail-value">' + data.car_details.license_plate + '</span></div>';
+                                
+                                if (data.car_details.vin) {
+                                    carDetailsHtml += '<div class="detail-row"><span class="detail-label">رقم الهيكل:</span> <span class="detail-value">' + data.car_details.vin + '</span></div>';
+                                }
+                                
+                                carDetailsHtml += '<div class="detail-row"><span class="detail-label">اللون:</span> <span class="detail-value">' + data.car_details.color + '</span></div>';
+                                carDetailsHtml += '<div class="detail-row"><span class="detail-label">نوع الوقود:</span> <span class="detail-value">' + data.car_details.fuel_type + '</span></div>';
+                                carDetailsHtml += '<div class="detail-row"><span class="detail-label">ناقل الحركة:</span> <span class="detail-value">' + data.car_details.transmission + '</span></div>';
+                            } else {
+                                carDetailsHtml += '<div class="detail-row">السيارة: ' + data.car_info + '</div>';
+                            }
+                            
+                            carDetailsHtml += '</div>';
+                            
+                            // إضافة بيانات السيارة إلى النموذج
+                            $('#car-select').after(carDetailsHtml);
+                        }
+                        
+                        // عرض معلومات العميل
+                        var customerDetailsHtml = '<div class="customer-details-box">' +
+                            '<h5 class="details-title"><i class="fas fa-user me-2"></i>معلومات العميل</h5>';
+                        
+                        if (data.customer && data.customer.name) {
+                            customerDetailsHtml += '<div class="detail-row"><span class="detail-label">الاسم:</span> <span class="detail-value">' + data.customer.name + '</span></div>';
+                        } else if (data.customer_name) {
+                            customerDetailsHtml += '<div class="detail-row"><span class="detail-label">الاسم:</span> <span class="detail-value">' + data.customer_name + '</span></div>';
+                        }
+                        
+                        if (data.customer && data.customer.email) {
+                            customerDetailsHtml += '<div class="detail-row"><span class="detail-label">البريد الإلكتروني:</span> <span class="detail-value">' + data.customer.email + '</span></div>';
+                        } else if (data.customer_email) {
+                            customerDetailsHtml += '<div class="detail-row"><span class="detail-label">البريد الإلكتروني:</span> <span class="detail-value">' + data.customer_email + '</span></div>';
+                        }
+                        
+                        if (data.customer && data.customer.phone) {
+                            customerDetailsHtml += '<div class="detail-row"><span class="detail-label">الهاتف:</span> <span class="detail-value">' + data.customer.phone + '</span></div>';
+                        } else if (data.customer_phone) {
+                            customerDetailsHtml += '<div class="detail-row"><span class="detail-label">الهاتف:</span> <span class="detail-value">' + data.customer_phone + '</span></div>';
+                        }
+                        
+                        // إضافة معلومات الحجز
+                        if (data.reservation_details) {
+                            customerDetailsHtml += '<div class="detail-row"><span class="detail-label">رقم الحجز:</span> <span class="detail-value">' + data.reservation_details.reservation_number + '</span></div>';
+                            customerDetailsHtml += '<div class="detail-row"><span class="detail-label">تاريخ البداية:</span> <span class="detail-value">' + data.reservation_details.start_date + '</span></div>';
+                            customerDetailsHtml += '<div class="detail-row"><span class="detail-label">تاريخ النهاية:</span> <span class="detail-value">' + data.reservation_details.end_date + '</span></div>';
+                        }
+                        
+                        customerDetailsHtml += '</div>';
+                        
+                        // إضافة بيانات العميل إلى النموذج
+                        $('#reservation-select').after(customerDetailsHtml);
+                    } else {
+                        // عرض رسالة خطأ
+                        var errorMessage = '<div class="alert alert-danger mt-2">' +
+                            '<i class="fas fa-exclamation-triangle me-2"></i> ' +
+                            'حدث خطأ أثناء جلب بيانات الحجز: ' + (data.error || 'خطأ غير معروف') +
+                            '</div>';
+                        $('#reservation-select').after(errorMessage);
+                        console.error('خطأ في استجابة الخادم', data);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // إزالة مؤشر التحميل وإظهار رسالة الخطأ
+                    $('.loading-indicator').remove();
+                    
+                    var errorMessage = '<div class="alert alert-danger mt-2">' +
+                        '<i class="fas fa-exclamation-triangle me-2"></i> ' +
+                        'فشل في الاتصال بالخادم. يرجى المحاولة مرة أخرى.' +
+                        '</div>';
+                    $('#reservation-select').after(errorMessage);
+                    
+                    console.error('خطأ في الطلب:', error);
+                    console.error('حالة الخطأ:', status);
+                    console.error('استجابة الخادم:', xhr.responseText);
+                }
+            });
+        }
+    });
+});
+
+// سكريبت إضافي للتأكد من تفعيل وظيفة إظهار/إخفاء أقسام الفحص
+function setupInspectionToggle() {
+    // تحديد المقاطع الرئيسية
+    var electronicSection = document.getElementById('electronic-inspection-section');
+    var manualSection = document.getElementById('manual-inspection-section');
+    
+    if (!electronicSection || !manualSection) {
+        console.error("لم يتم العثور على عناصر الفحص");
+        return;
+    }
+    
+    // إخفاء كلا القسمين ابتداءً
+    electronicSection.style.display = 'none';
+    manualSection.style.display = 'none';
+    
+    // الحصول على قيمة الاختيار الحالية
+    var select = document.getElementById('{{ form.inspection_type.id_for_label }}');
+    if (!select) {
+        console.error("لم يتم العثور على حقل نوع الفحص");
+        return;
+    }
+    
+    // وظيفة لتحديث العرض بناءً على قيمة الاختيار
+    function updateSections() {
+        var selectedValue = select.value;
+        
+        if (selectedValue === 'electronic') {
+            electronicSection.style.display = 'block';
+            manualSection.style.display = 'none';
+        } else {
+            electronicSection.style.display = 'none';
+            manualSection.style.display = 'block';
+        }
+    }
+    
+    // تحديث العرض عند بدء التشغيل
+    updateSections();
+    
+    // إضافة مستمع للتغييرات
+    select.addEventListener('change', updateSections);
+}
+
+// تنفيذ عند تحميل الصفحة مباشرة
+window.addEventListener('DOMContentLoaded', setupInspectionToggle);
+// تنفيذ مرة إضافية بعد جاهزية المستند للتأكد
+window.addEventListener('load', setupInspectionToggle);
+// استخدام جيكويري أيضاً للتأكد
+$(document).ready(setupInspectionToggle);
+</script>
+
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ title }}</h5>
+                <a href="{% url 'car_condition_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> {% trans "العودة للقائمة" %}
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" action="" class="needs-validation" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <h6 class="mb-0">{% trans "معلومات أساسية" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="reservation-select" class="form-label">{{ form.reservation.label }}</label>
+                                        <select name="{{ form.reservation.html_name }}" id="reservation-select" class="form-select">
+                                            <option value="">--- اختر الحجز ---</option>
+                                            {% for reservation in active_reservations %}
+                                                <option value="{{ reservation.id }}" {% if form.reservation.value|stringformat:"s" == reservation.id|stringformat:"s" %}selected{% endif %}>
+                                                    #{{ reservation.reservation_number }} - {{ reservation.user.get_full_name|default:reservation.user.username }} ({{ reservation.car.make }} {{ reservation.car.model }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        {% if form.reservation.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.reservation.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="car-select" class="form-label">{{ form.car.label }}</label>
+                                        <select name="{{ form.car.html_name }}" id="car-select" class="form-select">
+                                            <option value="">--- اختر السيارة ---</option>
+                                            {% for option in form.car.field.queryset %}
+                                                <option value="{{ option.id }}" {% if form.car.value|stringformat:"s" == option.id|stringformat:"s" %}selected{% endif %}>
+                                                    {{ option.make }} {{ option.model }} ({{ option.year }}) - {{ option.license_plate }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        {% if form.car.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.car.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="{{ form.report_type.id_for_label }}" class="form-label">{{ form.report_type.label }}</label>
+                                        {{ form.report_type }}
+                                        {% if form.report_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.report_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                        <div class="form-text">
+                                            {% trans "اختر 'تسليم' عند بداية الإيجار، و'استلام' عند نهاية الإيجار" %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-3">
+                                        <label for="{{ form.car_condition.id_for_label }}" class="form-label">{{ form.car_condition.label }}</label>
+                                        {{ form.car_condition }}
+                                        {% if form.car_condition.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.car_condition.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-3">
+                                        <label for="{{ form.date.id_for_label }}" class="form-label">{{ form.date.label }}</label>
+                                        {{ form.date }}
+                                        {% if form.date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">{% trans "تفاصيل السيارة" %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="{{ form.fuel_level.id_for_label }}" class="form-label">{{ form.fuel_level.label }}</label>
+                                        <div class="input-group">
+                                            {{ form.fuel_level }}
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                        <div class="fuel-gauge mt-1">
+                                            <div class="fuel-gauge-fill" id="fuel-gauge-fill" style="width: 0%"></div>
+                                        </div>
+                                        <div class="fuel-level-selector">
+                                            <div class="fuel-level-option" data-value="0">E</div>
+                                            <div class="fuel-level-option" data-value="25">1/4</div>
+                                            <div class="fuel-level-option" data-value="50">1/2</div>
+                                            <div class="fuel-level-option" data-value="75">3/4</div>
+                                            <div class="fuel-level-option" data-value="100">F</div>
+                                        </div>
+                                        {% if form.fuel_level.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.fuel_level.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label for="{{ form.mileage.id_for_label }}" class="form-label">{{ form.mileage.label }}</label>
+                                        <div class="input-group">
+                                            {{ form.mileage }}
+                                            <span class="input-group-text">كم</span>
+                                        </div>
+                                        {% if form.mileage.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.mileage.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label for="{{ form.inspection_type.id_for_label }}" class="form-label">{{ form.inspection_type.label }}</label>
+                                        {{ form.inspection_type }}
+                                        {% if form.inspection_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.inspection_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- باقي النموذج سيكون مطابقاً للأصلي -->
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">{{ form.notes.label }}</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.notes.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <label for="{{ form.defects.id_for_label }}" class="form-label">{{ form.defects.label }}</label>
+                        {{ form.defects }}
+                        {% if form.defects.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.defects.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">
+                            {% trans "أدخل أي أضرار أو مشاكل ملحوظة في السيارة" %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> {% trans "حفظ التقرير" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// سكريبت مؤشر مستوى الوقود
+$(document).ready(function() {
+    // تحديث مؤشر الوقود عند تغيير القيمة
+    function updateFuelGauge() {
+        var value = $('#{{ form.fuel_level.id_for_label }}').val();
+        if (value === '') value = 0;
+        value = Math.max(0, Math.min(100, parseInt(value)));
+        $('#fuel-gauge-fill').width(value + '%');
+        
+        // تحديث الخيارات المحددة
+        $('.fuel-level-option').removeClass('selected');
+        if (value === 0) $('.fuel-level-option[data-value="0"]').addClass('selected');
+        else if (value <= 25) $('.fuel-level-option[data-value="25"]').addClass('selected');
+        else if (value <= 50) $('.fuel-level-option[data-value="50"]').addClass('selected');
+        else if (value <= 75) $('.fuel-level-option[data-value="75"]').addClass('selected');
+        else $('.fuel-level-option[data-value="100"]').addClass('selected');
+    }
+    
+    // تحديث عند بدء التشغيل
+    updateFuelGauge();
+    
+    // تحديث عند تغيير القيمة
+    $('#{{ form.fuel_level.id_for_label }}').on('input', updateFuelGauge);
+    
+    // النقر على خيارات الوقود
+    $('.fuel-level-option').click(function() {
+        var value = $(this).data('value');
+        $('#{{ form.fuel_level.id_for_label }}').val(value).trigger('input');
+    });
+});
+</script>
+{% endblock %}
