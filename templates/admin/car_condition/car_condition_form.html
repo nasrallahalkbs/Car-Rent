@@ -269,13 +269,13 @@ $(document).ready(function() {
         var reservationId = $(this).val();
         console.log('تم اختيار الحجز: ' + reservationId);
         
-        // إزالة أي معلومات عميل سابقة
-        $('.alert.alert-info.mt-2').remove();
+        // إزالة أي معلومات سابقة (كل من معلومات العميل والسيارة)
+        $('.alert.alert-info.mt-2, .alert.alert-success.mt-2').remove();
         
         if (reservationId) {
             console.log('إرسال طلب AJAX للحصول على بيانات الحجز');
             $.ajax({
-                url: "/ar/api/get-car-by-reservation/",
+                url: "{% url 'get_car_by_reservation_ar' %}",
                 data: {
                     'reservation_id': reservationId
                 },
@@ -301,6 +301,26 @@ $(document).ready(function() {
                         if (data.car_id) {
                             $('#car-select').val(data.car_id);
                             console.log('تم تعيين السيارة بنجاح');
+                            
+                            // إضافة معلومات السيارة أيضًا
+                            var carDetails = '<div class="alert alert-success mt-2">' +
+                                '<strong>معلومات السيارة:</strong><br>';
+                            
+                            if (data.car_details) {
+                                carDetails += 'الماركة/الموديل: ' + data.car_details.make + ' ' + data.car_details.model + '<br>';
+                                carDetails += 'سنة الصنع: ' + data.car_details.year + '<br>';
+                                carDetails += 'رقم اللوحة: ' + data.car_details.license_plate + '<br>';
+                                if (data.car_details.vin) {
+                                    carDetails += 'رقم الهيكل: ' + data.car_details.vin + '<br>';
+                                }
+                                carDetails += 'اللون: ' + data.car_details.color + '<br>';
+                                carDetails += 'نوع الوقود: ' + data.car_details.fuel_type + '<br>';
+                            } else {
+                                carDetails += 'السيارة: ' + data.car_info + '<br>';
+                            }
+                            
+                            carDetails += '</div>';
+                            $('#car-select').after(carDetails);
                         } else {
                             console.error('معرف السيارة غير موجود في البيانات!');
                         }
