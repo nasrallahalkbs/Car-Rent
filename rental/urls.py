@@ -165,6 +165,16 @@ urlpatterns = [
     path('dashboard/car-condition/reservation/<int:reservation_id>/comparison/', car_condition_views.car_condition_comparison, name='car_condition_comparison'),
     path('api/get-car-by-reservation/', car_condition_views.get_car_by_reservation, name='get_car_by_reservation'),
     
+    # مسارات تقارير حالة السيارة باللغة العربية
+    path('ar/dashboard/car-condition/', car_condition_views.car_condition_list, name='car_condition_list_ar'),
+    path('ar/dashboard/car-condition/create/', car_condition_views.car_condition_create, name='car_condition_create_ar'),
+    path('ar/dashboard/car-condition/<int:report_id>/', car_condition_views.car_condition_detail, name='car_condition_detail_ar'),
+    path('ar/dashboard/car-condition/<int:report_id>/edit/', car_condition_views.car_condition_edit, name='car_condition_edit_ar'),
+    path('ar/dashboard/car-condition/<int:report_id>/delete/', car_condition_views.car_condition_delete, name='car_condition_delete_ar'),
+    path('ar/dashboard/car-condition/car/<int:car_id>/history/', car_condition_views.car_history_reports, name='car_history_reports_ar'),
+    path('ar/dashboard/car-condition/statistics/', car_condition_views.car_condition_statistics, name='car_condition_statistics_ar'),
+    path('ar/dashboard/car-condition/reservation/<int:reservation_id>/comparison/', car_condition_views.car_condition_comparison, name='car_condition_comparison_ar'),
+    
     # مسارات إدارة العهدة
     path('dashboard/custody/', views_custody.custody_dashboard, name='custody_dashboard'),
     path('dashboard/custody/dashboard/', views_custody.custody_dashboard, name='custody_dashboard2'),
