@@ -576,26 +576,56 @@ def car_condition_delete(request, report_id):
 @login_required
 def get_car_by_reservation(request):
     """استرجاع معلومات السيارة والعميل المرتبطة بالحجز لعرضها في النموذج بتقنية AJAX"""
+    import traceback
+    import json
+    from django.utils import timezone
     
+    # تسجيل بداية الطلب مع الوقت والتاريخ
+    current_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(f"[{current_time}] بدء معالجة طلب get_car_by_reservation")
+    
+    # الحصول على معرف الحجز من الطلب وطباعته
     reservation_id = request.GET.get('reservation_id')
+    print(f"معرف الحجز المطلوب: {reservation_id}")
+    print(f"بيانات الطلب GET: {json.dumps(dict(request.GET))}")
+    
+    # التحقق من وجود معرف الحجز
     if not reservation_id:
-        return JsonResponse({'error': 'No reservation ID provided'}, status=400)
+        print("خطأ: لم يتم توفير معرف الحجز")
+        return JsonResponse({'error': 'لم يتم توفير معرف الحجز', 'status': 'error'}, status=400)
     
     try:
         # تسجيل معلومات التصحيح
         print(f"DEBUG: استدعاء API للحصول على معلومات الحجز: {reservation_id}")
         
-        reservation = Reservation.objects.get(id=reservation_id)
+        # البحث عن الحجز في قاعدة البيانات
+        reservation = Reservation.objects.select_related('car', 'user').get(id=reservation_id)
+        print(f"تم العثور على الحجز: {reservation.reservation_number}, سيارة: {reservation.car.make} {reservation.car.model}")
         
-        # استرجاع معلومات السيارة والعميل
+        # التحقق من وجود السيارة
+        if not hasattr(reservation, 'car') or not reservation.car:
+            print(f"خطأ: لا توجد سيارة مرتبطة بالحجز {reservation.reservation_number}")
+            return JsonResponse({'error': 'لا توجد سيارة مرتبطة بهذا الحجز', 'status': 'error'}, status=404)
+        
+        # التحقق من وجود المستخدم
+        if not hasattr(reservation, 'user') or not reservation.user:
+            print(f"خطأ: لا يوجد عميل مرتبط بالحجز {reservation.reservation_number}")
+            return JsonResponse({'error': 'لا يوجد عميل مرتبط بهذا الحجز', 'status': 'error'}, status=404)
+        
+        # تجهيز بيانات الاستجابة
+        customer_name = reservation.user.get_full_name() or reservation.user.username
+        start_date_formatted = reservation.start_date.strftime('%Y-%m-%d')
+        end_date_formatted = reservation.end_date.strftime('%Y-%m-%d')
+        
         response_data = {
             'car_id': reservation.car.id,
             'car_info': f'{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})',
-            'customer_name': reservation.user.get_full_name() or reservation.user.username,
+            'customer_name': customer_name,
             'customer_id': reservation.user.id,
             'reservation_number': reservation.reservation_number,
-            'reservation_start_date': reservation.start_date.strftime('%Y-%m-%d'),
-            'reservation_end_date': reservation.end_date.strftime('%Y-%m-%d'),
+            'reservation_start_date': start_date_formatted,
+            'reservation_end_date': end_date_formatted,
+            'status': 'success',
             'car_details': {
                 'make': reservation.car.make,
                 'model': reservation.car.model,
@@ -609,15 +639,32 @@ def get_car_by_reservation(request):
         }
         
         # تسجيل معلومات الاستجابة للتصحيح
-        print(f"DEBUG: استجابة API لمعلومات الحجز: {response_data}")
+        print(f"نجاح: تم جلب بيانات الحجز {reservation.reservation_number}")
+        print(f"معلومات السيارة: {response_data['car_info']}")
+        print(f"العميل: {customer_name}")
+        print(f"تاريخ البداية: {start_date_formatted}, تاريخ النهاية: {end_date_formatted}")
         
         return JsonResponse(response_data)
+    
     except Reservation.DoesNotExist:
         print(f"ERROR: الحجز غير موجود: {reservation_id}")
-        return JsonResponse({'error': 'Reservation not found'}, status=404)
+        return JsonResponse({
+            'error': 'الحجز غير موجود',
+            'message': f'لا يمكن العثور على حجز برقم {reservation_id}',
+            'status': 'error'
+        }, status=404)
+    
     except Exception as e:
         print(f"ERROR: خطأ غير متوقع: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
+        # طباعة تتبع الخطأ الكامل للتحقق
+        traceback_str = traceback.format_exc()
+        print(f"تفاصيل الخطأ الكاملة:\n{traceback_str}")
+        
+        return JsonResponse({
+            'error': 'حدث خطأ أثناء جلب بيانات الحجز',
+            'message': str(e),
+            'status': 'error'
+        }, status=500)
 
 @login_required
 def car_history_reports(request, car_id):

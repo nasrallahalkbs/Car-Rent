@@ -1026,16 +1026,32 @@ $(document).ready(function() {
         // العلاقة بين الحجز والسيارة وعرض البيانات
         $("#reservation-select").change(function() {
             const reservationId = $(this).val();
+            console.log("تغيير قيمة الحجز:", reservationId);
+            
             if (reservationId) {
+                console.log("جاري تحميل بيانات الحجز رقم:", reservationId);
+                
+                // عرض مؤشر التحميل
+                $(".customer-details").html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> جاري تحميل بيانات العميل...</div>');
+                $(".car-details-content").html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> جاري تحميل بيانات السيارة...</div>');
+                $(".customer-info, .car-details-info").slideDown();
+                
                 $.ajax({
                     url: "{% url 'get_car_by_reservation' %}",
+                    type: "GET",
                     data: {
                         'reservation_id': reservationId
                     },
                     dataType: 'json',
+                    beforeSend: function() {
+                        console.log("بدء طلب AJAX للحصول على بيانات الحجز");
+                    },
                     success: function(data) {
+                        console.log("تم استلام البيانات بنجاح:", data);
+                        
                         // تعيين السيارة المتعلقة بالحجز
                         $("#car-select").val(data.car_id);
+                        console.log("تم تعيين السيارة:", data.car_id);
                         
                         // عرض معلومات العميل والحجز
                         var customerDetails = `
@@ -1072,40 +1088,84 @@ $(document).ready(function() {
                         `;
                         $(".car-details-content").html(carDetails);
                         $(".car-details-info").slideDown();
+                        
+                        // تفعيل حقل الشرط الخاص بحالة السيارة
+                        if ($("#id_car_condition").length) {
+                            console.log("تفعيل قائمة حالة السيارة");
+                            $("#id_car_condition").prop('disabled', false);
+                        }
+                        
+                        // تنشيط أو إعادة تحميل أي قوائم منسدلة أخرى قد تعتمد على بيانات السيارة
+                        refreshDependentFields();
                     },
-                    error: function(error) {
-                        console.error("Error fetching car data:", error);
-                        $(".customer-info, .car-details-info").slideUp();
-                        alert("{% trans 'حدث خطأ أثناء جلب بيانات الحجز' %}");
+                    error: function(xhr, status, error) {
+                        console.error("خطأ في تحميل بيانات الحجز:", error);
+                        console.error("استجابة الخادم:", xhr.responseText);
+                        console.error("حالة الطلب:", status);
+                        
+                        // عرض رسالة خطأ للمستخدم
+                        $(".customer-details").html('<div class="alert alert-danger">حدث خطأ أثناء تحميل بيانات العميل</div>');
+                        $(".car-details-content").html('<div class="alert alert-danger">حدث خطأ أثناء تحميل بيانات السيارة</div>');
+                        
+                        // إظهار تفاصيل الخطأ في وحدة التحكم للمطورين
+                        try {
+                            const errorData = JSON.parse(xhr.responseText);
+                            console.error("تفاصيل الخطأ:", errorData);
+                        } catch (e) {
+                            console.error("تعذر تحليل استجابة الخطأ كـ JSON");
+                        }
                     }
                 });
             } else {
-                // إخفاء معلومات العميل والسيارة إذا لم يتم اختيار حجز
+                console.log("لم يتم اختيار حجز");
+                
+                // إخفاء معلومات العميل والسيارة إذا لم يتم تحديد حجز
                 $(".customer-info, .car-details-info").slideUp();
+                
+                // إعادة تعيين حقل السيارة للسماح بالاختيار اليدوي
+                $("#car-select").val('');
             }
         });
         
-        // تم إزالة وظيفة عرض الوقود البصرية
+        // وظيفة لتحديث الحقول المعتمدة
+        function refreshDependentFields() {
+            console.log("تحديث الحقول المعتمدة");
+            
+            // تحديث أي حقول أخرى قد تعتمد على السيارة أو الحجز
+            // مثل قائمة حالة السيارة، نوع الوقود، إلخ
+            
+            // يمكن إضافة المزيد من التحديثات حسب الحاجة
+        }
         
         // إضافة تأثيرات مرئية عند تغيير نوع التقرير
         $("#{{ form.report_type.id_for_label }}").change(function() {
             const reportType = $(this).val();
+            console.log("تغيير نوع التقرير:", reportType);
             
             // إذا كان التقرير من نوع صيانة، أظهر حقول الصيانة
             if (reportType === 'maintenance' || reportType === 'periodic') {
-                $("#{{ form.maintenance_type.id_for_label }}").closest('.col-12').show();
+                $("#{{ form.maintenance_type.id_for_label }}").closest('.col-12').slideDown();
             } else {
-                $("#{{ form.maintenance_type.id_for_label }}").closest('.col-12').hide();
+                $("#{{ form.maintenance_type.id_for_label }}").closest('.col-12').slideUp();
             }
         }).trigger('change');
         
         // تحقق مما إذا كان هناك حجز مختار بالفعل عند تحميل الصفحة
         if ($("#reservation-select").val()) {
+            console.log("حجز محدد مسبقًا، جاري تحميل البيانات...");
             $("#reservation-select").trigger("change");
+        } else {
+            console.log("لا يوجد حجز محدد مسبقاً");
         }
         
-        // تم إعداد معاينة الصور في الكود أعلاه
-        console.log('تم إعداد معاينة الصور بالفعل في الكود السابق');
+        // تفعيل المراقبة المستمرة للتغييرات في جميع الحقول المنسدلة
+        $("select.form-select").on("focus", function() {
+            console.log("تركيز على حقل:", $(this).attr("id"));
+        });
+        
+        // وضع تعليمات توضيحية للمستخدم
+        $(".customer-info, .car-details-info").hide();
+        console.log("تم إعداد صفحة تقرير حالة السيارة بنجاح");
     });
 </script>
 {% endblock %}
