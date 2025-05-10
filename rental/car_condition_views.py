@@ -1055,11 +1055,29 @@ def complete_car_inspection_create(request):
     # جلب جميع فئات الفحص المنشطة
     inspection_categories = list(CarInspectionCategory.objects.filter(is_active=True).order_by('display_order'))
     
-    # جلب جميع عناصر الفحص مباشرة وترتيبها بالفئة
+    # جلب فقط العناصر المهمة والمكلفة (حسب طلب المستخدم)
     inspection_items = CarInspectionItem.objects.filter(
         category__in=inspection_categories,
         is_active=True
+    ).filter(
+        # عرض العناصر المهمة أو المكلفة أو الحرجة فقط
+        Q(is_important=True) | 
+        Q(is_expensive=True) | 
+        Q(is_critical=True)
     ).order_by('category__display_order', 'display_order')
+    
+    # تسجيل العناصر المهمة والمكلفة للتشخيص
+    for item in inspection_items:
+        properties = []
+        if item.is_important:
+            properties.append("مهم")
+            print(f"إضافة العنصر المهم من قاعدة البيانات: {item.name} (ID: {item.id})")
+        if item.is_expensive:
+            properties.append("مكلف")
+            print(f"إضافة العنصر المكلف من قاعدة البيانات: {item.name} (ID: {item.id})")
+        if item.is_critical:
+            properties.append("حرج")
+            print(f"إضافة العنصر الحرج من قاعدة البيانات: {item.name} (ID: {item.id})")
     
     # إنشاء قاموس لربط عناصر الفحص بفئاتها
     category_items = {}
