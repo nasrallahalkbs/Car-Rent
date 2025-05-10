@@ -1015,6 +1015,12 @@ def complete_car_inspection_create(request):
                         inspection_detail=None  # صورة عامة
                     )
             
+            # معالجة ملف الفحص الإلكتروني إذا تم اختيار نوع الفحص "إلكتروني"
+            if form.cleaned_data['inspection_type'] == 'electronic' and 'inspection_pdf_file' in request.FILES:
+                pdf_file = request.FILES['inspection_pdf_file']
+                report.electronic_report_pdf = pdf_file
+                report.save()  # حفظ التغييرات
+            
             # معالجة عناصر الفحص للفئات الأخرى (غير الهيكل الخارجي)
             for key, value in request.POST.items():
                 # معالجة حقول عناصر الفحص

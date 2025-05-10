@@ -493,5 +493,35 @@
             $('.fuel-level-option[data-value="' + initialFuelLevel + '"]').click();
         }
     });
+    
+    // معالجة عرض/إخفاء قسم الفحص الإلكتروني
+    $(document).ready(function() {
+        // التحقق من نوع الفحص وإظهار/إخفاء قسم الملف الإلكتروني وأقسام الفحص
+        function checkInspectionType() {
+            var inspectionType = $('#id_inspection_type').val();
+            var electronicReportSection = $('#electronic_report_section');
+            var inspectionDetailsSection = $('.card-header:contains("تفاصيل الفحص")').closest('.card');
+            
+            if (inspectionType === 'electronic') {
+                // إذا كان النوع إلكتروني
+                electronicReportSection.show();
+                // إخفاء أقسام الفحص (باستثناء الهيكل الخارجي/الصور)
+                inspectionDetailsSection.hide();
+            } else {
+                // إذا كان النوع يدوي
+                electronicReportSection.hide();
+                // إظهار أقسام الفحص
+                inspectionDetailsSection.show();
+            }
+        }
+        
+        // التحقق عند تحميل الصفحة
+        checkInspectionType();
+        
+        // إضافة مستمع لتغييرات نوع الفحص
+        $('#id_inspection_type').change(function() {
+            checkInspectionType();
+        });
+    });
 </script>
 {% endblock %}
