@@ -533,7 +533,7 @@
                 </div>
                 
                 <!-- قسم رفع ملف الفحص الإلكتروني - سيظهر فقط عند اختيار "فحص إلكتروني" -->
-                <div class="row mb-3" id="electronic-inspection-section" style="display: none;">
+                <div class="row mb-3" id="electronic-inspection-section" style="display: none !important;">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header bg-success text-white">
@@ -570,7 +570,7 @@
                 </div>
                 
                 <!-- قسم عناصر الفحص المهمة والمكلفة فقط (يظهر عند اختيار فحص يدوي) -->
-                <div class="row mb-3" id="manual-inspection-section" style="display: none;">
+                <div class="row mb-3" id="manual-inspection-section" style="display: none !important;">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header bg-primary text-white">
@@ -896,67 +896,31 @@
 
     // دالة للتبديل بين أقسام الفحص بناءً على نوع الفحص
     function toggleInspectionSections(inspectionType) {
-        console.log("تنفيذ دالة toggleInspectionSections مع النوع: " + inspectionType);
+        // إخفاء كلا القسمين بداية بإزالة أي أنماط inline مضافة من قبل
+        $("#electronic-inspection-section, #manual-inspection-section").css('display', 'none');
         
-        // التأكد من وجود العناصر المطلوبة
-        if ($("#electronic-inspection-section").length === 0) {
-            console.error("لم يتم العثور على قسم الفحص الإلكتروني!");
-        }
-        
-        if ($("#manual-inspection-section").length === 0) {
-            console.error("لم يتم العثور على قسم الفحص اليدوي!");
-        }
-        
+        // ثم إظهار القسم المناسب حسب نوع الفحص
         if (inspectionType === 'electronic') {
-            console.log("إظهار قسم الفحص الإلكتروني وإخفاء قسم الفحص اليدوي");
-            
-            // إظهار قسم الفحص الإلكتروني
-            $("#electronic-inspection-section").show();
-            // إخفاء قسم الفحص اليدوي
-            $("#manual-inspection-section").hide();
-            
-            // جعل حقل الملف PDF إجباري
+            $("#electronic-inspection-section").css('display', 'block');
             $("#inspection_pdf_file").prop('required', true);
-            
-            // تحديث التعليمات في قسم "حالة السيارة"
             $(".info-message").html('<i class="fas fa-info-circle me-1"></i>{% trans "تم اختيار الفحص الإلكتروني - قم برفع ملف PDF" %}');
-            
-            // إضافة تأثير مرئي على القسم النشط
-            $(".card-header.bg-success").addClass("pulse-animation");
-            
         } else {
-            console.log("إخفاء قسم الفحص الإلكتروني وإظهار قسم الفحص اليدوي");
-            
-            // إخفاء قسم الفحص الإلكتروني
-            $("#electronic-inspection-section").hide();
-            // إظهار قسم الفحص اليدوي
-            $("#manual-inspection-section").show();
-            
-            // جعل حقل الملف PDF غير إجباري
+            $("#manual-inspection-section").css('display', 'block');
             $("#inspection_pdf_file").prop('required', false);
-            
-            // تحديث التعليمات في قسم "حالة السيارة"
             $(".info-message").html('<i class="fas fa-info-circle me-1"></i>{% trans "تم اختيار الفحص اليدوي - قم بتحديد العناصر المهمة" %}');
-            
-            // إزالة التأثير المرئي
-            $(".card-header.bg-success").removeClass("pulse-animation");
         }
-        
-        // للتأكد من تطبيق التغييرات
-        console.log("حالة قسم الفحص الإلكتروني: " + $("#electronic-inspection-section").is(":visible"));
-        console.log("حالة قسم الفحص اليدوي: " + $("#manual-inspection-section").is(":visible"));
     }
 
     // الدالة الرئيسية - سيتم تنفيذها عند تحميل الصفحة
 $(document).ready(function() {
-        console.log("تم تحميل الصفحة");
-        
-        // تحديد نوع الفحص الافتراضي عند تحميل الصفحة
-        var defaultInspectionType = $("#{{ form.inspection_type.id_for_label }}").val() || 'manual';
-        console.log("نوع الفحص الافتراضي: " + defaultInspectionType);
-        
-        // تطبيق حالة العرض المناسبة عند التحميل
-        toggleInspectionSections(defaultInspectionType);
+        // تأخير بسيط لضمان تحميل الصفحة بالكامل قبل تطبيق تبديل العرض
+        setTimeout(function() {
+            // إعداد نوع الفحص الأولي عند تحميل الصفحة
+            var currentType = $("#{{ form.inspection_type.id_for_label }}").val() || 'manual';
+            
+            // تطبيق التغييرات للنوع الأولي
+            toggleInspectionSections(currentType);
+        }, 100);
         // إخفاء قسم الإصلاحات في البداية
         $(".card.border-warning").hide();
         
@@ -970,17 +934,18 @@ $(document).ready(function() {
             }
         });
         
-        // استدعاء دالة التبديل عند تغيير نوع الفحص
-        $("#{{ form.inspection_type.id_for_label }}").on('change', function() {
-            var inspectionType = $(this).val();
-            console.log("تم تغيير نوع الفحص إلى: " + inspectionType);
-            toggleInspectionSections(inspectionType);
+        // حذف أي معالجات سابقة وإضافة معالج جديد لحدث تغيير نوع الفحص
+        // ملاحظة مهمة: نستخدم off('change') أولاً لتجنب تسجيل المعالج أكثر من مرة
+        $("#{{ form.inspection_type.id_for_label }}").off('change').on('change', function() {
+            // الحصول على القيمة الجديدة المختارة
+            var selectedType = $(this).val();
+            // تطبيق التغييرات المناسبة على واجهة المستخدم
+            toggleInspectionSections(selectedType);
         });
         
         {% if report and report.is_electronic_inspection %}
         // إذا كان التقرير الحالي هو فحص إلكتروني، تأكد من عرض قسم الفحص الإلكتروني
         $("#{{ form.inspection_type.id_for_label }}").val('electronic');
-        console.log("تم تعيين نوع الفحص للتقرير الحالي إلى: إلكتروني");
         toggleInspectionSections('electronic');
         {% endif %}
         
