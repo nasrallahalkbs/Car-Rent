@@ -976,38 +976,40 @@
             dropdownToggles.forEach(toggle => {
                 toggle.addEventListener('click', function(event) {
                     event.preventDefault();
-                    event.stopPropagation(); // منع انتشار الحدث للعناصر الأب
                     
                     const targetId = this.getAttribute('data-bs-target');
                     const targetElement = document.querySelector(targetId);
                     
                     if (targetElement) {
+                        // التحقق مما إذا كانت القائمة المستهدفة مفتوحة بالفعل
+                        const isAlreadyOpen = targetElement.classList.contains('show');
+                        
                         // إغلاق القوائم الأخرى
                         document.querySelectorAll('.collapse.show').forEach(openMenu => {
-                            // لا تغلق القائمة الحالية إلا إذا نقرنا عليها
-                            if (openMenu !== targetElement) {
-                                openMenu.classList.remove('show');
-                                // إعادة ضبط زر التبديل المرتبط بها
-                                const relatedToggle = document.querySelector(`[data-bs-target="#${openMenu.id}"]`);
-                                if (relatedToggle) {
-                                    relatedToggle.setAttribute('aria-expanded', 'false');
-                                    const arrow = relatedToggle.querySelector('.fa-chevron-down');
-                                    if (arrow) {
-                                        arrow.style.transform = 'rotate(0)';
-                                    }
+                            // نغلق جميع القوائم المفتوحة (بما في ذلك القائمة الحالية إذا كانت مفتوحة)
+                            openMenu.classList.remove('show');
+                            
+                            // إعادة ضبط زر التبديل المرتبط بالقائمة
+                            const relatedToggle = document.querySelector(`[data-bs-target="#${openMenu.id}"]`);
+                            if (relatedToggle) {
+                                relatedToggle.setAttribute('aria-expanded', 'false');
+                                const arrow = relatedToggle.querySelector('.fa-chevron-down');
+                                if (arrow) {
+                                    arrow.style.transform = 'rotate(0)';
                                 }
                             }
                         });
                         
-                        // تبديل حالة القائمة المنسدلة الحالية
-                        targetElement.classList.toggle('show');
-                        const isExpanded = targetElement.classList.contains('show');
-                        this.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-                        
-                        // تحريك السهم
-                        const arrow = this.querySelector('.fa-chevron-down');
-                        if (arrow) {
-                            arrow.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0)';
+                        // إذا لم تكن القائمة مفتوحة من قبل، افتحها الآن (أي نتجنب إعادة فتحها إذا كانت مفتوحة وقمنا بإغلاقها)
+                        if (!isAlreadyOpen) {
+                            targetElement.classList.add('show');
+                            this.setAttribute('aria-expanded', 'true');
+                            
+                            // تحريك السهم للأعلى عند الفتح
+                            const arrow = this.querySelector('.fa-chevron-down');
+                            if (arrow) {
+                                arrow.style.transform = 'rotate(180deg)';
+                            }
                         }
                     }
                 });
