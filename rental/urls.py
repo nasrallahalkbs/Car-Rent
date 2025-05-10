@@ -173,6 +173,16 @@ urlpatterns = [
     path('dashboard/custody/<int:guarantee_id>/print/', views_custody.custody_print, name='custody_print'),
     path('dashboard/custody/export/', views_custody.custody_export, name='custody_export'),
     
+    # مسارات إدارة العهدة باللغة العربية
+    path('ar/dashboard/custody/', views_custody.custody_dashboard, name='custody_dashboard_ar'),
+    path('ar/dashboard/custody/list/', views_custody.custody_list, name='custody_list_ar'),
+    path('ar/dashboard/custody/create/', views_custody.custody_create, name='custody_create_ar'),
+    path('ar/dashboard/custody/<int:guarantee_id>/', views_custody.custody_detail, name='custody_detail_ar'),
+    path('ar/dashboard/custody/<int:guarantee_id>/edit/', views_custody.custody_edit, name='custody_edit_ar'),
+    path('ar/dashboard/custody/<int:guarantee_id>/return/', views_custody.custody_return, name='custody_return_ar'),
+    path('ar/dashboard/custody/<int:guarantee_id>/print/', views_custody.custody_print, name='custody_print_ar'),
+    path('ar/dashboard/custody/export/', views_custody.custody_export, name='custody_export_ar'),
+    
     # مسارات نظام توثيق حالة السيارة المتقدم
     # إدارة فئات وعناصر الفحص
     path('dashboard/car-condition/categories/', car_condition_views.inspection_category_list, name='inspection_category_list'),
