@@ -1051,16 +1051,31 @@ def complete_car_inspection_create(request):
     else:
         form = CompleteCarInspectionForm(initial=initial_data, user=request.user)
     
-    # جلب فئات الفحص وعناصرها المنشطة
-    inspection_categories = CarInspectionCategory.objects.filter(is_active=True).prefetch_related(
-        Prefetch('inspection_items', queryset=CarInspectionItem.objects.filter(is_active=True).order_by('display_order'))
-    ).order_by('display_order')
+    # جلب فئات الفحص وعناصرها المنشطة بطريقة مُحسنة
+    # جلب جميع فئات الفحص المنشطة
+    inspection_categories = list(CarInspectionCategory.objects.filter(is_active=True).order_by('display_order'))
     
-    # تسجيل عدد الفئات والعناصر
-    print(f"✅ عدد فئات الفحص: {inspection_categories.count()}")
+    # جلب جميع عناصر الفحص مباشرة وترتيبها بالفئة
+    inspection_items = CarInspectionItem.objects.filter(
+        category__in=inspection_categories,
+        is_active=True
+    ).order_by('category__display_order', 'display_order')
+    
+    # إنشاء قاموس لربط عناصر الفحص بفئاتها
+    category_items = {}
+    for item in inspection_items:
+        if item.category_id not in category_items:
+            category_items[item.category_id] = []
+        category_items[item.category_id].append(item)
+    
+    # إضافة عناصر الفحص كخاصية مؤقتة للفئات
     for category in inspection_categories:
-        items_count = category.inspection_items.count()
-        print(f"✅ فئة {category.name}: {items_count} عنصر")
+        category.items_list = category_items.get(category.id, [])
+    
+    # تسجيل عدد الفئات والعناصر للتشخيص
+    print(f"✅ عدد فئات الفحص: {len(inspection_categories)}")
+    for category in inspection_categories:
+        print(f"✅ فئة {category.name}: {len(category.items_list)} عنصر")
     
     # قائمة خيارات حالة العناصر
     condition_choices = CarInspectionItem.CONDITION_CHOICES
