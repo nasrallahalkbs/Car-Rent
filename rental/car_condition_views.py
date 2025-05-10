@@ -582,10 +582,13 @@ def get_car_by_reservation(request):
         return JsonResponse({'error': 'No reservation ID provided'}, status=400)
     
     try:
+        # تسجيل معلومات التصحيح
+        print(f"DEBUG: استدعاء API للحصول على معلومات الحجز: {reservation_id}")
+        
         reservation = Reservation.objects.get(id=reservation_id)
         
         # استرجاع معلومات السيارة والعميل
-        return JsonResponse({
+        response_data = {
             'car_id': reservation.car.id,
             'car_info': f'{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})',
             'customer_name': reservation.user.get_full_name() or reservation.user.username,
@@ -603,9 +606,18 @@ def get_car_by_reservation(request):
                 'transmission': reservation.car.get_transmission_display(),
                 'fuel_type': reservation.car.get_fuel_type_display(),
             }
-        })
+        }
+        
+        # تسجيل معلومات الاستجابة للتصحيح
+        print(f"DEBUG: استجابة API لمعلومات الحجز: {response_data}")
+        
+        return JsonResponse(response_data)
     except Reservation.DoesNotExist:
+        print(f"ERROR: الحجز غير موجود: {reservation_id}")
         return JsonResponse({'error': 'Reservation not found'}, status=404)
+    except Exception as e:
+        print(f"ERROR: خطأ غير متوقع: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 @login_required
 def car_history_reports(request, car_id):
