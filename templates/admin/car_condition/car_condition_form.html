@@ -282,18 +282,47 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: function(data) {
                     console.log('استجابة AJAX:', data);
+                    
+                    // نفحص محتوى البيانات للتصحيح
+                    console.log('معرف السيارة:', data.car_id);
+                    console.log('بيانات السيارة:', data.car);
+                    console.log('بيانات العميل:', data.customer);
+                    
                     if (data.status === 'success') {
                         // تحديث اختيار السيارة
                         console.log('تحديث اختيار السيارة: ' + data.car_id);
-                        $('#car-select').val(data.car_id);
+                        
+                        // التأكد من وجود القيمة قبل تعيينها
+                        if (data.car_id) {
+                            $('#car-select').val(data.car_id);
+                            console.log('تم تعيين السيارة بنجاح');
+                        } else {
+                            console.error('معرف السيارة غير موجود في البيانات!');
+                        }
                         
                         // عرض معلومات العميل
                         var customerInfo = '<div class="alert alert-info mt-2">' +
-                            '<strong>معلومات العميل:</strong><br>' +
-                            'الاسم: ' + data.customer.name + '<br>' +
-                            'البريد الإلكتروني: ' + data.customer.email + '<br>' +
-                            (data.customer.phone ? 'الهاتف: ' + data.customer.phone + '<br>' : '') +
-                            '</div>';
+                            '<strong>معلومات العميل:</strong><br>';
+                        
+                        if (data.customer && data.customer.name) {
+                            customerInfo += 'الاسم: ' + data.customer.name + '<br>';
+                        } else if (data.customer_name) {
+                            customerInfo += 'الاسم: ' + data.customer_name + '<br>';
+                        }
+                        
+                        if (data.customer && data.customer.email) {
+                            customerInfo += 'البريد الإلكتروني: ' + data.customer.email + '<br>';
+                        } else if (data.customer_email) {
+                            customerInfo += 'البريد الإلكتروني: ' + data.customer_email + '<br>';
+                        }
+                        
+                        if (data.customer && data.customer.phone) {
+                            customerInfo += 'الهاتف: ' + data.customer.phone + '<br>';
+                        } else if (data.customer_phone) {
+                            customerInfo += 'الهاتف: ' + data.customer_phone + '<br>';
+                        }
+                        
+                        customerInfo += '</div>';
                         
                         $('#reservation-select').after(customerInfo);
                     } else {
