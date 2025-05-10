@@ -992,6 +992,67 @@
                     }
                 });
             });
+            
+            // إغلاق القوائم المنسدلة عند الرجوع للخلف أو تغيير الصفحة
+            window.addEventListener('pageshow', function(event) {
+                // الحل لمشكلة القوائم المنسدلة المعلقة
+                if (event.persisted) {
+                    // تم تحميل الصفحة من ذاكرة التخزين المؤقت (عند الرجوع للخلف)
+                    closeAllDropdowns();
+                }
+            });
+            
+            // إضافة مستمع لزر الرجوع في المتصفح
+            window.addEventListener('popstate', function() {
+                // تأخير قصير لضمان أن التغييرات تحدث بعد تحميل الصفحة
+                setTimeout(closeAllDropdowns, 100);
+            });
+            
+            // مستمع إضافي - فرض إغلاق القوائم المنسدلة عند تحميل الصفحة
+            document.addEventListener('DOMContentLoaded', function() {
+                // القوائم التي يجب أن تبقى مفتوحة (بناءً على المسار الحالي)
+                const currentPath = window.location.pathname;
+                // تأخير قصير لإعطاء Bootstrap الوقت لتهيئة القوائم
+                setTimeout(function() {
+                    // افحص جميع القوائم وأغلق التي لا تتطابق مع المسار الحالي
+                    const allDropdowns = document.querySelectorAll('.collapse');
+                    allDropdowns.forEach(dropdown => {
+                        const toggleButton = document.querySelector(`[data-bs-target="#${dropdown.id}"]`);
+                        if (toggleButton) {
+                            const shouldBeOpen = toggleButton.classList.contains('active');
+                            if (!shouldBeOpen) {
+                                dropdown.classList.remove('show');
+                                toggleButton.setAttribute('aria-expanded', 'false');
+                                // إعادة ضبط السهم
+                                const arrow = toggleButton.querySelector('.fa-chevron-down');
+                                if (arrow) {
+                                    arrow.style.transform = 'rotate(0)';
+                                }
+                            }
+                        }
+                    });
+                }, 200);
+            });
+            
+            // دالة لإغلاق جميع القوائم المنسدلة
+            function closeAllDropdowns() {
+                const openDropdowns = document.querySelectorAll('.collapse.show');
+                openDropdowns.forEach(dropdown => {
+                    dropdown.classList.remove('show');
+                    
+                    // العثور على الزر المرتبط بهذه القائمة
+                    const toggleButton = document.querySelector(`[data-bs-target="#${dropdown.id}"]`);
+                    if (toggleButton) {
+                        toggleButton.setAttribute('aria-expanded', 'false');
+                        
+                        // إعادة ضبط السهم
+                        const arrow = toggleButton.querySelector('.fa-chevron-down');
+                        if (arrow) {
+                            arrow.style.transform = 'rotate(0)';
+                        }
+                    }
+                });
+            }
         });
     </script>
     
