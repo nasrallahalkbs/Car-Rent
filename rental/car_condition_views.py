@@ -604,10 +604,69 @@ def get_car_by_reservation(request):
     import traceback
     import json
     from django.utils import timezone
+    from django.core import serializers
     
     # تسجيل بداية الطلب مع الوقت والتاريخ
     current_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"[{current_time}] بدء معالجة طلب get_car_by_reservation")
+    
+    # الحصول على معرف الحجز من الطلب
+    reservation_id = request.GET.get('reservation_id')
+    if not reservation_id:
+        return JsonResponse({
+            'error': 'لم يتم توفير معرف الحجز',
+            'status': 'error'
+        }, status=400)
+
+    try:
+        # البحث عن الحجز مع تحميل بيانات السيارة والمستخدم
+        reservation = Reservation.objects.select_related('car', 'user').get(id=reservation_id)
+        
+        # تحضير بيانات السيارة
+        car_info = {
+            'id': reservation.car.id,
+            'make': reservation.car.make,
+            'model': reservation.car.model,
+            'year': reservation.car.year,
+            'license_plate': reservation.car.license_plate,
+            'display_name': f"{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})"
+        }
+        
+        # تحضير بيانات العميل
+        customer_info = {
+            'id': reservation.user.id,
+            'name': reservation.user.get_full_name() or reservation.user.username,
+            'email': reservation.user.email,
+            'phone': getattr(reservation.user, 'phone', ''),
+        }
+        
+        # تحضير بيانات الحجز
+        reservation_info = {
+            'id': reservation.id,
+            'number': reservation.reservation_number,
+            'start_date': reservation.start_date.strftime('%Y-%m-%d'),
+            'end_date': reservation.end_date.strftime('%Y-%m-%d'),
+            'status': reservation.status
+        }
+        
+        return JsonResponse({
+            'status': 'success',
+            'car': car_info,
+            'customer': customer_info,
+            'reservation': reservation_info
+        })
+        
+    except Reservation.DoesNotExist:
+        return JsonResponse({
+            'error': 'الحجز غير موجود',
+            'status': 'error'
+        }, status=404)
+    except Exception as e:
+        print(f"خطأ: {str(e)}")
+        return JsonResponse({
+            'error': 'حدث خطأ أثناء جلب البيانات',
+            'status': 'error'
+        }, status=500)
     
     # الحصول على معرف الحجز من الطلب وطباعته
     reservation_id = request.GET.get('reservation_id')

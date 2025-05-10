@@ -263,6 +263,43 @@
 
 {% block content %}
 <script>
+// تحديث بيانات السيارة والعميل عند اختيار الحجز
+$(document).ready(function() {
+    $('#reservation-select').change(function() {
+        var reservationId = $(this).val();
+        if (reservationId) {
+            $.ajax({
+                url: '/ar/admin/car-condition/get-car-by-reservation/',
+                data: {
+                    'reservation_id': reservationId
+                },
+                dataType: 'json',
+                success: function(data) {
+                    if (data.status === 'success') {
+                        // تحديث اختيار السيارة
+                        $('#car-select').val(data.car.id);
+                        
+                        // عرض معلومات العميل
+                        var customerInfo = '<div class="alert alert-info mt-2">' +
+                            '<strong>معلومات العميل:</strong><br>' +
+                            'الاسم: ' + data.customer.name + '<br>' +
+                            'البريد الإلكتروني: ' + data.customer.email + '<br>' +
+                            (data.customer.phone ? 'الهاتف: ' + data.customer.phone + '<br>' : '') +
+                            '</div>';
+                        
+                        $('#reservation-select').after(customerInfo);
+                    } else {
+                        console.error('خطأ في استجابة الخادم');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('خطأ في الطلب:', error);
+                }
+            });
+        }
+    });
+});
+
 // سكريبت إضافي للتأكد من تفعيل وظيفة إظهار/إخفاء أقسام الفحص
 function setupInspectionToggle() {
     // تحديد المقاطع الرئيسية
