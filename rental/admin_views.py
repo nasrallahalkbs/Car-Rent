@@ -633,6 +633,11 @@ def update_reservation_status(request, reservation_id, status):
     # تشخيص الأخطاء
     print(f"DIAGNOSTIC: Request received for reservation {reservation_id} with status {status}")
     
+    # تصحيح الحالات المتقاربة لفظياً
+    if status == 'confirm':
+        status = 'confirmed'
+        print(f"STATUS NORMALIZED: 'confirm' changed to 'confirmed' for reservation {reservation_id}")
+    
     valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled', 'view', 'details', 'delete']
     if status not in valid_statuses:
         print(f"ERROR: Invalid status '{status}' received for reservation {reservation_id}")
