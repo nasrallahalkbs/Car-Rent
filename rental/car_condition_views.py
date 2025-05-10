@@ -1052,8 +1052,12 @@ def complete_car_inspection_create(request):
         form = CompleteCarInspectionForm(initial=initial_data, user=request.user)
     
     # جلب فئات الفحص وعناصرها المنشطة بطريقة مُحسنة
-    # جلب جميع فئات الفحص المنشطة
-    inspection_categories = list(CarInspectionCategory.objects.filter(is_active=True).order_by('display_order'))
+    # جلب جميع فئات الفحص المنشطة باستثناء فئة أنظمة السلامة
+    inspection_categories = list(CarInspectionCategory.objects.filter(
+        is_active=True
+    ).exclude(
+        name='أنظمة السلامة'  # استبعاد فئة أنظمة السلامة
+    ).order_by('display_order'))
     
     # جلب فقط العناصر المهمة والمكلفة (حسب طلب المستخدم)
     inspection_items = CarInspectionItem.objects.filter(
