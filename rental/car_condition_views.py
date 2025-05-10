@@ -613,6 +613,7 @@ def get_car_by_reservation(request):
     reservation_id = request.GET.get('reservation_id')
     print(f"معرف الحجز المطلوب: {reservation_id}")
     print(f"بيانات الطلب GET: {json.dumps(dict(request.GET))}")
+    print(f"معرفات العناصر في النموذج: reservation-select, car-select")
     
     # التحقق من وجود معرف الحجز
     if not reservation_id:
@@ -623,7 +624,7 @@ def get_car_by_reservation(request):
         # تسجيل معلومات التصحيح
         print(f"DEBUG: استدعاء API للحصول على معلومات الحجز: {reservation_id}")
         
-        # البحث عن الحجز في قاعدة البيانات
+        # البحث عن الحجز في قاعدة البيانات مع تحميل البيانات المرتبطة بطريقة أكثر كفاءة
         reservation = Reservation.objects.select_related('car', 'user').get(id=reservation_id)
         print(f"تم العثور على الحجز: {reservation.reservation_number}, سيارة: {reservation.car.make} {reservation.car.model}")
         
@@ -639,35 +640,70 @@ def get_car_by_reservation(request):
         
         # تجهيز بيانات الاستجابة
         customer_name = reservation.user.get_full_name() or reservation.user.username
+        customer_email = reservation.user.email or ""
+        customer_phone = ""
+        
+        # محاولة الحصول على رقم هاتف العميل إذا كان متوفرًا في نموذج المستخدم
+        if hasattr(reservation.user, 'profile') and reservation.user.profile and hasattr(reservation.user.profile, 'phone'):
+            customer_phone = reservation.user.profile.phone or ""
+        
+        # تنسيق تواريخ الحجز
         start_date_formatted = reservation.start_date.strftime('%Y-%m-%d')
         end_date_formatted = reservation.end_date.strftime('%Y-%m-%d')
         
+        # تحضير بيانات المركبة بشكل مفصل
+        car_info = {
+            'make': reservation.car.make,
+            'model': reservation.car.model,
+            'year': reservation.car.year,
+            'color': reservation.car.color,
+            'license_plate': reservation.car.license_plate,
+            'vin': getattr(reservation.car, 'vin', ''),
+            'category': reservation.car.get_category_display(),
+            'transmission': reservation.car.get_transmission_display(),
+            'fuel_type': reservation.car.get_fuel_type_display(),
+            'current_mileage': getattr(reservation.car, 'current_mileage', 0),
+            'daily_rate': getattr(reservation.car, 'daily_rate', 0),
+        }
+        
+        # تحضير معلومات الحجز بشكل مفصل
+        reservation_info = {
+            'id': reservation.id,
+            'reservation_number': reservation.reservation_number,
+            'status': reservation.status,
+            'start_date': start_date_formatted,
+            'end_date': end_date_formatted,
+            'pickup_location': getattr(reservation, 'pickup_location', ''),
+            'return_location': getattr(reservation, 'return_location', ''),
+            'total_amount': getattr(reservation, 'total_amount', 0),
+        }
+        
+        # تجميع كل البيانات في كائن استجابة واحد
         response_data = {
             'car_id': reservation.car.id,
             'car_info': f'{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})',
             'customer_name': customer_name,
             'customer_id': reservation.user.id,
+            'customer_email': customer_email,
+            'customer_phone': customer_phone,
             'reservation_number': reservation.reservation_number,
             'reservation_start_date': start_date_formatted,
             'reservation_end_date': end_date_formatted,
             'status': 'success',
-            'car_details': {
-                'make': reservation.car.make,
-                'model': reservation.car.model,
-                'year': reservation.car.year,
-                'color': reservation.car.color,
-                'license_plate': reservation.car.license_plate,
-                'category': reservation.car.get_category_display(),
-                'transmission': reservation.car.get_transmission_display(),
-                'fuel_type': reservation.car.get_fuel_type_display(),
+            'car_details': car_info,
+            'reservation_details': reservation_info,
+            'html_elements': {
+                'reservation_select_id': 'reservation-select',
+                'car_select_id': 'car-select'
             }
         }
         
         # تسجيل معلومات الاستجابة للتصحيح
         print(f"نجاح: تم جلب بيانات الحجز {reservation.reservation_number}")
         print(f"معلومات السيارة: {response_data['car_info']}")
-        print(f"العميل: {customer_name}")
+        print(f"العميل: {customer_name} ({customer_email})")
         print(f"تاريخ البداية: {start_date_formatted}, تاريخ النهاية: {end_date_formatted}")
+        print(f"معرف عنصر السيارة (HTML): car-select")
         
         return JsonResponse(response_data)
     
@@ -676,7 +712,11 @@ def get_car_by_reservation(request):
         return JsonResponse({
             'error': 'الحجز غير موجود',
             'message': f'لا يمكن العثور على حجز برقم {reservation_id}',
-            'status': 'error'
+            'status': 'error',
+            'html_elements': {
+                'reservation_select_id': 'reservation-select',
+                'car_select_id': 'car-select'
+            }
         }, status=404)
     
     except Exception as e:
@@ -688,7 +728,11 @@ def get_car_by_reservation(request):
         return JsonResponse({
             'error': 'حدث خطأ أثناء جلب بيانات الحجز',
             'message': str(e),
-            'status': 'error'
+            'status': 'error',
+            'html_elements': {
+                'reservation_select_id': 'reservation-select',
+                'car_select_id': 'car-select'
+            }
         }, status=500)
 
 @login_required

@@ -1067,39 +1067,111 @@ $(document).ready(function() {
                         $("#car-select").val(data.car_id);
                         console.log("تم تعيين السيارة:", data.car_id);
                         
-                        // عرض معلومات العميل والحجز
-                        var customerDetails = `
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><strong>{% trans "اسم العميل" %}:</strong> ${data.customer_name}</p>
-                                    <p><strong>{% trans "رقم الحجز" %}:</strong> ${data.reservation_number}</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong>{% trans "تاريخ البداية" %}:</strong> ${data.reservation_start_date}</p>
-                                    <p><strong>{% trans "تاريخ النهاية" %}:</strong> ${data.reservation_end_date}</p>
-                                </div>
-                            </div>
-                        `;
-                        $(".customer-details").html(customerDetails);
-                        $(".customer-info").slideDown();
+                        // عرض معلومات العميل والحجز المحسنة
+                        var customerDetails = `<div class="row">`;
                         
-                        // عرض تفاصيل السيارة
-                        var carDetails = `
-                            <div class="row">
+                        // معلومات العميل
+                        customerDetails += `
+                            <div class="col-md-6">
+                                <p><strong>{% trans "اسم العميل" %}:</strong> ${data.customer_name}</p>`;
+                                
+                        // إضافة البريد الإلكتروني إن وجد
+                        if (data.customer_email) {
+                            customerDetails += `<p><strong>{% trans "البريد الإلكتروني" %}:</strong> ${data.customer_email}</p>`;
+                        }
+                        
+                        // إضافة رقم الهاتف إن وجد
+                        if (data.customer_phone) {
+                            customerDetails += `<p><strong>{% trans "رقم الهاتف" %}:</strong> ${data.customer_phone}</p>`;
+                        }
+                        
+                        customerDetails += `<p><strong>{% trans "رقم الحجز" %}:</strong> ${data.reservation_number}</p>
+                            </div>`;
+                            
+                        // معلومات الحجز
+                        customerDetails += `
+                            <div class="col-md-6">
+                                <p><strong>{% trans "تاريخ البداية" %}:</strong> ${data.reservation_start_date}</p>
+                                <p><strong>{% trans "تاريخ النهاية" %}:</strong> ${data.reservation_end_date}</p>`;
+                                
+                        // إضافة معلومات إضافية للحجز إن وجدت
+                        if (data.reservation_details) {
+                            if (data.reservation_details.pickup_location) {
+                                customerDetails += `<p><strong>{% trans "موقع الاستلام" %}:</strong> ${data.reservation_details.pickup_location}</p>`;
+                            }
+                            
+                            if (data.reservation_details.return_location) {
+                                customerDetails += `<p><strong>{% trans "موقع التسليم" %}:</strong> ${data.reservation_details.return_location}</p>`;
+                            }
+                            
+                            if (data.reservation_details.total_amount) {
+                                customerDetails += `<p><strong>{% trans "إجمالي المبلغ" %}:</strong> ${data.reservation_details.total_amount} ريال</p>`;
+                            }
+                        }
+                        
+                        customerDetails += `</div></div>`;
+                        
+                        // تنبيه بالحجز المحدد
+                        customerDetails += `
+                            <div class="alert alert-success mt-2">
+                                <i class="fas fa-check-circle"></i> {% trans "تم تحديد الحجز بنجاح" %}
+                            </div>`;
+                            
+                        $(".customer-details").html(customerDetails);
+                        $(".customer-info").slideDown().addClass("border-success");
+                        
+                        // إزالة الفئة بعد فترة
+                        setTimeout(function() {
+                            $(".customer-info").removeClass("border-success");
+                        }, 3000);
+                        
+                        // عرض تفاصيل السيارة بتنسيق محسن
+                        var carDetails = `<div class="row">`;
+                        
+                        // التأكد من وجود البيانات المطلوبة
+                        if (data.car_details) {
+                            // معلومات أساسية للسيارة
+                            carDetails += `
                                 <div class="col-md-6">
                                     <p><strong>{% trans "الماركة" %}:</strong> ${data.car_details.make}</p>
                                     <p><strong>{% trans "الموديل" %}:</strong> ${data.car_details.model}</p>
                                     <p><strong>{% trans "سنة الصنع" %}:</strong> ${data.car_details.year}</p>
-                                    <p><strong>{% trans "اللون" %}:</strong> ${data.car_details.color}</p>
-                                </div>
+                                    <p><strong>{% trans "اللون" %}:</strong> ${data.car_details.color}</p>`;
+                                    
+                            // رقم الهيكل إن وجد
+                            if (data.car_details.vin) {
+                                carDetails += `<p><strong>{% trans "رقم الهيكل" %}:</strong> ${data.car_details.vin}</p>`;
+                            }
+                            
+                            carDetails += `</div>`;
+                            
+                            // معلومات إضافية للسيارة
+                            carDetails += `
                                 <div class="col-md-6">
                                     <p><strong>{% trans "لوحة الترخيص" %}:</strong> ${data.car_details.license_plate}</p>
                                     <p><strong>{% trans "الفئة" %}:</strong> ${data.car_details.category}</p>
                                     <p><strong>{% trans "ناقل الحركة" %}:</strong> ${data.car_details.transmission}</p>
-                                    <p><strong>{% trans "نوع الوقود" %}:</strong> ${data.car_details.fuel_type}</p>
-                                </div>
-                            </div>
-                        `;
+                                    <p><strong>{% trans "نوع الوقود" %}:</strong> ${data.car_details.fuel_type}</p>`;
+                                    
+                            // إضافة عداد الكيلومترات إن وجد
+                            if (data.car_details.current_mileage) {
+                                carDetails += `<p><strong>{% trans "قراءة العداد" %}:</strong> ${data.car_details.current_mileage} كم</p>`;
+                            }
+                            
+                            carDetails += `</div>`;
+                        } else {
+                            // رسالة في حالة عدم وجود تفاصيل كافية للسيارة
+                            carDetails += `
+                                <div class="col-12">
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> 
+                                        {% trans "بيانات السيارة غير متوفرة بشكل كامل" %}
+                                    </div>
+                                </div>`;
+                        }
+                        
+                        carDetails += `</div>`;
+                        
                         $(".car-details-content").html(carDetails);
                         $(".car-details-info").slideDown();
                         
@@ -1117,27 +1189,104 @@ $(document).ready(function() {
                         console.error("استجابة الخادم:", xhr.responseText);
                         console.error("حالة الطلب:", status);
                         
-                        // عرض رسالة خطأ للمستخدم
-                        $(".customer-details").html('<div class="alert alert-danger">حدث خطأ أثناء تحميل بيانات العميل</div>');
-                        $(".car-details-content").html('<div class="alert alert-danger">حدث خطأ أثناء تحميل بيانات السيارة</div>');
-                        
-                        // إظهار تفاصيل الخطأ في وحدة التحكم للمطورين
                         try {
+                            // محاولة تحليل استجابة الخطأ
                             const errorData = JSON.parse(xhr.responseText);
                             console.error("تفاصيل الخطأ:", errorData);
+                            
+                            // عرض رسالة الخطأ المفصلة للمستخدم
+                            let errorMessage = errorData.message || errorData.error || "{% trans 'حدث خطأ غير معروف أثناء تحميل بيانات الحجز' %}";
+                            
+                            $(".customer-details").html(`
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    <strong>{% trans "خطأ" %}:</strong> ${errorMessage}
+                                </div>
+                                <div class="small text-muted mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    {% trans "الرجاء التأكد من اختيار حجز صالح أو المحاولة مرة أخرى" %}
+                                </div>
+                            `);
+                            
+                            $(".car-details-content").html(`
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-car-crash me-2"></i>
+                                    {% trans "لا يمكن عرض بيانات السيارة نظراً لوجود خطأ" %}
+                                </div>
+                            `);
+                            
+                            // إضافة فئة لتمييز وجود خطأ
+                            $(".customer-info").addClass("border-danger");
+                            setTimeout(function() {
+                                $(".customer-info").removeClass("border-danger");
+                            }, 5000);
                         } catch (e) {
-                            console.error("تعذر تحليل استجابة الخطأ كـ JSON");
+                            // في حالة عدم القدرة على تحليل استجابة الخطأ
+                            console.error("تعذر تحليل استجابة الخطأ كـ JSON:", e);
+                            
+                            // عرض رسالة خطأ عامة
+                            $(".customer-details").html(`
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>{% trans "خطأ في الاتصال" %}:</strong>
+                                    {% trans "حدث خطأ غير متوقع أثناء تحميل بيانات الحجز" %}
+                                </div>
+                                <div class="small">
+                                    {% trans "رمز الخطأ" %}: ${status} (${error})
+                                </div>
+                            `);
+                            
+                            $(".car-details-content").html(`
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-car-crash me-2"></i>
+                                    {% trans "لا يمكن عرض بيانات السيارة" %}
+                                </div>
+                            `);
+                            
+                            // تمييز الخطأ
+                            $(".customer-info, .car-details-info").addClass("border-danger");
+                            setTimeout(function() {
+                                $(".customer-info, .car-details-info").removeClass("border-danger");
+                            }, 5000);
                         }
                     }
                 });
             } else {
                 console.log("لم يتم اختيار حجز");
                 
-                // إخفاء معلومات العميل والسيارة إذا لم يتم تحديد حجز
-                $(".customer-info, .car-details-info").slideUp();
+                // عرض رسالة تذكير للمستخدم
+                $(".customer-details").html(`
+                    <div class="alert alert-info mt-2">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% trans "يرجى اختيار حجز من القائمة المنسدلة لعرض بيانات العميل والسيارة تلقائيا" %}
+                    </div>
+                    <div class="small text-muted">
+                        {% trans "يمكنك أيضاً اختيار السيارة مباشرة من القائمة المنسدلة بدلاً من ذلك" %}
+                    </div>
+                `);
+                
+                $(".car-details-content").html(`
+                    <div class="alert alert-secondary">
+                        <i class="fas fa-car me-2"></i>
+                        {% trans "بيانات السيارة غير متوفرة" %}
+                    </div>
+                `);
+                
+                // إظهار وإخفاء أقسام المعلومات بتأثير بصري
+                $(".customer-info").slideDown();
+                $(".car-details-info").slideUp();
                 
                 // إعادة تعيين حقل السيارة للسماح بالاختيار اليدوي
                 $("#car-select").val('');
+                console.log("تم مسح اختيار السيارة تلقائياً");
+                
+                // تعطيل أي عناصر تعتمد على وجود حجز
+                if ($("#id_car_condition").length) {
+                    console.log("تعطيل قائمة حالة السيارة حتى يتم اختيار سيارة");
+                }
+                
+                // إزالة أي تأثيرات بصرية
+                $(".customer-info, .car-details-info").removeClass("border-success border-danger");
             }
         });
         
