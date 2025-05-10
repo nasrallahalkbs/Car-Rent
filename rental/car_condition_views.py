@@ -378,8 +378,8 @@ def car_condition_create(request):
     # طباعة معلومات تصحيح إضافية
     print(f"تم تجهيز القالب بـ {len(context['inspection_categories'])} فئة فحص و {active_reservations.count()} حجز نشط")
     
-    # استخدام القالب المحسن لإصلاح مشكلة عرض بيانات السيارة والعميل
-    return render(request, 'admin/car_condition/car_condition_form_enhanced.html', context)
+    # استخدام القالب الجديد البسيط
+    return render(request, 'admin/car_condition/car_condition_form_new.html', context)
 
 @login_required
 def car_condition_edit(request, report_id):
@@ -532,8 +532,8 @@ def car_condition_edit(request, report_id):
         'exterior_images': exterior_images,
     }
     
-    # استخدام القالب المحسن للتعديل أيضًا
-    return render(request, 'admin/car_condition/car_condition_form_enhanced.html', context)
+    # استخدام القالب الجديد للتعديل أيضًا
+    return render(request, 'admin/car_condition/car_condition_form_new.html', context)
 
 @login_required
 def car_condition_detail(request, report_id):
