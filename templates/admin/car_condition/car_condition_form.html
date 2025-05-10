@@ -344,8 +344,15 @@ $(document).ready(setupInspectionToggle);
                             <div class="card-body">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label for="{{ form.reservation.id_for_label }}" class="form-label">{{ form.reservation.label }}</label>
-                                        {{ form.reservation }}
+                                        <label for="reservation-select" class="form-label">{{ form.reservation.label }}</label>
+                                        <select name="{{ form.reservation.html_name }}" id="reservation-select" class="form-select">
+                                            <option value="">--- اختر الحجز ---</option>
+                                            {% for reservation in active_reservations %}
+                                                <option value="{{ reservation.id }}" {% if form.reservation.value|stringformat:"s" == reservation.id|stringformat:"s" %}selected{% endif %}>
+                                                    #{{ reservation.reservation_number }} - {{ reservation.user.get_full_name|default:reservation.user.username }} ({{ reservation.car.make }} {{ reservation.car.model }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
                                         {% if form.reservation.errors %}
                                         <div class="invalid-feedback d-block">
                                             {% for error in form.reservation.errors %}
@@ -356,8 +363,15 @@ $(document).ready(setupInspectionToggle);
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <label for="{{ form.car.id_for_label }}" class="form-label">{{ form.car.label }}</label>
-                                        {{ form.car }}
+                                        <label for="car-select" class="form-label">{{ form.car.label }}</label>
+                                        <select name="{{ form.car.html_name }}" id="car-select" class="form-select">
+                                            <option value="">--- اختر السيارة ---</option>
+                                            {% for option in form.car.field.queryset %}
+                                                <option value="{{ option.id }}" {% if form.car.value|stringformat:"s" == option.id|stringformat:"s" %}selected{% endif %}>
+                                                    {{ option.make }} {{ option.model }} ({{ option.year }}) - {{ option.license_plate }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
                                         {% if form.car.errors %}
                                         <div class="invalid-feedback d-block">
                                             {% for error in form.car.errors %}
