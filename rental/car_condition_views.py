@@ -1056,6 +1056,12 @@ def complete_car_inspection_create(request):
         Prefetch('inspection_items', queryset=CarInspectionItem.objects.filter(is_active=True).order_by('display_order'))
     ).order_by('display_order')
     
+    # تسجيل عدد الفئات والعناصر
+    print(f"✅ عدد فئات الفحص: {inspection_categories.count()}")
+    for category in inspection_categories:
+        items_count = category.inspection_items.count()
+        print(f"✅ فئة {category.name}: {items_count} عنصر")
+    
     # قائمة خيارات حالة العناصر
     condition_choices = CarInspectionItem.CONDITION_CHOICES
     
