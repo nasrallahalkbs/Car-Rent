@@ -719,14 +719,12 @@ def get_car_by_reservation(request):
             'total_amount': getattr(reservation, 'total_amount', 0),
         }
         
-        # تجميع كل البيانات في كائن استجابة واحد
+        # تجميع كل البيانات في كائن استجابة واحد (مع إزالة البريد الإلكتروني ورقم الهاتف)
         response_data = {
             'car_id': reservation.car.id,
             'car_info': f'{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})',
             'customer_name': customer_name,
             'customer_id': reservation.user.id,
-            'customer_email': customer_email,
-            'customer_phone': customer_phone,
             'reservation_number': reservation.reservation_number,
             'reservation_start_date': start_date_formatted,
             'reservation_end_date': end_date_formatted,
@@ -746,11 +744,9 @@ def get_car_by_reservation(request):
         print(f"تاريخ البداية: {start_date_formatted}, تاريخ النهاية: {end_date_formatted}")
         print(f"معرف عنصر السيارة (HTML): car-select")
         
-        # إضافة معلومات مختصرة للواجهة
+        # إضافة معلومات مختصرة للواجهة (فقط اسم العميل)
         response_data['customer'] = {
-            'name': customer_name,
-            'email': customer_email,
-            'phone': customer_phone
+            'name': customer_name
         }
         response_data['car'] = {
             'id': reservation.car.id,
