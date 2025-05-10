@@ -261,27 +261,30 @@ def car_condition_create(request):
     for category in inspection_categories:
         for item in category.inspection_items.all():
             # تحديد العناصر المهمة والمكلفة والحساسة بناءً على اسم العنصر
-            item_name_lower = item.name.lower()
+            item_name = item.name  # استخدام الاسم بدون تحويل إلى lowercase للنصوص العربية
             
             # تحديد العناصر المهمة
-            important_keywords = ['محرك', 'فرامل', 'نظام التعليق', 'ناقل الحركة', 'توجيه', 'كهرباء رئيسية']
+            important_keywords = ['محرك', 'فرامل', 'نظام التعليق', 'ناقل الحركة', 'توجيه', 'كهرباء', 'بطارية']
             for keyword in important_keywords:
-                if keyword in item_name_lower:
+                if keyword in item_name:
                     important_items.add(item.id)
+                    print(f"إضافة العنصر المهم: {item.name} (ID: {item.id})")
                     break
             
             # تحديد العناصر المكلفة
-            expensive_keywords = ['محرك', 'ناقل الحركة', 'نظام التعليق', 'كمبيوتر', 'مكيف', 'رادييتر']
+            expensive_keywords = ['محرك', 'ناقل الحركة', 'نظام التعليق', 'كمبيوتر', 'مكيف', 'رادييتر', 'بطارية']
             for keyword in expensive_keywords:
-                if keyword in item_name_lower:
+                if keyword in item_name:
                     expensive_items.add(item.id)
+                    print(f"إضافة العنصر المكلف: {item.name} (ID: {item.id})")
                     break
             
             # تحديد العناصر الحساسة (الحرجة)
-            critical_keywords = ['فرامل', 'توجيه', 'وسائد هوائية', 'سلامة', 'أمان']
+            critical_keywords = ['فرامل', 'توجيه', 'وسائد هوائية', 'سلامة', 'أمان', 'إطارات']
             for keyword in critical_keywords:
-                if keyword in item_name_lower:
+                if keyword in item_name:
                     critical_items.add(item.id)
+                    print(f"إضافة العنصر الحرج: {item.name} (ID: {item.id})")
                     break
     
     context = {
