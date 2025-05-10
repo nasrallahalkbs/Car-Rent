@@ -150,7 +150,7 @@ def car_condition_create(request):
             print(f"خطأ: السيارة برقم {car_id} غير موجودة!")
             pass
             
-    # الحصول على قائمة الحجوزات النشطة للعرض في النموذج
+    # الحصول على قائمة الحجوزات النشطة للعرض في النموذج مع بيانات العميل والسيارة
     active_reservations = Reservation.objects.filter(
         status__in=['confirmed', 'active'],
     ).select_related('user', 'car').order_by('-created_at')
@@ -158,6 +158,21 @@ def car_condition_create(request):
     print(f"عدد الحجوزات النشطة المتاحة: {active_reservations.count()}")
     for i, res in enumerate(active_reservations[:5]):
         print(f"حجز #{i+1}: ID={res.id}, رقم={res.reservation_number}, المستخدم={res.user}, السيارة={res.car}")
+    
+    # إعداد قاموس يحتوي على معلومات كل حجز مع بيانات العميل والسيارة
+    reservations_with_details = []
+    for reservation in active_reservations:
+        reservation_details = {
+            'id': reservation.id,
+            'reservation_number': reservation.reservation_number,
+            'car_id': reservation.car.id,
+            'car_info': f"{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})",
+            'customer_name': reservation.user.get_full_name() or reservation.user.username,
+            'customer_email': reservation.user.email,
+            'customer_phone': getattr(reservation.user, 'phone', '') if hasattr(reservation.user, 'phone') else '',
+            'display_text': f"{reservation.reservation_number} - {reservation.car.make} {reservation.car.model} ({reservation.get_status_display()})"
+        }
+        reservations_with_details.append(reservation_details)
     
     if request.method == 'POST':
         # طباعة بيانات الطلب للتصحيح
@@ -357,6 +372,7 @@ def car_condition_create(request):
         'expensive_items': expensive_items,
         'critical_items': critical_items,
         'active_reservations': active_reservations,  # قائمة الحجوزات النشطة
+        'reservations_with_details': reservations_with_details,  # قائمة الحجوزات مع تفاصيل كاملة
     }
     
     # طباعة معلومات تصحيح إضافية
