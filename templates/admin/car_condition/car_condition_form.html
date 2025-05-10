@@ -7,6 +7,14 @@
 
 {% block extra_head %}
 <style>
+    /* إخفاء أقسام الفحص حتى يتم تحديد نوع الفحص */
+    #electronic-inspection-section {
+        display: none;
+    }
+    
+    #manual-inspection-section {
+        display: none;
+    }
     .fuel-level-selector {
         display: flex;
         align-items: center;
@@ -525,7 +533,7 @@
                 </div>
                 
                 <!-- قسم رفع ملف الفحص الإلكتروني - سيظهر فقط عند اختيار "فحص إلكتروني" -->
-                <div class="row mb-3" id="electronic-inspection-section">
+                <div class="row mb-3" id="electronic-inspection-section" style="display: none;">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header bg-success text-white">
@@ -562,7 +570,7 @@
                 </div>
                 
                 <!-- قسم عناصر الفحص المهمة والمكلفة فقط (يظهر عند اختيار فحص يدوي) -->
-                <div class="row mb-3" id="manual-inspection-section">
+                <div class="row mb-3" id="manual-inspection-section" style="display: none;">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header bg-primary text-white">
@@ -939,7 +947,16 @@
         console.log("حالة قسم الفحص اليدوي: " + $("#manual-inspection-section").is(":visible"));
     }
 
-    $(document).ready(function() {
+    // الدالة الرئيسية - سيتم تنفيذها عند تحميل الصفحة
+$(document).ready(function() {
+        console.log("تم تحميل الصفحة");
+        
+        // تحديد نوع الفحص الافتراضي عند تحميل الصفحة
+        var defaultInspectionType = $("#{{ form.inspection_type.id_for_label }}").val() || 'manual';
+        console.log("نوع الفحص الافتراضي: " + defaultInspectionType);
+        
+        // تطبيق حالة العرض المناسبة عند التحميل
+        toggleInspectionSections(defaultInspectionType);
         // إخفاء قسم الإصلاحات في البداية
         $(".card.border-warning").hide();
         
@@ -954,18 +971,11 @@
         });
         
         // استدعاء دالة التبديل عند تغيير نوع الفحص
-        $("#{{ form.inspection_type.id_for_label }}").change(function() {
+        $("#{{ form.inspection_type.id_for_label }}").on('change', function() {
             var inspectionType = $(this).val();
             console.log("تم تغيير نوع الفحص إلى: " + inspectionType);
             toggleInspectionSections(inspectionType);
         });
-        
-        // تنفيذ دالة التبديل عند تحميل الصفحة بعد تأخير قصير للتأكد من تحميل الصفحة بالكامل
-        setTimeout(function() {
-            var initialInspectionType = $("#{{ form.inspection_type.id_for_label }}").val();
-            console.log("القيمة الأولية لنوع الفحص: " + initialInspectionType);
-            toggleInspectionSections(initialInspectionType);
-        }, 300);
         
         {% if report and report.is_electronic_inspection %}
         // إذا كان التقرير الحالي هو فحص إلكتروني، تأكد من عرض قسم الفحص الإلكتروني
