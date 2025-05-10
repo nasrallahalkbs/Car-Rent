@@ -690,27 +690,38 @@ def update_reservation_status(request, reservation_id, status):
     return redirect('admin_reservations')
 
 @login_required
-@permission_required("reservations", "edit_reservations")
+@admin_required
+@permission_required("reservations", "approve_reservations")
 def confirm_reservation(request, reservation_id):
     """Admin view to confirm a reservation - simplified URL pattern"""
-    reservation = get_object_or_404(Reservation, id=reservation_id)
+    # تسجيل تشخيصي
+    print(f"DIAGNOSTIC: Processing confirmation for reservation {reservation_id}")
     
-    # حفظ الحالة الجديدة
-    reservation.status = 'confirmed'
+    try:
+        reservation = get_object_or_404(Reservation, id=reservation_id)
+        
+        # حفظ الحالة الجديدة
+        reservation.status = 'confirmed'
+        
+        # تعديل حالة توفر السيارة
+        car = reservation.car
+        car.is_available = False
+        car.save()
+        
+        # تعيين تاريخ انتهاء مهلة الدفع (24 ساعة من الآن)
+        # استخدام confirmation_expiry الذي يتم استخدامه في النموذج بدلاً من expiry_date
+        reservation.confirmation_expiry = timezone.now() + timezone.timedelta(hours=24)
+        
+        reservation.save()
+        
+        # رسالة تأكيد
+        messages.success(request, "تم تأكيد الحجز بنجاح! سيبقى الحجز مفعلاً لمدة 24 ساعة حتى يتم الدفع.")
+        print(f"DIAGNOSTIC: Reservation {reservation_id} confirmed successfully")
+    except Exception as e:
+        # التقاط أي أخطاء وتسجيلها
+        print(f"ERROR: Failed to confirm reservation {reservation_id}. Error: {str(e)}")
+        messages.error(request, f"حدث خطأ أثناء تأكيد الحجز: {str(e)}")
     
-    # تعديل حالة توفر السيارة
-    car = reservation.car
-    car.is_available = False
-    car.save()
-    
-    # تعيين تاريخ انتهاء مهلة الدفع (24 ساعة من الآن)
-    # استخدام confirmation_expiry الذي يتم استخدامه في النموذج بدلاً من expiry_date
-    reservation.confirmation_expiry = timezone.now() + timezone.timedelta(hours=24)
-    
-    reservation.save()
-    
-    # رسالة تأكيد
-    messages.success(request, "تم تأكيد الحجز بنجاح! سيبقى الحجز مفعلاً لمدة 24 ساعة حتى يتم الدفع.")
     return redirect('admin_reservations')
 
 @login_required
