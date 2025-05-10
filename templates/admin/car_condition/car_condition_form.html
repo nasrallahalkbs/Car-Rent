@@ -269,7 +269,7 @@ $(document).ready(function() {
         var reservationId = $(this).val();
         if (reservationId) {
             $.ajax({
-                url: '/ar/admin/car-condition/get-car-by-reservation/',
+                url: "{% url 'get_car_by_reservation' %}",
                 data: {
                     'reservation_id': reservationId
                 },
@@ -277,16 +277,18 @@ $(document).ready(function() {
                 success: function(data) {
                     if (data.status === 'success') {
                         // تحديث اختيار السيارة
-                        $('#car-select').val(data.car.id);
+                        $('#car-select').val(data.car_id);
                         
                         // عرض معلومات العميل
                         var customerInfo = '<div class="alert alert-info mt-2">' +
                             '<strong>معلومات العميل:</strong><br>' +
-                            'الاسم: ' + data.customer.name + '<br>' +
-                            'البريد الإلكتروني: ' + data.customer.email + '<br>' +
-                            (data.customer.phone ? 'الهاتف: ' + data.customer.phone + '<br>' : '') +
+                            'الاسم: ' + data.customer_name + '<br>' +
+                            'البريد الإلكتروني: ' + data.customer_email + '<br>' +
+                            (data.customer_phone ? 'الهاتف: ' + data.customer_phone + '<br>' : '') +
                             '</div>';
                         
+                        // إزالة أي معلومات عميل سابقة
+                        $('.alert.alert-info.mt-2').remove();
                         $('#reservation-select').after(customerInfo);
                     } else {
                         console.error('خطأ في استجابة الخادم');
