@@ -471,6 +471,123 @@
         // سنستخدم وظيفة previewImage العامة من الخارج
         // ولن نحتاج إلى وظيفة setupImagePreview المكررة
         
+        // إضافة المعالج لاختيار الحجز لجلب بيانات السيارة والعميل
+        $('#id_reservation').change(function() {
+            var reservationId = $(this).val();
+            console.log('تم اختيار الحجز: ' + reservationId);
+            
+            // إزالة أي معلومات سابقة
+            $('.car-customer-info').remove();
+            
+            if (reservationId) {
+                console.log('إرسال طلب AJAX للحصول على بيانات الحجز');
+                
+                // عرض مؤشر تحميل
+                var loadingIndicator = '<div class="car-customer-info loading-indicator mt-3 mb-3"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> جاري تحميل بيانات السيارة والعميل...</div>';
+                $('#id_reservation').after(loadingIndicator);
+                
+                $.ajax({
+                    url: "{% url 'get_car_by_reservation_ar' %}",
+                    data: {
+                        'reservation_id': reservationId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log('استجابة AJAX:', data);
+                        
+                        // إزالة مؤشر التحميل
+                        $('.loading-indicator').remove();
+                        
+                        if (data.status === 'success') {
+                            // تعيين السيارة في القائمة المنسدلة
+                            if (data.car_id) {
+                                $('#id_car').val(data.car_id);
+                                console.log('تم تعيين السيارة: ' + data.car_id);
+                            }
+                            
+                            // إنشاء عنصر لعرض معلومات السيارة والعميل
+                            var infoHtml = '<div class="car-customer-info row mb-4">';
+                            
+                            // معلومات السيارة
+                            infoHtml += '<div class="col-md-6"><div class="card bg-light">';
+                            infoHtml += '<div class="card-header bg-primary text-white"><h6 class="mb-0"><i class="fas fa-car me-2"></i>معلومات السيارة</h6></div>';
+                            infoHtml += '<div class="card-body">';
+                            
+                            if (data.car_details) {
+                                infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">الماركة/الموديل:</div><div class="col-sm-8">' + data.car_details.make + ' ' + data.car_details.model + '</div></div>';
+                                infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">سنة الصنع:</div><div class="col-sm-8">' + data.car_details.year + '</div></div>';
+                                infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">رقم اللوحة:</div><div class="col-sm-8">' + data.car_details.license_plate + '</div></div>';
+                                infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">اللون:</div><div class="col-sm-8">' + data.car_details.color + '</div></div>';
+                                infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">نوع الوقود:</div><div class="col-sm-8">' + data.car_details.fuel_type + '</div></div>';
+                                infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">ناقل الحركة:</div><div class="col-sm-8">' + data.car_details.transmission + '</div></div>';
+                            } else {
+                                infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">السيارة:</div><div class="col-sm-8">' + data.car_info + '</div></div>';
+                            }
+                            
+                            infoHtml += '</div></div></div>';
+                            
+                            // معلومات العميل
+                            infoHtml += '<div class="col-md-6"><div class="card bg-light">';
+                            infoHtml += '<div class="card-header bg-success text-white"><h6 class="mb-0"><i class="fas fa-user me-2"></i>معلومات العميل</h6></div>';
+                            infoHtml += '<div class="card-body">';
+                            
+                            if (data.customer && data.customer.name) {
+                                infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">الاسم:</div><div class="col-sm-8">' + data.customer.name + '</div></div>';
+                                
+                                if (data.customer.email) {
+                                    infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">البريد الإلكتروني:</div><div class="col-sm-8">' + data.customer.email + '</div></div>';
+                                }
+                                
+                                if (data.customer.phone) {
+                                    infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">الهاتف:</div><div class="col-sm-8">' + data.customer.phone + '</div></div>';
+                                }
+                            } else if (data.customer_name) {
+                                infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">الاسم:</div><div class="col-sm-8">' + data.customer_name + '</div></div>';
+                                
+                                if (data.customer_email) {
+                                    infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">البريد الإلكتروني:</div><div class="col-sm-8">' + data.customer_email + '</div></div>';
+                                }
+                                
+                                if (data.customer_phone) {
+                                    infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">الهاتف:</div><div class="col-sm-8">' + data.customer_phone + '</div></div>';
+                                }
+                            }
+                            
+                            // معلومات الحجز
+                            infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">رقم الحجز:</div><div class="col-sm-8">' + data.reservation_number + '</div></div>';
+                            infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">تاريخ البداية:</div><div class="col-sm-8">' + data.reservation_start_date + '</div></div>';
+                            infoHtml += '<div class="row mb-2"><div class="col-sm-4 fw-bold">تاريخ النهاية:</div><div class="col-sm-8">' + data.reservation_end_date + '</div></div>';
+                            
+                            infoHtml += '</div></div></div>';
+                            
+                            infoHtml += '</div>';
+                            
+                            // إضافة العنصر بعد حقل الحجز
+                            $('.card-body .row:first').after(infoHtml);
+                        } else {
+                            // عرض رسالة خطأ
+                            var errorMessage = '<div class="car-customer-info alert alert-danger mt-2 mb-3">' +
+                                '<i class="fas fa-exclamation-triangle me-2"></i>' + (data.error || 'حدث خطأ أثناء جلب البيانات') +
+                                '</div>';
+                            $('#id_reservation').after(errorMessage);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // إزالة مؤشر التحميل
+                        $('.loading-indicator').remove();
+                        
+                        // عرض رسالة خطأ
+                        var errorMessage = '<div class="car-customer-info alert alert-danger mt-2 mb-3">' +
+                            '<i class="fas fa-exclamation-triangle me-2"></i>فشل الاتصال بالخادم: ' + error +
+                            '</div>';
+                        $('#id_reservation').after(errorMessage);
+                        
+                        console.error('خطأ AJAX:', error);
+                    }
+                });
+            }
+        });
+        
         // إدارة مستوى الوقود
         $('.fuel-level-option').click(function() {
             var value = $(this).data('value');
@@ -491,6 +608,11 @@
         var initialFuelLevel = $('#id_fuel_level').val();
         if (initialFuelLevel) {
             $('.fuel-level-option[data-value="' + initialFuelLevel + '"]').click();
+        }
+        
+        // تنفيذ تغيير الحجز عند التحميل إذا كان هناك حجز محدد مسبقاً
+        if ($('#id_reservation').val()) {
+            $('#id_reservation').trigger('change');
         }
     });
     
