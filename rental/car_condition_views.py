@@ -168,8 +168,7 @@ def car_condition_create(request):
             'car_id': reservation.car.id,
             'car_info': f"{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})",
             'customer_name': reservation.user.get_full_name() or reservation.user.username,
-            'customer_email': reservation.user.email,
-            'customer_phone': getattr(reservation.user, 'phone', '') if hasattr(reservation.user, 'phone') else '',
+            # تم إزالة البريد الإلكتروني ورقم الهاتف لحماية خصوصية العميل
             'display_text': f"{reservation.reservation_number} - {reservation.car.make} {reservation.car.model} ({reservation.get_status_display()})"
         }
         reservations_with_details.append(reservation_details)
