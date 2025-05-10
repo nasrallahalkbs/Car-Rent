@@ -252,11 +252,46 @@ def car_condition_create(request):
         Prefetch('inspection_items', queryset=CarInspectionItem.objects.filter(is_active=True).order_by('display_order'))
     ).order_by('display_order')
     
+    # تحديد العناصر المهمة والمكلفة والحساسة
+    important_items = set()  # مجموعة العناصر المهمة
+    expensive_items = set()  # مجموعة العناصر المكلفة
+    critical_items = set()  # مجموعة العناصر الحساسة
+    
+    # المرور على جميع فئات وعناصر الفحص لتحديد الخصائص الإضافية
+    for category in inspection_categories:
+        for item in category.inspection_items.all():
+            # تحديد العناصر المهمة والمكلفة والحساسة بناءً على اسم العنصر
+            item_name_lower = item.name.lower()
+            
+            # تحديد العناصر المهمة
+            important_keywords = ['محرك', 'فرامل', 'نظام التعليق', 'ناقل الحركة', 'توجيه', 'كهرباء رئيسية']
+            for keyword in important_keywords:
+                if keyword in item_name_lower:
+                    important_items.add(item.id)
+                    break
+            
+            # تحديد العناصر المكلفة
+            expensive_keywords = ['محرك', 'ناقل الحركة', 'نظام التعليق', 'كمبيوتر', 'مكيف', 'رادييتر']
+            for keyword in expensive_keywords:
+                if keyword in item_name_lower:
+                    expensive_items.add(item.id)
+                    break
+            
+            # تحديد العناصر الحساسة (الحرجة)
+            critical_keywords = ['فرامل', 'توجيه', 'وسائد هوائية', 'سلامة', 'أمان']
+            for keyword in critical_keywords:
+                if keyword in item_name_lower:
+                    critical_items.add(item.id)
+                    break
+    
     context = {
         'form': form,
         'title': _('إنشاء تقرير حالة سيارة جديد'),
         'inspection_categories': inspection_categories,
         'exterior_images': [],  # قائمة فارغة لصور الهيكل الخارجي في حالة الإنشاء
+        'important_items': important_items,
+        'expensive_items': expensive_items,
+        'critical_items': critical_items,
     }
     
     return render(request, 'admin/car_condition/car_condition_form.html', context)
