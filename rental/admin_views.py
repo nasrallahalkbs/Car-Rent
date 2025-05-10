@@ -1522,6 +1522,7 @@ def download_receipt(request, payment_id):
         return response
 
 @login_required
+@admin_required
 @permission_required("payments", "create_payments")
 def add_manual_payment(request):
     """Add a manual payment entry"""
