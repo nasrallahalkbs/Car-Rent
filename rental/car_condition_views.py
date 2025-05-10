@@ -115,28 +115,49 @@ def car_condition_list(request):
 @login_required
 def car_condition_create(request):
     """إنشاء تقرير جديد لحالة السيارة"""
+    from django.utils import timezone
+    
+    print(f"[{timezone.now()}] بداية تنفيذ car_condition_create")
     
     # إذا تم تحديد سيارة أو حجز، ستكون هنا
     car_id = request.GET.get('car_id', None)
     reservation_id = request.GET.get('reservation_id', None)
+    
+    print(f"معلمات الطلب: car_id={car_id}, reservation_id={reservation_id}")
     
     initial_data = {}
     
     # إذا تم تمرير معرف الحجز
     if reservation_id:
         try:
+            print(f"محاولة جلب الحجز برقم: {reservation_id}")
             reservation = Reservation.objects.get(id=reservation_id)
             initial_data['reservation'] = reservation.id
             initial_data['car'] = reservation.car.id
+            print(f"تم العثور على الحجز: {reservation} للمستخدم: {reservation.user}")
+            print(f"السيارة المرتبطة: {reservation.car}")
         except Reservation.DoesNotExist:
+            print(f"خطأ: الحجز برقم {reservation_id} غير موجود!")
             pass
     # إذا تم تمرير معرف السيارة فقط
     elif car_id:
         try:
+            print(f"محاولة جلب السيارة برقم: {car_id}")
             car = Car.objects.get(id=car_id)
             initial_data['car'] = car.id
+            print(f"تم العثور على السيارة: {car}")
         except Car.DoesNotExist:
+            print(f"خطأ: السيارة برقم {car_id} غير موجودة!")
             pass
+            
+    # الحصول على قائمة الحجوزات النشطة للعرض في النموذج
+    active_reservations = Reservation.objects.filter(
+        status__in=['confirmed', 'active'],
+    ).select_related('user', 'car').order_by('-created_at')
+    
+    print(f"عدد الحجوزات النشطة المتاحة: {active_reservations.count()}")
+    for i, res in enumerate(active_reservations[:5]):
+        print(f"حجز #{i+1}: ID={res.id}, رقم={res.reservation_number}, المستخدم={res.user}, السيارة={res.car}")
     
     if request.method == 'POST':
         # طباعة بيانات الطلب للتصحيح
@@ -335,7 +356,11 @@ def car_condition_create(request):
         'important_items': important_items,
         'expensive_items': expensive_items,
         'critical_items': critical_items,
+        'active_reservations': active_reservations,  # قائمة الحجوزات النشطة
     }
+    
+    # طباعة معلومات تصحيح إضافية
+    print(f"تم تجهيز القالب بـ {len(context['inspection_categories'])} فئة فحص و {active_reservations.count()} حجز نشط")
     
     return render(request, 'admin/car_condition/car_condition_form.html', context)
 
