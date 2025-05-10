@@ -1194,7 +1194,7 @@ def admin_payments(request):
         'pending_count': pending_count
     }
 
-    return render(request, 'admin/payments_django.html', context)
+    return render(request, 'admin/payments_dropdown.html', context)
 
 @login_required
 @permission_required("payments", "view_payments")
