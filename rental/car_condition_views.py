@@ -257,35 +257,75 @@ def car_condition_create(request):
     expensive_items = set()  # مجموعة العناصر المكلفة
     critical_items = set()  # مجموعة العناصر الحساسة
     
-    # المرور على جميع فئات وعناصر الفحص لتحديد الخصائص الإضافية
+    # تعيين العناصر المهمة والمكلفة والحرجة في حالة عدم وجود بيانات في قاعدة البيانات
+    default_important_items = {
+        'محرك': True,
+        'فرامل': True,
+        'نظام التعليق': True,
+        'ناقل الحركة': True, 
+        'توجيه': True,
+        'كهرباء': True,
+        'بطارية': True,
+        'مكيف': True
+    }
+    
+    default_expensive_items = {
+        'محرك': True,
+        'ناقل الحركة': True,
+        'نظام التعليق': True,
+        'مكيف': True,
+        'رادييتر': True,
+        'بطارية': True,
+        'كمبيوتر': True
+    }
+    
+    default_critical_items = {
+        'فرامل': True,
+        'توجيه': True,
+        'وسائد هوائية': True,
+        'سلامة': True,
+        'أمان': True,
+        'إطارات': True
+    }
+    
+    # المرور على جميع فئات وعناصر الفحص لتحديد العناصر المهمة والمكلفة والحرجة
     for category in inspection_categories:
         for item in category.inspection_items.all():
-            # تحديد العناصر المهمة والمكلفة والحساسة بناءً على اسم العنصر
-            item_name = item.name  # استخدام الاسم بدون تحويل إلى lowercase للنصوص العربية
+            # إضافة العناصر المهمة
+            if hasattr(item, 'is_important') and item.is_important:
+                important_items.add(item.id)
+                print(f"إضافة العنصر المهم من قاعدة البيانات: {item.name} (ID: {item.id})")
+            else:
+                # إذا لم يكن لدينا الحقل الجديد، نستخدم الكلمات المفتاحية
+                for keyword in default_important_items:
+                    if keyword in item.name:
+                        important_items.add(item.id)
+                        print(f"إضافة العنصر المهم بناءً على الاسم: {item.name} (ID: {item.id})")
+                        break
             
-            # تحديد العناصر المهمة
-            important_keywords = ['محرك', 'فرامل', 'نظام التعليق', 'ناقل الحركة', 'توجيه', 'كهرباء', 'بطارية']
-            for keyword in important_keywords:
-                if keyword in item_name:
-                    important_items.add(item.id)
-                    print(f"إضافة العنصر المهم: {item.name} (ID: {item.id})")
-                    break
+            # إضافة العناصر المكلفة
+            if hasattr(item, 'is_expensive') and item.is_expensive:
+                expensive_items.add(item.id)
+                print(f"إضافة العنصر المكلف من قاعدة البيانات: {item.name} (ID: {item.id})")
+            else:
+                # إذا لم يكن لدينا الحقل الجديد، نستخدم الكلمات المفتاحية
+                for keyword in default_expensive_items:
+                    if keyword in item.name:
+                        expensive_items.add(item.id)
+                        print(f"إضافة العنصر المكلف بناءً على الاسم: {item.name} (ID: {item.id})")
+                        break
             
-            # تحديد العناصر المكلفة
-            expensive_keywords = ['محرك', 'ناقل الحركة', 'نظام التعليق', 'كمبيوتر', 'مكيف', 'رادييتر', 'بطارية']
-            for keyword in expensive_keywords:
-                if keyword in item_name:
-                    expensive_items.add(item.id)
-                    print(f"إضافة العنصر المكلف: {item.name} (ID: {item.id})")
-                    break
-            
-            # تحديد العناصر الحساسة (الحرجة)
-            critical_keywords = ['فرامل', 'توجيه', 'وسائد هوائية', 'سلامة', 'أمان', 'إطارات']
-            for keyword in critical_keywords:
-                if keyword in item_name:
-                    critical_items.add(item.id)
-                    print(f"إضافة العنصر الحرج: {item.name} (ID: {item.id})")
-                    break
+            # إضافة العناصر الحرجة
+            if hasattr(item, 'is_critical') and item.is_critical:
+                critical_items.add(item.id)
+                print(f"إضافة العنصر الحرج من قاعدة البيانات: {item.name} (ID: {item.id})")
+            else:
+                # إذا لم يكن لدينا الحقل الجديد، نستخدم الكلمات المفتاحية
+                for keyword in default_critical_items:
+                    if keyword in item.name:
+                        critical_items.add(item.id)
+                        print(f"إضافة العنصر الحرج بناءً على الاسم: {item.name} (ID: {item.id})")
+                        break
     
     context = {
         'form': form,

@@ -1006,6 +1006,11 @@ class CarInspectionItem(models.Model):
     is_required = models.BooleanField(default=True, verbose_name=_('إلزامي'))
     is_active = models.BooleanField(default=True, verbose_name=_('نشط'))
     
+    # حقول إضافية لتصنيف العناصر
+    is_important = models.BooleanField(default=False, verbose_name=_('مهم'))
+    is_expensive = models.BooleanField(default=False, verbose_name=_('مكلف'))
+    is_critical = models.BooleanField(default=False, verbose_name=_('حرج'))
+    
     class Meta:
         verbose_name = _('عنصر فحص السيارة')
         verbose_name_plural = _('عناصر فحص السيارة')
