@@ -971,15 +971,35 @@
                 }
             });
             
-            // القوائم المنسدلة في الشريط الجانبي
+            // القوائم المنسدلة في الشريط الجانبي - معالجة محسّنة للنقر
             const dropdownToggles = document.querySelectorAll('.menu-link.dropdown-toggle');
             dropdownToggles.forEach(toggle => {
                 toggle.addEventListener('click', function(event) {
                     event.preventDefault();
+                    event.stopPropagation(); // منع انتشار الحدث للعناصر الأب
+                    
                     const targetId = this.getAttribute('data-bs-target');
                     const targetElement = document.querySelector(targetId);
                     
                     if (targetElement) {
+                        // إغلاق القوائم الأخرى
+                        document.querySelectorAll('.collapse.show').forEach(openMenu => {
+                            // لا تغلق القائمة الحالية إلا إذا نقرنا عليها
+                            if (openMenu !== targetElement) {
+                                openMenu.classList.remove('show');
+                                // إعادة ضبط زر التبديل المرتبط بها
+                                const relatedToggle = document.querySelector(`[data-bs-target="#${openMenu.id}"]`);
+                                if (relatedToggle) {
+                                    relatedToggle.setAttribute('aria-expanded', 'false');
+                                    const arrow = relatedToggle.querySelector('.fa-chevron-down');
+                                    if (arrow) {
+                                        arrow.style.transform = 'rotate(0)';
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // تبديل حالة القائمة المنسدلة الحالية
                         targetElement.classList.toggle('show');
                         const isExpanded = targetElement.classList.contains('show');
                         this.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
@@ -1053,6 +1073,18 @@
                     }
                 });
             }
+            
+            // إضافة مستمع نقر للمستند لإغلاق القوائم المنسدلة عند النقر في أي مكان آخر
+            document.addEventListener('click', function(event) {
+                // تحقق مما إذا كان النقر خارج القوائم المنسدلة
+                const isDropdownToggle = event.target.closest('.menu-link.dropdown-toggle');
+                const isDropdownMenu = event.target.closest('.collapse');
+                
+                // إذا لم يكن النقر على زر القائمة أو داخل القائمة، أغلق جميع القوائم
+                if (!isDropdownToggle && !isDropdownMenu) {
+                    closeAllDropdowns();
+                }
+            });
         });
     </script>
     
