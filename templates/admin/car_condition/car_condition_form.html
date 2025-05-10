@@ -7,14 +7,7 @@
 
 {% block extra_head %}
 <style>
-    /* إخفاء أقسام الفحص حتى يتم تحديد نوع الفحص */
-    #electronic-inspection-section {
-        display: none;
-    }
-    
-    #manual-inspection-section {
-        display: none;
-    }
+    /* سيتم التحكم بإظهار وإخفاء أقسام الفحص من خلال جافاسكريبت */
     .fuel-level-selector {
         display: flex;
         align-items: center;
@@ -268,6 +261,57 @@
 {% endblock %}
 
 {% block content %}
+<script>
+// سكريبت إضافي للتأكد من تفعيل وظيفة إظهار/إخفاء أقسام الفحص
+function setupInspectionToggle() {
+    // تحديد المقاطع الرئيسية
+    var electronicSection = document.getElementById('electronic-inspection-section');
+    var manualSection = document.getElementById('manual-inspection-section');
+    
+    if (!electronicSection || !manualSection) {
+        console.error("لم يتم العثور على عناصر الفحص");
+        return;
+    }
+    
+    // إخفاء كلا القسمين ابتداءً
+    electronicSection.style.display = 'none';
+    manualSection.style.display = 'none';
+    
+    // الحصول على قيمة الاختيار الحالية
+    var select = document.getElementById('{{ form.inspection_type.id_for_label }}');
+    if (!select) {
+        console.error("لم يتم العثور على حقل نوع الفحص");
+        return;
+    }
+    
+    // وظيفة لتحديث العرض بناءً على قيمة الاختيار
+    function updateSections() {
+        var selectedValue = select.value;
+        
+        if (selectedValue === 'electronic') {
+            electronicSection.style.display = 'block';
+            manualSection.style.display = 'none';
+        } else {
+            electronicSection.style.display = 'none';
+            manualSection.style.display = 'block';
+        }
+    }
+    
+    // تحديث العرض عند بدء التشغيل
+    updateSections();
+    
+    // إضافة مستمع للتغييرات
+    select.addEventListener('change', updateSections);
+}
+
+// تنفيذ عند تحميل الصفحة مباشرة
+window.addEventListener('DOMContentLoaded', setupInspectionToggle);
+// تنفيذ مرة إضافية بعد جاهزية المستند للتأكد
+window.addEventListener('load', setupInspectionToggle);
+// استخدام جيكويري أيضاً للتأكد
+$(document).ready(setupInspectionToggle);
+</script>
+
 <div class="container-fluid mt-3">
     <div class="card">
         <div class="card-header">
@@ -533,7 +577,7 @@
                 </div>
                 
                 <!-- قسم رفع ملف الفحص الإلكتروني - سيظهر فقط عند اختيار "فحص إلكتروني" -->
-                <div class="row mb-3" id="electronic-inspection-section" style="display: none !important;">
+                <div class="row mb-3" id="electronic-inspection-section">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header bg-success text-white">
@@ -570,7 +614,7 @@
                 </div>
                 
                 <!-- قسم عناصر الفحص المهمة والمكلفة فقط (يظهر عند اختيار فحص يدوي) -->
-                <div class="row mb-3" id="manual-inspection-section" style="display: none !important;">
+                <div class="row mb-3" id="manual-inspection-section">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header bg-primary text-white">
