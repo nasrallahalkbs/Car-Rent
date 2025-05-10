@@ -175,6 +175,7 @@ urlpatterns = [
     
     # مسارات إدارة العهدة باللغة العربية
     path('ar/dashboard/custody/', views_custody.custody_dashboard, name='custody_dashboard_ar'),
+    path('ar/dashboard/custody/dashboard/', views_custody.custody_dashboard, name='custody_dashboard_ar2'),
     path('ar/dashboard/custody/list/', views_custody.custody_list, name='custody_list_ar'),
     path('ar/dashboard/custody/create/', views_custody.custody_create, name='custody_create_ar'),
     path('ar/dashboard/custody/<int:guarantee_id>/', views_custody.custody_detail, name='custody_detail_ar'),
