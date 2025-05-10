@@ -622,6 +622,7 @@ def get_car_by_reservation(request):
     import traceback
     import json
     from django.utils import timezone
+    from decimal import Decimal
     
     # تسجيل بداية الطلب مع الوقت والتاريخ
     current_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -756,7 +757,21 @@ def get_car_by_reservation(request):
             'info': response_data['car_info']
         }
         
-        print(f"JSON المُرجَع: {json.dumps(response_data, ensure_ascii=False)}")
+        # تحويل أي قيم Decimal إلى float لتكون قابلة للتحويل إلى JSON
+        def decimal_to_float(obj):
+            if isinstance(obj, dict):
+                return {k: decimal_to_float(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [decimal_to_float(item) for item in obj]
+            elif isinstance(obj, Decimal):
+                return float(obj)
+            else:
+                return obj
+        
+        # تحويل جميع القيم في response_data
+        response_data = decimal_to_float(response_data)
+        
+        print(f"تم تحويل القيم العشرية إلى قيم عائمة للسماح بالتحويل إلى JSON")
         return JsonResponse(response_data)
     
     except Reservation.DoesNotExist:
