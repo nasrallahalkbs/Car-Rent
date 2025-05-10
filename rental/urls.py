@@ -27,6 +27,8 @@ urlpatterns = [
     path('ar/dashboard/archive/super_upload/', super_upload, name='super_upload'),
     # إضافة مسار الرفع للغة العربية باستخدام دالة الرفع الموثوقة الجديدة
     path('ar/dashboard/archive/upload/', super_reliable_upload, name='admin_archive_upload_ar'),
+    # إضافة مسار صفحة الإضافة باللغة العربية
+    path('ar/dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add_ar'),
     # User-facing views
     path('', views.index, name='index'),
     path('register/', views.register_view, name='register'),
