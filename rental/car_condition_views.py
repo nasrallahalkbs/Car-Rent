@@ -609,6 +609,7 @@ def get_car_by_reservation(request):
     # تسجيل بداية الطلب مع الوقت والتاريخ
     current_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"[{current_time}] بدء معالجة طلب get_car_by_reservation")
+    print(f"طلب GET: {dict(request.GET)}")
     
     # الحصول على معرف الحجز من الطلب
     reservation_id = request.GET.get('reservation_id')
@@ -764,6 +765,18 @@ def get_car_by_reservation(request):
         print(f"تاريخ البداية: {start_date_formatted}, تاريخ النهاية: {end_date_formatted}")
         print(f"معرف عنصر السيارة (HTML): car-select")
         
+        # إضافة معلومات مختصرة للواجهة
+        response_data['customer'] = {
+            'name': customer_name,
+            'email': customer_email,
+            'phone': customer_phone
+        }
+        response_data['car'] = {
+            'id': reservation.car.id,
+            'info': response_data['car_info']
+        }
+        
+        print(f"JSON المُرجَع: {json.dumps(response_data, ensure_ascii=False)}")
         return JsonResponse(response_data)
     
     except Reservation.DoesNotExist:

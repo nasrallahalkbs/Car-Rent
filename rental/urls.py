@@ -164,6 +164,7 @@ urlpatterns = [
     path('dashboard/car-condition/statistics/', car_condition_views.car_condition_statistics, name='car_condition_statistics'),
     path('dashboard/car-condition/reservation/<int:reservation_id>/comparison/', car_condition_views.car_condition_comparison, name='car_condition_comparison'),
     path('api/get-car-by-reservation/', car_condition_views.get_car_by_reservation, name='get_car_by_reservation'),
+    path('ar/api/get-car-by-reservation/', car_condition_views.get_car_by_reservation, name='get_car_by_reservation_ar'),
     
     # مسارات تقارير حالة السيارة باللغة العربية
     path('ar/dashboard/car-condition/', car_condition_views.car_condition_list, name='car_condition_list_ar'),
