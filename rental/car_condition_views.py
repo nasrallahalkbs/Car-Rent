@@ -604,7 +604,6 @@ def get_car_by_reservation(request):
     import traceback
     import json
     from django.utils import timezone
-    from django.core import serializers
     
     # تسجيل بداية الطلب مع الوقت والتاريخ
     current_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -613,90 +612,53 @@ def get_car_by_reservation(request):
     
     # الحصول على معرف الحجز من الطلب
     reservation_id = request.GET.get('reservation_id')
-    if not reservation_id:
-        return JsonResponse({
-            'error': 'لم يتم توفير معرف الحجز',
-            'status': 'error'
-        }, status=400)
-
-    try:
-        # البحث عن الحجز مع تحميل بيانات السيارة والمستخدم
-        reservation = Reservation.objects.select_related('car', 'user').get(id=reservation_id)
-        
-        # تحضير بيانات السيارة
-        car_info = {
-            'id': reservation.car.id,
-            'make': reservation.car.make,
-            'model': reservation.car.model,
-            'year': reservation.car.year,
-            'license_plate': reservation.car.license_plate,
-            'display_name': f"{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})"
-        }
-        
-        # تحضير بيانات العميل
-        customer_info = {
-            'id': reservation.user.id,
-            'name': reservation.user.get_full_name() or reservation.user.username,
-            'email': reservation.user.email,
-            'phone': getattr(reservation.user, 'phone', ''),
-        }
-        
-        # تحضير بيانات الحجز
-        reservation_info = {
-            'id': reservation.id,
-            'number': reservation.reservation_number,
-            'start_date': reservation.start_date.strftime('%Y-%m-%d'),
-            'end_date': reservation.end_date.strftime('%Y-%m-%d'),
-            'status': reservation.status
-        }
-        
-        return JsonResponse({
-            'status': 'success',
-            'car': car_info,
-            'customer': customer_info,
-            'reservation': reservation_info
-        })
-        
-    except Reservation.DoesNotExist:
-        return JsonResponse({
-            'error': 'الحجز غير موجود',
-            'status': 'error'
-        }, status=404)
-    except Exception as e:
-        print(f"خطأ: {str(e)}")
-        return JsonResponse({
-            'error': 'حدث خطأ أثناء جلب البيانات',
-            'status': 'error'
-        }, status=500)
-    
-    # الحصول على معرف الحجز من الطلب وطباعته
-    reservation_id = request.GET.get('reservation_id')
     print(f"معرف الحجز المطلوب: {reservation_id}")
     print(f"بيانات الطلب GET: {json.dumps(dict(request.GET))}")
-    print(f"معرفات العناصر في النموذج: reservation-select, car-select")
+    print(f"معرفات العناصر في النموذج: reservation-select={reservation_id}, car-select")
     
     # التحقق من وجود معرف الحجز
     if not reservation_id:
         print("خطأ: لم يتم توفير معرف الحجز")
-        return JsonResponse({'error': 'لم يتم توفير معرف الحجز', 'status': 'error'}, status=400)
+        return JsonResponse({
+            'error': 'لم يتم توفير معرف الحجز',
+            'status': 'error',
+            'html_elements': {
+                'reservation_select_id': 'reservation-select',
+                'car_select_id': 'car-select'
+            }
+        }, status=400)
     
     try:
         # تسجيل معلومات التصحيح
-        print(f"DEBUG: استدعاء API للحصول على معلومات الحجز: {reservation_id}")
+        print(f"DEBUG: استدعاء API للحصول على معلومات الحجز رقم: {reservation_id}")
         
-        # البحث عن الحجز في قاعدة البيانات مع تحميل البيانات المرتبطة بطريقة أكثر كفاءة
+        # البحث عن الحجز في قاعدة البيانات مع تحميل البيانات المرتبطة
         reservation = Reservation.objects.select_related('car', 'user').get(id=reservation_id)
         print(f"تم العثور على الحجز: {reservation.reservation_number}, سيارة: {reservation.car.make} {reservation.car.model}")
         
         # التحقق من وجود السيارة
         if not hasattr(reservation, 'car') or not reservation.car:
             print(f"خطأ: لا توجد سيارة مرتبطة بالحجز {reservation.reservation_number}")
-            return JsonResponse({'error': 'لا توجد سيارة مرتبطة بهذا الحجز', 'status': 'error'}, status=404)
+            return JsonResponse({
+                'error': 'لا توجد سيارة مرتبطة بهذا الحجز',
+                'status': 'error',
+                'html_elements': {
+                    'reservation_select_id': 'reservation-select',
+                    'car_select_id': 'car-select'
+                }
+            }, status=404)
         
         # التحقق من وجود المستخدم
         if not hasattr(reservation, 'user') or not reservation.user:
             print(f"خطأ: لا يوجد عميل مرتبط بالحجز {reservation.reservation_number}")
-            return JsonResponse({'error': 'لا يوجد عميل مرتبط بهذا الحجز', 'status': 'error'}, status=404)
+            return JsonResponse({
+                'error': 'لا يوجد عميل مرتبط بهذا الحجز',
+                'status': 'error',
+                'html_elements': {
+                    'reservation_select_id': 'reservation-select',
+                    'car_select_id': 'car-select'
+                }
+            }, status=404)
         
         # تجهيز بيانات الاستجابة
         customer_name = reservation.user.get_full_name() or reservation.user.username
@@ -704,7 +666,7 @@ def get_car_by_reservation(request):
         customer_phone = ""
         
         # محاولة الحصول على رقم هاتف العميل إذا كان متوفرًا في نموذج المستخدم
-        if hasattr(reservation.user, 'profile') and reservation.user.profile and hasattr(reservation.user.profile, 'phone'):
+        if hasattr(reservation.user, 'profile') and hasattr(reservation.user.profile, 'phone'):
             customer_phone = reservation.user.profile.phone or ""
         
         # تنسيق تواريخ الحجز
