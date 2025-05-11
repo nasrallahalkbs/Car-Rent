@@ -984,10 +984,15 @@
                         // التحقق مما إذا كانت القائمة المستهدفة مفتوحة بالفعل
                         const isAlreadyOpen = targetElement.classList.contains('show');
                         
+                        // إذا كان المستهدف هو قائمة توثيق حالة السيارة، عاملها بشكل خاص
+                        const isCarCondition = targetId === '#carConditionSubmenu';
+                        const currentPath = window.location.pathname;
+                        
                         // إغلاق القوائم الأخرى
                         document.querySelectorAll('.collapse.show').forEach(openMenu => {
-                            // نغلق جميع القوائم المفتوحة (بما في ذلك القائمة الحالية إذا كانت مفتوحة)
-                            openMenu.classList.remove('show');
+                            // لا نغلق القائمة الحالية إذا كانت مفتوحة وهي قائمة توثيق حالة السيارة
+                            if (openMenu.id !== 'carConditionSubmenu' || !currentPath.includes('dashboard/car-condition')) {
+                                openMenu.classList.remove('show');
                             
                             // إعادة ضبط زر التبديل المرتبط بالقائمة
                             const relatedToggle = document.querySelector(`[data-bs-target="#${openMenu.id}"]`);
@@ -1020,58 +1025,85 @@
                 // الحل لمشكلة القوائم المنسدلة المعلقة
                 if (event.persisted) {
                     // تم تحميل الصفحة من ذاكرة التخزين المؤقت (عند الرجوع للخلف)
-                    closeAllDropdowns();
+                    const currentPath = window.location.pathname;
+                    closeAllDropdowns(currentPath);
                 }
             });
             
             // إضافة مستمع لزر الرجوع في المتصفح
             window.addEventListener('popstate', function() {
                 // تأخير قصير لضمان أن التغييرات تحدث بعد تحميل الصفحة
-                setTimeout(closeAllDropdowns, 100);
+                const currentPath = window.location.pathname;
+                setTimeout(function() {
+                    closeAllDropdowns(currentPath);
+                }, 100);
             });
             
-            // مستمع إضافي - فرض إغلاق القوائم المنسدلة عند تحميل الصفحة
+            // مستمع إضافي - معالجة محسنة للقوائم المنسدلة عند تحميل الصفحة
             document.addEventListener('DOMContentLoaded', function() {
-                // القوائم التي يجب أن تبقى مفتوحة (بناءً على المسار الحالي)
+                // الحصول على المسار الحالي
                 const currentPath = window.location.pathname;
+                
                 // تأخير قصير لإعطاء Bootstrap الوقت لتهيئة القوائم
                 setTimeout(function() {
-                    // افحص جميع القوائم وأغلق التي لا تتطابق مع المسار الحالي
-                    const allDropdowns = document.querySelectorAll('.collapse');
-                    allDropdowns.forEach(dropdown => {
-                        const toggleButton = document.querySelector(`[data-bs-target="#${dropdown.id}"]`);
-                        if (toggleButton) {
-                            const shouldBeOpen = toggleButton.classList.contains('active');
-                            if (!shouldBeOpen) {
-                                dropdown.classList.remove('show');
-                                toggleButton.setAttribute('aria-expanded', 'false');
-                                // إعادة ضبط السهم
-                                const arrow = toggleButton.querySelector('.fa-chevron-down');
-                                if (arrow) {
-                                    arrow.style.transform = 'rotate(0)';
-                                }
+                    // إغلاق جميع القوائم المنسدلة مع مراعاة المسار الحالي
+                    closeAllDropdowns(currentPath);
+                    
+                    // التأكد من أن القوائم التي تطابق المسار الحالي تبقى مفتوحة
+                    if (currentPath.includes('dashboard/car-condition')) {
+                        const carConditionMenu = document.getElementById('carConditionSubmenu');
+                        const carConditionToggle = document.querySelector('[data-bs-target="#carConditionSubmenu"]');
+                        if (carConditionMenu && carConditionToggle) {
+                            carConditionMenu.classList.add('show');
+                            carConditionToggle.setAttribute('aria-expanded', 'true');
+                            const arrow = carConditionToggle.querySelector('.fa-chevron-down');
+                            if (arrow) {
+                                arrow.style.transform = 'rotate(180deg)';
                             }
                         }
-                    });
+                    }
                 }, 200);
             });
             
-            // دالة لإغلاق جميع القوائم المنسدلة
-            function closeAllDropdowns() {
+            // دالة لإغلاق جميع القوائم المنسدلة - النسخة المحسنة
+            function closeAllDropdowns(exceptPath) {
                 const openDropdowns = document.querySelectorAll('.collapse.show');
                 openDropdowns.forEach(dropdown => {
-                    dropdown.classList.remove('show');
-                    
                     // العثور على الزر المرتبط بهذه القائمة
                     const toggleButton = document.querySelector(`[data-bs-target="#${dropdown.id}"]`);
+                    
                     if (toggleButton) {
-                        toggleButton.setAttribute('aria-expanded', 'false');
+                        // تحقق مما إذا كانت القائمة الحالية يجب أن تبقى مفتوحة بناءً على المسار
+                        let shouldStayOpen = false;
                         
-                        // إعادة ضبط السهم
-                        const arrow = toggleButton.querySelector('.fa-chevron-down');
-                        if (arrow) {
-                            arrow.style.transform = 'rotate(0)';
+                        if (exceptPath) {
+                            const pathsToKeepOpen = {
+                                'carConditionSubmenu': 'dashboard/car-condition',
+                                'vehiclesSubmenu': 'cars',
+                                'userSubmenu': 'users/manage',
+                                'paymentsSubmenu': 'payments',
+                                'custodySubmenu': 'dashboard/custody'
+                            };
+                            
+                            // تحقق مما إذا كان ينبغي إبقاء القائمة الحالية مفتوحة
+                            const pathToCheck = pathsToKeepOpen[dropdown.id];
+                            shouldStayOpen = pathToCheck && exceptPath.includes(pathToCheck);
                         }
+                        
+                        // إغلاق القائمة إلا إذا كان يجب أن تبقى مفتوحة
+                        if (!shouldStayOpen) {
+                            dropdown.classList.remove('show');
+                            toggleButton.setAttribute('aria-expanded', 'false');
+                            
+                            // إعادة ضبط السهم
+                            const arrow = toggleButton.querySelector('.fa-chevron-down');
+                            if (arrow) {
+                                arrow.style.transform = 'rotate(0)';
+                            }
+                        }
+                    } else {
+                        // إذا لم يتم العثور على زر التبديل، أغلق القائمة على أي حال
+                        dropdown.classList.remove('show');
                     }
                 });
             }
@@ -1084,7 +1116,8 @@
                 
                 // إذا لم يكن النقر على زر القائمة أو داخل القائمة، أغلق جميع القوائم
                 if (!isDropdownToggle && !isDropdownMenu) {
-                    closeAllDropdowns();
+                    const currentPath = window.location.pathname;
+                    closeAllDropdowns(currentPath);
                 }
             });
         });
