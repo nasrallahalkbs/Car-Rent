@@ -1233,34 +1233,61 @@ def complete_car_inspection_create(request):
                 report.save()  # حفظ التغييرات
             
             # معالجة عناصر الفحص للفئات الأخرى (غير الهيكل الخارجي)
+            print("✅ بدء معالجة عناصر الفحص")
+            inspection_items_count = 0
+            
             for key, value in request.POST.items():
                 # معالجة حقول عناصر الفحص
                 if key.startswith('inspection_item_') and value:
-                    item_id = int(key.replace('inspection_item_', ''))
-                    
-                    # البحث عن عنصر الفحص
                     try:
+                        item_id = int(key.replace('inspection_item_', ''))
+                        print(f"✅ معالجة عنصر الفحص رقم {item_id} - القيمة: {value}")
+                        
+                        # البحث عن عنصر الفحص
                         inspection_item = CarInspectionItem.objects.get(id=item_id)
                         
                         # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
                         if inspection_item.category.name == 'الهيكل الخارجي':
+                            print(f"⚠️ تخطي عنصر من فئة الهيكل الخارجي: {inspection_item.name}")
                             continue
                             
                         # الحصول على الملاحظات واحتياج الإصلاح
                         notes = request.POST.get(f'notes_item_{item_id}', '')
                         needs_repair = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
                         
+                        print(f"✅ عنصر الفحص: {inspection_item.name}, الحالة: {value}, يحتاج إصلاح: {needs_repair}")
+                        
                         # إنشاء تفاصيل الفحص
-                        CarInspectionDetail.objects.create(
+                        detail = CarInspectionDetail.objects.create(
                             report=report,
                             inspection_item=inspection_item,
                             condition=value,
                             notes=notes,
                             needs_repair=needs_repair
                         )
+                        
+                        print(f"✅ تم حفظ تفصيل الفحص: {detail.id} - العنصر: {inspection_item.name}")
+                        inspection_items_count += 1
+                        
                     except CarInspectionItem.DoesNotExist:
-                        pass
+                        print(f"⚠️ تحذير: عنصر الفحص رقم {item_id} غير موجود")
+                    except ValueError as e:
+                        print(f"⚠️ تحذير: خطأ في معالجة العنصر {key}: {str(e)}")
+                    except Exception as e:
+                        print(f"❌ خطأ غير متوقع في معالجة العنصر {key}: {str(e)}")
+                        messages.warning(request, f"حدث خطأ أثناء حفظ عنصر الفحص: {str(e)}")
             
+            print(f"✅ تم حفظ {inspection_items_count} من عناصر الفحص")
+            
+            # ملخص التقرير
+            print(f"✅✅✅ تم إنشاء التقرير بنجاح!")
+            print(f"✅ رقم التقرير: {report.id}")
+            print(f"✅ السيارة: {report.car}")
+            print(f"✅ نوع التقرير: {report.get_report_type_display()}")
+            print(f"✅ عدد الصور: {report.carinspectionimage_set.count()}")
+            print(f"✅ عدد عناصر الفحص: {report.carinspectiondetail_set.count()}")
+            
+            # رسالة النجاح
             messages.success(request, _('تم إنشاء تقرير فحص السيارة بنجاح'))
             
             # توجيه إلى صفحة تفاصيل التقرير
