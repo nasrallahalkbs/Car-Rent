@@ -1474,6 +1474,25 @@ def about_us(request):
     return render(request, template)
 
 # إزالة @login_required للسماح للمستخدمين غير المسجلين بالوصول لصفحة طلب الحجز
+def book_from_cart(request):
+    """وظيفة خاصة لحجز السيارة مباشرة من السلة"""
+    # التأكد من أن المستخدم مسجل الدخول
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # الحصول على عناصر السلة للمستخدم
+    cart_items = CartItem.objects.filter(user=request.user).order_by('-created_at')
+    
+    # التحقق من وجود عناصر في السلة
+    if not cart_items.exists():
+        messages.error(request, 'لا توجد سيارات في سلة التسوق')
+        return redirect('cart')
+    
+    # استخدام السيارة الأولى من السلة
+    first_cart_item = cart_items.first()
+    return redirect('book_car', car_id=first_cart_item.car.id)
+
+
 def book_car(request, car_id):
     """View for booking a car directly from car detail page"""
     car = get_object_or_404(Car, id=car_id, is_available=True)
