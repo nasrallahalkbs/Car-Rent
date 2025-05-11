@@ -214,7 +214,6 @@
                                         <div class="id-card-header border-bottom pb-2 mb-3">
                                             <h6 class="text-primary mb-1">{% trans "بطاقة معلومات المستأجر" %}</h6>
                                             <div class="d-flex justify-content-between">
-                                                <span class="text-muted">{% trans "الرقم" %}: {{ reservation.reservation_number }}</span>
                                                 <span class="text-muted">{% trans "التاريخ" %}: {% if is_english %}{{ reservation.created_at|date:"m/d/Y" }}{% else %}{{ reservation.created_at|date:"d/m/Y" }}{% endif %}</span>
                                             </div>
                                         </div>
@@ -240,10 +239,7 @@
                                                         <div class="col-5 text-muted">{% trans "رقم الهاتف" %}</div>
                                                         <div class="col-7">{{ reservation.user.phone|default:"غير متوفر" }}</div>
                                                     </div>
-                                                    <div class="row mb-2">
-                                                        <div class="col-5 text-muted">{% trans "نوع الضمان" %}</div>
-                                                        <div class="col-7">{{ reservation.get_guarantee_type_display }}</div>
-                                                    </div>
+                                                    <!-- تم إزالة حقل نوع الضمان من هنا ووضعه في قسم تفاصيل الحجز -->
                                                     <div class="row mb-2">
                                                         <div class="col-5 text-muted">{% trans "العنوان" %}</div>
                                                         <div class="col-7">{{ reservation.user.address|default:"غير متوفر" }}</div>
@@ -302,6 +298,10 @@
                                             <td>{{ reservation.get_guarantee_type_display }}</td>
                                         </tr>
                                         <tr>
+                                            <td class="text-muted">{% trans "تفاصيل الضمان" %}</td>
+                                            <td>{{ reservation.guarantee_details|default:"غير متوفر" }}</td>
+                                        </tr>
+                                        <tr>
                                             <td class="text-muted">{% trans "تاريخ الاستلام" %}</td>
                                             <td class="fw-bold">{% if is_english %}{{ reservation.start_date|date:"m/d/Y" }}{% else %}{{ reservation.start_date|date:"d/m/Y" }}{% endif %}</td>
                                         </tr>
@@ -317,10 +317,10 @@
                                             <td class="text-muted">{% trans "نوع الإيجار" %}</td>
                                             <td>{{ reservation.get_rental_type_display }}</td>
                                         </tr>
-                                        {% if reservation.guarantee_type %}
+                                        {% if reservation.deposit_amount %}
                                         <tr>
-                                            <td class="text-muted">{% trans "نوع الضمان" %}</td>
-                                            <td>{{ reservation.get_guarantee_type_display }}</td>
+                                            <td class="text-muted">{% trans "مبلغ التأمين" %}</td>
+                                            <td>{{ reservation.deposit_amount }} {% trans "دينار" %}</td>
                                         </tr>
                                         {% endif %}
                                     </table>
