@@ -56,6 +56,7 @@ urlpatterns = [
     path('ar/cart/remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart_ar'),
     path('checkout/', views.checkout, name='checkout'),
     path('checkout-new/', views.checkout_new, name='checkout_new'),
+    path('ar/checkout-new/', views.checkout_new, name='checkout_new_ar'),
     path('confirmation/', views.confirmation, name='confirmation'),
     path('reservations/', views.my_reservations, name='my_reservations'),
     path('payment/', payment_views.professional_payment, name='professional_payment'),
