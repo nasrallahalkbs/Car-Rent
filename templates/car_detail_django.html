@@ -670,7 +670,11 @@
                     {% if car.is_available %}
                         {% if user.is_authenticated %}
                         <!-- زر الإضافة إلى السلة الجديد -->
+                        {% if LANGUAGE_CODE == 'ar' %}
+                        <form method="POST" action="{% url 'add_to_cart_ar' %}" class="mb-3">
+                        {% else %}
                         <form method="POST" action="{% url 'add_to_cart' %}" class="mb-3">
+                        {% endif %}
                             {% csrf_token %}
                             <input type="hidden" name="car_id" value="{{ car.id }}">
                             <div class="row mb-3">
@@ -692,19 +696,34 @@
                             </button>
                         </form>
                         <!-- زر طلب الحجز المباشر -->
+                        {% if LANGUAGE_CODE == 'ar' %}
+                        <a href="{% url 'book_car_ar' car_id=car.id %}" class="action-button d-block text-center text-decoration-none py-3">
+                            <i class="fas fa-calendar-check {% trans "me-2" %}"></i> {% trans "Request Booking" %}
+                        </a>
+                        {% else %}
                         <a href="{% url 'book_car' car_id=car.id %}" class="action-button d-block text-center text-decoration-none py-3">
                             <i class="fas fa-calendar-check {% trans "me-2" %}"></i> {% trans "Request Booking" %}
                         </a>
+                        {% endif %}
                         {% else %}
                         <!-- مستخدم غير مسجل دخول، نعرض زر تسجيل الدخول -->
                         <div class="text-center mb-3">
                             <p class="text-muted mb-3">{% trans "To book this car, please login or register" %}</p>
+                            {% if LANGUAGE_CODE == 'ar' %}
+                            <a href="{% url 'login' %}?next={% url 'car_detail_ar' car_id=car.id %}" class="action-button d-block text-center text-decoration-none py-3 mb-3">
+                                <i class="fas fa-user {% trans "me-2" %}"></i> {% trans "Login to Book" %}
+                            </a>
+                            <a href="{% url 'register' %}?next={% url 'car_detail_ar' car_id=car.id %}" class="text-decoration-none">
+                                {% trans "Don't have an account? Register" %}
+                            </a>
+                            {% else %}
                             <a href="{% url 'login' %}?next={% url 'car_detail' car_id=car.id %}" class="action-button d-block text-center text-decoration-none py-3 mb-3">
                                 <i class="fas fa-user {% trans "me-2" %}"></i> {% trans "Login to Book" %}
                             </a>
                             <a href="{% url 'register' %}?next={% url 'car_detail' car_id=car.id %}" class="text-decoration-none">
                                 {% trans "Don't have an account? Register" %}
                             </a>
+                            {% endif %}
                         </div>
                         {% endif %}
                     {% else %}
