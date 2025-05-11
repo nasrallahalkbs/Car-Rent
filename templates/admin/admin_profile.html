@@ -1,0 +1,376 @@
+{% extends "admin/enhanced/admin_layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "الملف الشخصي" %} - {% trans "لوحة تحكم المسؤول" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-section {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    
+    .profile-header {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        padding: 2rem;
+        position: relative;
+    }
+    
+    .profile-header h3 {
+        margin-bottom: 0;
+        font-weight: 700;
+    }
+    
+    .profile-header p {
+        margin-bottom: 0;
+        opacity: 0.8;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+    }
+    
+    .profile-avatar-initial {
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .profile-body {
+        padding: 2rem;
+    }
+    
+    .profile-info-item {
+        margin-bottom: 1.5rem;
+    }
+    
+    .profile-info-label {
+        font-size: 0.9rem;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .profile-info-value {
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    
+    .profile-form {
+        margin-top: 1.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .activity-item {
+        border-right: 3px solid #6366f1;
+        padding: 0.8rem 1.5rem;
+        margin-bottom: 1rem;
+        background-color: #f8fafc;
+        border-radius: 0.5rem;
+    }
+    
+    .activity-title {
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 0.3rem;
+    }
+    
+    .activity-time {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .activity-details {
+        color: #334155;
+        margin-top: 0.5rem;
+    }
+    
+    .stats-card {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        padding: 1.5rem;
+        height: 100%;
+        transition: all 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .stats-icon {
+        width: 3rem;
+        height: 3rem;
+        background-color: #f1f5f9;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6366f1;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-title {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-value {
+        color: #0f172a;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "الملف الشخصي" %}</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-4">{% trans "الملف الشخصي" %}</h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- قسم المعلومات الشخصية -->
+        <div class="col-lg-8">
+            <div class="profile-section">
+                <div class="profile-header text-center">
+                    <div class="profile-avatar">
+                        <span class="profile-avatar-initial">{{ admin_user.user.username|slice:":2" }}</span>
+                    </div>
+                    <h3>{{ admin_user.full_name|default:admin_user.user.get_full_name }}</h3>
+                    {% if admin_user.role %}
+                        <p>{{ admin_user.role.name }}</p>
+                    {% else %}
+                        <p>{% trans "مسؤول" %}</p>
+                    {% endif %}
+                </div>
+                <div class="profile-body">
+                    <h4 class="mb-4">{% trans "المعلومات الشخصية" %}</h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">{% trans "اسم المستخدم" %}</div>
+                                <div class="profile-info-value">{{ admin_user.user.username }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">{% trans "البريد الإلكتروني" %}</div>
+                                <div class="profile-info-value">{{ admin_user.user.email }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">{% trans "الاسم الكامل" %}</div>
+                                <div class="profile-info-value">{{ admin_user.full_name|default:admin_user.user.get_full_name|default:"--" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">{% trans "رقم الهاتف" %}</div>
+                                <div class="profile-info-value">{{ admin_user.phone_number|default:"--" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">{% trans "الوظيفة الحالية" %}</div>
+                                <div class="profile-info-value">{{ admin_user.current_job|default:"--" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">{% trans "المؤهل" %}</div>
+                                <div class="profile-info-value">{{ admin_user.qualification|default:"--" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">{% trans "القسم" %}</div>
+                                <div class="profile-info-value">{{ admin_user.department|default:"--" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">{% trans "آخر تسجيل دخول" %}</div>
+                                <div class="profile-info-value">{{ admin_user.user.last_login|date:"j F Y H:i"|default:"--" }}</div>
+                            </div>
+                        </div>
+                        {% if admin_user.last_login_ip %}
+                        <div class="col-md-6">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">{% trans "آخر عنوان IP" %}</div>
+                                <div class="profile-info-value">{{ admin_user.last_login_ip }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h4 class="mb-4">{% trans "تعديل المعلومات الشخصية" %}</h4>
+                    <form class="profile-form" method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="first_name" class="form-label">{% trans "الاسم الأول" %}</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" value="{{ admin_user.user.first_name }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="last_name" class="form-label">{% trans "الاسم الأخير" %}</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ admin_user.user.last_name }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="full_name" class="form-label">{% trans "الاسم الكامل" %}</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" value="{{ admin_user.full_name|default:'' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="email" class="form-label">{% trans "البريد الإلكتروني" %}</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ admin_user.user.email }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="phone_number" class="form-label">{% trans "رقم الهاتف" %}</label>
+                                    <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ admin_user.phone_number|default:'' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="current_job" class="form-label">{% trans "الوظيفة الحالية" %}</label>
+                                    <input type="text" class="form-control" id="current_job" name="current_job" value="{{ admin_user.current_job|default:'' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="qualification" class="form-label">{% trans "المؤهل" %}</label>
+                                    <input type="text" class="form-control" id="qualification" name="qualification" value="{{ admin_user.qualification|default:'' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="department" class="form-label">{% trans "القسم" %}</label>
+                                    <input type="text" class="form-control" id="department" name="department" value="{{ admin_user.department|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">{% trans "حفظ التغييرات" %}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم الإحصائيات والأنشطة -->
+        <div class="col-lg-4">
+            <!-- إحصائيات سريعة -->
+            <div class="profile-section mb-4">
+                <div class="profile-header">
+                    <h3>{% trans "إحصائيات سريعة" %}</h3>
+                    <p>{% trans "نظرة عامة على النظام" %}</p>
+                </div>
+                <div class="profile-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stats-card text-center">
+                                <div class="stats-icon mx-auto">
+                                    <i class="fas fa-car"></i>
+                                </div>
+                                <div class="stats-title">{% trans "السيارات" %}</div>
+                                <div class="stats-value">{{ stats.cars_count }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stats-card text-center">
+                                <div class="stats-icon mx-auto">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="stats-title">{% trans "الحجوزات" %}</div>
+                                <div class="stats-value">{{ stats.reservations_count }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stats-card text-center">
+                                <div class="stats-icon mx-auto">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="stats-title">{% trans "المستخدمين" %}</div>
+                                <div class="stats-value">{{ stats.users_count }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stats-card text-center">
+                                <div class="stats-icon mx-auto">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="stats-title">{% trans "الحجوزات النشطة" %}</div>
+                                <div class="stats-value">{{ stats.active_reservations }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- آخر الأنشطة -->
+            <div class="profile-section">
+                <div class="profile-header">
+                    <h3>{% trans "آخر الأنشطة" %}</h3>
+                    <p>{% trans "آخر 10 نشاطات قمت بها" %}</p>
+                </div>
+                <div class="profile-body">
+                    {% if admin_activities %}
+                        {% for activity in admin_activities %}
+                            <div class="activity-item">
+                                <div class="activity-title">{{ activity.action }}</div>
+                                <div class="activity-time">{{ activity.created_at|date:"j F Y H:i"|default:"--" }}</div>
+                                {% if activity.details %}
+                                    <div class="activity-details">{{ activity.details }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <p>{% trans "لا توجد أنشطة مسجلة بعد" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
