@@ -620,6 +620,12 @@ def car_detail(request, car_id):
     is_english = current_language == 'en'
     is_rtl = current_language == 'ar'
 
+    # إضافة رموز تصحيح
+    today_value = date.today()
+    print(f"DEBUG: car_detail view - car.is_available = {car.is_available}")
+    print(f"DEBUG: car_detail view - user.is_authenticated = {request.user.is_authenticated}")
+    print(f"DEBUG: car_detail view - today = {today_value}")
+    
     context = {
         'car': car,
         'reviews': reviews,
@@ -627,13 +633,14 @@ def car_detail(request, car_id):
         'total_reviews': total_reviews,
         'rating_distribution': rating_distribution,
         'similar_cars': similar_cars,
-        'today': date.today(),
+        'today': today_value,
         'is_favorite': is_favorite,
         'is_english': is_english,
         'is_rtl': is_rtl
     }
 
     template = get_template_by_language(request, 'car_detail.html')
+    print(f"DEBUG: car_detail view - template selected = {template}")
     return render(request, template, context)
 
 def car_reviews(request, car_id):
