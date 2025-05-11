@@ -725,6 +725,8 @@ def get_car_by_reservation(request):
             'customer_name': customer_name,
             'customer_id': reservation.user.id,
             'reservation_number': reservation.reservation_number,
+            'reservation_start_date': start_date_formatted,
+            'reservation_end_date': end_date_formatted,
             'status': 'success',
             'car_details': car_info,
             'html_elements': {
