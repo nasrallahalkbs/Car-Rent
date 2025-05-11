@@ -144,13 +144,18 @@ $(document).ready(function() {
                         
                         // إضافة معلومات العميل (الاسم فقط)
                         var customerInfo = '<div class="customer-info-box">' +
-                            '<div class="info-title"><i class="fas fa-user me-2"></i>معلومات العميل</div>';
+                            '<div class="info-title"><i class="fas fa-user me-2"></i>معلومات العميل والحجز</div>';
                         
                         // عرض اسم العميل فقط
                         if (data.customer && data.customer.name) {
-                            customerInfo += '<div class="info-row"><div class="info-label">الاسم:</div><div class="info-value">' + data.customer.name + '</div></div>';
+                            customerInfo += '<div class="info-row"><div class="info-label">اسم العميل:</div><div class="info-value">' + data.customer.name + '</div></div>';
                         } else if (data.customer_name) {
-                            customerInfo += '<div class="info-row"><div class="info-label">الاسم:</div><div class="info-value">' + data.customer_name + '</div></div>';
+                            customerInfo += '<div class="info-row"><div class="info-label">اسم العميل:</div><div class="info-value">' + data.customer_name + '</div></div>';
+                        }
+                        
+                        // عرض رقم الحجز فقط
+                        if (data.reservation_number) {
+                            customerInfo += '<div class="info-row"><div class="info-label">رقم الحجز:</div><div class="info-value">' + data.reservation_number + '</div></div>';
                         }
                         
                         customerInfo += '</div>';
@@ -217,7 +222,7 @@ $(document).ready(function() {
                                             <option value="">--- اختر الحجز ---</option>
                                             {% for reservation in active_reservations %}
                                                 <option value="{{ reservation.id }}" {% if form.reservation.value|stringformat:"s" == reservation.id|stringformat:"s" %}selected{% endif %}>
-                                                    #{{ reservation.reservation_number }} - {{ reservation.user.get_full_name|default:reservation.user.username }} ({{ reservation.car.make }} {{ reservation.car.model }})
+                                                    {{ reservation.reservation_number }}
                                                 </option>
                                             {% endfor %}
                                         </select>
