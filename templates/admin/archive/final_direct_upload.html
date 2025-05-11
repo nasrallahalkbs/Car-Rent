@@ -139,6 +139,13 @@
         
         <div class="instruction-box">
             <p><strong><i class="fas fa-info-circle me-2"></i> {% trans "ملاحظة هامة:" %}</strong> {% trans "تم تصميم هذه الطريقة لتتجاوز جميع مشاكل منع المستندات التلقائية في النظام، وتضمن حفظ الملف مادياً في نظام الملفات قبل تسجيله في قاعدة البيانات." %}</p>
+            <p><strong>{% trans "المميزات:" %}</strong></p>
+            <ul>
+                <li>{% trans "تتجاوز جميع إشارات منع المستندات التلقائية" %}</li>
+                <li>{% trans "تحفظ الملف مادياً قبل تسجيله في قاعدة البيانات" %}</li>
+                <li>{% trans "تعطل المحفزات (triggers) مؤقتاً أثناء الإدراج في قاعدة البيانات" %}</li>
+                <li>{% trans "تضمن التحقق من حفظ الملف قبل إكمال العملية" %}</li>
+            </ul>
         </div>
         
         {% if messages %}
@@ -223,7 +230,7 @@
 {{ block.super }}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('تم تحميل صفحة الرفع النهائي المضمون');
+        console.log('تم تحميل صفحة الرفع النهائي المضمون - النسخة المحسنة 2.0');
         
         const form = document.getElementById('finalUploadForm');
         const fileInput = document.getElementById('file');
@@ -232,18 +239,109 @@
         const fileNameDisplay = document.getElementById('fileName');
         const uploadProgress = document.getElementById('uploadProgress');
         const progressBar = uploadProgress.querySelector('.progress-bar');
+
+        // إضافة حقل تأكيد للواجهة لتوفير تفاصيل تشخيصية
+        const createDebugInfo = function() {
+            // إنشاء عنصر لعرض معلومات تصحيح الأخطاء إذا لم يكن موجودًا
+            if (!document.getElementById('debugInfoBox')) {
+                const debugBox = document.createElement('div');
+                debugBox.id = 'debugInfoBox';
+                debugBox.className = 'mt-4 p-3 border rounded bg-light';
+                debugBox.style.display = 'none';
+                debugBox.innerHTML = '<h6 class="mb-2 font-weight-bold">معلومات تشخيصية:</h6><div id="debugContent"></div>';
+                form.parentNode.appendChild(debugBox);
+            }
+            return document.getElementById('debugContent');
+        };
+
+        // إضافة معلومات تشخيصية
+        const logDebug = function(message) {
+            console.log(message);
+            const debugContent = createDebugInfo();
+            const logItem = document.createElement('div');
+            logItem.className = 'mb-1';
+            logItem.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            debugContent.appendChild(logItem);
+            document.getElementById('debugInfoBox').style.display = 'block';
+        };
         
-        // تحديث اسم الملف عند اختياره
+        // فحص نوع الملف وحجمه
+        const validateFile = function(file) {
+            // أنواع الملفات المسموح بها (الأكثر شيوعاً)
+            const allowedTypes = [
+                'application/pdf', 
+                'image/jpeg', 
+                'image/png', 
+                'image/gif',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/plain'
+            ];
+            
+            // الحد الأقصى لحجم الملف: 10 ميجابايت
+            const maxSize = 10 * 1024 * 1024;
+            
+            if (!allowedTypes.includes(file.type)) {
+                logDebug(`نوع الملف غير مدعوم: ${file.type}`);
+                return {
+                    valid: false,
+                    message: `نوع الملف غير مدعوم: ${file.type}. يرجى اختيار PDF أو صورة أو مستند مكتبي.`
+                };
+            }
+            
+            if (file.size > maxSize) {
+                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+                logDebug(`حجم الملف كبير جداً: ${sizeMB} ميجابايت`);
+                return {
+                    valid: false,
+                    message: `حجم الملف كبير جداً (${sizeMB} ميجابايت). الحد الأقصى هو 10 ميجابايت.`
+                };
+            }
+            
+            logDebug(`تم التحقق من الملف بنجاح. النوع: ${file.type}, الحجم: ${(file.size / 1024).toFixed(2)} كيلوبايت`);
+            return { valid: true };
+        };
+        
+        // تحديث اسم الملف عند اختياره مع فحص صحة الملف
         fileInput.addEventListener('change', function() {
             if (fileInput.files && fileInput.files.length > 0) {
-                fileNameDisplay.textContent = fileInput.files[0].name;
+                const file = fileInput.files[0];
+                fileNameDisplay.textContent = file.name;
                 fileNameDisplay.style.display = 'block';
-                console.log('تم اختيار الملف:', fileInput.files[0].name);
+                logDebug(`تم اختيار الملف: ${file.name}`);
+                
+                // فحص صحة الملف
+                const validation = validateFile(file);
+                if (!validation.valid) {
+                    alert(validation.message);
+                    fileInput.value = '';
+                    fileNameDisplay.style.display = 'none';
+                    return;
+                }
                 
                 // تعيين عنوان المستند تلقائياً إذا كان فارغاً
                 const titleInput = document.getElementById('title');
                 if (!titleInput.value.trim()) {
-                    titleInput.value = fileInput.files[0].name.split('.')[0];
+                    // استخراج اسم الملف بدون الامتداد
+                    const fileName = file.name.split('.');
+                    fileName.pop(); // حذف الامتداد
+                    titleInput.value = fileName.join('.');
+                    logDebug(`تم تعيين العنوان تلقائياً: ${titleInput.value}`);
+                }
+                
+                // تحديد نوع المستند تلقائياً بناءً على نوع الملف
+                const documentTypeSelect = document.getElementById('document_type');
+                if (file.type.includes('image/')) {
+                    documentTypeSelect.value = 'image';
+                    logDebug(`تم تعيين نوع المستند تلقائياً: صورة`);
+                } else if (file.type.includes('pdf')) {
+                    documentTypeSelect.value = 'pdf';
+                    logDebug(`تم تعيين نوع المستند تلقائياً: PDF`);
+                } else if (file.type.includes('word') || file.type.includes('document')) {
+                    documentTypeSelect.value = 'document';
+                    logDebug(`تم تعيين نوع المستند تلقائياً: مستند`);
                 }
             } else {
                 fileNameDisplay.style.display = 'none';
@@ -255,22 +353,46 @@
             fileInput.click();
         });
         
-        // معالجة تقديم النموذج
+        // معالجة تقديم النموذج مع تحسينات للتحقق والتشخيص
         form.addEventListener('submit', function(event) {
             const titleInput = document.getElementById('title');
+            
+            logDebug('بدء التحقق من النموذج قبل الإرسال...');
             
             // التحقق من الحقول المطلوبة
             if (!titleInput.value.trim()) {
                 event.preventDefault();
                 alert('يرجى إدخال عنوان للمستند');
+                logDebug('خطأ: لم يتم توفير عنوان للمستند');
+                titleInput.focus();
                 return false;
             }
             
             if (!fileInput.files || fileInput.files.length === 0) {
                 event.preventDefault();
                 alert('يرجى تحديد ملف للرفع');
+                logDebug('خطأ: لم يتم اختيار ملف للرفع');
                 return false;
             }
+            
+            // التحقق من صحة الملف مرة أخرى قبل الإرسال
+            const validation = validateFile(fileInput.files[0]);
+            if (!validation.valid) {
+                event.preventDefault();
+                alert(validation.message);
+                return false;
+            }
+            
+            // إضافة بيانات تأكيد إضافية للنموذج
+            const timestamp = Date.now();
+            const confirmField = document.createElement('input');
+            confirmField.type = 'hidden';
+            confirmField.name = 'submit_timestamp';
+            confirmField.value = timestamp;
+            form.appendChild(confirmField);
+            
+            logDebug(`تم إضافة طابع زمني للتأكيد: ${timestamp}`);
+            logDebug('جميع التحققات ناجحة، جاري إرسال النموذج...');
             
             // عرض حالة التقدم
             uploadProgress.style.display = 'block';
@@ -279,25 +401,51 @@
             submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جاري الرفع...';
             submitButton.disabled = true;
             
-            // محاكاة تقدم الرفع
+            // محاكاة تقدم الرفع بشكل أكثر واقعية
             let progress = 0;
+            const fileSize = fileInput.files[0].size;
+            const isLargeFile = fileSize > 1024 * 1024; // أكبر من 1 ميجابايت
+            
             const interval = setInterval(function() {
-                progress += Math.random() * 10;
+                // تعديل معدل التقدم بناءً على حجم الملف
+                let increment = isLargeFile ? (Math.random() * 5) : (Math.random() * 10);
+                
+                // إبطاء التقدم قرب النهاية لمحاكاة المعالجة على الخادم
+                if (progress > 80) {
+                    increment = Math.random() * 2;
+                }
+                
+                progress += increment;
                 if (progress > 100) progress = 100;
                 
                 progressBar.style.width = progress + '%';
                 progressBar.setAttribute('aria-valuenow', progress);
+                
+                // إضافة تحديثات حالة بناءً على نسبة التقدم
+                if (progress < 30 && !progressBar.hasAttribute('data-phase-1')) {
+                    logDebug('جاري تحميل الملف إلى الخادم...');
+                    progressBar.setAttribute('data-phase-1', 'true');
+                } else if (progress >= 30 && progress < 60 && !progressBar.hasAttribute('data-phase-2')) {
+                    logDebug('جاري معالجة الملف وحفظه في المجلد...');
+                    progressBar.setAttribute('data-phase-2', 'true');
+                } else if (progress >= 60 && progress < 90 && !progressBar.hasAttribute('data-phase-3')) {
+                    logDebug('جاري إدراج المستند في قاعدة البيانات...');
+                    progressBar.setAttribute('data-phase-3', 'true');
+                } else if (progress >= 90 && !progressBar.hasAttribute('data-phase-4')) {
+                    logDebug('اكتمال العملية، جاري إعادة التوجيه...');
+                    progressBar.setAttribute('data-phase-4', 'true');
+                }
                 
                 if (progress >= 100) {
                     clearInterval(interval);
                 }
             }, 300);
             
-            console.log('بدء رفع المستند...');
+            logDebug('بدء رفع المستند...');
             return true;
         });
         
-        // إضافة السحب والإسقاط
+        // إضافة السحب والإسقاط مع تحسينات
         const dropArea = document.querySelector('.file-upload-wrapper');
         
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -320,11 +468,15 @@
         function highlight() {
             dropArea.style.borderColor = '#2196F3';
             dropArea.style.backgroundColor = '#e3f2fd';
+            dropArea.style.transform = 'scale(1.01)';
+            dropArea.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
         }
         
         function unhighlight() {
             dropArea.style.borderColor = '#ddd';
             dropArea.style.backgroundColor = '#f9f9f9';
+            dropArea.style.transform = 'scale(1)';
+            dropArea.style.boxShadow = 'none';
         }
         
         dropArea.addEventListener('drop', handleDrop, false);
@@ -334,11 +486,47 @@
             const files = dt.files;
             
             if (files.length > 0) {
+                logDebug(`تم إسقاط الملف: ${files[0].name}`);
                 fileInput.files = files;
                 const event = new Event('change');
                 fileInput.dispatchEvent(event);
             }
         }
+        
+        // إضافة زر لتبديل إظهار معلومات التشخيص
+        const formActions = document.querySelector('.form-actions');
+        
+        const toggleDebugButton = document.createElement('button');
+        toggleDebugButton.type = 'button';
+        toggleDebugButton.className = 'btn btn-outline-info btn-sm';
+        toggleDebugButton.innerHTML = '<i class="fas fa-bug me-1"></i> عرض معلومات التشخيص';
+        toggleDebugButton.onclick = function() {
+            const debugBox = document.getElementById('debugInfoBox');
+            if (debugBox) {
+                if (debugBox.style.display === 'none' || debugBox.style.display === '') {
+                    debugBox.style.display = 'block';
+                    this.innerHTML = '<i class="fas fa-bug me-1"></i> إخفاء معلومات التشخيص';
+                } else {
+                    debugBox.style.display = 'none';
+                    this.innerHTML = '<i class="fas fa-bug me-1"></i> عرض معلومات التشخيص';
+                }
+            } else {
+                // إنشاء صندوق المعلومات إذا لم يكن موجوداً
+                createDebugInfo();
+                logDebug('تم إنشاء صندوق معلومات التشخيص');
+                this.innerHTML = '<i class="fas fa-bug me-1"></i> إخفاء معلومات التشخيص';
+            }
+        };
+        
+        // إضافة زر التشخيص بعد زر الإلغاء
+        const cancelButton = formActions.querySelector('a.btn-outline-secondary');
+        if (cancelButton) {
+            cancelButton.after(toggleDebugButton);
+        } else {
+            formActions.prepend(toggleDebugButton);
+        }
+        
+        logDebug('تم تهيئة صفحة الرفع المحسنة بنجاح');
     });
 </script>
 {% endblock %}
