@@ -168,7 +168,7 @@ class Reservation(models.Model):
     notes = models.TextField(blank=True, null=True, help_text="Additional notes or payment details")
     
     def __str__(self):
-        return f"Reservation #{self.id} - {self.car} ({self.status})"
+        return f"{self.reservation_number}" if self.reservation_number else f"Reservation #{self.id}"
         
     @property
     def days(self):
