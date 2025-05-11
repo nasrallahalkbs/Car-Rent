@@ -307,6 +307,54 @@
             justify-content: center;
         }
         
+        .notification-dropdown {
+            width: 320px;
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .notification-dropdown .dropdown-header {
+            background-color: var(--light-color);
+            padding: 12px 16px;
+            font-weight: 600;
+            color: var(--dark-color);
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s;
+        }
+        
+        .notification-item:hover {
+            background-color: #f8fafc;
+        }
+        
+        .notification-content {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+            margin-bottom: 0.2rem;
+        }
+        
+        .notification-details {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 0.2rem;
+        }
+        
+        .notification-time {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+        
         .content-wrapper {
             padding: 1rem 1rem;
             max-width: 100%;
@@ -900,9 +948,35 @@
                         </a>
                     </div>
                     
-                    <div class="topbar-icon">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
+                    <div class="dropdown">
+                        <div class="topbar-icon" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge">{{ pending_reservations_list|length }}</span>
+                        </div>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+                            <h6 class="dropdown-header">{% trans "طلبات الحجز الجديدة" %}</h6>
+                            {% if pending_reservations_list %}
+                                {% for reservation in pending_reservations_list %}
+                                    <a class="dropdown-item notification-item" href="{% url 'admin_reservation_detail' reservation.id %}">
+                                        <div class="notification-content">
+                                            <div class="notification-title">
+                                                {% if reservation.user %}{{ reservation.user.get_full_name|default:reservation.user.username }}{% else %}{{ reservation.customer_name }}{% endif %}
+                                            </div>
+                                            <div class="notification-details">
+                                                {% if reservation.car %}{{ reservation.car.brand }} {{ reservation.car.model }}{% endif %}
+                                            </div>
+                                            <div class="notification-time">
+                                                {{ reservation.created_at|date:"j F Y" }}
+                                            </div>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-center" href="{% url 'admin_reservations' %}">{% trans "عرض كل الحجوزات" %}</a>
+                            {% else %}
+                                <div class="dropdown-item text-center">{% trans "لا توجد حجوزات جديدة" %}</div>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="dropdown">
                         <div class="topbar-icon" data-bs-toggle="dropdown">
