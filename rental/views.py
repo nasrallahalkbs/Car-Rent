@@ -789,7 +789,14 @@ def add_to_cart(request):
         )
         messages.success(request, "تمت إضافة السيارة إلى سلة التسوق!")
 
-    return redirect('book_car', car_id=car_id)
+    # توجيه المستخدم إلى صفحة السلة بدلاً من صفحة طلب الحجز
+    from django.utils.translation import get_language
+    current_language = get_language()
+    
+    if current_language == 'ar':
+        return redirect('cart_ar')
+    else:
+        return redirect('cart')
 
 @login_required
 def remove_from_cart(request, item_id):
