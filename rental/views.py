@@ -636,7 +636,8 @@ def car_detail(request, car_id):
         'today': today_value,
         'is_favorite': is_favorite,
         'is_english': is_english,
-        'is_rtl': is_rtl
+        'is_rtl': is_rtl,
+        'LANGUAGE_CODE': current_language # إضافة LANGUAGE_CODE إلى السياق
     }
 
     template = get_template_by_language(request, 'car_detail.html')
