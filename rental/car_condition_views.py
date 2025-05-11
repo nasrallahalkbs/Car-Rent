@@ -1183,26 +1183,48 @@ def complete_car_inspection_create(request):
             pass
     
     if request.method == 'POST':
-        form = CompleteCarInspectionForm(request.POST, user=request.user)
+        # تمرير الملفات المرفوعة مع البيانات المرسلة
+        form = CompleteCarInspectionForm(request.POST, files=request.FILES, user=request.user)
+        print("✅ النموذج POST - FILES:", request.FILES)
         if form.is_valid():
+            print("✅ تم التحقق من صحة النموذج بنجاح")
             # حفظ التقرير وتفاصيل الفحص
-            report = form.save()
+            try:
+                report = form.save()
+                print("✅ تم حفظ التقرير بنجاح:", report)
+            except Exception as e:
+                print("❌ خطأ في حفظ التقرير:", str(e))
+                messages.error(request, f"حدث خطأ أثناء حفظ التقرير: {str(e)}")
+                return redirect('complete_car_inspection_create')
             
             # معالجة صور السيارة (هذه الصور تحل محل "الهيكل الخارجي")
             image_types = ['front_image', 'rear_image', 'side_image', 'interior_image']
             
+            print(f"✅ معالجة الصور: {', '.join([f for f in request.FILES.keys()])}")
+            
             for image_type in image_types:
                 if image_type in request.FILES:
-                    image_file = request.FILES[image_type]
-                    notes = request.POST.get(f'{image_type}_notes', '')
-                    
-                    # إنشاء سجل لصورة الفحص
-                    CarInspectionImage.objects.create(
-                        report=report,
-                        image=image_file,
-                        description=notes or f'صورة {image_type.replace("_image", "")}',
-                        inspection_detail=None  # صورة عامة
-                    )
+                    try:
+                        image_file = request.FILES[image_type]
+                        notes = request.POST.get(f'{image_type}_notes', '')
+                        
+                        # فحص الصورة
+                        print(f"✅ معالجة صورة {image_type}: {image_file.name} ({image_file.size} بايت)")
+                        
+                        # تحضير الوصف
+                        description = notes or f'صورة {image_type.replace("_image", "")}'
+                        
+                        # إنشاء سجل لصورة الفحص
+                        img = CarInspectionImage.objects.create(
+                            report=report,
+                            image=image_file,
+                            description=description,
+                            inspection_detail=None  # صورة عامة
+                        )
+                        print(f"✅ تم حفظ الصورة بنجاح: {img.id}")
+                    except Exception as e:
+                        print(f"❌ خطأ في حفظ صورة {image_type}: {str(e)}")
+                        messages.warning(request, f"حدث خطأ أثناء حفظ صورة {image_type}: {str(e)}")
             
             # معالجة ملف الفحص الإلكتروني إذا تم اختيار نوع الفحص "إلكتروني"
             if form.cleaned_data['inspection_type'] == 'electronic' and 'inspection_pdf_file' in request.FILES:

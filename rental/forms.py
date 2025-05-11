@@ -816,10 +816,23 @@ class CompleteCarInspectionForm(forms.Form):
     
     def save(self):
         """حفظ تقرير حالة السيارة مع كافة التفاصيل"""
+        print("✅ بدء عملية حفظ تقرير حالة السيارة")
+        
+        # التحقق من وجود بيانات السيارة
+        car = self.cleaned_data.get('car')
+        if not car:
+            print("❌ خطأ: لم يتم تحديد السيارة")
+            raise ValueError("لم يتم تحديد السيارة. الرجاء اختيار سيارة قبل حفظ التقرير.")
+            
+        # طباعة البيانات الأساسية للتحقق
+        print(f"✅ سيارة: {car}")
+        print(f"✅ نوع التقرير: {self.cleaned_data.get('report_type')}")
+        print(f"✅ نوع الفحص: {self.cleaned_data.get('inspection_type')}")
+            
         # إنشاء التقرير الأساسي
         report = CarConditionReport(
             reservation=self.cleaned_data.get('reservation'),
-            car=self.cleaned_data.get('car'),
+            car=car,
             report_type=self.cleaned_data.get('report_type'),
             inspection_type=self.cleaned_data.get('inspection_type'),
             mileage=self.cleaned_data.get('mileage'),
@@ -832,22 +845,34 @@ class CompleteCarInspectionForm(forms.Form):
             repair_cost=self.cleaned_data.get('repair_cost') or 0,
             created_by=self.user
         )
-        report.save()
+        
+        try:
+            report.save()
+            print(f"✅ تم حفظ التقرير الأساسي بنجاح. معرف التقرير: {report.id}")
+        except Exception as e:
+            print(f"❌ خطأ في حفظ التقرير الأساسي: {str(e)}")
+            raise
         
         # حفظ تفاصيل الفحص
+        detail_count = 0
         for field_name, value in self.cleaned_data.items():
             if field_name.startswith('item_') and not field_name.endswith('_notes'):
-                item_id = int(field_name.split('_')[1])
-                notes_field = f'{field_name}_notes'
-                
-                inspection_detail = CarInspectionDetail(
-                    report=report,
-                    inspection_item_id=item_id,
-                    condition=value,
-                    notes=self.cleaned_data.get(notes_field, '')
-                )
-                inspection_detail.save()
+                try:
+                    item_id = int(field_name.split('_')[1])
+                    notes_field = f'{field_name}_notes'
+                    
+                    inspection_detail = CarInspectionDetail(
+                        report=report,
+                        inspection_item_id=item_id,
+                        condition=value,
+                        notes=self.cleaned_data.get(notes_field, '')
+                    )
+                    inspection_detail.save()
+                    detail_count += 1
+                except Exception as e:
+                    print(f"⚠️ تحذير: فشل في حفظ تفاصيل العنصر {field_name}: {str(e)}")
         
+        print(f"✅ تم حفظ {detail_count} من تفاصيل الفحص")
         return report
 
 
