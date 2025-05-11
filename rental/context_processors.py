@@ -10,10 +10,11 @@ def cart_count(request):
     favorites_count = 0
     if request.user.is_authenticated:
         try:
-            cart_items_count = CartItem.objects.filter(user=request.user, is_active=True).count()
+            # تم إزالة الشرط is_active حيث لا يوجد هذا الحقل في نموذج CartItem
+            cart_items_count = CartItem.objects.filter(user=request.user).count()
             favorites_count = FavoriteCar.objects.filter(user=request.user).count()
-        except:
-            pass
+        except Exception as e:
+            print(f"خطأ في حساب العناصر: {e}")
     return {
         'cart_items_count': cart_items_count,
         'favorites_count': favorites_count
