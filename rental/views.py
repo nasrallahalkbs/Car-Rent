@@ -1444,58 +1444,55 @@ def about_us(request):
     template = get_template_by_language(request, 'about_us.html')
     return render(request, template)
 
-@login_required
+# إزالة @login_required للسماح للمستخدمين غير المسجلين بالوصول لصفحة طلب الحجز
 def book_car(request, car_id):
     """View for booking a car directly from car detail page"""
     car = get_object_or_404(Car, id=car_id, is_available=True)
 
-    # First check if there's a cart item for this car
-    cart_item = CartItem.objects.filter(user=request.user, car=car).order_by('-created_at').first()
-
     start_date = None
     end_date = None
+    cart_item = None
+    
+    # التحقق مما إذا كان المستخدم مسجل الدخول قبل الوصول إلى البيانات المرتبطة بالمستخدم
+    if request.user.is_authenticated:
+        # First check if there's a cart item for this car
+        cart_item = CartItem.objects.filter(user=request.user, car=car).order_by('-created_at').first()
 
-    # If we have a cart item, use its dates
-    if cart_item:
-        start_date = cart_item.start_date
-        end_date = cart_item.end_date
-    else:
-        # Otherwise look for dates in GET parameters
-        start_date_str = request.GET.get('start_date')
-        end_date_str = request.GET.get('end_date')
+        # If we have a cart item, use its dates
+        if cart_item:
+            start_date = cart_item.start_date
+            end_date = cart_item.end_date
 
-        if start_date_str:
-            try:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            except ValueError:
-                pass
+    # Check for dates in GET parameters regardless of authentication status
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
 
-        if end_date_str:
-            try:
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            except ValueError:
-                pass
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
 
-        # Calculate total price if dates are available
-        total_price = None
-        if start_date and end_date:
-            total_price = calculate_total_price(car, start_date, end_date)
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
 
-        context = {
-            'car': car,
-            'start_date': start_date,
-            'end_date': end_date,
-            'total_price': total_price,
-            'today': date.today(),
-            'cart_item': cart_item,
-        }
+    # Calculate total price if dates are available
+    total_price = None
+    if start_date and end_date:
+        total_price = calculate_total_price(car, start_date, end_date)
 
+    # إعداد سياق العرض مع معلومات إضافية حول حالة تسجيل الدخول
     context = {
         'car': car,
         'start_date': start_date,
         'end_date': end_date,
         'today': date.today(),
-        'cart_item': cart_item,  # Pass the cart item to the template
+        'cart_item': cart_item,
+        'is_authenticated': request.user.is_authenticated,
+        'total_price': total_price,
     }
 
     template = get_template_by_language(request, 'booking.html')
