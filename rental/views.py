@@ -715,7 +715,6 @@ def cart_view(request):
     template = get_template_by_language(request, 'cart.html')
     return render(request, template, context)
 
-@login_required
 def add_to_cart(request):
     """Add a car to shopping cart"""
     if request.method != 'POST':
@@ -723,6 +722,28 @@ def add_to_cart(request):
 
     car_id = request.POST.get('car_id')
     car = get_object_or_404(Car, id=car_id, is_available=True)
+
+    # التحقق مما إذا كان المستخدم مسجل الدخول
+    if not request.user.is_authenticated:
+        # حفظ معلومات التاريخ في نص التوجيه للرجوع إليها بعد تسجيل الدخول (اختياري)
+        start_date_str = request.POST.get('start_date')
+        end_date_str = request.POST.get('end_date')
+        next_url = f"/car/{car_id}/?start_date={start_date_str}&end_date={end_date_str}"
+        
+        # استخدام اللغة الحالية للمستخدم عند التوجيه
+        from django.utils.translation import get_language
+        current_language = get_language()
+        
+        if current_language == 'ar':
+            # رسالة بالعربية
+            messages.info(request, "يرجى تسجيل الدخول أو إنشاء حساب لإضافة السيارة إلى سلة التسوق.")
+            login_url = reverse('login') + f"?next=/ar/car/{car_id}/"
+        else:
+            # رسالة بالإنجليزية
+            messages.info(request, "Please login or register to add this car to your cart.")
+            login_url = reverse('login') + f"?next=/car/{car_id}/"
+            
+        return redirect(login_url)
 
     start_date_str = request.POST.get('start_date')
     end_date_str = request.POST.get('end_date')
