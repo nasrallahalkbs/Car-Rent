@@ -109,6 +109,7 @@ TEMPLATES = [
                 'rental.context_processors.cart_count',
                 'rental.context_processors.dark_mode',
                 'rental.context_processors.language_context',
+                'rental.context_processors.admin_notifications',
             ],
         },
     },
