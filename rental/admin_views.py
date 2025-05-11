@@ -18,6 +18,8 @@ from functools import wraps
 from datetime import datetime, date, timedelta
 import uuid
 import csv
+# استيراد نموذج AdminUser من models_superadmin
+from .models_superadmin import AdminUser, Role, AdminActivity
 import logging
 import os
 import json
@@ -175,27 +177,6 @@ def clean_document_list(documents):
         return documents.filter(title__isnull=False).exclude(title__in=["بدون عنوان", "", " ", "نموذج_استعلام_الارشيف"])
     return documents
 
-def admin_required(function):
-    """
-    Decorator for views that checks if the user is an admin.
-    """
-    @wraps(function)
-    def wrapper(request, *args, **kwargs):
-        # Debug output for admin_required
-        print(f"Admin check for {request.user}, authenticated: {request.user.is_authenticated}")
-        if not request.user.is_authenticated:
-            messages.error(request, "يرجى تسجيل الدخول للوصول إلى لوحة التحكم")
-            next_url = request.path
-            login_url = reverse('login')
-            return redirect(f"{login_url}?next={next_url}")
-        elif not request.user.is_admin:
-            messages.error(request, "غير مصرح لك بالوصول إلى هذه الصفحة!")
-            return redirect('index')
-
-        # Set a global current_user variable for admin templates
-        request.current_user = request.user
-        return function(request, *args, **kwargs)
-    return wrapper
 
 @login_required
 @admin_required
@@ -4262,3 +4243,56 @@ def admin_archive_upload_direct(request):
     }
     
     return render(request, 'admin/archive/direct_upload_fix.html', context)
+@login_required
+@admin_required
+def admin_profile(request):
+    """عرض وتعديل الملف الشخصي للمشرف العادي"""
+    # محاولة الحصول على بيانات المشرف
+    try:
+        admin_user = AdminUser.objects.get(user=request.user)
+    except AdminUser.DoesNotExist:
+        # إذا لم يكن هناك ملف شخصي للمشرف، نقوم بإنشاء واحد
+        admin_user = None
+        messages.warning(request, "لم يتم العثور على ملف المشرف الخاص بك. يرجى الاتصال بالمسؤول الأعلى.")
+        return redirect('admin_index')
+    
+    # إذا تم إرسال النموذج للتحديث
+    if request.method == 'POST':
+        # تحديث بيانات المستخدم الأساسية
+        user = request.user
+        user.first_name = request.POST.get('first_name', user.first_name)
+        user.last_name = request.POST.get('last_name', user.last_name)
+        user.email = request.POST.get('email', user.email)
+        user.save()
+        
+        # تحديث بيانات ملف المشرف
+        admin_user.full_name = request.POST.get('full_name', admin_user.full_name)
+        admin_user.phone_number = request.POST.get('phone_number', admin_user.phone_number)
+        admin_user.current_job = request.POST.get('current_job', admin_user.current_job)
+        admin_user.qualification = request.POST.get('qualification', admin_user.qualification)
+        admin_user.department = request.POST.get('department', admin_user.department)
+        admin_user.save()
+        
+        messages.success(request, "تم تحديث بياناتك الشخصية بنجاح")
+        return redirect('admin_profile')
+    
+    # إحصائيات للمشرف
+    stats = {
+        'reservations_count': Reservation.objects.count(),
+        'active_reservations': Reservation.objects.filter(status='confirmed').count(),
+        'cars_count': Car.objects.count(),
+        'users_count': User.objects.count(),
+    }
+    
+    # أنشطة المشرف
+    admin_activities = []
+    if hasattr(admin_user, 'activities'):
+        admin_activities = admin_user.activities.all().order_by('-id')[:10]
+    
+    context = {
+        'admin_user': admin_user,
+        'stats': stats,
+        'admin_activities': admin_activities,
+    }
+    
+    return render(request, 'admin/admin_profile.html', context)

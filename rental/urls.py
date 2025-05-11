@@ -70,6 +70,7 @@ urlpatterns = [
     path('api/car/<int:car_id>/unavailable-dates/', views.get_unavailable_dates_api, name='get_unavailable_dates_api'),
     # Admin views
     path('dashboard/', admin_views.admin_index, name='admin_index'),
+    path('dashboard/profile/', admin_views.admin_profile, name='admin_profile'),
     path('dashboard/cars/', admin_views.admin_cars, name='admin_cars'),
     path('dashboard/cars/add/', admin_views.add_car, name='add_car'),
     path('dashboard/cars/<int:car_id>/edit/', admin_views.edit_car, name='edit_car'),
