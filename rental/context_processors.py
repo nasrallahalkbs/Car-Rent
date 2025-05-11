@@ -1,5 +1,5 @@
 from .models import Reservation
-from rental.models import CartItem
+from rental.models import CartItem, FavoriteCar
 from django.db.models import Sum
 
 def cart_count(request):
@@ -7,12 +7,17 @@ def cart_count(request):
     إضافة عدد عناصر سلة التسوق إلى سياق القالب
     """
     cart_items_count = 0
+    favorites_count = 0
     if request.user.is_authenticated:
         try:
             cart_items_count = CartItem.objects.filter(user=request.user, is_active=True).count()
+            favorites_count = FavoriteCar.objects.filter(user=request.user).count()
         except:
             pass
-    return {'cart_items_count': cart_items_count}
+    return {
+        'cart_items_count': cart_items_count,
+        'favorites_count': favorites_count
+    }
 
 def dark_mode(request):
     """
