@@ -564,6 +564,28 @@ def car_listing(request):
     margin_right_class = 'ms-2' if is_arabic else 'me-2'
     margin_left_class = 'me-1' if is_arabic else 'ms-1'
 
+    # التحقق من وجود معلمة في URL لاستخدام الواجهة المحسنة
+    use_enhanced = request.GET.get('enhanced', 'true')
+    use_enhanced = use_enhanced.lower() in ['true', '1', 'yes']
+    
+    # إذا كان المستخدم يريد استخدام الواجهة المحسنة
+    if use_enhanced:
+        # التحقق من معلمة الترتيب إذا وجدت
+        sort_param = request.GET.get('sort', '')
+        if sort_param:
+            if sort_param == 'price_asc':
+                cars = cars.order_by('daily_rate')
+            elif sort_param == 'price_desc':
+                cars = cars.order_by('-daily_rate')
+            elif sort_param == 'year_desc':
+                cars = cars.order_by('-year')
+            elif sort_param == 'year_asc':
+                cars = cars.order_by('year')
+                
+        # ترتيب الصفحات بعد الفرز
+        paginator = Paginator(cars, 9)  # عرض 9 سيارات في الصفحة
+        page_obj = paginator.get_page(page_number)
+    
     context = {
         'form': form,
         'cars': page_obj,
@@ -572,10 +594,16 @@ def car_listing(request):
         'margin_right_class': margin_right_class,
         'margin_left_class': margin_left_class,
         'favorite_car_ids': favorite_car_ids,
+        'use_enhanced': use_enhanced,  # إضافة معلمة للتبديل بين الواجهتين
     }
 
-    template = get_template_by_language(request, 'cars.html')
-    return render(request, template, context)
+    # استخدام قالب الواجهة المحسنة إذا تم تحديده
+    if use_enhanced:
+        template_name = 'cars_enhanced.html'
+    else:
+        template_name = 'cars.html'
+    
+    return render(request, template_name, context)
 
 def car_detail(request, car_id):
     """Car detail page with reservation form"""
