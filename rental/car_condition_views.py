@@ -303,32 +303,73 @@ def car_condition_create(request):
                                     print(f"تخطي عنصر هيكل خارجي: {inspection_item.name}")
                                     continue
                                 
-                                # الحصول على الملاحظات واحتياج الإصلاح
+                                # الحصول على الملاحظات واحتياج الإصلاح - محاولة جميع الأنماط المحتملة
+                                # النمط الأول: notes_item_XX
                                 notes_field = request.POST.get(f'notes_item_{item_id}', '')
+                                
+                                # النمط الثاني: item_XX_notes أو inspection_item_XX_notes
                                 if not notes_field:
                                     notes_field = request.POST.get(f'{key}_notes', '')
-                                    
+                                
+                                # النمط الثالث: عندما يكون اسم الحقل مضمناً في المفتاح نفسه
+                                for notes_key in request.POST.keys():
+                                    if f'notes_{item_id}' in notes_key or f'item_{item_id}_notes' in notes_key:
+                                        notes_field = request.POST.get(notes_key, '')
+                                        print(f"  تم العثور على ملاحظات في الحقل: {notes_key}")
+                                        break
+                                
+                                # البحث عن حقل احتياج الإصلاح بجميع الأنماط المحتملة
+                                # النمط الأول: needs_repair_XX
                                 needs_repair_field = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
+                                
+                                # النمط الثاني: item_XX_needs_repair
                                 if not needs_repair_field:
                                     needs_repair_field = request.POST.get(f'{key}_needs_repair', '') == 'on'
                                 
-                                print(f"معلومات إضافية - ملاحظات: {notes_field}, بحاجة للإصلاح: {needs_repair_field}")
+                                # النمط الثالث: أي حقل يتضمن needs_repair و item_id
+                                for repair_key in request.POST.keys():
+                                    if f'repair_{item_id}' in repair_key or f'item_{item_id}_repair' in repair_key:
+                                        repair_value = request.POST.get(repair_key, '')
+                                        needs_repair_field = repair_value == 'on' or repair_value == 'true' or repair_value == '1'
+                                        print(f"  تم العثور على احتياج الإصلاح في الحقل: {repair_key}, القيمة: {repair_value}")
+                                        break
+                                
+                                # طباعة معلومات تفصيلية
+                                print(f"معلومات إضافية لعنصر الفحص {item_id}:")
+                                print(f"  - الشرط: {value}")
+                                print(f"  - الملاحظات: {notes_field}")
+                                print(f"  - بحاجة للإصلاح: {needs_repair_field}")
+                                
+                                # تحويل قيمة condition إذا كانت من نوع JSON
+                                condition_value = value
+                                if isinstance(value, str) and value.strip().startswith('{') and value.strip().endswith('}'):
+                                    try:
+                                        import json
+                                        condition_data = json.loads(value)
+                                        if 'condition' in condition_data:
+                                            condition_value = condition_data['condition']
+                                            print(f"  تم تحويل قيمة الحالة من JSON: {condition_value}")
+                                    except json.JSONDecodeError:
+                                        print(f"  فشل تحويل قيمة الحالة من JSON: {value}")
                                 
                                 # إنشاء تفاصيل الفحص
-                                detail = CarInspectionDetail.objects.create(
-                                    report=report,
-                                    inspection_item=inspection_item,
-                                    condition=value,
-                                    notes=notes_field,
-                                    needs_repair=needs_repair_field
-                                )
-                                print(f"تم إنشاء تفصيل فحص جديد بنجاح: {detail.id}")
+                                try:
+                                    detail = CarInspectionDetail.objects.create(
+                                        report=report,
+                                        inspection_item=inspection_item,
+                                        condition=condition_value,
+                                        notes=notes_field,
+                                        needs_repair=needs_repair_field
+                                    )
+                                    print(f"✅ تم إنشاء تفصيل فحص جديد بنجاح! (معرف: {detail.id})")
+                                except Exception as e:
+                                    print(f"❌ خطأ أثناء إنشاء تفصيل الفحص: {str(e)}")
                             except CarInspectionItem.DoesNotExist:
-                                print(f"خطأ: لم يتم العثور على عنصر الفحص بمعرف {item_id}")
+                                print(f"❌ خطأ: لم يتم العثور على عنصر الفحص بمعرف {item_id}")
                         except ValueError:
-                            print(f"خطأ: فشل تحويل معرف العنصر {item_id} إلى رقم صحيح")
-                        except CarInspectionItem.DoesNotExist:
-                            pass
+                            print(f"❌ خطأ: فشل تحويل معرف العنصر {item_id} إلى رقم صحيح")
+                        except Exception as e:
+                            print(f"❌ خطأ غير متوقع أثناء معالجة عنصر الفحص {item_id}: {str(e)}")
             
             messages.success(request, _('تم إنشاء تقرير حالة السيارة وتفاصيل الفحص بنجاح'))
             

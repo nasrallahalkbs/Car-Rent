@@ -426,13 +426,48 @@ class CarConditionReportForm(forms.ModelForm):
             
     def clean(self):
         cleaned_data = super().clean()
+        print("\n==== بدء التحقق من صحة البيانات في نموذج تقرير حالة السيارة ====")
+        
         # التأكد من أن الحجز والسيارة متطابقان
         reservation = cleaned_data.get('reservation')
         car = cleaned_data.get('car')
+        report_type = cleaned_data.get('report_type')
         
-        if reservation and car and reservation.car.id != car.id:
-            self.add_error('car', 'السيارة المحددة لا تتطابق مع السيارة في الحجز')
+        print(f"معلومات النموذج - الحجز: {reservation}, السيارة: {car}, نوع التقرير: {report_type}")
+        
+        # إذا كان هناك حجز، نتأكد من تطابق السيارة مع الحجز
+        if reservation and car:
+            reservation_car_id = getattr(reservation.car, 'id', None)
+            car_id = getattr(car, 'id', None)
             
+            print(f"معرف سيارة الحجز: {reservation_car_id}, معرف السيارة المختارة: {car_id}")
+            
+            if reservation_car_id != car_id:
+                error_msg = f'السيارة المحددة لا تتطابق مع السيارة في الحجز (سيارة الحجز: {reservation.car}, السيارة المختارة: {car})'
+                print(f"❌ خطأ: {error_msg}")
+                self.add_error('car', error_msg)
+                # تعيين السيارة تلقائيًا للمساعدة في حل المشكلة
+                cleaned_data['car'] = reservation.car
+                print(f"✅ تم تصحيح السيارة تلقائيًا إلى: {reservation.car}")
+        
+        # إذا كان التقرير من نوع تسليم أو استلام، نتأكد من وجود حجز
+        if report_type in ['delivery', 'return'] and not reservation:
+            error_msg = 'يجب تحديد حجز عند إنشاء تقرير تسليم أو استلام'
+            print(f"❌ خطأ: {error_msg}")
+            self.add_error('reservation', error_msg)
+        
+        # إذا لم يكن هناك سيارة محددة على الإطلاق
+        if not car:
+            error_msg = 'يجب تحديد سيارة لإنشاء التقرير'
+            print(f"❌ خطأ: {error_msg}")
+            self.add_error('car', error_msg)
+            
+            # إذا كان هناك حجز ولكن لم يتم تحديد سيارة، نحاول تعيين سيارة الحجز تلقائيًا
+            if reservation and hasattr(reservation, 'car') and reservation.car:
+                cleaned_data['car'] = reservation.car
+                print(f"✅ تم تعيين السيارة تلقائيًا من الحجز: {reservation.car}")
+        
+        print("==== انتهاء التحقق من صحة البيانات ====\n")
         return cleaned_data
 
 
