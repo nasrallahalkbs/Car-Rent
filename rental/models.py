@@ -984,8 +984,24 @@ class CarConditionReport(models.Model):
     def save(self, *args, **kwargs):
         # التأكد من أن السيارة تطابق السيارة في الحجز
         if self.reservation and not self.car_id:
+            # إذا كان هناك حجز ولكن لم يتم تحديد السيارة، نأخذ سيارة الحجز
             self.car = self.reservation.car
+        
+        # التأكد من تطابق السيارة في الحجز والتقرير
+        if self.reservation and self.car_id and self.reservation.car_id != self.car_id:
+            # إذا كانت السيارتان مختلفتين، يمكن اتخاذ إجراء:
+            # 1. استخدام سيارة الحجز (الأكثر منطقية)
+            # 2. إلغاء الحفظ ورفع استثناء
+            # 3. الاحتفاظ بالسيارة المختارة والاستمرار
             
+            # نختار الخيار 1: استخدام سيارة الحجز
+            print(f"⚠️ تنبيه: تم اكتشاف اختلاف بين السيارة المختارة (ID: {self.car_id}) وسيارة الحجز (ID: {self.reservation.car_id})، سيتم استخدام سيارة الحجز.")
+            self.car = self.reservation.car
+        
+        # طباعة معلومات التصحيح
+        print(f"✅ حفظ تقرير حالة السيارة: {self.car} - {self.get_report_type_display()}")
+        
+        # استدعاء save الأصلية
         super().save(*args, **kwargs)
 
 
