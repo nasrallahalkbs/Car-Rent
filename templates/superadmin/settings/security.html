@@ -234,14 +234,21 @@
                 <div class="text-center mb-4">
                     <p>{% trans "امسح رمز QR التالي باستخدام تطبيق المصادقة" %}</p>
                     <div class="qr-placeholder p-4 d-inline-block bg-light rounded">
-                        <img src="https://via.placeholder.com/200x200" alt="QR Code" class="img-fluid">
+                        <!-- سيتم استبدال هذه الصورة بواسطة AJAX عند فتح النافذة المنبثقة -->
+                        <div id="qrCodeContainer">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">{% trans "جاري التحميل..." %}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <form>
+                <form id="setupTwoFactorForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="enable_2fa">
                     <div class="mb-3">
                         <label for="otpCode" class="form-label">{% trans "أدخل الرمز من تطبيقك" %}</label>
-                        <input type="text" class="form-control text-center" id="otpCode" placeholder="123456" maxlength="6" autocomplete="off">
+                        <input type="text" class="form-control text-center" id="otpCode" name="totp_code" placeholder="123456" maxlength="6" autocomplete="off">
                     </div>
                     
                     <div class="alert alert-info">
@@ -256,7 +263,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
-                <button type="button" class="btn btn-primary">{% trans "تفعيل" %}</button>
+                <button type="button" class="btn btn-primary" id="activate2FAButton">{% trans "تفعيل" %}</button>
             </div>
         </div>
     </div>
@@ -283,10 +290,70 @@
             // فقط السماح بالأرقام
             $(this).val($(this).val().replace(/[^0-9]/g, ''));
             
-            // اقتصار الطول على 6 أرقام
+            // اقتصار الطول على 6
             if ($(this).val().length > 6) {
                 $(this).val($(this).val().substring(0, 6));
             }
+        });
+        
+        // تحميل رمز QR عند فتح النافذة المنبثقة
+        $('#setup2FAModal').on('shown.bs.modal', function (e) {
+            // استدعاء AJAX لجلب رمز QR
+            $.ajax({
+                url: '{% url "superadmin_generate_2fa_qr" %}',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success && data.qr_code) {
+                        // عرض رمز QR
+                        $('#qrCodeContainer').html('<img src="' + data.qr_code + '" alt="QR Code" class="img-fluid">');
+                    } else {
+                        // عرض رسالة خطأ
+                        $('#qrCodeContainer').html('<div class="alert alert-danger">{% trans "حدث خطأ أثناء توليد رمز QR" %}</div>');
+                    }
+                },
+                error: function() {
+                    // عرض رسالة خطأ
+                    $('#qrCodeContainer').html('<div class="alert alert-danger">{% trans "حدث خطأ أثناء الاتصال بالخادم" %}</div>');
+                }
+            });
+        });
+        
+        // تفعيل المصادقة الثنائية
+        $('#activate2FAButton').on('click', function() {
+            var otpCode = $('#otpCode').val();
+            
+            if (!otpCode || otpCode.length !== 6) {
+                alert('{% trans "الرجاء إدخال رمز مكون من 6 أرقام" %}');
+                return;
+            }
+            
+            // إرسال طلب AJAX لتفعيل المصادقة الثنائية
+            $.ajax({
+                url: '{% url "superadmin_enable_2fa" %}',
+                type: 'POST',
+                data: {
+                    totp_code: otpCode,
+                    csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+                },
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success) {
+                        // إغلاق النافذة المنبثقة وعرض رسالة نجاح
+                        $('#setup2FAModal').modal('hide');
+                        alert('{% trans "تم تفعيل المصادقة الثنائية بنجاح" %}');
+                        // إعادة تحميل الصفحة
+                        window.location.reload();
+                    } else {
+                        // عرض رسالة خطأ
+                        alert(data.message || '{% trans "فشل في تفعيل المصادقة الثنائية" %}');
+                    }
+                },
+                error: function() {
+                    // عرض رسالة خطأ
+                    alert('{% trans "حدث خطأ أثناء الاتصال بالخادم" %}');
+                }
+            });
         });
     });
 </script>
