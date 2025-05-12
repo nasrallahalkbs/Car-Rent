@@ -71,80 +71,115 @@ def system_diagnostics(request):
     return render(request, 'superadmin/diagnostics/index.html', context)
 
 def get_system_stats():
-    """الحصول على إحصائيات النظام"""
+    """الحصول على إحصائيات النظام الحقيقية"""
+    stats = {}
+    
+    # معلومات حول البيئة
     try:
-        # إحصائيات نظام التشغيل
+        stats['os_info'] = f"{os.name.upper()} {sys.platform}"
+        stats['python_version'] = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        stats['django_version'] = django.__version__
+        stats['app_path'] = str(settings.BASE_DIR)
+        stats['media_path'] = str(settings.MEDIA_ROOT)
+    except Exception as e:
+        print(f"خطأ في جلب معلومات البيئة: {e}")
+    
+    # إحصائيات نظام التشغيل - CPU
+    try:
         cpu_usage = psutil.cpu_percent(interval=0.5)
+        stats['cpu_usage'] = cpu_usage
+    except Exception as e:
+        print(f"خطأ في جلب معلومات المعالج: {e}")
+        stats['cpu_usage'] = None
+    
+    # إحصائيات نظام التشغيل - الذاكرة
+    try:
         memory = psutil.virtual_memory()
+        stats['memory_usage'] = memory.percent
+        stats['memory_total'] = f"{memory.total / (1024**3):.2f} GB"
+        stats['memory_available'] = f"{memory.available / (1024**3):.2f} GB"
+    except Exception as e:
+        print(f"خطأ في جلب معلومات الذاكرة: {e}")
+        stats['memory_usage'] = None
+        stats['memory_total'] = _('غير متاح')
+        stats['memory_available'] = _('غير متاح')
+    
+    # إحصائيات نظام التشغيل - القرص
+    try:
         disk = psutil.disk_usage('/')
-        
-        # معلومات حول البيئة
-        python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-        
-        # إحصائيات قاعدة البيانات
-        db_size = get_database_size()
-        
-        # عدد الحجوزات النشطة
+        stats['disk_usage'] = disk.percent
+        stats['disk_total'] = f"{disk.total / (1024**3):.2f} GB"
+        stats['disk_free'] = f"{disk.free / (1024**3):.2f} GB"
+    except Exception as e:
+        print(f"خطأ في جلب معلومات القرص: {e}")
+        stats['disk_usage'] = None
+        stats['disk_total'] = _('غير متاح')
+        stats['disk_free'] = _('غير متاح')
+    
+    # إحصائيات قاعدة البيانات
+    try:
+        stats['db_size'] = get_database_size()
+        stats['db_type'] = settings.DATABASES['default']['ENGINE'].split('.')[-1]
+        stats['db_connections'] = connection.settings_dict.get('CONN_MAX_AGE', _('غير محدد'))
+    except Exception as e:
+        print(f"خطأ في جلب معلومات قاعدة البيانات: {e}")
+        stats['db_size'] = _('غير متاح')
+        stats['db_type'] = _('غير معروف')
+        stats['db_connections'] = _('غير متاح')
+    
+    # وقت تشغيل النظام
+    try:
+        stats['uptime'] = get_system_uptime()
+    except Exception as e:
+        print(f"خطأ في جلب وقت تشغيل النظام: {e}")
+        stats['uptime'] = _('غير متاح')
+    
+    # إحصائيات قاعدة البيانات - المستخدمين والحجوزات
+    try:
         from rental.models import Reservation
-        active_reservations = Reservation.objects.filter(status='confirmed').count()
+        stats['active_reservations'] = Reservation.objects.filter(status='confirmed').count()
         
-        # عدد المستخدمين
         from django.contrib.auth import get_user_model
         User = get_user_model()
-        total_users = User.objects.count()
-        
-        # عدد المجلدات والمستندات
-        from rental.models import ArchiveFolder, Document
-        total_folders = ArchiveFolder.objects.count()
-        total_documents = Document.objects.count()
-        
-        stats = {
-            'os_info': f"{os.name.upper()} {sys.platform}",
-            'python_version': python_version,
-            'django_version': django.__version__,
-            'cpu_usage': cpu_usage,
-            'memory_usage': memory.percent,
-            'memory_total': f"{memory.total / (1024**3):.2f} GB",
-            'memory_available': f"{memory.available / (1024**3):.2f} GB",
-            'disk_usage': disk.percent,
-            'disk_total': f"{disk.total / (1024**3):.2f} GB",
-            'disk_free': f"{disk.free / (1024**3):.2f} GB",
-            'db_size': db_size,
-            'db_type': settings.DATABASES['default']['ENGINE'].split('.')[-1],
-            'db_connections': connection.settings_dict.get('CONN_MAX_AGE', _('غير محدد')),
-            'uptime': get_system_uptime(),
-            'active_reservations': active_reservations,
-            'total_users': total_users,
-            'total_folders': total_folders,
-            'total_documents': total_documents,
-            'app_path': settings.BASE_DIR,
-            'media_path': settings.MEDIA_ROOT,
-        }
-        
-        return stats
+        stats['total_users'] = User.objects.count()
     except Exception as e:
-        # في حالة وجود خطأ، إرجاع إحصائيات أساسية
-        print(f"خطأ في get_system_stats: {e}")
-        return {
-            'os_info': f"{os.name} {sys.platform}",
-            'python_version': sys.version.split(' ')[0],
-            'django_version': django.__version__,
-            'cpu_usage': 0,
-            'memory_usage': 0,
-            'memory_total': "0 GB",
-            'memory_available': "0 GB",
-            'disk_usage': 0,
-            'disk_total': "0 GB",
-            'disk_free': "0 GB",
-            'db_size': "0 MB",
-            'db_type': settings.DATABASES['default']['ENGINE'].split('.')[-1],
-            'db_connections': _('غير محدد'),
-            'uptime': _('غير متاح'),
-            'error': str(e)
-        }
+        print(f"خطأ في جلب معلومات المستخدمين والحجوزات: {e}")
+        stats['active_reservations'] = 0
+        stats['total_users'] = 0
+    
+    # إحصائيات المجلدات والمستندات
+    try:
+        from rental.models import ArchiveFolder, Document
+        stats['total_folders'] = ArchiveFolder.objects.count()
+        stats['total_documents'] = Document.objects.count()
+    except Exception as e:
+        print(f"خطأ في جلب معلومات المجلدات والمستندات: {e}")
+        stats['total_folders'] = 0
+        stats['total_documents'] = 0
+    
+    # معلومات البيئة المتقدمة
+    try:
+        # إضافة معلومات حول عدد نوى المعالج
+        stats['cpu_cores'] = psutil.cpu_count(logical=False)
+        stats['cpu_threads'] = psutil.cpu_count(logical=True)
+        
+        # معلومات حول النظام
+        uname = os.uname() if hasattr(os, 'uname') else None
+        if uname:
+            stats['system_name'] = uname.sysname
+            stats['system_version'] = uname.release
+        
+        # معلومات حول الشبكة
+        net_io = psutil.net_io_counters()
+        stats['network_sent'] = f"{net_io.bytes_sent / (1024**2):.2f} MB"
+        stats['network_received'] = f"{net_io.bytes_recv / (1024**2):.2f} MB"
+    except Exception as e:
+        print(f"خطأ في جلب معلومات البيئة المتقدمة: {e}")
+    
+    return stats
 
 def get_database_size():
-    """الحصول على حجم قاعدة البيانات"""
+    """الحصول على حجم قاعدة البيانات الحقيقي"""
     try:
         db_engine = settings.DATABASES['default']['ENGINE']
         db_name = settings.DATABASES['default']['NAME']
@@ -153,77 +188,232 @@ def get_database_size():
             # قاعدة بيانات SQLite
             if os.path.exists(db_name):
                 size_bytes = os.path.getsize(db_name)
-                return f"{size_bytes / (1024**2):.2f} MB"
+                size_mb = size_bytes / (1024**2)
+                # تحويل إلى وحدات مناسبة
+                if size_mb < 1:
+                    return f"{size_bytes / 1024:.2f} KB"
+                elif size_mb < 1024:
+                    return f"{size_mb:.2f} MB"
+                else:
+                    return f"{size_mb / 1024:.2f} GB"
             return "0 MB"
         elif 'postgresql' in db_engine:
             # قاعدة بيانات PostgreSQL
+            size_bytes = 0
+            db_info = {}
+            
+            # محاولة الحصول على حجم قاعدة البيانات الكاملة
             try:
                 with connection.cursor() as cursor:
-                    # لنجرب الاستعلام عن حجم قاعدة البيانات الحالية
                     cursor.execute("SELECT pg_database_size(current_database())")
                     size_bytes = cursor.fetchone()[0]
-                    return f"{size_bytes / (1024**2):.2f} MB"
-            except Exception as pg_e:
-                print(f"خطأ في قياس حجم PostgreSQL: {pg_e}")
+                    
+                    # الحصول على معلومات إضافية عن قاعدة البيانات
+                    cursor.execute("""
+                        SELECT count(*) as total_tables 
+                        FROM information_schema.tables 
+                        WHERE table_schema = 'public'
+                    """)
+                    db_info['total_tables'] = cursor.fetchone()[0]
+                    
+                    # قياس حجم الجداول المختلفة
+                    cursor.execute("""
+                        SELECT 
+                            table_name, 
+                            pg_relation_size(quote_ident(table_name)) as size_bytes
+                        FROM 
+                            information_schema.tables
+                        WHERE 
+                            table_schema = 'public'
+                        ORDER BY 
+                            size_bytes DESC
+                        LIMIT 5
+                    """)
+                    largest_tables = cursor.fetchall()
+                    db_info['largest_tables'] = [
+                        {'name': table[0], 'size': f"{table[1] / (1024**2):.2f} MB"}
+                        for table in largest_tables
+                    ]
+            except Exception as e:
+                print(f"خطأ في الاستعلام عن قاعدة بيانات PostgreSQL: {e}")
+                
                 # محاولة بديلة للحصول على حجم البيانات
                 try:
                     with connection.cursor() as cursor:
-                        # استعلام عن حجم البيانات فقط بغض النظر عن اسم قاعدة البيانات
                         cursor.execute("""
                             SELECT sum(pg_relation_size(quote_ident(table_name)))
                             FROM information_schema.tables
                             WHERE table_schema = 'public'
                         """)
                         size_bytes = cursor.fetchone()[0] or 0
-                        return f"{size_bytes / (1024**2):.2f} MB"
-                except:
-                    return "غير متاح"
+                except Exception as e2:
+                    print(f"فشلت المحاولة البديلة: {e2}")
+                    return _('غير متاح')
+            
+            # تحويل الحجم إلى وحدة مناسبة
+            size_mb = size_bytes / (1024**2)
+            if size_mb < 1:
+                size_str = f"{size_bytes / 1024:.2f} KB"
+            elif size_mb < 1024:
+                size_str = f"{size_mb:.2f} MB"
+            else:
+                size_str = f"{size_mb / 1024:.2f} GB"
+                
+            # إرفاق معلومات إضافية إذا كانت متوفرة
+            if db_info:
+                return {
+                    'size': size_str,
+                    'total_tables': db_info.get('total_tables', 0),
+                    'largest_tables': db_info.get('largest_tables', [])
+                }
+            return size_str
+            
+        elif 'mysql' in db_engine:
+            # قاعدة بيانات MySQL/MariaDB
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT table_schema AS 'Database',
+                        SUM(data_length + index_length) AS 'Size'
+                        FROM information_schema.TABLES
+                        WHERE table_schema = DATABASE()
+                        GROUP BY table_schema
+                    """)
+                    result = cursor.fetchone()
+                    if result and result[1]:
+                        size_bytes = result[1]
+                        size_mb = size_bytes / (1024**2)
+                        if size_mb < 1:
+                            return f"{size_bytes / 1024:.2f} KB"
+                        elif size_mb < 1024:
+                            return f"{size_mb:.2f} MB"
+                        else:
+                            return f"{size_mb / 1024:.2f} GB"
+            except Exception as e:
+                print(f"خطأ في قياس حجم MySQL: {e}")
+                return _('غير متاح')
         
-        return _('غير متاح')
+        # قواعد بيانات أخرى غير مدعومة
+        return _('غير متاح للمحرك: {engine}').format(engine=db_engine.split('.')[-1])
     except Exception as e:
         print(f"خطأ في get_database_size: {e}")
         return _('غير متاح')
 
 def get_system_uptime():
-    """الحصول على مدة تشغيل النظام"""
+    """الحصول على مدة تشغيل النظام والخادم الحقيقية"""
+    uptime_info = {}
+    
+    # محاولة الحصول على وقت تشغيل النظام
     try:
         # الحصول على وقت بدء تشغيل النظام
-        boot_time = datetime.datetime.fromtimestamp(psutil.boot_time())
-        uptime = datetime.datetime.now() - boot_time
+        boot_time = psutil.boot_time()
+        boot_datetime = datetime.datetime.fromtimestamp(boot_time)
+        current_time = datetime.datetime.now()
+        uptime = current_time - boot_datetime
+        
+        # حساب الأيام والساعات والدقائق والثواني
         days = uptime.days
         hours, remainder = divmod(uptime.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
         
+        uptime_info['system'] = {
+            'total_seconds': int(uptime.total_seconds()),
+            'days': days,
+            'hours': hours,
+            'minutes': minutes,
+            'seconds': seconds,
+            'boot_time': boot_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            'current_time': current_time.strftime('%Y-%m-%d %H:%M:%S'),
+        }
+        
         # تنسيق المدة بشكل مناسب مع مراعاة التعريب
         if days > 0:
-            return f"{days} {_('يوم')} {hours} {_('ساعة')} {minutes} {_('دقيقة')}"
+            uptime_info['system']['formatted'] = f"{days} {_('يوم')} {hours} {_('ساعة')} {minutes} {_('دقيقة')}"
         elif hours > 0:
-            return f"{hours} {_('ساعة')} {minutes} {_('دقيقة')}"
+            uptime_info['system']['formatted'] = f"{hours} {_('ساعة')} {minutes} {_('دقيقة')}"
         else:
-            return f"{minutes} {_('دقيقة')} {seconds} {_('ثانية')}"
+            uptime_info['system']['formatted'] = f"{minutes} {_('دقيقة')} {seconds} {_('ثانية')}"
+            
     except Exception as e:
-        # في حالة فشل الحصول على وقت تشغيل النظام، نحاول الحصول على وقت تشغيل عملية الخادم
+        print(f"خطأ في الحصول على وقت تشغيل النظام: {e}")
+        uptime_info['system'] = {'error': str(e)}
+    
+    # محاولة الحصول على وقت تشغيل عملية الخادم
+    try:
+        # الحصول على معلومات عملية جونيكورن الحالية
+        process = psutil.Process(os.getpid())
+        start_time = datetime.datetime.fromtimestamp(process.create_time())
+        current_time = datetime.datetime.now()
+        process_uptime = current_time - start_time
+        
+        days = process_uptime.days
+        hours, remainder = divmod(process_uptime.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        
+        uptime_info['server'] = {
+            'total_seconds': int(process_uptime.total_seconds()),
+            'days': days,
+            'hours': hours,
+            'minutes': minutes,
+            'seconds': seconds,
+            'start_time': start_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'current_time': current_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'pid': os.getpid(),
+            'name': process.name(),
+        }
+        
+        # تنسيق المدة بشكل مناسب مع مراعاة التعريب
+        if days > 0:
+            uptime_info['server']['formatted'] = f"{days} {_('يوم')} {hours} {_('ساعة')} {minutes} {_('دقيقة')}"
+        elif hours > 0:
+            uptime_info['server']['formatted'] = f"{hours} {_('ساعة')} {minutes} {_('دقيقة')}"
+        else:
+            uptime_info['server']['formatted'] = f"{minutes} {_('دقيقة')} {seconds} {_('ثانية')}"
+            
+        # الحصول على مزيد من المعلومات عن العملية
         try:
-            # الحصول على معلومات عملية جونيكورن الحالية
-            process = psutil.Process(os.getpid())
-            start_time = datetime.datetime.fromtimestamp(process.create_time())
-            process_uptime = datetime.datetime.now() - start_time
+            uptime_info['server']['memory_percent'] = process.memory_percent()
+            uptime_info['server']['cpu_percent'] = process.cpu_percent(interval=0.1)
+            uptime_info['server']['threads'] = len(process.threads())
+            uptime_info['server']['connections'] = len(process.connections())
+        except Exception as proc_detail_e:
+            print(f"خطأ في الحصول على تفاصيل إضافية عن العملية: {proc_detail_e}")
             
-            days = process_uptime.days
-            hours, remainder = divmod(process_uptime.seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            
-            # إضافة توضيح بأن هذا هو وقت تشغيل عملية الخادم وليس النظام
-            if days > 0:
-                return f"{days} {_('يوم')} {hours} {_('ساعة')} - {_('عملية الخادم')}"
-            elif hours > 0:
-                return f"{hours} {_('ساعة')} {minutes} {_('دقيقة')} - {_('عملية الخادم')}"
-            else:
-                return f"{minutes} {_('دقيقة')} {seconds} {_('ثانية')} - {_('عملية الخادم')}"
-        except Exception as proc_e:
-            # في حالة فشل كل المحاولات
-            print(f"خطأ في get_system_uptime: {e}, {proc_e}")
-            return _('غير متاح')
+    except Exception as proc_e:
+        print(f"خطأ في الحصول على وقت تشغيل الخادم: {proc_e}")
+        uptime_info['server'] = {'error': str(proc_e)}
+    
+    # معلومات إضافية عن النظام
+    try:
+        # عدد العمليات النشطة
+        processes = len(psutil.pids())
+        uptime_info['active_processes'] = processes
+        
+        # متوسط تحميل النظام (إذا كان نظام يونكس)
+        if hasattr(os, 'getloadavg'):
+            load_avg = os.getloadavg()
+            uptime_info['load_avg'] = {
+                '1min': round(load_avg[0], 2),
+                '5min': round(load_avg[1], 2),
+                '15min': round(load_avg[2], 2)
+            }
+        
+        # عدد الاتصالات النشطة
+        connections = len(psutil.net_connections())
+        uptime_info['active_connections'] = connections
+    except Exception as sys_info_e:
+        print(f"خطأ في الحصول على معلومات إضافية عن النظام: {sys_info_e}")
+    
+    # إعادة المعلومات الأساسية عن وقت تشغيل النظام أو الخادم
+    if 'system' in uptime_info and 'formatted' in uptime_info['system']:
+        # إذا كانت معلومات النظام متاحة
+        return uptime_info['system']['formatted']
+    elif 'server' in uptime_info and 'formatted' in uptime_info['server']:
+        # إذا كانت معلومات الخادم متاحة فقط (لكن النظام غير متاح)
+        return f"{uptime_info['server']['formatted']} - {_('عملية الخادم')}"
+    else:
+        # في حالة عدم توفر أي معلومات
+        return _('غير متاح')
 
 def get_diagnostic_tools():
     """الحصول على قائمة أدوات التشخيص المتاحة"""
