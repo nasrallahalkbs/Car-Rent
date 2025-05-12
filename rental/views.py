@@ -430,6 +430,9 @@ def logout_view(request):
 @login_required
 def profile_view(request):
     """User profile view"""
+    # التأكد من وجود معلومات أمان للمستخدم
+    security, created = UserSecurity.objects.get_or_create(user=request.user)
+    
     password_form = PasswordChangeForm()
     password_form_submitted = False
     
@@ -498,6 +501,7 @@ def profile_view(request):
         'password_form': password_form,
         'password_form_submitted': password_form_submitted,
         'user': request.user,
+        'security': security,  # إضافة معلومات الأمان للسياق
         'current_date': timezone.now(),
         'timestamp': datetime.now().timestamp(),  # إضافة ختم زمني
     }
