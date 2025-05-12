@@ -982,27 +982,56 @@ class CarConditionReport(models.Model):
         return f"{self.get_report_type_display()} - {self.car} - {self.date.strftime('%Y-%m-%d')}"
     
     def save(self, *args, **kwargs):
+        import json
+        from django.utils import timezone
+        
+        print(f"[{timezone.now()}] بدء عملية حفظ تقرير حالة السيارة...")
+        print(f"معلومات التقرير قبل الحفظ - السيارة ID: {self.car_id}, الحجز ID: {getattr(self.reservation, 'id', 'لا يوجد')}")
+        
         # التأكد من أن السيارة تطابق السيارة في الحجز
         if self.reservation and not self.car_id:
             # إذا كان هناك حجز ولكن لم يتم تحديد السيارة، نأخذ سيارة الحجز
+            print(f"ℹ️ لم يتم تحديد سيارة ولكن يوجد حجز، سيتم أخذ السيارة من الحجز ({self.reservation.car})")
             self.car = self.reservation.car
+            print(f"✅ تم تعيين السيارة من الحجز: {self.car}")
         
         # التأكد من تطابق السيارة في الحجز والتقرير
-        if self.reservation and self.car_id and self.reservation.car_id != self.car_id:
-            # إذا كانت السيارتان مختلفتين، يمكن اتخاذ إجراء:
-            # 1. استخدام سيارة الحجز (الأكثر منطقية)
-            # 2. إلغاء الحفظ ورفع استثناء
-            # 3. الاحتفاظ بالسيارة المختارة والاستمرار
+        if self.reservation and self.car_id and hasattr(self.reservation, 'car_id') and self.reservation.car_id != self.car_id:
+            # إذا كانت السيارتان مختلفتين، نختار سيارة الحجز
+            print(f"⚠️ تنبيه: تم اكتشاف اختلاف بين السيارة المختارة (ID: {self.car_id}) وسيارة الحجز (ID: {self.reservation.car_id}).")
+            print(f"معلومات السيارة المختارة: {getattr(self.car, 'make', '')} {getattr(self.car, 'model', '')}")
+            print(f"معلومات سيارة الحجز: {getattr(self.reservation.car, 'make', '')} {getattr(self.reservation.car, 'model', '')}")
             
-            # نختار الخيار 1: استخدام سيارة الحجز
-            print(f"⚠️ تنبيه: تم اكتشاف اختلاف بين السيارة المختارة (ID: {self.car_id}) وسيارة الحجز (ID: {self.reservation.car_id})، سيتم استخدام سيارة الحجز.")
             self.car = self.reservation.car
+            print(f"✅ تم تعيين السيارة من الحجز: {self.car}")
         
-        # طباعة معلومات التصحيح
-        print(f"✅ حفظ تقرير حالة السيارة: {self.car} - {self.get_report_type_display()}")
+        # في حالة عدم وجود حجز، نتأكد من وجود سيارة على الأقل
+        if not self.reservation and not self.car_id:
+            print(f"❌ خطأ: لا يوجد حجز ولا سيارة محددة، لا يمكن إنشاء تقرير بدون سيارة!")
+            raise ValueError("لا يمكن إنشاء تقرير حالة السيارة بدون تحديد سيارة أو حجز.")
+        
+        # طباعة معلومات تفصيلية قبل الحفظ
+        car_details = {
+            'id': getattr(self.car, 'id', None),
+            'make': getattr(self.car, 'make', ''),
+            'model': getattr(self.car, 'model', ''),
+            'license_plate': getattr(self.car, 'license_plate', '')
+        }
+        
+        print(f"معلومات التقرير النهائية:")
+        print(f"- نوع التقرير: {self.get_report_type_display()}")
+        print(f"- السيارة: {json.dumps(car_details, ensure_ascii=False)}")
+        print(f"- التاريخ: {self.date}")
+        print(f"- حالة السيارة: {self.car_condition}")
+        print(f"- نوع الفحص: {self.inspection_type}")
         
         # استدعاء save الأصلية
-        super().save(*args, **kwargs)
+        try:
+            super().save(*args, **kwargs)
+            print(f"✅ تم حفظ تقرير حالة السيارة بنجاح! معرف التقرير: {self.id}")
+        except Exception as e:
+            print(f"❌ خطأ أثناء حفظ تقرير حالة السيارة: {str(e)}")
+            raise
 
 
 class CarInspectionCategory(models.Model):

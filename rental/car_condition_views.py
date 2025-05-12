@@ -178,8 +178,42 @@ def car_condition_create(request):
         print("Form submitted with data:", request.POST)
         print("Files:", request.FILES)
         
+        # طباعة تفاصيل إضافية للمساعدة في التصحيح
+        print("\n------ تفاصيل بيانات النموذج المرسلة ------")
+        print(f"عدد العناصر المرسلة: {len(request.POST)}")
+        
+        # البحث عن اسم الحقول المهمة
+        important_fields = ['reservation', 'car', 'report_type', 'inspection_type', 'mileage', 'date']
+        for field in important_fields:
+            print(f"حقل {field}: {request.POST.get(field, 'غير موجود')}")
+        
+        # البحث عن حقول الفحص
+        inspection_items = [key for key in request.POST.keys() if key.startswith('inspection_item_') or key.startswith('item_')]
+        print(f"عناصر الفحص المرسلة: {inspection_items}")
+        
+        # التحقق من صحة البيانات المرسلة
+        if not request.POST.get('car'):
+            print("⚠️ تحذير: لم يتم تحديد سيارة في البيانات المرسلة")
+        
+        if not request.POST.get('report_type'):
+            print("⚠️ تحذير: لم يتم تحديد نوع التقرير في البيانات المرسلة")
+        
+        # تحويل البيانات من JSON إذا كانت موجودة
+        for key, value in request.POST.items():
+            if isinstance(value, str) and value.strip().startswith('{') and value.strip().endswith('}'):
+                try:
+                    import json
+                    parsed_value = json.loads(value)
+                    print(f"تم تحويل قيمة الحقل {key} من JSON: {parsed_value}")
+                    # يمكن هنا تعديل request.POST لتغيير القيمة، ولكن هذا ليس ممكنًا مباشرة
+                except json.JSONDecodeError:
+                    print(f"فشل تحويل قيمة الحقل {key} من JSON")
+        
+        # إنشاء نموذج جديد مع البيانات المرسلة
         form = CarConditionReportForm(request.POST, request.FILES, user=request.user, initial=initial_data)
+        
         if form.is_valid():
+            print("✅ النموذج صالح، جاري معالجة البيانات...")
             report = form.save(commit=False)
             report.created_by = request.user
             
@@ -235,31 +269,64 @@ def car_condition_create(request):
             
             # حفظ تفاصيل الفحص من النموذج المرسل (فقط للفحص اليدوي)
             if inspection_type == 'manual':
+                print("معالجة بيانات الفحص اليدوي...")
+                
+                # طباعة جميع العناصر المرسلة من النموذج للتصحيح
+                inspection_items = [key for key in request.POST.keys() if key.startswith('inspection_item_') or key.startswith('item_')]
+                print(f"عناصر الفحص المرسلة من النموذج: {inspection_items}")
+                
+                # البحث عن جميع الأنماط المحتملة لحقول الفحص
                 for key, value in request.POST.items():
                     # معالجة حقول عناصر الفحص
+                    item_id = None
+                    
+                    # فحص النمط الأول: inspection_item_XX
                     if key.startswith('inspection_item_') and value:
-                        item_id = int(key.replace('inspection_item_', ''))
+                        item_id = key.replace('inspection_item_', '')
+                    # فحص النمط الثاني: item_XX
+                    elif key.startswith('item_') and value:
+                        item_id = key.replace('item_', '')
                         
-                        # البحث عن عنصر الفحص
+                    # إذا تم العثور على معرف العنصر، نتابع المعالجة
+                    if item_id:
                         try:
-                            inspection_item = CarInspectionItem.objects.get(id=item_id)
+                            item_id = int(item_id)
+                            print(f"معالجة عنصر الفحص معرف: {item_id}, القيمة: {value}")
                             
-                            # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
-                            if inspection_item.category.name == 'الهيكل الخارجي':
-                                continue
-                            
-                            # الحصول على الملاحظات واحتياج الإصلاح
-                            notes = request.POST.get(f'notes_item_{item_id}', '')
-                            needs_repair = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
-                            
-                            # إنشاء تفاصيل الفحص
-                            CarInspectionDetail.objects.create(
-                                report=report,
-                                inspection_item=inspection_item,
-                                condition=value,
-                                notes=notes,
-                                needs_repair=needs_repair
-                            )
+                            # البحث عن عنصر الفحص
+                            try:
+                                inspection_item = CarInspectionItem.objects.get(id=item_id)
+                                print(f"تم العثور على عنصر الفحص: {inspection_item.name}, الفئة: {inspection_item.category.name}")
+                                
+                                # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
+                                if inspection_item.category.name == 'الهيكل الخارجي':
+                                    print(f"تخطي عنصر هيكل خارجي: {inspection_item.name}")
+                                    continue
+                                
+                                # الحصول على الملاحظات واحتياج الإصلاح
+                                notes_field = request.POST.get(f'notes_item_{item_id}', '')
+                                if not notes_field:
+                                    notes_field = request.POST.get(f'{key}_notes', '')
+                                    
+                                needs_repair_field = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
+                                if not needs_repair_field:
+                                    needs_repair_field = request.POST.get(f'{key}_needs_repair', '') == 'on'
+                                
+                                print(f"معلومات إضافية - ملاحظات: {notes_field}, بحاجة للإصلاح: {needs_repair_field}")
+                                
+                                # إنشاء تفاصيل الفحص
+                                detail = CarInspectionDetail.objects.create(
+                                    report=report,
+                                    inspection_item=inspection_item,
+                                    condition=value,
+                                    notes=notes_field,
+                                    needs_repair=needs_repair_field
+                                )
+                                print(f"تم إنشاء تفصيل فحص جديد بنجاح: {detail.id}")
+                            except CarInspectionItem.DoesNotExist:
+                                print(f"خطأ: لم يتم العثور على عنصر الفحص بمعرف {item_id}")
+                        except ValueError:
+                            print(f"خطأ: فشل تحويل معرف العنصر {item_id} إلى رقم صحيح")
                         except CarInspectionItem.DoesNotExist:
                             pass
             
