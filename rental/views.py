@@ -104,6 +104,8 @@ def get_template_by_language(request, base_template):
         'error.html': 'error_django.html',
         'admin_dashboard.html': 'admin_dashboard_django.html',
         'favorite_cars.html': 'favorite_cars_django.html',
+        # قوالب الأمان والمصادقة الثنائية
+        'two_factor_auth.html': 'two_factor_auth_django.html',
     }
 
     # حالة خاصة للقالب index_arabic.html - توجيه إلى index_django.html

@@ -1,0 +1,224 @@
+{% extends "layout_django.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}
+  {% if is_english %}
+    Two-Factor Authentication - Car Rental
+  {% else %}
+    المصادقة الثنائية - تأجير السيارات
+  {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ألوان الثيم والمتغيرات */
+  :root {
+    --primary-color: #3a86ff;
+    --primary-dark: #2970d6;
+    --primary-light: #c7dbff;
+    --accent-color: #ff006e;
+    --dark-color: #2b3a55;
+    --text-color: #212529;
+    --text-muted: #6c757d;
+    --light-bg: #f8f9fa;
+    --card-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    --hover-shadow: 0 15px 30px rgba(58, 134, 255, 0.2);
+    --border-radius-lg: 15px;
+    --border-radius-md: 10px;
+    --transition-normal: all 0.3s ease;
+  }
+
+  .auth-container {
+    max-width: 500px;
+    margin: 50px auto;
+    background: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+  }
+
+  .auth-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #4dabf7 100%);
+    color: white;
+    padding: 30px 25px;
+    text-align: center;
+    position: relative;
+  }
+
+  .auth-header h3 {
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  .auth-header p {
+    margin-bottom: 0;
+    opacity: 0.85;
+  }
+
+  .auth-body {
+    padding: 30px 25px;
+  }
+
+  .form-control {
+    padding: 12px 15px;
+    border-radius: var(--border-radius-md);
+    border: 1px solid #ced4da;
+    font-size: 1rem;
+    transition: var(--transition-normal);
+    margin-bottom: 20px;
+  }
+
+  .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(58, 134, 255, 0.25);
+  }
+
+  .auth-btn {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: var(--border-radius-md);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #4dabf7 100%);
+    color: white;
+    border: none;
+    font-weight: 600;
+    transition: var(--transition-normal);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .auth-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(58, 134, 255, 0.3);
+  }
+
+  .auth-btn:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: all 0.6s;
+  }
+
+  .auth-btn:hover:before {
+    left: 100%;
+  }
+
+  .verification-code {
+    letter-spacing: 8px;
+    font-family: monospace;
+    font-size: 24px;
+    padding: 12px 20px;
+    text-align: center;
+  }
+
+  .instructions {
+    background-color: var(--light-bg);
+    border-radius: var(--border-radius-md);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-right: 4px solid var(--primary-color);
+  }
+
+  .instructions p {
+    margin-bottom: 0;
+    color: var(--text-color);
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 15px;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: var(--transition-normal);
+  }
+
+  .back-link:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="auth-container">
+    <div class="auth-header">
+      <h3>
+        {% if is_english %}
+          Two-Factor Authentication
+        {% else %}
+          المصادقة الثنائية
+        {% endif %}
+      </h3>
+      <p>
+        {% if is_english %}
+          Enter the code from your authentication app
+        {% else %}
+          أدخل الرمز من تطبيق المصادقة الخاص بك
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="auth-body">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="instructions">
+        <p>
+          {% if is_english %}
+            Open your authentication app (Google Authenticator, Microsoft Authenticator, etc.) and enter the 6-digit code displayed for this account.
+          {% else %}
+            افتح تطبيق المصادقة الخاص بك (Google Authenticator أو Microsoft Authenticator أو غيرهما) وأدخل الرمز المكون من 6 أرقام المعروض لهذا الحساب.
+          {% endif %}
+        </p>
+      </div>
+
+      <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        <input type="hidden" name="username" value="{{ username }}">
+        <input type="hidden" name="step" value="2fa">
+        
+        <div class="mb-3">
+          <label for="totp_code" class="form-label">
+            {% if is_english %}
+              Authentication Code
+            {% else %}
+              رمز المصادقة
+            {% endif %}
+          </label>
+          <input type="text" name="totp_code" id="totp_code" class="form-control verification-code" required autocomplete="off" autofocus>
+        </div>
+
+        <button type="submit" class="auth-btn">
+          {% if is_english %}
+            Verify
+          {% else %}
+            تحقق
+          {% endif %}
+        </button>
+      </form>
+
+      <div class="text-center mt-4">
+        <a href="{% url 'login' %}" class="back-link">
+          {% if is_english %}
+            &larr; Back to Login
+          {% else %}
+            &rarr; العودة إلى تسجيل الدخول
+          {% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
