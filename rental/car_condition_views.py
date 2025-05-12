@@ -183,9 +183,10 @@ def car_condition_create(request):
             messages.error(request, _('يجب تحديد السيارة لإنشاء تقرير حالة.'))
             print("❌ خطأ: لم يتم تحديد السيارة!")
             form = CarConditionReportForm(user=request.user, initial=initial_data)
+            # تمرير الحجوزات مباشرة بدون استخدام JSON
             context = {
                 'form': form,
-                'reservations_json': json.dumps(reservations_with_details),
+                'reservations': reservations_with_details,  # استخدام قائمة مباشرة بدلاً من JSON
                 'inspection_categories': CarInspectionCategory.objects.filter(is_active=True).prefetch_related(
                     Prefetch('inspection_items', queryset=CarInspectionItem.objects.filter(is_active=True).order_by('display_order'))
                 ).order_by('display_order')
@@ -251,9 +252,10 @@ def car_condition_create(request):
                 print(f"❌ خطأ أثناء حفظ التقرير: {str(save_err)}")
                 messages.error(request, f"حدث خطأ أثناء حفظ التقرير: {str(save_err)}")
                 form = CarConditionReportForm(request.POST, request.FILES, user=request.user, initial=initial_data)
+                # تمرير الحجوزات مباشرة بدون تحويلها إلى JSON
                 context = {
                     'form': form,
-                    'reservations_json': json.dumps(reservations_with_details),
+                    'reservations': reservations_with_details,  # تمرير القائمة مباشرة بدون JSON
                     'inspection_categories': CarInspectionCategory.objects.filter(is_active=True).prefetch_related(
                         Prefetch('inspection_items', queryset=CarInspectionItem.objects.filter(is_active=True).order_by('display_order'))
                     ).order_by('display_order')
