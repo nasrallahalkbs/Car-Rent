@@ -72,33 +72,76 @@ def system_diagnostics(request):
 
 def get_system_stats():
     """الحصول على إحصائيات النظام"""
-    # إحصائيات نظام التشغيل
-    cpu_usage = psutil.cpu_percent(interval=1)
-    memory = psutil.virtual_memory()
-    disk = psutil.disk_usage('/')
-    
-    # إحصائيات قاعدة البيانات
-    db_size = get_database_size()
-    db_connections = connection.settings_dict['CONN_MAX_AGE']
-    
-    stats = {
-        'os_info': f"{os.name} {sys.platform}",
-        'python_version': sys.version.split(' ')[0],
-        'django_version': django.__version__,
-        'cpu_usage': cpu_usage,
-        'memory_usage': memory.percent,
-        'memory_total': f"{memory.total / (1024**3):.2f} GB",
-        'memory_available': f"{memory.available / (1024**3):.2f} GB",
-        'disk_usage': disk.percent,
-        'disk_total': f"{disk.total / (1024**3):.2f} GB",
-        'disk_free': f"{disk.free / (1024**3):.2f} GB",
-        'db_size': db_size,
-        'db_type': settings.DATABASES['default']['ENGINE'].split('.')[-1],
-        'db_connections': db_connections if db_connections is not None else _('غير محدد'),
-        'uptime': get_system_uptime(),
-    }
-    
-    return stats
+    try:
+        # إحصائيات نظام التشغيل
+        cpu_usage = psutil.cpu_percent(interval=0.5)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        # معلومات حول البيئة
+        python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        
+        # إحصائيات قاعدة البيانات
+        db_size = get_database_size()
+        
+        # عدد الحجوزات النشطة
+        from rental.models import Reservation
+        active_reservations = Reservation.objects.filter(status='confirmed').count()
+        
+        # عدد المستخدمين
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        total_users = User.objects.count()
+        
+        # عدد المجلدات والمستندات
+        from rental.models import ArchiveFolder, Document
+        total_folders = ArchiveFolder.objects.count()
+        total_documents = Document.objects.count()
+        
+        stats = {
+            'os_info': f"{os.name.upper()} {sys.platform}",
+            'python_version': python_version,
+            'django_version': django.__version__,
+            'cpu_usage': cpu_usage,
+            'memory_usage': memory.percent,
+            'memory_total': f"{memory.total / (1024**3):.2f} GB",
+            'memory_available': f"{memory.available / (1024**3):.2f} GB",
+            'disk_usage': disk.percent,
+            'disk_total': f"{disk.total / (1024**3):.2f} GB",
+            'disk_free': f"{disk.free / (1024**3):.2f} GB",
+            'db_size': db_size,
+            'db_type': settings.DATABASES['default']['ENGINE'].split('.')[-1],
+            'db_connections': connection.settings_dict.get('CONN_MAX_AGE', _('غير محدد')),
+            'uptime': get_system_uptime(),
+            'active_reservations': active_reservations,
+            'total_users': total_users,
+            'total_folders': total_folders,
+            'total_documents': total_documents,
+            'app_path': settings.BASE_DIR,
+            'media_path': settings.MEDIA_ROOT,
+        }
+        
+        return stats
+    except Exception as e:
+        # في حالة وجود خطأ، إرجاع إحصائيات أساسية
+        print(f"خطأ في get_system_stats: {e}")
+        return {
+            'os_info': f"{os.name} {sys.platform}",
+            'python_version': sys.version.split(' ')[0],
+            'django_version': django.__version__,
+            'cpu_usage': 0,
+            'memory_usage': 0,
+            'memory_total': "0 GB",
+            'memory_available': "0 GB",
+            'disk_usage': 0,
+            'disk_total': "0 GB",
+            'disk_free': "0 GB",
+            'db_size': "0 MB",
+            'db_type': settings.DATABASES['default']['ENGINE'].split('.')[-1],
+            'db_connections': _('غير محدد'),
+            'uptime': _('غير متاح'),
+            'error': str(e)
+        }
 
 def get_database_size():
     """الحصول على حجم قاعدة البيانات"""
@@ -114,13 +157,31 @@ def get_database_size():
             return "0 MB"
         elif 'postgresql' in db_engine:
             # قاعدة بيانات PostgreSQL
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT pg_database_size(%s)", [db_name])
-                size_bytes = cursor.fetchone()[0]
-                return f"{size_bytes / (1024**2):.2f} MB"
+            try:
+                with connection.cursor() as cursor:
+                    # لنجرب الاستعلام عن حجم قاعدة البيانات الحالية
+                    cursor.execute("SELECT pg_database_size(current_database())")
+                    size_bytes = cursor.fetchone()[0]
+                    return f"{size_bytes / (1024**2):.2f} MB"
+            except Exception as pg_e:
+                print(f"خطأ في قياس حجم PostgreSQL: {pg_e}")
+                # محاولة بديلة للحصول على حجم البيانات
+                try:
+                    with connection.cursor() as cursor:
+                        # استعلام عن حجم البيانات فقط بغض النظر عن اسم قاعدة البيانات
+                        cursor.execute("""
+                            SELECT sum(pg_relation_size(quote_ident(table_name)))
+                            FROM information_schema.tables
+                            WHERE table_schema = 'public'
+                        """)
+                        size_bytes = cursor.fetchone()[0] or 0
+                        return f"{size_bytes / (1024**2):.2f} MB"
+                except:
+                    return "غير متاح"
         
         return _('غير متاح')
     except Exception as e:
+        print(f"خطأ في get_database_size: {e}")
         return _('غير متاح')
 
 def get_system_uptime():
