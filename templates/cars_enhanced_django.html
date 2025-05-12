@@ -37,6 +37,54 @@
         to { opacity: 1; }
     }
     
+    /* تحسين أزرار التصفية */
+    .category-pill {
+        border-radius: 50px !important;
+        padding: 12px 20px !important;
+        background-color: white !important;
+        color: #0d6efd !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+        margin: 6px !important;
+        cursor: pointer !important;
+        transition: all 0.3s !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.05) !important;
+        text-decoration: none !important;
+    }
+    
+    .category-pill:hover {
+        background-color: #f8f9fa !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 12px rgba(0,0,0,0.08) !important;
+        text-decoration: none !important;
+        color: #0a58ca !important;
+    }
+    
+    .category-pill.active {
+        background: linear-gradient(to right, #0d6efd, #0b5ed7) !important;
+        color: white !important;
+        border-color: transparent !important;
+    }
+    
+    /* مركز عدد السيارات في الشريط */
+    .cars-count {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    .cars-count .badge {
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        padding: 10px 20px !important;
+        border-radius: 50px !important;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2) !important;
+    }
+    
     /* Fix for inline SVG icons */
     .car-brand-icon {
         width: 100% !important;
@@ -80,42 +128,28 @@
 {% block content %}
 <div class="cars-section py-5">
     <div class="container">
-        <!-- عنوان الصفحة مع تصميم جديد -->
-        <div class="row mb-5">
-            <div class="col-lg-8 {% if request.session.language == 'ar' %}me-auto text-end{% else %}ms-auto text-start{% endif %}">
-                <h2 class="section-title display-5 fw-bold">
-                    {% if request.session.language == 'ar' %}استعراض أسطول السيارات{% else %}Browse Our Fleet{% endif %}
-                </h2>
-                <div class="title-border {% if request.session.language == 'ar' %}float-end{% else %}float-start{% endif %}"></div>
-                <p class="lead text-muted my-4">
-                    {% if request.session.language == 'ar' %}
-                    اختر السيارة المثالية لرحلتك من تشكيلتنا الواسعة من السيارات الفاخرة والاقتصادية المجهزة بأحدث التقنيات والمزايا لضمان تجربة قيادة استثنائية
-                    {% else %}
-                    Choose the perfect vehicle for your journey from our extensive collection of luxury and economy cars equipped with the latest features for an exceptional driving experience
-                    {% endif %}
-                </p>
-            </div>
-        </div>
+        <!-- تم إزالة عنوان الصفحة -->
+        <div class="d-none"></div>
         
         <!-- أزرار فئات السيارات بتصميم محسن -->
         <div class="category-filters text-center mb-5 animate__animated animate__fadeIn">
             <div class="d-flex flex-wrap justify-content-center">
-                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if not request.GET.category %}active{% endif %}">
+                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?enhanced=true" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if not request.GET.category and not request.GET.transmission %}active{% endif %}">
                     <i class="fas fa-car {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> {% if request.session.language == 'ar' %}جميع السيارات{% else %}All Cars{% endif %}
                 </a>
-                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?category=Economy" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'Economy' %}active{% endif %}">
+                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?category=Economy&enhanced=true" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'Economy' %}active{% endif %}">
                     <i class="fas fa-money-bill-wave {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> {% if request.session.language == 'ar' %}اقتصادية{% else %}Economy{% endif %}
                 </a>
-                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?category=Mid-size" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'Mid-size' %}active{% endif %}">
+                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?category=Mid-size&enhanced=true" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'Mid-size' %}active{% endif %}">
                     <i class="fas fa-car-side {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> {% if request.session.language == 'ar' %}متوسطة{% else %}Mid-size{% endif %}
                 </a>
-                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?category=Luxury" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'Luxury' %}active{% endif %}">
+                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?category=Luxury&enhanced=true" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'Luxury' %}active{% endif %}">
                     <i class="fas fa-crown {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> {% if request.session.language == 'ar' %}فاخرة{% else %}Luxury{% endif %}
                 </a>
-                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?category=SUV" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'SUV' %}active{% endif %}">
+                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?category=SUV&enhanced=true" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'SUV' %}active{% endif %}">
                     <i class="fas fa-truck {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> {% if request.session.language == 'ar' %}دفع رباعي{% else %}SUV{% endif %}
                 </a>
-                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?transmission=Automatic" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.transmission == 'Automatic' %}active{% endif %}">
+                <a href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?transmission=Automatic&enhanced=true" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.transmission == 'Automatic' %}active{% endif %}">
                     <i class="fas fa-cog {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> {% if request.session.language == 'ar' %}ناقل أوتوماتيك{% else %}Automatic{% endif %}
                 </a>
             </div>
@@ -124,7 +158,7 @@
         <!-- شريط أدوات البحث المتقدم -->
         <div class="search-control-wrapper mb-4 shadow-sm">
             <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <!-- Left section: View switching and design toggle -->
+                <!-- Left section: View switching -->
                 <div class="toolbar-section d-flex align-items-center">
                     <div class="view-switch d-flex mb-2 mb-md-0">
                         <button class="btn {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}" id="listViewBtn" title="{% if request.session.language == 'ar' %}عرض قائمة{% else %}List View{% endif %}">
@@ -134,15 +168,10 @@
                             <i class="fas fa-th-large"></i>
                         </button>
                     </div>
-                    
-                    <a href="{{ standard_url }}" class="btn btn-outline-secondary {% if request.session.language == 'ar' %}me-3{% else %}ms-3{% endif %}" title="{% if request.session.language == 'ar' %}العودة للتصميم الأساسي{% else %}Back to Standard Design{% endif %}">
-                        <i class="fas fa-arrow-left {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
-                        {% if request.session.language == 'ar' %}تصميم أساسي{% else %}Standard Design{% endif %}
-                    </a>
                 </div>
                 
-                <!-- Center section: Car count -->
-                <div class="cars-count mb-2 mb-md-0">
+                <!-- Center section: Car count - مركز في الوسط -->
+                <div class="cars-count mb-2 mb-md-0 d-flex justify-content-center align-items-center">
                     <span class="badge bg-primary rounded-pill fs-6 px-3 py-2">
                         {{ cars.count }} 
                         {% if request.session.language == 'ar' %}سيارة متوفرة{% else %}cars available{% endif %}
