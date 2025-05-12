@@ -1,5 +1,9 @@
 import json
 import pyotp
+import random
+import base64
+import qrcode
+import io
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -11,6 +15,7 @@ from django.conf import settings
 from .models_system import SystemSetting
 from .models_superadmin import AdminUser, Role, Permission
 from .models import User
+from .security_models import UserSecurity
 
 # الدالة المساعدة للتحقق من صلاحيات المسؤول الأعلى
 def is_superadmin(user):
@@ -299,6 +304,122 @@ def security_settings(request):
     return render(request, 'superadmin/settings/security.html', context)
 
 @login_required
+def superadmin_generate_2fa_qr(request):
+    """توليد رمز QR للمصادقة الثنائية للمسؤول الأعلى"""
+    if not is_superadmin(request.user):
+        return JsonResponse({
+            'success': False,
+            'message': _('ليس لديك صلاحية الوصول')
+        })
+    
+    # التأكد من تفعيل المصادقة الثنائية على مستوى النظام
+    two_factor_enabled = get_system_setting('two_factor_enabled', False)
+    if not two_factor_enabled:
+        return JsonResponse({
+            'success': False,
+            'message': _('المصادقة الثنائية غير مفعلة على مستوى النظام')
+        })
+    
+    # الحصول على أو إنشاء سجل الأمان للمستخدم
+    user_security, created = UserSecurity.objects.get_or_create(user=request.user)
+    
+    # إنشاء سر TOTP جديد إذا لم يكن موجودًا أو إذا كان التفعيل متعطل حاليًا
+    if not user_security.totp_secret or not user_security.two_factor_enabled:
+        user_security.totp_secret = pyotp.random_base32()
+        user_security.save()
+    
+    # إنشاء URI لتطبيق المصادقة
+    totp = pyotp.TOTP(user_security.totp_secret)
+    user_identifier = request.user.username
+    site_name = get_system_setting('site_name', 'تأجير السيارات')
+    provisioning_uri = totp.provisioning_uri(name=user_identifier, issuer=site_name)
+    
+    # إنشاء رمز QR
+    qr_img = qrcode.make(provisioning_uri)
+    
+    # تحويل الصورة إلى بيانات Base64
+    buffered = io.BytesIO()
+    qr_img.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    
+    # إرجاع البيانات مع بادئة Data URI
+    return JsonResponse({
+        'success': True,
+        'qr_code': f"data:image/png;base64,{img_str}",
+        'secret': user_security.totp_secret
+    })
+
+@login_required
+def superadmin_enable_2fa(request):
+    """تفعيل المصادقة الثنائية للمسؤول الأعلى"""
+    if not is_superadmin(request.user):
+        return JsonResponse({
+            'success': False,
+            'message': _('ليس لديك صلاحية الوصول')
+        })
+    
+    # التأكد من استخدام طريقة POST
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': _('طريقة غير مسموحة')
+        })
+    
+    # التأكد من تفعيل المصادقة الثنائية على مستوى النظام
+    two_factor_enabled = get_system_setting('two_factor_enabled', False)
+    if not two_factor_enabled:
+        return JsonResponse({
+            'success': False,
+            'message': _('المصادقة الثنائية غير مفعلة على مستوى النظام')
+        })
+    
+    # الحصول على الرمز المدخل
+    totp_code = request.POST.get('totp_code')
+    if not totp_code:
+        return JsonResponse({
+            'success': False,
+            'message': _('الرجاء إدخال رمز التحقق')
+        })
+    
+    # الحصول على سجل الأمان للمستخدم
+    try:
+        user_security = UserSecurity.objects.get(user=request.user)
+    except UserSecurity.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': _('لم يتم إعداد المصادقة الثنائية بعد')
+        })
+    
+    # التحقق من صحة الرمز المدخل
+    totp = pyotp.TOTP(user_security.totp_secret)
+    if not totp.verify(totp_code):
+        return JsonResponse({
+            'success': False,
+            'message': _('رمز التحقق غير صحيح')
+        })
+    
+    # تفعيل المصادقة الثنائية
+    user_security.two_factor_enabled = True
+    
+    # إنشاء رموز النسخ الاحتياطية إذا لم تكن موجودة
+    if not user_security.backup_codes:
+        # إنشاء 10 رموز نسخ احتياطية
+        backup_codes = []
+        for _ in range(10):
+            # إنشاء رمز عشوائي مكون من 8 أرقام
+            backup_code = ''.join(str(random.randint(0, 9)) for _ in range(8))
+            backup_codes.append(backup_code)
+        
+        # حفظ رموز النسخ الاحتياطية كسلسلة JSON
+        user_security.backup_codes = json.dumps(backup_codes)
+    
+    user_security.save()
+    
+    return JsonResponse({
+        'success': True,
+        'message': _('تم تفعيل المصادقة الثنائية بنجاح')
+    })
+
 def notification_settings(request):
     """إعدادات الإشعارات"""
     if not is_superadmin(request.user):
