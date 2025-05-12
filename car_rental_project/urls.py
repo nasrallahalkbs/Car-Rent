@@ -10,8 +10,8 @@ urlpatterns = [
     # إضافة مسار العرض الخاص بتبديل اللغة من Django
     path('i18n/', include('django.conf.urls.i18n')),
     
-    # مسار تسجيل الدخول الموحد الرئيسي
-    path('login/', lambda request: redirect('unified_login'), name='main_login'),
+    # مسار تسجيل الدخول الرئيسي
+    path('login/', lambda request: redirect('login'), name='main_login'),
 ]
 
 # استيراد redirect للتوجيه
