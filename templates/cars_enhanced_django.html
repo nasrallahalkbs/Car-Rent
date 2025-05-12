@@ -7,7 +7,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-<link rel="stylesheet" href="/static/css/modern-cars.css">
+<link rel="stylesheet" href="{% static 'css/modern-cars.css' %}">
 <style>
     .car-card {
         opacity: 0;
@@ -35,6 +35,44 @@
     @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
+    }
+    
+    /* Fix for inline SVG icons */
+    .car-brand-icon {
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background-color: #f8f9fa !important;
+    }
+    
+    .car-brand-circle {
+        position: relative !important;
+        width: 75% !important;
+        height: 75% !important;
+        background-color: #efefef !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+    }
+    
+    .car-brand-name {
+        position: absolute !important;
+        bottom: -25px !important;
+        width: 100% !important;
+        text-align: center !important;
+        font-weight: bold !important;
+        font-size: 14px !important;
+        color: #333 !important;
+    }
+    
+    /* Fix for image paths issue */
+    .car-image-wrapper {
+        height: 220px !important;
+        background-color: #f8f9fa !important;
     }
 </style>
 {% endblock %}
@@ -219,17 +257,49 @@
                         {% elif car.image_url %}
                         <img src="{{ car.image_url }}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
                         {% else %}
-                            {% if 'مرسيدس' in car.make %}
-                                <img src="{% static 'images/cars/mercedes.svg' %}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
-                            {% elif 'بي إم دبليو' in car.make %}
-                                <img src="{% static 'images/cars/bmw.svg' %}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
-                            {% elif 'هوندا' in car.make %}
-                                <img src="{% static 'images/cars/honda.svg' %}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
-                            {% elif 'تويوتا' in car.make %}
-                                <img src="{% static 'images/cars/toyota.svg' %}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
-                            {% else %}
-                                <img src="{% static 'images/car-placeholder.svg' %}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
-                            {% endif %}
+                            <div class="car-brand-icon" 
+                                 data-make="{{ car.make }}" 
+                                 style="height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                                <div class="car-brand-circle" style="position: relative; width: 80%; height: 80%; background-color: #efefef; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                                    {% if 'مرسيدس' in car.make %}
+                                        <svg width="60%" height="60%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="50" cy="50" r="48" fill="none" stroke="#333" stroke-width="2"/>
+                                            <path d="M 50,2 L 50,98 M 2,50 L 98,50 M 15,15 L 85,85 M 15,85 L 85,15" stroke="#333" stroke-width="2"/>
+                                        </svg>
+                                        <div class="car-brand-name" style="position: absolute; bottom: -30px; width: 100%; text-align: center; font-weight: bold; color: #333;">{{ car.make }}</div>
+                                    {% elif 'بي إم دبليو' in car.make %}
+                                        <svg width="60%" height="60%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="50" cy="50" r="48" fill="none" stroke="#333" stroke-width="2"/>
+                                            <path d="M 2,50 L 50,50 L 50,2" fill="#0066b1"/>
+                                            <path d="M 50,50 L 98,50 L 50,98" fill="#0066b1"/>
+                                            <path d="M 50,2 L 50,50 L 98,50" fill="#fff"/>
+                                            <path d="M 2,50 L 50,50 L 50,98" fill="#fff"/>
+                                        </svg>
+                                        <div class="car-brand-name" style="position: absolute; bottom: -30px; width: 100%; text-align: center; font-weight: bold; color: #333;">{{ car.make }}</div>
+                                    {% elif 'هوندا' in car.make %}
+                                        <svg width="60%" height="60%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="10" y="30" width="80" height="40" rx="5" fill="none" stroke="#e11921" stroke-width="2"/>
+                                            <path d="M 20,50 L 80,50" stroke="#e11921" stroke-width="4"/>
+                                        </svg>
+                                        <div class="car-brand-name" style="position: absolute; bottom: -30px; width: 100%; text-align: center; font-weight: bold; color: #333;">{{ car.make }}</div>
+                                    {% elif 'تويوتا' in car.make %}
+                                        <svg width="60%" height="60%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                            <ellipse cx="50" cy="50" rx="30" ry="20" fill="none" stroke="#d71921" stroke-width="2"/>
+                                            <ellipse cx="50" cy="50" rx="48" ry="25" fill="none" stroke="#d71921" stroke-width="2"/>
+                                            <ellipse cx="50" cy="50" rx="15" ry="10" fill="none" stroke="#d71921" stroke-width="2"/>
+                                        </svg>
+                                        <div class="car-brand-name" style="position: absolute; bottom: -30px; width: 100%; text-align: center; font-weight: bold; color: #333;">{{ car.make }}</div>
+                                    {% else %}
+                                        <svg width="60%" height="60%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="10" y="40" width="80" height="30" rx="10" fill="#adb5bd"/>
+                                            <circle cx="25" cy="70" r="10" fill="#6c757d"/>
+                                            <circle cx="75" cy="70" r="10" fill="#6c757d"/>
+                                            <path d="M 5,50 L 15,50 L 25,30 L 75,30 L 85,50 L 95,50" fill="none" stroke="#6c757d" stroke-width="2"/>
+                                        </svg>
+                                        <div class="car-brand-name" style="position: absolute; bottom: -30px; width: 100%; text-align: center; font-weight: bold; color: #333;">{{ car.make }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         {% endif %}
                         <div class="car-overlay"></div>
                         <div class="car-price">
