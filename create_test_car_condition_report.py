@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 """
-إنشاء تقرير حالة سيارة اختباري للتأكد من عمل الفورم بشكل صحيح
+إنشاء تقرير حالة سيارة اختباري كامل مع صور وعناصر فحص للتأكد من عمل النموذج بشكل صحيح
 """
 
 import os
 import django
+import tempfile
+from PIL import Image
+from io import BytesIO
 from django.utils import timezone
+from django.core.files.uploadedfile import SimpleUploadedFile
 from datetime import timedelta
+import random
+import string
 
 # إعداد Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'car_rental_project.settings')
@@ -14,13 +20,27 @@ django.setup()
 
 # استيراد النماذج بعد إعداد Django
 from django.contrib.auth import get_user_model
-from rental.models import Car, Reservation, CarConditionReport
+from rental.models import Car, Reservation, CarConditionReport, CarInspectionImage, CarInspectionItem, CarInspectionDetail, CarInspectionCategory
 
 User = get_user_model()
 
+def create_test_image(filename, color=(255, 0, 0)):
+    """إنشاء صورة اختبارية لرفعها مع التقرير"""
+    image = Image.new('RGB', (100, 100), color=color)
+    temp_file = BytesIO()
+    image.save(temp_file, format='JPEG')
+    temp_file.seek(0)
+    
+    # إنشاء ملف مرفوع وهمي
+    return SimpleUploadedFile(
+        name=filename,
+        content=temp_file.read(),
+        content_type='image/jpeg'
+    )
+
 def create_test_car_condition_report():
-    """إنشاء تقرير حالة سيارة اختباري"""
-    print("بدء إنشاء تقرير حالة سيارة اختباري...")
+    """إنشاء تقرير حالة سيارة اختباري كامل"""
+    print("بدء إنشاء تقرير حالة سيارة اختباري كامل...")
 
     # البحث عن مستخدم موجود أو إنشاء مستخدم جديد
     try:
@@ -105,6 +125,55 @@ def create_test_car_condition_report():
         print(f"خطأ في العثور على/إنشاء حجز: {str(e)}")
         return
 
+    # التحقق من وجود فئات وعناصر الفحص
+    try:
+        # إنشاء فئات الفحص إذا لم تكن موجودة
+        categories = []
+        category_names = ["المحرك", "نظام التعليق", "الفرامل", "الإطارات", "الهيكل الخارجي", "المقصورة الداخلية"]
+        
+        for i, name in enumerate(category_names):
+            category, created = CarInspectionCategory.objects.get_or_create(
+                name=name,
+                defaults={
+                    'description': f'فحص {name}',
+                    'display_order': i+1,
+                    'is_active': True
+                }
+            )
+            categories.append(category)
+            if created:
+                print(f"تم إنشاء فئة فحص جديدة: {category.name}")
+            else:
+                print(f"تم العثور على فئة فحص موجودة: {category.name}")
+        
+        # التأكد من وجود عناصر فحص لكل فئة
+        inspection_items = []
+        for category in categories:
+            # إنشاء عناصر فحص لهذه الفئة إذا لم تكن موجودة
+            items_count = CarInspectionItem.objects.filter(category=category).count()
+            
+            if items_count == 0:
+                for i in range(3):  # إنشاء 3 عناصر لكل فئة
+                    item = CarInspectionItem.objects.create(
+                        category=category,
+                        name=f"{category.name} - عنصر {i+1}",
+                        description=f"وصف لعنصر {category.name} رقم {i+1}",
+                        is_active=True,
+                        display_order=i+1,
+                        is_important=True if i == 0 else False,
+                        estimated_cost=random.randint(100, 1000) if i == 1 else 0
+                    )
+                    inspection_items.append(item)
+                    print(f"تم إنشاء عنصر فحص جديد: {item.name}")
+            else:
+                items = CarInspectionItem.objects.filter(category=category)
+                inspection_items.extend(items)
+                print(f"تم العثور على {items.count()} عنصر فحص لفئة {category.name}")
+    
+    except Exception as e:
+        print(f"خطأ في التحقق من/إنشاء فئات وعناصر الفحص: {str(e)}")
+        return
+
     # إنشاء تقرير حالة السيارة
     try:
         print(f"[{timezone.now()}] بدء عملية حفظ تقرير حالة السيارة...")
@@ -113,6 +182,9 @@ def create_test_car_condition_report():
         print(f"الحجز المرتبط: {reservation.id}")
         print(f"حالة الحجز: {reservation.status}")
         
+        print("معلومات التقرير قبل الحفظ - السيارة ID: {}, الحجز ID: {}".format(car.id, reservation.id))
+        
+        # إنشاء تقرير جديد
         report = CarConditionReport.objects.create(
             car=car,
             reservation=reservation,  # ربط التقرير بالحجز
@@ -125,7 +197,63 @@ def create_test_car_condition_report():
             notes="تم فحص السيارة وهي بحالة ممتازة",
             created_by=user
         )
-        print(f"✅ تم إنشاء تقرير حالة السيارة بنجاح: {report.id}")
+        
+        print("\n=== ملخص بيانات التقرير قبل الحفظ النهائي ===")
+        print(f"🚗 السيارة: {car.make} {car.model} (ID: {car.id})")
+        print(f"📋 نوع التقرير: {report.get_report_type_display()}")
+        print(f"📅 التاريخ: {report.date}")
+        print(f"🔍 نوع الفحص: {report.inspection_type}")
+        print(f"🔢 عداد المسافات: {report.mileage} كم")
+        print(f"⛽ مستوى الوقود: {report.fuel_level}%")
+        print(f"📝 الملاحظات: {report.notes}")
+        print("===========================================\n")
+        
+        # إنشاء صور للتقرير
+        image_types = [
+            ('front_image', 'صورة أمامية للسيارة', (255, 0, 0)),  # أحمر
+            ('rear_image', 'صورة خلفية للسيارة', (0, 255, 0)),     # أخضر
+            ('side_image', 'صورة جانبية للسيارة', (0, 0, 255)),    # أزرق
+            ('interior_image', 'صورة داخلية للسيارة', (255, 255, 0))  # أصفر
+        ]
+        
+        for image_type, description, color in image_types:
+            try:
+                # إنشاء صورة وهمية
+                test_image = create_test_image(f"{image_type}.jpg", color)
+                
+                # إنشاء سجل للصورة
+                img = CarInspectionImage.objects.create(
+                    report=report,
+                    image=test_image,
+                    description=description,
+                    inspection_detail=None  # صورة عامة
+                )
+                print(f"✅ تم إنشاء صورة {image_type}: {img.id}")
+            except Exception as e:
+                print(f"❌ خطأ في إنشاء صورة {image_type}: {str(e)}")
+        
+        # إنشاء عناصر تفاصيل الفحص
+        conditions = ['excellent', 'good', 'fair', 'poor']
+        
+        for item in random.sample(inspection_items, min(len(inspection_items), 10)):
+            try:
+                # إنشاء تفصيل فحص عشوائي
+                condition = random.choice(conditions)
+                needs_repair = condition in ['fair', 'poor']
+                notes = f"ملاحظات حول {item.name}" if needs_repair else ""
+                
+                detail = CarInspectionDetail.objects.create(
+                    report=report,
+                    inspection_item=item,
+                    condition=condition,
+                    notes=notes,
+                    needs_repair=needs_repair
+                )
+                print(f"✅ تم إنشاء تفصيل فحص لعنصر '{item.name}' بحالة '{condition}'")
+            except Exception as e:
+                print(f"❌ خطأ في إنشاء تفصيل فحص لعنصر '{item.name}': {str(e)}")
+        
+        print(f"✅ تم إنشاء تقرير حالة السيارة بنجاح (ID: {report.id})")
         
         # طباعة تفاصيل التقرير
         print(f"معرف التقرير: {report.id}")
@@ -140,6 +268,12 @@ def create_test_car_condition_report():
         print(f"الملاحظات: {report.notes}")
         print(f"تم الإنشاء بواسطة: {report.created_by}")
         print(f"تاريخ الإنشاء: {report.created_at}")
+        
+        # طباعة عدد الصور وتفاصيل الفحص
+        image_count = CarInspectionImage.objects.filter(report=report).count()
+        detail_count = CarInspectionDetail.objects.filter(report=report).count()
+        print(f"عدد الصور المرفقة: {image_count}")
+        print(f"عدد عناصر الفحص: {detail_count}")
         
         return report
     except Exception as e:
