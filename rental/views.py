@@ -515,6 +515,17 @@ def car_listing(request):
 
     # Get all available cars by default, ordered by id for consistent pagination
     cars = Car.objects.filter(is_available=True).order_by('id')
+    
+    # Process search query from the new search field
+    search_query = request.GET.get('search', '')
+    if search_query:
+        cars = cars.filter(
+            Q(make__icontains=search_query) | 
+            Q(model__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(features__icontains=search_query) |
+            Q(category__icontains=search_query)
+        )
 
     # Filter based on search criteria if form is valid
     if form.is_valid():
