@@ -21,6 +21,10 @@ from django.apps import apps
 
 from .models_system import SystemIssue
 from .models_superadmin import AdminUser
+from .superadmin_diagnostics_utils import (
+    fix_disk_space, fix_media_permissions, fix_project_permissions,
+    fix_db_permissions, create_media_directory, check_db_connection
+)
 
 # الدالة المساعدة للتحقق من صلاحيات المسؤول الأعلى
 def is_superadmin(user):
@@ -593,13 +597,52 @@ def fix_system_issue(request, issue_id):
     # التحقق إذا كان issue_id رقمي (معرف قاعدة بيانات) أو نصي (معرف مشكلة)
     if issue_id.isdigit():
         # الحصول على المشكلة من قاعدة البيانات باستخدام المعرف
-        issue = get_object_or_404(SystemIssue, id=issue_id)
-    else:
-        # الحصول على المشكلة من قاعدة البيانات باستخدام المعرف النصي (issue_id)
-        issue = SystemIssue.objects.filter(title__contains=issue_id).first()
-        if not issue:
-            messages.error(request, _('المشكلة غير موجودة'))
+        try:
+            issue = get_object_or_404(SystemIssue, id=issue_id)
+            issue_type = issue.area
+            issue_key = None
+            
+            # تحديث حالة المشكلة
+            issue.status = 'in_progress'
+            issue.save()
+            
+            messages.success(request, _('تم بدء معالجة المشكلة'))
+            
+            # إعادة التوجيه لصفحة التشخيص
             return redirect('superadmin_diagnostics')
+            
+        except Exception as e:
+            messages.error(request, _('حدث خطأ أثناء معالجة المشكلة: {error}').format(error=str(e)))
+            return redirect('superadmin_diagnostics')
+    else:
+        # معالجة المشكلة بناءً على المعرف النصي
+        issue_fixed = False
+        
+        if issue_id == 'disk_space_low':
+            # معالجة مشكلة انخفاض مساحة القرص
+            issue_fixed = fix_disk_space()
+        elif issue_id == 'media_root_not_writable':
+            # معالجة مشكلة أذونات مجلد الوسائط
+            issue_fixed = fix_media_permissions()
+        elif issue_id == 'project_dir_not_writable':
+            # معالجة مشكلة أذونات مجلد المشروع
+            issue_fixed = fix_project_permissions()
+        elif issue_id == 'db_file_not_writable':
+            # معالجة مشكلة أذونات ملف قاعدة البيانات
+            issue_fixed = fix_db_permissions()
+        elif issue_id == 'missing_media_root':
+            # معالجة مشكلة عدم وجود مجلد الوسائط
+            issue_fixed = create_media_directory()
+        elif issue_id == 'db_connection_error':
+            # معالجة مشكلة الاتصال بقاعدة البيانات
+            issue_fixed = check_db_connection()
+        
+        if issue_fixed:
+            messages.success(request, _('تم إصلاح المشكلة بنجاح'))
+        else:
+            messages.warning(request, _('تم محاولة إصلاح المشكلة، لكن قد تحتاج إلى تدخل يدوي'))
+        
+        return redirect('superadmin_diagnostics')
     
     # التحقق من حالة المشكلة
     if issue.status == 'fixed':
