@@ -243,9 +243,9 @@ def login_view(request):
             messages.error(request, "جلسة المصادقة الثنائية غير صالحة، يرجى إعادة تسجيل الدخول.")
 
     # التعامل مع نموذج التحقق من المصادقة الثنائية
-    if request.method == 'POST' and 'two_factor_token' in request.POST and 'username' in request.POST:
+    if request.method == 'POST' and 'totp_code' in request.POST and 'username' in request.POST:
         username = request.POST.get('username')
-        token = request.POST.get('two_factor_token')
+        token = request.POST.get('totp_code')
         user = User.objects.filter(username=username).first()
         
         if user and token:

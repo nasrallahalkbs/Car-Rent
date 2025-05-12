@@ -4337,18 +4337,22 @@ def admin_2fa_setup(request):
             
         # تعطيل المصادقة الثنائية
         elif action == 'disable_2fa':
-            disable_2fa_for_user(request.user)
+            # استخدام الوظيفة مع خيار القوة لتجاوز شرط التحقق من رمز TOTP
+            disable_2fa_for_user(request.user, force=True)
             security.refresh_from_db()
             messages.success(request, _("تم تعطيل المصادقة الثنائية."))
     
-    # إنشاء رمز QR والرموز الاحتياطية إذا كانت المصادقة الثنائية مفعلة أو تم تفعيلها للتو
-    if security.two_factor_enabled:
+    # إنشاء رمز QR إذا طلب المشرف إعداد المصادقة الثنائية
+    if request.method == 'POST' and request.POST.get('action') == 'setup_2fa':
+        qr_code = generate_qr_code_image(request.user)
+        backup_codes = security.backup_codes
+    # إذا كانت المصادقة الثنائية مفعلة ولكن تم فتح الصفحة فقط (ليس من خلال POST)
+    elif security.two_factor_enabled and not request.method == 'POST':
         if not security.totp_secret:
             # إذا كان المستخدم لديه المصادقة الثنائية مفعلة ولكن بدون سر، نعيد إنشاء السر
             security = setup_2fa_for_user(request.user)
-        
-        # إنشاء رمز QR دائماً إذا كانت المصادقة الثنائية مفعلة
-        qr_code = generate_qr_code_image(request.user)
+            
+        # نعرض الرموز الاحتياطية فقط - لا داعي لعرض QR مرة أخرى بعد التفعيل
         backup_codes = security.backup_codes
 
     # عرض صفحة إعداد المصادقة الثنائية
