@@ -11,6 +11,26 @@ from .models_custody import CustomerGuarantee
 # استيراد موديل AdminUser
 from .models_superadmin import AdminUser
 
+# نموذج التحقق من البريد الإلكتروني
+class EmailVerification(models.Model):
+    """نموذج تخزين رموز التحقق من البريد الإلكتروني"""
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='verification')
+    token = models.CharField(max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    verified_at = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"تحقق بريد {self.user.email}"
+    
+    def is_valid(self):
+        """التحقق من صلاحية الرمز"""
+        return self.expires_at > timezone.now() and not self.verified_at
+        
+    class Meta:
+        verbose_name = 'تحقق بريد إلكتروني'
+        verbose_name_plural = 'تحققات البريد الإلكتروني'
+
 class User(AbstractUser):
     """Extended User model for car rental app"""
     phone = models.CharField(max_length=20, blank=True)
