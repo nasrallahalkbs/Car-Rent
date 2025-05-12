@@ -187,18 +187,43 @@ def get_database_size():
 def get_system_uptime():
     """الحصول على مدة تشغيل النظام"""
     try:
+        # الحصول على وقت بدء تشغيل النظام
         boot_time = datetime.datetime.fromtimestamp(psutil.boot_time())
         uptime = datetime.datetime.now() - boot_time
         days = uptime.days
         hours, remainder = divmod(uptime.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
         
+        # تنسيق المدة بشكل مناسب مع مراعاة التعريب
         if days > 0:
             return f"{days} {_('يوم')} {hours} {_('ساعة')} {minutes} {_('دقيقة')}"
+        elif hours > 0:
+            return f"{hours} {_('ساعة')} {minutes} {_('دقيقة')}"
         else:
-            return f"{hours} {_('ساعة')} {minutes} {_('دقيقة')} {seconds} {_('ثانية')}"
+            return f"{minutes} {_('دقيقة')} {seconds} {_('ثانية')}"
     except Exception as e:
-        return _('غير متاح')
+        # في حالة فشل الحصول على وقت تشغيل النظام، نحاول الحصول على وقت تشغيل عملية الخادم
+        try:
+            # الحصول على معلومات عملية جونيكورن الحالية
+            process = psutil.Process(os.getpid())
+            start_time = datetime.datetime.fromtimestamp(process.create_time())
+            process_uptime = datetime.datetime.now() - start_time
+            
+            days = process_uptime.days
+            hours, remainder = divmod(process_uptime.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            
+            # إضافة توضيح بأن هذا هو وقت تشغيل عملية الخادم وليس النظام
+            if days > 0:
+                return f"{days} {_('يوم')} {hours} {_('ساعة')} - {_('عملية الخادم')}"
+            elif hours > 0:
+                return f"{hours} {_('ساعة')} {minutes} {_('دقيقة')} - {_('عملية الخادم')}"
+            else:
+                return f"{minutes} {_('دقيقة')} {seconds} {_('ثانية')} - {_('عملية الخادم')}"
+        except Exception as proc_e:
+            # في حالة فشل كل المحاولات
+            print(f"خطأ في get_system_uptime: {e}, {proc_e}")
+            return _('غير متاح')
 
 def get_diagnostic_tools():
     """الحصول على قائمة أدوات التشخيص المتاحة"""
@@ -274,80 +299,101 @@ def run_system_check():
     warnings = []
     success = []
     
-    # فحص مساحة القرص
-    disk = psutil.disk_usage('/')
-    if disk.percent > 90:
-        issues.append({
-            'title': _('مساحة القرص منخفضة جداً'),
-            'description': _('مساحة القرص المتبقية {free_space} فقط من أصل {total_space}').format(
-                free_space=f"{disk.free / (1024**3):.2f} GB",
-                total_space=f"{disk.total / (1024**3):.2f} GB"
-            ),
-            'solution': _('حرر مساحة على القرص بحذف الملفات غير الضرورية'),
-            'severity': 'critical',
-            'issue_id': 'disk_space_low',
-        })
-    elif disk.percent > 80:
+    try:
+        # فحص مساحة القرص
+        disk = psutil.disk_usage('/')
+        if disk.percent > 90:
+            issues.append({
+                'title': _('مساحة القرص منخفضة جداً'),
+                'description': _('مساحة القرص المتبقية {free_space} فقط من أصل {total_space}').format(
+                    free_space=f"{disk.free / (1024**3):.2f} GB",
+                    total_space=f"{disk.total / (1024**3):.2f} GB"
+                ),
+                'solution': _('حرر مساحة على القرص بحذف الملفات غير الضرورية'),
+                'severity': 'critical',
+                'issue_id': 'disk_space_low',
+            })
+        elif disk.percent > 80:
+            warnings.append({
+                'title': _('مساحة القرص منخفضة'),
+                'description': _('مساحة القرص المتبقية {free_space} من أصل {total_space}').format(
+                    free_space=f"{disk.free / (1024**3):.2f} GB",
+                    total_space=f"{disk.total / (1024**3):.2f} GB"
+                ),
+                'solution': _('فكر في تحرير مساحة على القرص قريباً'),
+            })
+        else:
+            success.append({
+                'title': _('مساحة القرص جيدة'),
+                'description': _('مساحة القرص المتبقية {free_space} من أصل {total_space} ({percent}% مستخدم)').format(
+                    free_space=f"{disk.free / (1024**3):.2f} GB",
+                    total_space=f"{disk.total / (1024**3):.2f} GB",
+                    percent=disk.percent
+                ),
+            })
+    except Exception as e:
         warnings.append({
-            'title': _('مساحة القرص منخفضة'),
-            'description': _('مساحة القرص المتبقية {free_space} من أصل {total_space}').format(
-                free_space=f"{disk.free / (1024**3):.2f} GB",
-                total_space=f"{disk.total / (1024**3):.2f} GB"
-            ),
-            'solution': _('فكر في تحرير مساحة على القرص قريباً'),
-        })
-    else:
-        success.append({
-            'title': _('مساحة القرص جيدة'),
-            'description': _('مساحة القرص المتبقية {free_space} من أصل {total_space} ({percent}% مستخدم)').format(
-                free_space=f"{disk.free / (1024**3):.2f} GB",
-                total_space=f"{disk.total / (1024**3):.2f} GB",
-                percent=disk.percent
-            ),
+            'title': _('تعذر قراءة مساحة القرص'),
+            'description': _('حدث خطأ أثناء قراءة مساحة القرص: {error}').format(error=str(e)),
+            'solution': _('تحقق من أذونات النظام'),
         })
     
-    # فحص استخدام المعالج
-    cpu_usage = psutil.cpu_percent(interval=1)
-    if cpu_usage > 90:
-        issues.append({
-            'title': _('استخدام المعالج مرتفع جداً'),
-            'description': _('استخدام المعالج الحالي {cpu_usage}%').format(cpu_usage=cpu_usage),
-            'solution': _('تحقق من العمليات التي تستهلك المعالج بشكل كبير'),
-            'severity': 'high',
-            'issue_id': 'cpu_usage_high',
-        })
-    elif cpu_usage > 70:
+    try:
+        # فحص استخدام المعالج
+        cpu_usage = psutil.cpu_percent(interval=0.5)
+        if cpu_usage > 90:
+            issues.append({
+                'title': _('استخدام المعالج مرتفع جداً'),
+                'description': _('استخدام المعالج الحالي {cpu_usage}%').format(cpu_usage=cpu_usage),
+                'solution': _('تحقق من العمليات التي تستهلك المعالج بشكل كبير'),
+                'severity': 'high',
+                'issue_id': 'cpu_usage_high',
+            })
+        elif cpu_usage > 70:
+            warnings.append({
+                'title': _('استخدام المعالج مرتفع'),
+                'description': _('استخدام المعالج الحالي {cpu_usage}%').format(cpu_usage=cpu_usage),
+                'solution': _('راقب استخدام المعالج وتحقق إذا كان يرتفع باستمرار'),
+            })
+        else:
+            success.append({
+                'title': _('استخدام المعالج ضمن الحدود الطبيعية'),
+                'description': _('استخدام المعالج الحالي {cpu_usage}%').format(cpu_usage=cpu_usage),
+            })
+    except Exception as e:
         warnings.append({
-            'title': _('استخدام المعالج مرتفع'),
-            'description': _('استخدام المعالج الحالي {cpu_usage}%').format(cpu_usage=cpu_usage),
-            'solution': _('راقب استخدام المعالج وتحقق إذا كان يرتفع باستمرار'),
-        })
-    else:
-        success.append({
-            'title': _('استخدام المعالج طبيعي'),
-            'description': _('استخدام المعالج الحالي {cpu_usage}%').format(cpu_usage=cpu_usage),
+            'title': _('تعذر قراءة استخدام المعالج'),
+            'description': _('حدث خطأ أثناء قراءة استخدام المعالج: {error}').format(error=str(e)),
+            'solution': _('تحقق من أذونات النظام'),
         })
     
     # فحص استخدام الذاكرة
-    memory = psutil.virtual_memory()
-    if memory.percent > 90:
-        issues.append({
-            'title': _('استخدام الذاكرة مرتفع جداً'),
-            'description': _('استخدام الذاكرة الحالي {memory_usage}%').format(memory_usage=memory.percent),
-            'solution': _('تحقق من العمليات التي تستهلك الذاكرة بشكل كبير'),
-            'severity': 'high',
-            'issue_id': 'memory_usage_high',
-        })
-    elif memory.percent > 80:
+    try:
+        memory = psutil.virtual_memory()
+        if memory.percent > 90:
+            issues.append({
+                'title': _('استخدام الذاكرة مرتفع جداً'),
+                'description': _('استخدام الذاكرة الحالي {memory_usage}%').format(memory_usage=memory.percent),
+                'solution': _('تحقق من العمليات التي تستهلك الذاكرة بشكل كبير'),
+                'severity': 'high',
+                'issue_id': 'memory_usage_high',
+            })
+        elif memory.percent > 80:
+            warnings.append({
+                'title': _('استخدام الذاكرة مرتفع'),
+                'description': _('استخدام الذاكرة الحالي {memory_usage}%').format(memory_usage=memory.percent),
+                'solution': _('راقب استخدام الذاكرة وتحقق إذا كان يرتفع باستمرار'),
+            })
+        else:
+            success.append({
+                'title': _('استخدام الذاكرة طبيعي'),
+                'description': _('استخدام الذاكرة الحالي {memory_usage}%').format(memory_usage=memory.percent),
+            })
+    except Exception as e:
         warnings.append({
-            'title': _('استخدام الذاكرة مرتفع'),
-            'description': _('استخدام الذاكرة الحالي {memory_usage}%').format(memory_usage=memory.percent),
-            'solution': _('راقب استخدام الذاكرة وتحقق إذا كان يرتفع باستمرار'),
-        })
-    else:
-        success.append({
-            'title': _('استخدام الذاكرة طبيعي'),
-            'description': _('استخدام الذاكرة الحالي {memory_usage}%').format(memory_usage=memory.percent),
+            'title': _('تعذر قراءة استخدام الذاكرة'),
+            'description': _('حدث خطأ أثناء قراءة استخدام الذاكرة: {error}').format(error=str(e)),
+            'solution': _('تحقق من أذونات النظام'),
         })
     
     # تسجيل المشاكل المكتشفة في قاعدة البيانات
