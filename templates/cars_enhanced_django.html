@@ -124,39 +124,24 @@
         <!-- شريط أدوات البحث المتقدم -->
         <div class="search-control-wrapper mb-4 shadow-sm">
             <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <div class="view-switch d-flex mb-2 mb-md-0">
-                    <button class="btn {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}" id="listViewBtn">
-                        <i class="fas fa-list"></i>
-                    </button>
-                    <button class="btn active" id="gridViewBtn">
-                        <i class="fas fa-th-large"></i>
-                    </button>
-                    <a href="{{ standard_url }}" class="btn btn-outline-secondary ms-2" title="{% if request.session.language == 'ar' %}العودة للتصميم الأساسي{% else %}Back to Standard Design{% endif %}">
-                        <i class="fas fa-arrow-left"></i>
+                <!-- Left section: View switching and design toggle -->
+                <div class="toolbar-section d-flex align-items-center">
+                    <div class="view-switch d-flex mb-2 mb-md-0">
+                        <button class="btn {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}" id="listViewBtn" title="{% if request.session.language == 'ar' %}عرض قائمة{% else %}List View{% endif %}">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button class="btn active" id="gridViewBtn" title="{% if request.session.language == 'ar' %}عرض شبكة{% else %}Grid View{% endif %}">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                    </div>
+                    
+                    <a href="{{ standard_url }}" class="btn btn-outline-secondary {% if request.session.language == 'ar' %}me-3{% else %}ms-3{% endif %}" title="{% if request.session.language == 'ar' %}العودة للتصميم الأساسي{% else %}Back to Standard Design{% endif %}">
+                        <i class="fas fa-arrow-left {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                        {% if request.session.language == 'ar' %}تصميم أساسي{% else %}Standard Design{% endif %}
                     </a>
                 </div>
                 
-                <div class="filter-dropdown mb-2 mb-md-0">
-                    <button class="dropdown-toggle d-flex align-items-center" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-sort {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
-                        {% if request.session.language == 'ar' %}ترتيب حسب{% else %}Sort By{% endif %}
-                    </button>
-                    <ul class="dropdown-menu shadow" aria-labelledby="sortDropdown">
-                        <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
-                            {% if request.session.language == 'ar' %}السعر (الأقل للأعلى){% else %}Price (Low to High){% endif %}
-                        </a></li>
-                        <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
-                            {% if request.session.language == 'ar' %}السعر (الأعلى للأقل){% else %}Price (High to Low){% endif %}
-                        </a></li>
-                        <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
-                            {% if request.session.language == 'ar' %}الأحدث{% else %}Newest{% endif %}
-                        </a></li>
-                        <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
-                            {% if request.session.language == 'ar' %}الأقدم{% else %}Oldest{% endif %}
-                        </a></li>
-                    </ul>
-                </div>
-                
+                <!-- Center section: Car count -->
                 <div class="cars-count mb-2 mb-md-0">
                     <span class="badge bg-primary rounded-pill fs-6 px-3 py-2">
                         {{ cars.count }} 
@@ -164,10 +149,34 @@
                     </span>
                 </div>
                 
-                <button class="advanced-search-btn d-flex align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
-                    <i class="fas fa-filter {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
-                    {% if request.session.language == 'ar' %}بحث متقدم{% else %}Advanced Search{% endif %}
-                </button>
+                <!-- Right section: Sorting and filtering -->
+                <div class="toolbar-actions d-flex align-items-center">
+                    <div class="filter-dropdown mb-2 mb-md-0 {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}">
+                        <button class="dropdown-toggle d-flex align-items-center" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-sort {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
+                            {% if request.session.language == 'ar' %}ترتيب حسب{% else %}Sort By{% endif %}
+                        </button>
+                        <ul class="dropdown-menu shadow" aria-labelledby="sortDropdown">
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
+                                {% if request.session.language == 'ar' %}السعر (الأقل للأعلى){% else %}Price (Low to High){% endif %}
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
+                                {% if request.session.language == 'ar' %}السعر (الأعلى للأقل){% else %}Price (High to Low){% endif %}
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
+                                {% if request.session.language == 'ar' %}الأحدث{% else %}Newest{% endif %}
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
+                                {% if request.session.language == 'ar' %}الأقدم{% else %}Oldest{% endif %}
+                            </a></li>
+                        </ul>
+                    </div>
+                    
+                    <button class="advanced-search-btn d-flex align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
+                        <i class="fas fa-filter {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
+                        {% if request.session.language == 'ar' %}بحث متقدم{% else %}Advanced Search{% endif %}
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -311,6 +320,18 @@
                             {% if request.session.language == 'ar' %}متاحة{% else %}Available{% endif %}
                         </span>
                         {% endif %}
+                        
+                        <!-- Category Badge -->
+                        {% if car.category %}
+                        <span class="category-badge {% if car.category == 'Economy' %}economy{% elif car.category == 'Mid-size' %}midsize{% elif car.category == 'Luxury' %}luxury{% elif car.category == 'SUV' %}suv{% endif %}">
+                            <i class="fas {% if car.category == 'Economy' %}fa-money-bill-wave{% elif car.category == 'Mid-size' %}fa-car-side{% elif car.category == 'Luxury' %}fa-crown{% elif car.category == 'SUV' %}fa-truck{% else %}fa-car{% endif %} {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                            {% if request.session.language == 'ar' %}
+                                {% if car.category == 'Economy' %}اقتصادية{% elif car.category == 'Mid-size' %}متوسطة{% elif car.category == 'Luxury' %}فاخرة{% elif car.category == 'SUV' %}دفع رباعي{% else %}{{ car.get_category_display }}{% endif %}
+                            {% else %}
+                                {{ car.category }}
+                            {% endif %}
+                        </span>
+                        {% endif %}
                     </div>
                     <div class="card-body">
                         <h5 class="card-title fw-bold">{{ car.make }} {{ car.model }} {{ car.year }}</h5>
@@ -380,6 +401,18 @@
                             <span class="available-badge">
                                 <i class="fas fa-check-circle {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
                                 {% if request.session.language == 'ar' %}متاحة{% else %}Available{% endif %}
+                            </span>
+                            {% endif %}
+                            
+                            <!-- Category Badge -->
+                            {% if car.category %}
+                            <span class="category-badge {% if car.category == 'Economy' %}economy{% elif car.category == 'Mid-size' %}midsize{% elif car.category == 'Luxury' %}luxury{% elif car.category == 'SUV' %}suv{% endif %}">
+                                <i class="fas {% if car.category == 'Economy' %}fa-money-bill-wave{% elif car.category == 'Mid-size' %}fa-car-side{% elif car.category == 'Luxury' %}fa-crown{% elif car.category == 'SUV' %}fa-truck{% else %}fa-car{% endif %} {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                                {% if request.session.language == 'ar' %}
+                                    {% if car.category == 'Economy' %}اقتصادية{% elif car.category == 'Mid-size' %}متوسطة{% elif car.category == 'Luxury' %}فاخرة{% elif car.category == 'SUV' %}دفع رباعي{% else %}{{ car.get_category_display }}{% endif %}
+                                {% else %}
+                                    {{ car.category }}
+                                {% endif %}
                             </span>
                             {% endif %}
                         </div>
