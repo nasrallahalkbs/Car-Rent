@@ -135,7 +135,7 @@ class UserSecurity(models.Model):
         site_name = get_system_setting('site_name', 'Car Rental System')
         
         # استخدام اسم المستخدم واسم الموقع في URI
-        return totp.provisioning_uri(name=self.user.username, issuer=site_name)
+        return totp.provisioning_uri(name=self.user.username, issuer_name=site_name)
     
     def generate_backup_codes(self, count=8, force_regenerate=False):
         """توليد رموز احتياطية جديدة"""
