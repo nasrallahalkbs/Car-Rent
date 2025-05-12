@@ -409,7 +409,7 @@ def car_condition_create(request):
                                 try:
                                     detail = CarInspectionDetail.objects.create(
                                         report=report,
-                                        inspection_item=inspection_item,
+                                        item=inspection_item,
                                         condition=condition_value,
                                         notes=notes_field,
                                         needs_repair=needs_repair_field
