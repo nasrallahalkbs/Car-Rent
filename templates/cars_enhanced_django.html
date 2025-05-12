@@ -1,0 +1,425 @@
+{% extends 'layout.html' %}
+{% load i18n %}
+<!-- CACHE_BUSTER 1746744424 -->
+
+{% block title %}{% if request.session.language == 'ar' %}استعراض أسطول السيارات{% else %}Browse Our Fleet{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="/static/css/modern-cars.css">
+<style>
+    .car-card {
+        opacity: 0;
+    }
+    .car-card.animated {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 30px, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+    
+    /* إضافة تأثير تدريجي عند تحميل الصفحة */
+    .cars-section {
+        animation: fadeIn 0.8s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cars-section py-5">
+    <div class="container">
+        <!-- عنوان الصفحة مع تصميم جديد -->
+        <div class="row mb-5">
+            <div class="col-lg-8 {% if request.session.language == 'ar' %}me-auto text-end{% else %}ms-auto text-start{% endif %}">
+                <h2 class="section-title display-5 fw-bold">
+                    {% if request.session.language == 'ar' %}استعراض أسطول السيارات{% else %}Browse Our Fleet{% endif %}
+                </h2>
+                <div class="title-border {% if request.session.language == 'ar' %}float-end{% else %}float-start{% endif %}"></div>
+                <p class="lead text-muted my-4">
+                    {% if request.session.language == 'ar' %}
+                    اختر السيارة المثالية لرحلتك من تشكيلتنا الواسعة من السيارات الفاخرة والاقتصادية المجهزة بأحدث التقنيات والمزايا لضمان تجربة قيادة استثنائية
+                    {% else %}
+                    Choose the perfect vehicle for your journey from our extensive collection of luxury and economy cars equipped with the latest features for an exceptional driving experience
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <!-- أزرار فئات السيارات بتصميم محسن -->
+        <div class="category-filters text-center mb-5 animate__animated animate__fadeIn">
+            <div class="d-flex flex-wrap justify-content-center">
+                <a href="{% url 'cars' %}" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if not request.GET.category %}active{% endif %}">
+                    <i class="fas fa-car"></i> {% if request.session.language == 'ar' %}جميع السيارات{% else %}All Cars{% endif %}
+                </a>
+                <a href="{% url 'cars' %}?category=Economy" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'Economy' %}active{% endif %}">
+                    <i class="fas fa-money-bill-wave"></i> {% if request.session.language == 'ar' %}اقتصادية{% else %}Economy{% endif %}
+                </a>
+                <a href="{% url 'cars' %}?category=Mid-size" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'Mid-size' %}active{% endif %}">
+                    <i class="fas fa-car-side"></i> {% if request.session.language == 'ar' %}متوسطة{% else %}Mid-size{% endif %}
+                </a>
+                <a href="{% url 'cars' %}?category=Luxury" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'Luxury' %}active{% endif %}">
+                    <i class="fas fa-crown"></i> {% if request.session.language == 'ar' %}فاخرة{% else %}Luxury{% endif %}
+                </a>
+                <a href="{% url 'cars' %}?category=SUV" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.category == 'SUV' %}active{% endif %}">
+                    <i class="fas fa-truck"></i> {% if request.session.language == 'ar' %}دفع رباعي{% else %}SUV{% endif %}
+                </a>
+                <a href="{% url 'cars' %}?transmission=Automatic" class="category-pill {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %} {% if request.GET.transmission == 'Automatic' %}active{% endif %}">
+                    <i class="fas fa-cog"></i> {% if request.session.language == 'ar' %}ناقل أوتوماتيك{% else %}Automatic{% endif %}
+                </a>
+            </div>
+        </div>
+        
+        <!-- شريط أدوات البحث المتقدم -->
+        <div class="search-control-wrapper mb-4 shadow-sm">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <div class="view-switch d-flex mb-2 mb-md-0">
+                    <button class="btn {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}" id="listViewBtn">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button class="btn active" id="gridViewBtn">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <a href="{{ standard_url }}" class="btn btn-outline-secondary ms-2" title="{% if request.session.language == 'ar' %}العودة للتصميم الأساسي{% else %}Back to Standard Design{% endif %}">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                </div>
+                
+                <div class="filter-dropdown mb-2 mb-md-0">
+                    <button class="dropdown-toggle d-flex align-items-center" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-sort {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
+                        {% if request.session.language == 'ar' %}ترتيب حسب{% else %}Sort By{% endif %}
+                    </button>
+                    <ul class="dropdown-menu shadow" aria-labelledby="sortDropdown">
+                        <li><a class="dropdown-item" href="?sort=price_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                            {% if request.session.language == 'ar' %}السعر (الأقل للأعلى){% else %}Price (Low to High){% endif %}
+                        </a></li>
+                        <li><a class="dropdown-item" href="?sort=price_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                            {% if request.session.language == 'ar' %}السعر (الأعلى للأقل){% else %}Price (High to Low){% endif %}
+                        </a></li>
+                        <li><a class="dropdown-item" href="?sort=year_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                            {% if request.session.language == 'ar' %}الأحدث{% else %}Newest{% endif %}
+                        </a></li>
+                        <li><a class="dropdown-item" href="?sort=year_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">
+                            {% if request.session.language == 'ar' %}الأقدم{% else %}Oldest{% endif %}
+                        </a></li>
+                    </ul>
+                </div>
+                
+                <div class="cars-count mb-2 mb-md-0">
+                    <span class="badge bg-primary rounded-pill fs-6 px-3 py-2">
+                        {{ cars.count }} 
+                        {% if request.session.language == 'ar' %}سيارة متوفرة{% else %}cars available{% endif %}
+                    </span>
+                </div>
+                
+                <button class="advanced-search-btn d-flex align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
+                    <i class="fas fa-filter {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
+                    {% if request.session.language == 'ar' %}بحث متقدم{% else %}Advanced Search{% endif %}
+                </button>
+            </div>
+        </div>
+        
+        <!-- فلاتر البحث المتقدمة (مخفية افتراضيًا) -->
+        <div class="collapse mb-4" id="advancedFilters">
+            <div class="card card-body shadow">
+                <form method="GET" action="{% url 'cars' %}" class="row g-3">
+                    {% if request.GET.category %}
+                    <input type="hidden" name="category" value="{{ request.GET.category }}">
+                    {% endif %}
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            {% if request.session.language == 'ar' %}نوع السيارة{% else %}Car Type{% endif %}
+                        </label>
+                        <select name="category" class="form-select">
+                            <option value="">{% if request.session.language == 'ar' %}كل الأنواع{% else %}All Types{% endif %}</option>
+                            {% for cat_id, cat_name in form.fields.category.choices %}
+                            {% if cat_id %}
+                            <option value="{{ cat_id }}" {% if request.GET.category == cat_id %}selected{% endif %}>{{ cat_name }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            {% if request.session.language == 'ar' %}نوع ناقل الحركة{% else %}Transmission{% endif %}
+                        </label>
+                        <select name="transmission" class="form-select">
+                            <option value="">{% if request.session.language == 'ar' %}الكل{% else %}Any{% endif %}</option>
+                            {% for trans_id, trans_name in form.fields.transmission.choices %}
+                            {% if trans_id %}
+                            <option value="{{ trans_id }}" {% if request.GET.transmission == trans_id %}selected{% endif %}>{{ trans_name }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            {% if request.session.language == 'ar' %}نوع الوقود{% else %}Fuel Type{% endif %}
+                        </label>
+                        <select name="fuel_type" class="form-select">
+                            <option value="">{% if request.session.language == 'ar' %}الكل{% else %}Any{% endif %}</option>
+                            {% for fuel_id, fuel_name in form.fields.fuel_type.choices %}
+                            {% if fuel_id %}
+                            <option value="{{ fuel_id }}" {% if request.GET.fuel_type == fuel_id %}selected{% endif %}>{{ fuel_name }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            {% if request.session.language == 'ar' %}حد السعر اليومي{% else %}Daily Price Range{% endif %}
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="min_price" placeholder="{% if request.session.language == 'ar' %}من{% else %}Min{% endif %}" value="{{ request.GET.min_price|default:'' }}">
+                            <span class="input-group-text">-</span>
+                            <input type="number" class="form-control" name="max_price" placeholder="{% if request.session.language == 'ar' %}إلى{% else %}Max{% endif %}" value="{{ request.GET.max_price|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 {% if request.session.language == 'ar' %}text-end{% else %}text-start{% endif %} mt-4">
+                        <button type="submit" class="btn btn-primary {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}">
+                            <i class="fas fa-search {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                            {% if request.session.language == 'ar' %}تطبيق الفلتر{% else %}Apply Filter{% endif %}
+                        </button>
+                        <a href="{% url 'cars' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-redo {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                            {% if request.session.language == 'ar' %}إعادة ضبط{% else %}Reset{% endif %}
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- عرض السيارات (الشبكة) -->
+        <div class="row" id="carGrid">
+            {% for car in cars %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="car-card h-100 shadow-sm">
+                    <div class="car-image-wrapper">
+                        {% if car.image %}
+                        <img src="{{ car.image.url }}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
+                        {% elif car.image_url %}
+                        <img src="{{ car.image_url }}" class="card-img-top car-image" alt="{{ car.make }} {{ car.model }}">
+                        {% else %}
+                        <img src="https://via.placeholder.com/800x500?text=No+Image" class="card-img-top car-image" alt="No image available">
+                        {% endif %}
+                        <div class="car-overlay"></div>
+                        <div class="car-price">
+                            <span class="price-tag">{{ car.daily_rate }} {% if request.session.language == 'ar' %}ريال/يوم{% else %}SAR/day{% endif %}</span>
+                        </div>
+                        {% if car.is_available %}
+                        <span class="available-badge">
+                            <i class="fas fa-check-circle {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                            {% if request.session.language == 'ar' %}متاحة{% else %}Available{% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">{{ car.make }} {{ car.model }} {{ car.year }}</h5>
+                        <div class="car-features">
+                            <span class="badge rounded-pill bg-light text-dark mb-2">
+                                <i class="fas fa-car-side {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>{{ car.get_category_display }}
+                            </span>
+                            <span class="badge rounded-pill bg-light text-dark mb-2">
+                                <i class="fas fa-gas-pump {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>{{ car.get_fuel_type_display }}
+                            </span>
+                            <span class="badge rounded-pill bg-light text-dark mb-2">
+                                <i class="fas fa-cog {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>{{ car.get_transmission_display }}
+                            </span>
+                            <span class="badge rounded-pill bg-light text-dark mb-2">
+                                <i class="fas fa-users {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>{{ car.seats }} {% if request.session.language == 'ar' %}مقاعد{% else %}seats{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0">
+                        <a href="{% url 'car_detail' car.id %}" class="btn btn-view-details w-100">
+                            <i class="fas fa-info-circle {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                            {% if request.session.language == 'ar' %}عرض التفاصيل{% else %}View Details{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 py-5 text-center">
+                <div class="py-5 my-5">
+                    <i class="fas fa-car-crash fa-4x text-muted mb-4"></i>
+                    <h3 class="mb-3">{% if request.session.language == 'ar' %}لا توجد سيارات متاحة بناءً على معايير البحث{% else %}No cars available based on your search criteria{% endif %}</h3>
+                    <p class="text-muted">{% if request.session.language == 'ar' %}يرجى تغيير معايير البحث أو{% else %}Please change your search criteria or{% endif %} 
+                    <a href="{% url 'cars' %}" class="btn btn-outline-primary mt-2">
+                        {% if request.session.language == 'ar' %}عرض جميع السيارات{% else %}view all cars{% endif %}
+                    </a>
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- عرض السيارات (القائمة) - مخفي افتراضيًا -->
+        <div class="d-none" id="carList">
+            {% for car in cars %}
+            <div class="card mb-4 overflow-hidden">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        <div class="car-image-wrapper h-100">
+                            {% if car.image %}
+                            <img src="{{ car.image.url }}" class="img-fluid rounded-start h-100 w-100 object-fit-cover" alt="{{ car.make }} {{ car.model }}">
+                            {% elif car.image_url %}
+                            <img src="{{ car.image_url }}" class="img-fluid rounded-start h-100 w-100 object-fit-cover" alt="{{ car.make }} {{ car.model }}">
+                            {% else %}
+                            <img src="https://via.placeholder.com/800x500?text=No+Image" class="img-fluid rounded-start h-100 w-100 object-fit-cover" alt="No image available">
+                            {% endif %}
+                            {% if car.is_available %}
+                            <span class="available-badge">
+                                <i class="fas fa-check-circle {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                                {% if request.session.language == 'ar' %}متاحة{% else %}Available{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h4 class="card-title fw-bold">{{ car.make }} {{ car.model }} {{ car.year }}</h4>
+                                <div class="car-price-large">{{ car.daily_rate }} {% if request.session.language == 'ar' %}ريال/يوم{% else %}SAR/day{% endif %}</div>
+                            </div>
+                            
+                            <div class="car-features mb-3">
+                                <span class="badge rounded-pill bg-light text-dark mb-2">
+                                    <i class="fas fa-car-side {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>{{ car.get_category_display }}
+                                </span>
+                                <span class="badge rounded-pill bg-light text-dark mb-2">
+                                    <i class="fas fa-gas-pump {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>{{ car.get_fuel_type_display }}
+                                </span>
+                                <span class="badge rounded-pill bg-light text-dark mb-2">
+                                    <i class="fas fa-cog {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>{{ car.get_transmission_display }}
+                                </span>
+                                <span class="badge rounded-pill bg-light text-dark mb-2">
+                                    <i class="fas fa-users {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>{{ car.seats }} {% if request.session.language == 'ar' %}مقاعد{% else %}seats{% endif %}
+                                </span>
+                            </div>
+                            
+                            <p class="card-text">{{ car.features|truncatewords:25 }}</p>
+                            
+                            <div class="d-flex justify-content-end">
+                                <a href="{% url 'car_detail' car.id %}" class="btn btn-view-details">
+                                    <i class="fas fa-info-circle {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
+                                    {% if request.session.language == 'ar' %}عرض التفاصيل{% else %}View Details{% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- ترقيم الصفحات -->
+        {% if cars.has_other_pages %}
+        <nav aria-label="Page navigation" class="my-5">
+            <ul class="pagination justify-content-center">
+                {% if cars.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cars.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link" aria-hidden="true">&laquo;</span>
+                </li>
+                {% endif %}
+                
+                {% for num in cars.paginator.page_range %}
+                    {% if cars.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > cars.number|add:'-3' and num < cars.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if cars.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cars.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link" aria-hidden="true">&raquo;</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // تبديل بين عرض الشبكة والقائمة
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        const carGrid = document.getElementById('carGrid');
+        const carList = document.getElementById('carList');
+        
+        if (gridViewBtn && listViewBtn) {
+            gridViewBtn.addEventListener('click', function() {
+                gridViewBtn.classList.add('active');
+                listViewBtn.classList.remove('active');
+                carGrid.classList.remove('d-none');
+                carList.classList.add('d-none');
+            });
+            
+            listViewBtn.addEventListener('click', function() {
+                listViewBtn.classList.add('active');
+                gridViewBtn.classList.remove('active');
+                carList.classList.remove('d-none');
+                carGrid.classList.add('d-none');
+            });
+        }
+        
+        // تفعيل تأثيرات الرسوم المتحركة عند التمرير
+        const animateCards = () => {
+            const cards = document.querySelectorAll('.car-card');
+            
+            cards.forEach(card => {
+                const cardTop = card.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+                
+                if (cardTop < windowHeight - 100) {
+                    setTimeout(() => {
+                        card.classList.add('animated');
+                    }, 100 * Math.random());
+                }
+            });
+        };
+        
+        // تنفيذ التحريك الأولي للبطاقات المرئية
+        setTimeout(animateCards, 200);
+        
+        // تنفيذ التحريك عند التمرير
+        window.addEventListener('scroll', animateCards);
+    });
+</script>
+{% endblock %}

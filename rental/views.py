@@ -595,20 +595,19 @@ def car_listing(request):
         'margin_left_class': margin_left_class,
         'favorite_car_ids': favorite_car_ids,
         'use_enhanced': use_enhanced,  # إضافة معلمة للتبديل بين الواجهتين
+        'enhanced_url': request.path + '?enhanced=true',  # رابط للتصميم المحسن
+        'standard_url': request.path + '?enhanced=false'  # رابط للتصميم القياسي
     }
 
     # استخدام قالب الواجهة المحسنة إذا تم تحديده
     if use_enhanced:
-        # إضافة قالب الواجهة المحسنة إلى قاموس التخطيط مؤقتًا
-        template_mappings = {
-            'cars.html': 'cars_django.html',  # التخطيط الأصلي
-        }
-        # تحديث القاموس مؤقتًا لاستخدام القالب المحسن
-        if hasattr(get_template_by_language, 'template_mappings'):
-            get_template_by_language.template_mappings = template_mappings
+        # استخدام القالب المحسن بالطريقة المتوافقة مع نظام i18n
+        # لكن تحديد اسم القالب مباشرة متجاوزًا نظام get_template_by_language
+        if not hasattr(request, 'session'):
+            request.session = {}
         
-        # استخدام القالب المحسن مباشرة
-        return render(request, 'cars_enhanced.html', context)
+        # نضع القالب المحسن مباشرة
+        return render(request, 'cars_enhanced_django.html', context)
     else:
         # استخدام نظام القوالب العادي
         template = get_template_by_language(request, 'cars.html')
