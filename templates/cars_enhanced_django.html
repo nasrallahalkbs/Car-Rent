@@ -77,12 +77,52 @@
         align-items: center !important;
     }
     
-    .cars-count .badge {
+    .cars-count .cars-available-btn {
         font-size: 1rem !important;
         font-weight: 600 !important;
         padding: 10px 20px !important;
         border-radius: 50px !important;
         box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2) !important;
+        transition: all 0.3s !important;
+    }
+    
+    .cars-count .cars-available-btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 15px rgba(13, 110, 253, 0.25) !important;
+    }
+    
+    /* تنسيق حقل البحث */
+    .search-box {
+        display: flex !important;
+        align-items: center !important;
+    }
+    
+    .search-box form {
+        border-radius: 50px !important;
+        overflow: hidden !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    }
+    
+    .search-box .form-control {
+        border: none !important;
+        padding: 10px 15px !important;
+        height: auto !important;
+    }
+    
+    .search-box .btn {
+        border: none !important;
+        padding: 10px 15px !important;
+    }
+    
+    /* تنسيق زر البحث المتقدم */
+    .advanced-search-btn {
+        font-weight: 600 !important;
+        transition: all 0.3s !important;
+    }
+    
+    .advanced-search-btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 15px rgba(13, 110, 253, 0.25) !important;
     }
     
     /* Fix for inline SVG icons */
@@ -172,36 +212,50 @@
                 
                 <!-- Center section: Car count - مركز في الوسط -->
                 <div class="cars-count mb-2 mb-md-0 d-flex justify-content-center align-items-center">
-                    <span class="badge bg-primary rounded-pill fs-6 px-3 py-2">
+                    <button class="btn btn-primary rounded-pill cars-available-btn">
+                        <i class="fas fa-car-side {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
                         {{ cars.count }} 
                         {% if request.session.language == 'ar' %}سيارة متوفرة{% else %}cars available{% endif %}
-                    </span>
+                    </button>
                 </div>
                 
                 <!-- Right section: Sorting and filtering -->
                 <div class="toolbar-actions d-flex align-items-center">
+                    <!-- حقل البحث الجديد -->
+                    <div class="search-box mb-2 mb-md-0 {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}">
+                        <form action="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}" method="GET" class="d-flex">
+                            <input type="hidden" name="enhanced" value="true">
+                            {% if request.GET.category %}<input type="hidden" name="category" value="{{ request.GET.category }}">{% endif %}
+                            {% if request.GET.transmission %}<input type="hidden" name="transmission" value="{{ request.GET.transmission }}">{% endif %}
+                            <input type="text" name="search" class="form-control rounded-start" placeholder="{% if request.session.language == 'ar' %}بحث...{% else %}Search...{% endif %}" value="{{ request.GET.search|default:'' }}">
+                            <button type="submit" class="btn btn-primary rounded-end">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    
                     <div class="filter-dropdown mb-2 mb-md-0 {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}">
                         <button class="dropdown-toggle d-flex align-items-center" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-sort {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
                             {% if request.session.language == 'ar' %}ترتيب حسب{% else %}Sort By{% endif %}
                         </button>
                         <ul class="dropdown-menu shadow" aria-labelledby="sortDropdown">
-                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
                                 {% if request.session.language == 'ar' %}السعر (الأقل للأعلى){% else %}Price (Low to High){% endif %}
                             </a></li>
-                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
                                 {% if request.session.language == 'ar' %}السعر (الأعلى للأقل){% else %}Price (High to Low){% endif %}
                             </a></li>
-                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
                                 {% if request.session.language == 'ar' %}الأحدث{% else %}Newest{% endif %}
                             </a></li>
-                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}">
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
                                 {% if request.session.language == 'ar' %}الأقدم{% else %}Oldest{% endif %}
                             </a></li>
                         </ul>
                     </div>
                     
-                    <button class="advanced-search-btn d-flex align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
+                    <button class="btn btn-primary rounded-pill advanced-search-btn d-flex align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
                         <i class="fas fa-filter {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
                         {% if request.session.language == 'ar' %}بحث متقدم{% else %}Advanced Search{% endif %}
                     </button>
