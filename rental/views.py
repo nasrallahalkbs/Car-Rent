@@ -871,8 +871,13 @@ def user_2fa_setup(request):
         
         # إعداد المصادقة الثنائية
         if action == 'setup_2fa':
+            # إعداد TOTP وإنشاء السر
             security = setup_2fa_for_user(request.user)
+            
+            # إنشاء رمز QR باستخدام السر
             qr_code = generate_qr_code_image(request.user)
+            
+            # الحصول على رموز النسخ الاحتياطية
             backup_codes = security.backup_codes
             
             # تفعيل المصادقة الثنائية مباشرة
@@ -890,6 +895,11 @@ def user_2fa_setup(request):
             
             messages.success(request, _("تم تعطيل المصادقة الثنائية."))
     
+    # إذا كانت المصادقة الثنائية مفعلة بالفعل، نعرض رمز QR في أي زيارة للصفحة
+    if security.two_factor_enabled and security.totp_secret:
+        qr_code = generate_qr_code_image(request.user)
+        backup_codes = security.backup_codes
+        
     # عرض صفحة إعداد المصادقة الثنائية
     context = {
         'security': security,
