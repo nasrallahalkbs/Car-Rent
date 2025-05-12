@@ -872,21 +872,24 @@ def get_car_by_reservation(request):
             'info': response_data['car_info']
         }
         
-        # تحويل أي قيم Decimal إلى float لتكون قابلة للتحويل إلى JSON
-        def decimal_to_float(obj):
-            if isinstance(obj, dict):
-                return {k: decimal_to_float(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [decimal_to_float(item) for item in obj]
-            elif isinstance(obj, Decimal):
-                return float(obj)
-            else:
-                return obj
+        # معالجة القيم العشرية بشكل مباشر بدون استخدام تحويل JSON المعقد
+        # تحويل أي قيم Decimal محددة إلى float في response_data
+        if 'total_amount' in response_data and isinstance(response_data.get('total_amount'), Decimal):
+            response_data['total_amount'] = float(response_data['total_amount'])
+            
+        if 'daily_rate' in car_info and isinstance(car_info.get('daily_rate'), Decimal):
+            car_info['daily_rate'] = float(car_info['daily_rate'])
+            
+        # معالجة أي قيم عشرية أخرى قد تكون موجودة
+        for key, value in response_data.items():
+            if isinstance(value, Decimal):
+                response_data[key] = float(value)
         
-        # تحويل جميع القيم في response_data
-        response_data = decimal_to_float(response_data)
-        
-        print(f"تم تحويل القيم العشرية إلى قيم عائمة للسماح بالتحويل إلى JSON")
+        for key, value in car_info.items():
+            if isinstance(value, Decimal):
+                car_info[key] = float(value)
+                
+        print(f"✅ تم معالجة القيم العشرية مباشرة")
         return JsonResponse(response_data)
     
     except Reservation.DoesNotExist:
