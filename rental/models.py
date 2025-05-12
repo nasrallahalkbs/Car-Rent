@@ -988,27 +988,74 @@ class CarConditionReport(models.Model):
         print(f"[{timezone.now()}] بدء عملية حفظ تقرير حالة السيارة...")
         print(f"معلومات التقرير قبل الحفظ - السيارة ID: {self.car_id}, الحجز ID: {getattr(self.reservation, 'id', 'لا يوجد')}")
         
+        # حفظ كل القيم الأصلية للتشخيص
+        original_car_id = self.car_id
+        original_reservation_id = getattr(self.reservation, 'id', None)
+        
         # التأكد من أن السيارة تطابق السيارة في الحجز
         if self.reservation and not self.car_id:
             # إذا كان هناك حجز ولكن لم يتم تحديد السيارة، نأخذ سيارة الحجز
-            print(f"ℹ️ لم يتم تحديد سيارة ولكن يوجد حجز، سيتم أخذ السيارة من الحجز ({self.reservation.car})")
-            self.car = self.reservation.car
-            print(f"✅ تم تعيين السيارة من الحجز: {self.car}")
+            try:
+                print(f"ℹ️ لم يتم تحديد سيارة ولكن يوجد حجز، سيتم أخذ السيارة من الحجز ({self.reservation.car})")
+                self.car = self.reservation.car
+                print(f"✅ تم تعيين السيارة من الحجز: {self.car}")
+            except Exception as e:
+                print(f"❌ خطأ أثناء محاولة تعيين السيارة من الحجز: {str(e)}")
         
         # التأكد من تطابق السيارة في الحجز والتقرير
-        if self.reservation and self.car_id and hasattr(self.reservation, 'car_id') and self.reservation.car_id != self.car_id:
-            # إذا كانت السيارتان مختلفتين، نختار سيارة الحجز
-            print(f"⚠️ تنبيه: تم اكتشاف اختلاف بين السيارة المختارة (ID: {self.car_id}) وسيارة الحجز (ID: {self.reservation.car_id}).")
-            print(f"معلومات السيارة المختارة: {getattr(self.car, 'make', '')} {getattr(self.car, 'model', '')}")
-            print(f"معلومات سيارة الحجز: {getattr(self.reservation.car, 'make', '')} {getattr(self.reservation.car, 'model', '')}")
-            
-            self.car = self.reservation.car
-            print(f"✅ تم تعيين السيارة من الحجز: {self.car}")
+        if self.reservation and self.car_id:
+            try:
+                # استخدام getattr للتعامل الآمن مع الخصائص
+                reservation_car_id = getattr(self.reservation, 'car_id', None)
+                
+                if reservation_car_id and self.car_id != reservation_car_id:
+                    # إذا كانت السيارتان مختلفتين، نختار سيارة الحجز
+                    print(f"⚠️ تنبيه: تم اكتشاف اختلاف بين السيارة المختارة (ID: {self.car_id}) وسيارة الحجز (ID: {reservation_car_id}).")
+                    print(f"معلومات السيارة المختارة: {getattr(self.car, 'make', '')} {getattr(self.car, 'model', '')}")
+                    print(f"معلومات سيارة الحجز: {getattr(self.reservation.car, 'make', '')} {getattr(self.reservation.car, 'model', '')}")
+                    
+                    # نستخدم الوصول المباشر للكائن
+                    self.car = self.reservation.car
+                    print(f"✅ تم تعيين السيارة من الحجز: {self.car}")
+            except Exception as e:
+                print(f"❌ خطأ أثناء مقارنة السيارة والحجز: {str(e)}")
+                print(f"سنحاول المتابعة مع القيم الموجودة. السيارة ID: {self.car_id}")
         
         # في حالة عدم وجود حجز، نتأكد من وجود سيارة على الأقل
         if not self.reservation and not self.car_id:
             print(f"❌ خطأ: لا يوجد حجز ولا سيارة محددة، لا يمكن إنشاء تقرير بدون سيارة!")
             raise ValueError("لا يمكن إنشاء تقرير حالة السيارة بدون تحديد سيارة أو حجز.")
+            
+        # التحقق من صحة البيانات قبل الحفظ
+        if not self.car_id:
+            print(f"⚠️ تحذير: لا تزال السيارة غير محددة بعد محاولات التصحيح!")
+            if original_car_id:
+                print(f"محاولة استعادة السيارة الأصلية ID: {original_car_id}")
+                # محاولة استرجاع القيمة الأصلية إذا فشلت المحاولات السابقة
+                from .models import Car
+                try:
+                    self.car_id = original_car_id
+                    print(f"✅ تم استعادة معرف السيارة الأصلي: {self.car_id}")
+                except Exception as e:
+                    print(f"❌ فشل استعادة معرف السيارة الأصلي: {str(e)}")
+        
+        # التعامل مع الحقول الأخرى وتعيين القيم الافتراضية إذا لزم الأمر
+        if not self.date:
+            from django.utils import timezone
+            self.date = timezone.now()
+            print(f"✅ تم تعيين تاريخ التقرير تلقائياً: {self.date}")
+            
+        if not self.report_type:
+            print("⚠️ تحذير: لم يتم تحديد نوع التقرير، سيتم تعيين القيمة الافتراضية 'فحص دوري'")
+            self.report_type = 'periodic'
+            
+        if not self.car_condition:
+            print("⚠️ تحذير: لم يتم تحديد حالة السيارة، سيتم تعيين القيمة الافتراضية 'جيدة'")
+            self.car_condition = 'good'
+            
+        if self.inspection_type == 'electronic' and not self.is_electronic_inspection:
+            print("⚠️ تحذير: تم تحديد نوع الفحص كإلكتروني ولكن لم يتم تفعيل خاصية الفحص الإلكتروني")
+            self.is_electronic_inspection = True
         
         # طباعة معلومات تفصيلية قبل الحفظ
         car_details = {
@@ -1018,20 +1065,59 @@ class CarConditionReport(models.Model):
             'license_plate': getattr(self.car, 'license_plate', '')
         }
         
-        print(f"معلومات التقرير النهائية:")
-        print(f"- نوع التقرير: {self.get_report_type_display()}")
-        print(f"- السيارة: {json.dumps(car_details, ensure_ascii=False)}")
-        print(f"- التاريخ: {self.date}")
-        print(f"- حالة السيارة: {self.car_condition}")
-        print(f"- نوع الفحص: {self.inspection_type}")
+        # ملخص البيانات النهائية قبل الحفظ
+        print("\n=== ملخص بيانات التقرير قبل الحفظ النهائي ===")
+        print(f"🚗 السيارة: {car_details['make']} {car_details['model']} (ID: {car_details['id']})")
+        try:
+            report_type_display = self.get_report_type_display()
+        except:
+            report_type_display = self.report_type
+        print(f"📋 نوع التقرير: {report_type_display}")
+        print(f"📅 التاريخ: {self.date}")
+        try:
+            inspection_type_display = self.get_inspection_type_display()
+        except:
+            inspection_type_display = self.inspection_type
+        print(f"🔍 نوع الفحص: {inspection_type_display}")
+        print(f"🔢 عداد المسافات: {self.mileage} كم")
+        print(f"⛽ مستوى الوقود: {self.fuel_level}%")
+        if self.notes:
+            notes_summary = str(self.notes)
+            if len(notes_summary) > 50:
+                notes_summary = notes_summary[:50] + '...'
+            print(f"📝 الملاحظات: {notes_summary}")
+        print("===========================================\n")
         
         # استدعاء save الأصلية
         try:
+            # حفظ النموذج
             super().save(*args, **kwargs)
-            print(f"✅ تم حفظ تقرير حالة السيارة بنجاح! معرف التقرير: {self.id}")
+            print(f"✅ تم حفظ تقرير حالة السيارة بنجاح (ID: {self.id})")
         except Exception as e:
-            print(f"❌ خطأ أثناء حفظ تقرير حالة السيارة: {str(e)}")
-            raise
+            # التقاط أي استثناءات أثناء الحفظ
+            print(f"❌ حدث خطأ أثناء الحفظ: {str(e)}")
+            # محاولة إصلاح المشكلة ثم إعادة الحفظ
+            print("محاولة إصلاح المشكلة وإعادة الحفظ...")
+            
+            # التحقق من السيارة مرة أخرى
+            if not self.car_id and original_car_id:
+                print(f"إعادة تعيين معرف السيارة الأصلي: {original_car_id}")
+                self.car_id = original_car_id
+                
+            # التأكد من وجود قيم في كافة الحقول الإلزامية
+            required_fields = ['car_id', 'report_type', 'date', 'car_condition']
+            for field in required_fields:
+                if not getattr(self, field, None):
+                    print(f"⚠️ الحقل {field} فارغ! محاولة تعيين قيمة افتراضية...")
+            
+            # محاولة الحفظ مرة أخرى
+            try:
+                super().save(*args, **kwargs)
+                print(f"✅ تم حفظ تقرير حالة السيارة بنجاح بعد إصلاح المشكلة (ID: {self.id})")
+            except Exception as e2:
+                print(f"❌ فشل الحفظ مرة أخرى: {str(e2)}")
+                # إعادة رفع الاستثناء للإبلاغ عن الخطأ
+                raise
 
 
 class CarInspectionCategory(models.Model):

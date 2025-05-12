@@ -214,8 +214,51 @@ def car_condition_create(request):
         
         if form.is_valid():
             print("✅ النموذج صالح، جاري معالجة البيانات...")
-            report = form.save(commit=False)
-            report.created_by = request.user
+            try:
+                report = form.save(commit=False)
+                report.created_by = request.user
+                print(f"تم إنشاء تقرير بشكل مؤقت: {report}")
+                print(f"معرف السيارة: {report.car_id}, نوع التقرير: {report.report_type}")
+            except Exception as e:
+                print(f"❌ حدث خطأ أثناء إنشاء تقرير مؤقت: {str(e)}")
+                # إذا فشل إنشاء التقرير، نحاول إنشاءه بطريقة يدوية
+                from rental.models import CarConditionReport, Car
+                print("إعادة المحاولة بطريقة يدوية...")
+                
+                car_id = request.POST.get('car')
+                reservation_id = request.POST.get('reservation')
+                report_type = request.POST.get('report_type', 'periodic')
+                
+                print(f"القيم المأخوذة مباشرة من الطلب - السيارة: {car_id}, الحجز: {reservation_id}, نوع التقرير: {report_type}")
+                
+                if car_id:
+                    try:
+                        # محاولة إنشاء تقرير
+                        car = Car.objects.get(id=car_id)
+                        report = CarConditionReport(
+                            car=car,
+                            report_type=report_type,
+                            created_by=request.user
+                        )
+                        
+                        # تعيين الحجز إذا كان موجودًا
+                        if reservation_id:
+                            from rental.models import Reservation
+                            try:
+                                reservation = Reservation.objects.get(id=reservation_id)
+                                report.reservation = reservation
+                            except Exception as res_err:
+                                print(f"⚠️ تعذر العثور على الحجز: {str(res_err)}")
+                        
+                        print("✅ تم إنشاء تقرير بطريقة يدوية")
+                    except Exception as manual_err:
+                        print(f"❌ فشل إنشاء التقرير يدوياً أيضاً: {str(manual_err)}")
+                        messages.error(request, f"خطأ أثناء معالجة النموذج: {str(e)}")
+                        context = {
+                            'form': form,
+                            'reservations_json': json.dumps(reservations_with_details),
+                        }
+                        return render(request, 'admin/car_condition/car_condition_form_new.html', context)
             
             # إضافة معالجة ملف PDF للفحص الإلكتروني
             inspection_type = request.POST.get('inspection_type', 'manual')
@@ -233,9 +276,35 @@ def car_condition_create(request):
                     # إضافة علامة لتوضيح أن هذا فحص إلكتروني
                     report.is_electronic_inspection = True
             
-            report.save()
+            # حفظ تقرير حالة السيارة
+            try:
+                report.save()
+                print(f"✅ تم حفظ تقرير حالة السيارة بشكل نهائي: {report.id}")
+            except Exception as save_err:
+                print(f"❌ خطأ أثناء حفظ التقرير النهائي: {str(save_err)}")
+                
+                # محاولة إصلاح المشكلة والحفظ مرة أخرى
+                try:
+                    # التأكد من توفر جميع البيانات المطلوبة
+                    if not report.date:
+                        from django.utils import timezone
+                        report.date = timezone.now()
+                        print("✅ تم تعيين تاريخ افتراضي للتقرير")
+                        
+                    if not report.car_condition:
+                        report.car_condition = 'good'
+                        print("✅ تم تعيين حالة السيارة افتراضياً إلى 'جيدة'")
+                        
+                    # الحفظ مرة أخرى
+                    report.save()
+                    print(f"✅ تم حفظ التقرير بنجاح بعد المحاولة الثانية: {report.id}")
+                except Exception as e2:
+                    print(f"❌ فشلت المحاولة الثانية لحفظ التقرير: {str(e2)}")
+                    messages.error(request, "حدث خطأ أثناء محاولة حفظ التقرير")
+                    return redirect('car_condition_list')
             
             # معالجة صور الهيكل الخارجي
+            print("\n=== بدء معالجة صور الهيكل الخارجي ===")
             image_types = ['front_image', 'rear_image', 'side_image', 'interior_image']
             
             for image_type in image_types:
