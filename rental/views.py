@@ -599,11 +599,20 @@ def car_listing(request):
 
     # استخدام قالب الواجهة المحسنة إذا تم تحديده
     if use_enhanced:
-        template_name = 'cars_enhanced.html'
+        # إضافة قالب الواجهة المحسنة إلى قاموس التخطيط مؤقتًا
+        template_mappings = {
+            'cars.html': 'cars_django.html',  # التخطيط الأصلي
+        }
+        # تحديث القاموس مؤقتًا لاستخدام القالب المحسن
+        if hasattr(get_template_by_language, 'template_mappings'):
+            get_template_by_language.template_mappings = template_mappings
+        
+        # استخدام القالب المحسن مباشرة
+        return render(request, 'cars_enhanced.html', context)
     else:
-        template_name = 'cars.html'
-    
-    return render(request, template_name, context)
+        # استخدام نظام القوالب العادي
+        template = get_template_by_language(request, 'cars.html')
+        return render(request, template, context)
 
 def car_detail(request, car_id):
     """Car detail page with reservation form"""
