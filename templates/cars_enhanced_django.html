@@ -92,37 +92,93 @@
     }
     
     /* تنسيق حقل البحث */
-    .search-box {
+    .search-box, .search-box-wrapper {
         display: flex !important;
         align-items: center !important;
     }
     
-    .search-box form {
+    .search-box form, .search-form-top {
         border-radius: 50px !important;
         overflow: hidden !important;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        width: 450px !important;
+        max-width: 100% !important;
     }
     
-    .search-box .form-control {
+    .search-box .form-control, .search-input {
         border: none !important;
-        padding: 10px 15px !important;
+        padding: 12px 20px !important;
         height: auto !important;
+        flex: 1 !important;
     }
     
-    .search-box .btn {
+    .search-box .btn, .search-button {
         border: none !important;
-        padding: 10px 15px !important;
+        padding: 12px 20px !important;
+        background-color: #0d6efd !important;
+        color: white !important;
+    }
+    
+    .search-bar-top {
+        margin-bottom: 30px !important;
     }
     
     /* تنسيق زر البحث المتقدم */
     .advanced-search-btn {
         font-weight: 600 !important;
         transition: all 0.3s !important;
+        background-color: #0d6efd !important;
+        color: white !important;
+        box-shadow: 0 3px 8px rgba(13, 110, 253, 0.2) !important;
     }
     
     .advanced-search-btn:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 6px 15px rgba(13, 110, 253, 0.25) !important;
+        background-color: #0b5ed7 !important;
+    }
+    
+    /* تنسيق زر الترتيب */
+    .sort-button {
+        padding: 10px 16px !important;
+        background-color: white !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+        border-radius: 50px !important;
+        color: #333 !important;
+        font-weight: 500 !important;
+        transition: all 0.3s !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
+    }
+    
+    .sort-button:hover {
+        background-color: #f8f9fa !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important;
+    }
+    
+    /* تنسيق أزرار التبديل بين أنماط العرض */
+    .view-switch .btn {
+        width: 40px !important;
+        height: 40px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background-color: white !important;
+        border-radius: 8px !important;
+        color: #6c757d !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+        transition: all 0.3s !important;
+    }
+    
+    .view-switch .btn:hover {
+        background-color: #f8f9fa !important;
+        color: #0d6efd !important;
+    }
+    
+    .view-switch .btn.active {
+        background-color: #0d6efd !important;
+        color: white !important;
+        border-color: #0d6efd !important;
     }
     
     /* Fix for inline SVG icons */
@@ -171,6 +227,21 @@
         <!-- تم إزالة عنوان الصفحة -->
         <div class="d-none"></div>
         
+        <!-- حقل البحث الآن أعلى الفئات -->
+        <div class="search-bar-top mb-4 animate__animated animate__fadeIn">
+            <div class="search-box-wrapper d-flex justify-content-center">
+                <form action="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}" method="GET" class="d-flex search-form-top">
+                    <input type="hidden" name="enhanced" value="true">
+                    {% if request.GET.category %}<input type="hidden" name="category" value="{{ request.GET.category }}">{% endif %}
+                    {% if request.GET.transmission %}<input type="hidden" name="transmission" value="{{ request.GET.transmission }}">{% endif %}
+                    <input type="text" name="search" class="form-control search-input" placeholder="{% if request.session.language == 'ar' %}بحث...{% else %}Search...{% endif %}" value="{{ request.GET.search|default:'' }}">
+                    <button type="submit" class="btn btn-primary search-button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
         <!-- أزرار فئات السيارات بتصميم محسن -->
         <div class="category-filters text-center mb-5 animate__animated animate__fadeIn">
             <div class="d-flex flex-wrap justify-content-center">
@@ -210,46 +281,29 @@
                     </div>
                 </div>
                 
-                <!-- Center section: Car count - مركز في الوسط -->
-                <div class="cars-count mb-2 mb-md-0 d-flex justify-content-center align-items-center">
-                    <button class="btn btn-primary rounded-pill cars-available-btn">
-                        <i class="fas fa-car-side {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i>
-                        {{ cars.count }} 
-                        {% if request.session.language == 'ar' %}سيارة متوفرة{% else %}cars available{% endif %}
-                    </button>
+                <!-- Center section (empty now - removed cars available) -->
+                <div class="center-toolbar mb-2 mb-md-0">
+                    <!-- مساحة فارغة في المنتصف -->
                 </div>
                 
                 <!-- Right section: Sorting and filtering -->
                 <div class="toolbar-actions d-flex align-items-center">
-                    <!-- حقل البحث الجديد -->
-                    <div class="search-box mb-2 mb-md-0 {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}">
-                        <form action="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}" method="GET" class="d-flex">
-                            <input type="hidden" name="enhanced" value="true">
-                            {% if request.GET.category %}<input type="hidden" name="category" value="{{ request.GET.category }}">{% endif %}
-                            {% if request.GET.transmission %}<input type="hidden" name="transmission" value="{{ request.GET.transmission }}">{% endif %}
-                            <input type="text" name="search" class="form-control rounded-start" placeholder="{% if request.session.language == 'ar' %}بحث...{% else %}Search...{% endif %}" value="{{ request.GET.search|default:'' }}">
-                            <button type="submit" class="btn btn-primary rounded-end">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </form>
-                    </div>
-                    
                     <div class="filter-dropdown mb-2 mb-md-0 {% if request.session.language == 'ar' %}ms-2{% else %}me-2{% endif %}">
-                        <button class="dropdown-toggle d-flex align-items-center" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="dropdown-toggle d-flex align-items-center sort-button" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-sort {% if request.session.language == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
                             {% if request.session.language == 'ar' %}ترتيب حسب{% else %}Sort By{% endif %}
                         </button>
                         <ul class="dropdown-menu shadow" aria-labelledby="sortDropdown">
-                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}&enhanced=true{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
                                 {% if request.session.language == 'ar' %}السعر (الأقل للأعلى){% else %}Price (Low to High){% endif %}
                             </a></li>
-                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=price_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}&enhanced=true{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
                                 {% if request.session.language == 'ar' %}السعر (الأعلى للأقل){% else %}Price (High to Low){% endif %}
                             </a></li>
-                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_desc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}&enhanced=true{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
                                 {% if request.session.language == 'ar' %}الأحدث{% else %}Newest{% endif %}
                             </a></li>
-                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.enhanced %}&enhanced={{ request.GET.enhanced }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <li><a class="dropdown-item" href="{% if request.session.language == 'ar' %}{% url 'cars_ar' %}{% else %}{% url 'cars' %}{% endif %}?sort=year_asc{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}&enhanced=true{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
                                 {% if request.session.language == 'ar' %}الأقدم{% else %}Oldest{% endif %}
                             </a></li>
                         </ul>
