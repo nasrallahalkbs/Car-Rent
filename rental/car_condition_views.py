@@ -198,16 +198,8 @@ def car_condition_create(request):
         if not request.POST.get('report_type'):
             print("⚠️ تحذير: لم يتم تحديد نوع التقرير في البيانات المرسلة")
         
-        # تحويل البيانات من JSON إذا كانت موجودة
-        for key, value in request.POST.items():
-            if isinstance(value, str) and value.strip().startswith('{') and value.strip().endswith('}'):
-                try:
-                    import json
-                    parsed_value = json.loads(value)
-                    print(f"تم تحويل قيمة الحقل {key} من JSON: {parsed_value}")
-                    # يمكن هنا تعديل request.POST لتغيير القيمة، ولكن هذا ليس ممكنًا مباشرة
-                except json.JSONDecodeError:
-                    print(f"فشل تحويل قيمة الحقل {key} من JSON")
+        # لن نحاول تحويل البيانات من JSON بعد الآن، بل سنتعامل مع الحقول مباشرة
+        print("تجاهل تماماً أي محاولة لمعالجة بيانات JSON والتعامل مع القيم العادية فقط")
         
         # إنشاء نموذج جديد مع البيانات المرسلة
         form = CarConditionReportForm(request.POST, request.FILES, user=request.user, initial=initial_data)
@@ -409,17 +401,9 @@ def car_condition_create(request):
                                 print(f"  - الملاحظات: {notes_field}")
                                 print(f"  - بحاجة للإصلاح: {needs_repair_field}")
                                 
-                                # تحويل قيمة condition إذا كانت من نوع JSON
+                                # نستخدم القيمة المرسلة مباشرة بدون تحويل من JSON
                                 condition_value = value
-                                if isinstance(value, str) and value.strip().startswith('{') and value.strip().endswith('}'):
-                                    try:
-                                        import json
-                                        condition_data = json.loads(value)
-                                        if 'condition' in condition_data:
-                                            condition_value = condition_data['condition']
-                                            print(f"  تم تحويل قيمة الحالة من JSON: {condition_value}")
-                                    except json.JSONDecodeError:
-                                        print(f"  فشل تحويل قيمة الحالة من JSON: {value}")
+                                print(f"  استخدام قيمة الحالة مباشرة: {condition_value}")
                                 
                                 # إنشاء تفاصيل الفحص
                                 try:
