@@ -35,6 +35,8 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
+    path('profile/2fa-setup/', views.user_2fa_setup, name='user_2fa_setup'),
+    path('ar/profile/2fa-setup/', views.user_2fa_setup, name='user_2fa_setup_ar'),
     path('cars/', views.car_listing, name='cars'),
     path('ar/cars/', views.car_listing, name='cars_ar'),
     path('car/<int:car_id>/', views.car_detail, name='car_detail'),
@@ -85,6 +87,8 @@ urlpatterns = [
     # Admin views
     path('dashboard/', admin_views.admin_index, name='admin_index'),
     path('dashboard/profile/', admin_views.admin_profile, name='admin_profile'),
+    path('dashboard/profile/2fa-setup/', admin_views.admin_2fa_setup, name='admin_2fa_setup'),
+    path('ar/dashboard/profile/2fa-setup/', admin_views.admin_2fa_setup, name='admin_2fa_setup_ar'),
     path('dashboard/cars/', admin_views.admin_cars, name='admin_cars'),
     path('dashboard/cars/add/', admin_views.add_car, name='add_car'),
     path('dashboard/cars/<int:car_id>/edit/', admin_views.edit_car, name='edit_car'),

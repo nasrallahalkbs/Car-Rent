@@ -1,0 +1,247 @@
+{% extends "admin/enhanced/admin_layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "إعداد المصادقة الثنائية" %} - {% trans "لوحة تحكم المسؤول" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .setup-2fa-section {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    
+    .setup-2fa-header {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        padding: 2rem;
+        position: relative;
+    }
+    
+    .setup-2fa-header h3 {
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+    
+    .setup-2fa-header p {
+        margin-bottom: 0;
+        opacity: 0.8;
+    }
+    
+    .setup-2fa-body {
+        padding: 2rem;
+    }
+    
+    .qr-code-container {
+        max-width: 240px;
+        margin: 0 auto 2rem;
+    }
+    
+    .qr-code-container img {
+        width: 100%;
+        height: auto;
+    }
+    
+    .backup-codes-container {
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        background-color: #f8fafc;
+    }
+    
+    .backup-code {
+        font-family: monospace;
+        font-size: 1.1rem;
+        padding: 0.5rem;
+        background-color: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.25rem;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .setup-steps {
+        counter-reset: step;
+        margin-bottom: 2rem;
+    }
+    
+    .setup-step {
+        position: relative;
+        padding-right: 2.5rem;
+        margin-bottom: 1.5rem;
+        min-height: 2rem;
+    }
+    
+    .setup-step:before {
+        counter-increment: step;
+        content: counter(step);
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 2rem;
+        height: 2rem;
+        background-color: #6366f1;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+    
+    .setup-step-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #0f172a;
+    }
+    
+    .setup-step-desc {
+        color: #64748b;
+    }
+    
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 2rem;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: white;
+    }
+    
+    .warning-text {
+        background-color: #fffbeb;
+        border-right: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_index' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'admin_profile' %}">{% trans "الملف الشخصي" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "إعداد المصادقة الثنائية" %}</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-4">{% trans "إعداد المصادقة الثنائية" %}</h1>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="setup-2fa-section">
+                <div class="setup-2fa-header">
+                    <h3>{% trans "المصادقة الثنائية" %}</h3>
+                    <p>{% trans "زيادة أمان حسابك من خلال إضافة طبقة حماية إضافية" %}</p>
+                </div>
+                <div class="setup-2fa-body">
+                    {% if security.two_factor_enabled %}
+                        <div class="text-center mb-4">
+                            <div class="success-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <h4>{% trans "المصادقة الثنائية مفعلة" %}</h4>
+                            <p class="text-muted">{% trans "حسابك مؤمن الآن بطبقة حماية إضافية." %}</p>
+                        </div>
+                        
+                        <div class="warning-text mb-4">
+                            <p class="mb-0"><strong>{% trans "هام:" %}</strong> {% trans "إذا فقدت جهازك أو تطبيق المصادقة الخاص بك، يمكنك استخدام أكواد النسخ الاحتياطية للوصول إلى حسابك. احتفظ بها في مكان آمن." %}</p>
+                        </div>
+                        
+                        <form method="post" class="mb-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="disable_2fa">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('{% trans "هل أنت متأكد من رغبتك في تعطيل المصادقة الثنائية؟ سيقلل ذلك من أمان حسابك." %}');">
+                                    <i class="fas fa-lock-open me-2"></i> {% trans "تعطيل المصادقة الثنائية" %}
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="setup-steps">
+                            <div class="setup-step">
+                                <div class="setup-step-title">{% trans "قم بتنزيل تطبيق المصادقة" %}</div>
+                                <div class="setup-step-desc">
+                                    {% trans "قم بتنزيل وتثبيت تطبيق المصادقة في هاتفك الذكي مثل Google Authenticator أو Microsoft Authenticator أو Authy." %}
+                                </div>
+                            </div>
+                            <div class="setup-step">
+                                <div class="setup-step-title">{% trans "مسح رمز QR" %}</div>
+                                <div class="setup-step-desc">
+                                    {% trans "افتح تطبيق المصادقة في هاتفك وقم بمسح رمز QR الذي سيظهر بعد النقر على زر التفعيل." %}
+                                </div>
+                            </div>
+                            <div class="setup-step">
+                                <div class="setup-step-title">{% trans "نسخ أكواد النسخ الاحتياطية" %}</div>
+                                <div class="setup-step-desc">
+                                    {% trans "قم بنسخ أكواد النسخ الاحتياطية وتخزينها في مكان آمن. ستحتاج إليها في حال فقدت جهازك أو تطبيق المصادقة." %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form method="post" class="mb-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="setup_2fa">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-shield-alt me-2"></i> {% trans "تفعيل المصادقة الثنائية" %}
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="warning-text">
+                            <p class="mb-0"><strong>{% trans "هام:" %}</strong> {% trans "بعد تفعيل المصادقة الثنائية، ستحتاج إلى إدخال رمز من تطبيق المصادقة في كل مرة تسجل فيها الدخول." %}</p>
+                        </div>
+                    {% endif %}
+                    
+                    {% if qr_code %}
+                        <h4 class="mb-3 mt-5">{% trans "امسح رمز QR باستخدام تطبيق المصادقة" %}</h4>
+                        <div class="qr-code-container mb-4">
+                            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid">
+                        </div>
+                    {% endif %}
+                    
+                    {% if backup_codes %}
+                        <h4 class="mb-3">{% trans "رموز النسخ الاحتياطية" %}</h4>
+                        <div class="warning-text mb-3">
+                            <p class="mb-0"><strong>{% trans "تحذير:" %}</strong> {% trans "احتفظ بهذه الرموز في مكان آمن. ستظهر لك مرة واحدة فقط." %}</p>
+                        </div>
+                        <div class="backup-codes-container">
+                            <div class="row g-2">
+                                {% for code in backup_codes %}
+                                    <div class="col-6">
+                                        <div class="backup-code">{{ code }}</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

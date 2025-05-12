@@ -348,6 +348,48 @@
             </span>
           </div>
         </div>
+        
+        <!-- إضافة قسم المصادقة الثنائية -->
+        <div class="mt-3 mb-3">
+          <div class="security-section py-3">
+            <h5 class="text-center mb-3">
+              {% if is_english %}
+                Two-Factor Authentication 
+              {% else %}
+                المصادقة الثنائية
+              {% endif %}
+            </h5>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="security-status">
+                {% if user.security.two_factor_enabled %}
+                  <span class="badge bg-success rounded-pill">
+                    <i class="fas fa-shield-alt {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
+                    {% if is_english %}Enabled{% else %}مفعّلة{% endif %}
+                  </span>
+                {% else %}
+                  <span class="badge bg-warning rounded-pill">
+                    <i class="fas fa-exclamation-triangle {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
+                    {% if is_english %}Disabled{% else %}معطلة{% endif %}
+                  </span>
+                {% endif %}
+              </span>
+              <form method="post" action="{% url 'user_2fa_setup' %}">
+                {% csrf_token %}
+                {% if user.security.two_factor_enabled %}
+                  <button type="submit" name="action" value="disable_2fa" class="btn btn-sm btn-danger">
+                    <i class="fas fa-lock-open {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
+                    {% if is_english %}Disable{% else %}تعطيل{% endif %}
+                  </button>
+                {% else %}
+                  <button type="submit" name="action" value="setup_2fa" class="btn btn-sm btn-primary">
+                    <i class="fas fa-shield-alt {% if is_rtl %}ms-1{% else %}me-1{% endif %}"></i>
+                    {% if is_english %}Enable{% else %}تفعيل{% endif %}
+                  </button>
+                {% endif %}
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

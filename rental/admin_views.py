@@ -14,6 +14,8 @@ from django.utils.translation import get_language, gettext as _
 from django.conf import settings
 from .models import User, Car, Reservation, CartItem, SiteSettings, Document, ArchiveFolder
 from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm, SiteSettingsForm
+from .security import setup_2fa_for_user, disable_2fa_for_user, generate_qr_code_image
+from .security_models import UserSecurity
 from functools import wraps
 from datetime import datetime, date, timedelta
 import uuid
@@ -4289,10 +4291,59 @@ def admin_profile(request):
     if hasattr(admin_user, 'activities'):
         admin_activities = admin_user.activities.all().order_by('-id')[:10]
     
+    # الحصول على معلومات المصادقة الثنائية
+    security, created = UserSecurity.objects.get_or_create(user=request.user)
+    
     context = {
         'admin_user': admin_user,
         'stats': stats,
         'admin_activities': admin_activities,
+        'security': security,
     }
     
     return render(request, 'admin/admin_profile.html', context)
+
+@login_required
+@admin_required
+def admin_2fa_setup(request):
+    """إعداد المصادقة الثنائية للمشرف"""
+    # التحقق من وجود معلومات أمان للمستخدم أو إنشائها
+    security, created = UserSecurity.objects.get_or_create(user=request.user)
+    
+    # الحصول على بيانات QR ورموز النسخ الاحتياطية
+    qr_code = None
+    backup_codes = None
+    
+    # معالجة إجراءات المشرف
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # إعداد المصادقة الثنائية
+        if action == 'setup_2fa':
+            security = setup_2fa_for_user(request.user)
+            qr_code = generate_qr_code_image(request.user)
+            backup_codes = security.backup_codes
+            
+            # تفعيل المصادقة الثنائية مباشرة
+            security.two_factor_enabled = True
+            security.save(update_fields=['two_factor_enabled'])
+            
+            messages.success(request, _("تم تفعيل المصادقة الثنائية بنجاح. قم بمسح رمز QR باستخدام تطبيق التحقق."))
+            
+        # تعطيل المصادقة الثنائية
+        elif action == 'disable_2fa':
+            security.two_factor_enabled = False
+            security.totp_secret = None
+            security.backup_codes = []
+            security.save()
+            
+            messages.success(request, _("تم تعطيل المصادقة الثنائية."))
+    
+    # عرض صفحة إعداد المصادقة الثنائية
+    context = {
+        'security': security,
+        'qr_code': qr_code,
+        'backup_codes': backup_codes,
+    }
+    
+    return render(request, 'admin/admin_2fa_setup.html', context)

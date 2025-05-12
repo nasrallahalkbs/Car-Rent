@@ -9,6 +9,8 @@ from django.db.models import Q, Avg, Count
 from django.core.paginator import Paginator
 from django.conf import settings
 from django.utils.translation import gettext as _
+from rental.security import setup_2fa_for_user, disable_2fa_for_user, generate_qr_code_image
+from rental.security_models import UserSecurity
 from .forms import LoginForm, RegisterForm, CarSearchForm, ReservationForm, CheckoutForm, ReviewForm, ProfileForm, PasswordChangeForm
 from .models import User, Car, Reservation, Review, CartItem, FavoriteCar
 from .utils import calculate_total_price, get_car_availability, get_unavailable_dates
@@ -852,6 +854,50 @@ def remove_from_cart(request, item_id):
     item.delete()
     messages.success(request, "تمت إزالة العنصر من السلة!")
     return redirect('cart')
+
+@login_required
+def user_2fa_setup(request):
+    """إعداد المصادقة الثنائية للمستخدم العادي"""
+    # التحقق من وجود معلومات أمان للمستخدم أو إنشائها
+    security, created = UserSecurity.objects.get_or_create(user=request.user)
+    
+    # الحصول على بيانات QR ورموز النسخ الاحتياطية
+    qr_code = None
+    backup_codes = None
+    
+    # معالجة إجراءات المستخدم
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # إعداد المصادقة الثنائية
+        if action == 'setup_2fa':
+            security = setup_2fa_for_user(request.user)
+            qr_code = generate_qr_code_image(request.user)
+            backup_codes = security.backup_codes
+            
+            # تفعيل المصادقة الثنائية مباشرة
+            security.two_factor_enabled = True
+            security.save(update_fields=['two_factor_enabled'])
+            
+            messages.success(request, _("تم تفعيل المصادقة الثنائية بنجاح. قم بمسح رمز QR باستخدام تطبيق التحقق."))
+            
+        # تعطيل المصادقة الثنائية
+        elif action == 'disable_2fa':
+            security.two_factor_enabled = False
+            security.totp_secret = None
+            security.backup_codes = []
+            security.save()
+            
+            messages.success(request, _("تم تعطيل المصادقة الثنائية."))
+    
+    # عرض صفحة إعداد المصادقة الثنائية
+    context = {
+        'security': security,
+        'qr_code': qr_code,
+        'backup_codes': backup_codes,
+    }
+    
+    return render(request, 'security/user_2fa_setup.html', context)
 
 @login_required
 def checkout_old(request):
