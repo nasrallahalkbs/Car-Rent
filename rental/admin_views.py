@@ -4323,7 +4323,7 @@ def admin_2fa_setup(request):
             # إعداد TOTP وإنشاء السر
             security = setup_2fa_for_user(request.user)
             
-            # إنشاء رمز QR باستخدام السر
+            # إنشاء رمز QR باستخدام السر - دائماً نعرض الباركود عند التفعيل
             qr_code = generate_qr_code_image(request.user)
             
             # الحصول على رموز النسخ الاحتياطية
@@ -4331,21 +4331,23 @@ def admin_2fa_setup(request):
             
             # تفعيل المصادقة الثنائية مباشرة
             security.two_factor_enabled = True
-            security.save(update_fields=['two_factor_enabled'])
+            security.save(update_fields=['two_factor_enabled', 'totp_secret', 'backup_codes'])
             
-            messages.success(request, _("تم تفعيل المصادقة الثنائية بنجاح. قم بمسح رمز QR باستخدام تطبيق التحقق."))
+            messages.success(request, _("تم تفعيل المصادقة الثنائية بنجاح. قم بمسح رمز QR باستخدام تطبيق المصادقة."))
             
         # تعطيل المصادقة الثنائية
         elif action == 'disable_2fa':
-            security.two_factor_enabled = False
-            security.totp_secret = None
-            security.backup_codes = []
-            security.save()
-            
+            disable_2fa_for_user(request.user)
+            security.refresh_from_db()
             messages.success(request, _("تم تعطيل المصادقة الثنائية."))
     
-    # إذا كانت المصادقة الثنائية مفعلة بالفعل، نعرض رمز QR في أي زيارة للصفحة
-    if security.two_factor_enabled and security.totp_secret:
+    # إنشاء رمز QR والرموز الاحتياطية إذا كانت المصادقة الثنائية مفعلة أو تم تفعيلها للتو
+    if security.two_factor_enabled:
+        if not security.totp_secret:
+            # إذا كان المستخدم لديه المصادقة الثنائية مفعلة ولكن بدون سر، نعيد إنشاء السر
+            security = setup_2fa_for_user(request.user)
+        
+        # إنشاء رمز QR دائماً إذا كانت المصادقة الثنائية مفعلة
         qr_code = generate_qr_code_image(request.user)
         backup_codes = security.backup_codes
 
