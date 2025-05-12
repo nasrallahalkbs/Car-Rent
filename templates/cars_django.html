@@ -790,22 +790,22 @@
     
     <!-- Top Filter Buttons -->
     <div class="d-flex justify-content-center mb-4 flex-wrap">
-        <a href="#" class="filter-button automatic">
+        <a href="#" class="filter-button automatic" data-category="Automatic">
             <i class="fas fa-cog"></i> {% trans "Automatic" %}
         </a>
-        <a href="#" class="filter-button suv">
+        <a href="#" class="filter-button suv" data-category="SUV">
             <i class="fas fa-truck-monster"></i> {% trans "SUV" %}
         </a>
-        <a href="#" class="filter-button luxury">
+        <a href="#" class="filter-button luxury" data-category="Luxury">
             <i class="fas fa-crown"></i> {% trans "Luxury" %}
         </a>
-        <a href="#" class="filter-button midsize">
+        <a href="#" class="filter-button midsize" data-category="Mid-size">
             <i class="fas fa-car"></i> {% trans "Mid-size" %}
         </a>
-        <a href="#" class="filter-button economy">
+        <a href="#" class="filter-button economy" data-category="Economy">
             <i class="fas fa-wallet"></i> {% trans "Economy" %}
         </a>
-        <a href="#" class="filter-button all-cars">
+        <a href="#" class="filter-button all-cars" data-category="">
             <i class="fas fa-car-alt"></i> {% trans "All Cars" %}
         </a>
     </div>
@@ -902,24 +902,24 @@
         <!-- Results Area -->
         <div class="col-lg-9">
             <!-- Tools Bar -->
-            <div class="tools-bar">
+            <div class="tools-bar" style="display: flex; justify-content: space-between; align-items: center; background-color: #ffffff; padding: 12px 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); margin-bottom: 20px;">
                 <div class="d-flex align-items-center">
-                    <button class="search-advanced-btn">
+                    <button class="search-advanced-btn" style="display: inline-flex; align-items: center; padding: 8px 15px; background-color: #f0f5ff; color: #2563eb; border: 1px solid #d1e0ff; border-radius: 6px; font-weight: 600; margin-right: 10px;">
                         <i class="fas fa-search me-2"></i> {% trans "Advanced Search" %}
                     </button>
                     
-                    <a href="{{ enhanced_url }}" class="btn btn-primary mx-2" title="{% trans "Switch to Enhanced Design" %}">
+                    <a href="{{ enhanced_url }}" class="btn btn-primary" title="{% trans "Switch to Enhanced Design" %}" style="margin-right: 10px;">
                         <i class="fas fa-palette me-2"></i> {% trans "Enhanced View" %}
                     </a>
                 </div>
                 
                 <div class="d-flex align-items-center">
-                    <button class="availability-btn me-3">
+                    <button class="availability-btn" style="display: inline-flex; align-items: center; padding: 8px 15px; background-color: #0d6efd; color: white; border: none; border-radius: 6px; font-weight: 600; margin-right: 15px;">
                         <i class="fas fa-check-circle me-2"></i> {% trans "Cars available" %}
                     </button>
                     
-                    <div class="dropdown sort-dropdown me-3">
-                        <button class="dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="dropdown sort-dropdown" style="margin-right: 15px;">
+                        <button class="dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 15px; border-radius: 6px; display: flex; align-items: center;">
                             <i class="fas fa-sort me-2"></i> {% trans "Sort By" %}
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="sortDropdown">
@@ -935,10 +935,10 @@
                         </ul>
                     </div>
                     
-                    <div class="view-toggle">
-                        <button id="gridViewBtn" class="active" title="{% trans 'Grid View' %}">
+                    <div class="view-toggle" style="display: flex; background-color: #f1f5f9; border-radius: 6px; overflow: hidden; border: 1px solid #e2e8f0;">
+                        <button id="gridViewBtn" class="active" title="{% trans 'Grid View' %}" style="border: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: {% if gridViewBtn.active %}var(--primary-color){% else %}transparent{% endif %}; color: {% if gridViewBtn.active %}white{% else %}#64748b{% endif %};">
                             <i class="fas fa-th"></i></button>
-                        <button id="listViewBtn" title="{% trans 'List View' %}">
+                        <button id="listViewBtn" title="{% trans 'List View' %}" style="border: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: {% if listViewBtn.active %}var(--primary-color){% else %}transparent{% endif %}; color: {% if listViewBtn.active %}white{% else %}#64748b{% endif %};">
                             <i class="fas fa-list"></i></button>
                     </div>
                 </div>
@@ -962,29 +962,35 @@
                             <div class="car-img-wrapper">
                                 <!-- علامة الفئة الجديدة - تظهر أعلى يمين الصورة -->
                                 {% if car.category == 'Luxury' %}
-                                <div class="category-badge luxury">
+                                <span class="category-badge luxury" 
+                                      style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: white; box-shadow: 0 3px 6px rgba(0,0,0,0.2); z-index: 10; background: linear-gradient(45deg, #b45309, #fbbf24);">
                                     <i class="fas fa-crown {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> {% trans "Luxury" %}
-                                </div>
+                                </span>
                                 {% elif car.category == 'Economy' %}
-                                <div class="category-badge economy">
+                                <span class="category-badge economy"
+                                      style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: white; box-shadow: 0 3px 6px rgba(0,0,0,0.2); z-index: 10; background: linear-gradient(45deg, #059669, #34d399);">
                                     <i class="fas fa-wallet {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> {% trans "Economy" %}
-                                </div>
+                                </span>
                                 {% elif car.category == 'SUV' %}
-                                <div class="category-badge suv">
+                                <span class="category-badge suv"
+                                      style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: white; box-shadow: 0 3px 6px rgba(0,0,0,0.2); z-index: 10; background: linear-gradient(45deg, #4f46e5, #818cf8);">
                                     <i class="fas fa-truck-monster {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> {% trans "SUV" %}
-                                </div>
+                                </span>
                                 {% elif car.category == 'Mid-size' %}
-                                <div class="category-badge midsize">
+                                <span class="category-badge midsize"
+                                      style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: white; box-shadow: 0 3px 6px rgba(0,0,0,0.2); z-index: 10; background: linear-gradient(45deg, #0369a1, #7dd3fc);">
                                     <i class="fas fa-car {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> {% trans "Mid-size" %}
-                                </div>
+                                </span>
                                 {% elif car.category == 'Compact' %}
-                                <div class="category-badge compact">
+                                <span class="category-badge compact"
+                                      style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: white; box-shadow: 0 3px 6px rgba(0,0,0,0.2); z-index: 10; background: linear-gradient(45deg, #0d9488, #5eead4);">
                                     <i class="fas fa-car-side {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> {% trans "Compact" %}
-                                </div>
+                                </span>
                                 {% elif car.category == 'Truck' %}
-                                <div class="category-badge truck">
+                                <span class="category-badge truck"
+                                      style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: white; box-shadow: 0 3px 6px rgba(0,0,0,0.2); z-index: 10; background: linear-gradient(45deg, #b91c1c, #f87171);">
                                     <i class="fas fa-truck-pickup {% if is_english %}me-1{% else %}ms-1{% endif %}"></i> {% trans "Truck" %}
-                                </div>
+                                </span>
                                 {% endif %}
                                 
                                 <div class="car-badges-container">
