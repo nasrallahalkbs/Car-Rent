@@ -114,333 +114,291 @@ def car_condition_list(request):
 
 @login_required
 def car_condition_create(request):
-    """إنشاء تقرير جديد لحالة السيارة"""
+    """إنشاء تقرير جديد لحالة السيارة - تحسين أداء التقرير والتخلص تماماً من معالجة البيانات JSON"""
     from django.utils import timezone
     
-    print(f"[{timezone.now()}] بداية تنفيذ car_condition_create")
+    print(f"======= بداية تنفيذ دالة car_condition_create الجديدة (بدون معالجة JSON) [زمن: {timezone.now()}] =======")
     
-    # إذا تم تحديد سيارة أو حجز، ستكون هنا
+    # 1. إعداد البيانات المبدئية والمعلمات
     car_id = request.GET.get('car_id', None)
     reservation_id = request.GET.get('reservation_id', None)
     
-    print(f"معلمات الطلب: car_id={car_id}, reservation_id={reservation_id}")
+    print(f"معلمات URL: car_id={car_id}, reservation_id={reservation_id}")
     
     initial_data = {}
     
-    # إذا تم تمرير معرف الحجز
+    # 2. معالجة حالة وجود معرف حجز أو سيارة في الطلب
     if reservation_id:
         try:
-            print(f"محاولة جلب الحجز برقم: {reservation_id}")
             reservation = Reservation.objects.get(id=reservation_id)
             initial_data['reservation'] = reservation.id
             initial_data['car'] = reservation.car.id
-            print(f"تم العثور على الحجز: {reservation} للمستخدم: {reservation.user}")
-            print(f"السيارة المرتبطة: {reservation.car}")
+            print(f"تم تحميل بيانات الحجز: {reservation} (سيارة: {reservation.car})")
         except Reservation.DoesNotExist:
-            print(f"خطأ: الحجز برقم {reservation_id} غير موجود!")
-            pass
-    # إذا تم تمرير معرف السيارة فقط
+            print(f"الحجز برقم {reservation_id} غير موجود!")
     elif car_id:
         try:
-            print(f"محاولة جلب السيارة برقم: {car_id}")
             car = Car.objects.get(id=car_id)
             initial_data['car'] = car.id
-            print(f"تم العثور على السيارة: {car}")
+            print(f"تم تحميل بيانات السيارة: {car}")
         except Car.DoesNotExist:
-            print(f"خطأ: السيارة برقم {car_id} غير موجودة!")
-            pass
-            
-    # الحصول على قائمة الحجوزات النشطة للعرض في النموذج مع بيانات العميل والسيارة
+            print(f"السيارة برقم {car_id} غير موجودة!")
+    
+    # 3. إعداد قائمة الحجوزات النشطة للعرض في النموذج
     active_reservations = Reservation.objects.filter(
         status__in=['confirmed', 'active'],
-    ).select_related('user', 'car').order_by('-created_at')
+    ).select_related('user', 'car').order_by('-created_at')[:50]  # الحد من عدد الحجوزات لتحسين الأداء
     
-    print(f"عدد الحجوزات النشطة المتاحة: {active_reservations.count()}")
-    for i, res in enumerate(active_reservations[:5]):
-        print(f"حجز #{i+1}: ID={res.id}, رقم={res.reservation_number}, المستخدم={res.user}, السيارة={res.car}")
+    print(f"تم تحميل {active_reservations.count()} حجز نشط")
     
-    # إعداد قاموس يحتوي على معلومات كل حجز مع بيانات العميل والسيارة
+    # 4. إعداد قائمة الحجوزات بالتفاصيل للعرض في النموذج
     reservations_with_details = []
     for reservation in active_reservations:
+        # التأكد من وجود سيارة للحجز وعدم حدوث أخطاء
+        if not reservation.car:
+            print(f"⚠️ حجز بدون سيارة: {reservation}")
+            continue
+            
         reservation_details = {
             'id': reservation.id,
-            'reservation_number': reservation.reservation_number,
+            'reservation_number': getattr(reservation, 'reservation_number', '') or getattr(reservation, 'code', ''),
             'car_id': reservation.car.id,
             'car_info': f"{reservation.car.make} {reservation.car.model} ({reservation.car.license_plate})",
-            'customer_name': reservation.user.get_full_name() or reservation.user.username,
-            # تم إزالة البريد الإلكتروني ورقم الهاتف لحماية خصوصية العميل
-            'display_text': f"{reservation.reservation_number} - {reservation.car.make} {reservation.car.model} ({reservation.get_status_display()})"
+            'customer_name': (reservation.user.get_full_name() if hasattr(reservation.user, 'get_full_name') else '') or reservation.user.username,
+            'display_text': f"{getattr(reservation, 'reservation_number', '') or getattr(reservation, 'code', '')} - {reservation.car.make} {reservation.car.model}"
         }
         reservations_with_details.append(reservation_details)
     
+    # 5. معالجة البيانات المرسلة عند طلب POST
     if request.method == 'POST':
-        # طباعة بيانات الطلب للتصحيح
-        print("Form submitted with data:", request.POST)
-        print("Files:", request.FILES)
+        print("\n===== معالجة طلب POST لإنشاء تقرير جديد (النهج الجديد) =====")
+        print(f"عدد الحقول المرسلة: {len(request.POST)}")
         
-        # طباعة تفاصيل إضافية للمساعدة في التصحيح
-        print("\n------ تفاصيل بيانات النموذج المرسلة ------")
-        print(f"عدد العناصر المرسلة: {len(request.POST)}")
+        # 6. التحقق من البيانات الأساسية المطلوبة
+        car_id_post = request.POST.get('car')
+        report_type = request.POST.get('report_type', 'periodic')
+        inspection_type = request.POST.get('inspection_type', 'manual')
         
-        # البحث عن اسم الحقول المهمة
-        important_fields = ['reservation', 'car', 'report_type', 'inspection_type', 'mileage', 'date']
-        for field in important_fields:
-            print(f"حقل {field}: {request.POST.get(field, 'غير موجود')}")
+        if not car_id_post:
+            messages.error(request, _('يجب تحديد السيارة لإنشاء تقرير حالة.'))
+            print("❌ خطأ: لم يتم تحديد السيارة!")
+            form = CarConditionReportForm(user=request.user, initial=initial_data)
+            context = {
+                'form': form,
+                'reservations_json': json.dumps(reservations_with_details),
+                'inspection_categories': CarInspectionCategory.objects.filter(is_active=True).prefetch_related(
+                    Prefetch('inspection_items', queryset=CarInspectionItem.objects.filter(is_active=True).order_by('display_order'))
+                ).order_by('display_order')
+            }
+            return render(request, 'admin/car_condition/car_condition_form_new.html', context)
         
-        # البحث عن حقول الفحص
-        inspection_items = [key for key in request.POST.keys() if key.startswith('inspection_item_') or key.startswith('item_')]
-        print(f"عناصر الفحص المرسلة: {inspection_items}")
+        print(f"بيانات أساسية: السيارة={car_id_post}, نوع التقرير={report_type}, نوع الفحص={inspection_type}")
         
-        # التحقق من صحة البيانات المرسلة
-        if not request.POST.get('car'):
-            print("⚠️ تحذير: لم يتم تحديد سيارة في البيانات المرسلة")
-        
-        if not request.POST.get('report_type'):
-            print("⚠️ تحذير: لم يتم تحديد نوع التقرير في البيانات المرسلة")
-        
-        # لن نحاول تحويل البيانات من JSON بعد الآن، بل سنتعامل مع الحقول مباشرة
-        print("تجاهل تماماً أي محاولة لمعالجة بيانات JSON والتعامل مع القيم العادية فقط")
-        
-        # إنشاء نموذج جديد مع البيانات المرسلة
-        form = CarConditionReportForm(request.POST, request.FILES, user=request.user, initial=initial_data)
-        
-        if form.is_valid():
-            print("✅ النموذج صالح، جاري معالجة البيانات...")
-            try:
-                report = form.save(commit=False)
-                report.created_by = request.user
-                print(f"تم إنشاء تقرير بشكل مؤقت: {report}")
-                print(f"معرف السيارة: {report.car_id}, نوع التقرير: {report.report_type}")
-            except Exception as e:
-                print(f"❌ حدث خطأ أثناء إنشاء تقرير مؤقت: {str(e)}")
-                # إذا فشل إنشاء التقرير، نحاول إنشاءه بطريقة يدوية
-                from rental.models import CarConditionReport, Car
-                print("إعادة المحاولة بطريقة يدوية...")
-                
-                car_id = request.POST.get('car')
-                reservation_id = request.POST.get('reservation')
-                report_type = request.POST.get('report_type', 'periodic')
-                
-                print(f"القيم المأخوذة مباشرة من الطلب - السيارة: {car_id}, الحجز: {reservation_id}, نوع التقرير: {report_type}")
-                
-                if car_id:
-                    try:
-                        # محاولة إنشاء تقرير
-                        car = Car.objects.get(id=car_id)
-                        report = CarConditionReport(
-                            car=car,
-                            report_type=report_type,
-                            created_by=request.user
-                        )
-                        
-                        # تعيين الحجز إذا كان موجودًا
-                        if reservation_id:
-                            from rental.models import Reservation
-                            try:
-                                reservation = Reservation.objects.get(id=reservation_id)
-                                report.reservation = reservation
-                            except Exception as res_err:
-                                print(f"⚠️ تعذر العثور على الحجز: {str(res_err)}")
-                        
-                        print("✅ تم إنشاء تقرير بطريقة يدوية")
-                    except Exception as manual_err:
-                        print(f"❌ فشل إنشاء التقرير يدوياً أيضاً: {str(manual_err)}")
-                        messages.error(request, f"خطأ أثناء معالجة النموذج: {str(e)}")
-                        context = {
-                            'form': form,
-                            'reservations_json': json.dumps(reservations_with_details),
-                        }
-                        return render(request, 'admin/car_condition/car_condition_form_new.html', context)
+        # 7. إنشاء التقرير مباشرة من بيانات النموذج
+        try:
+            # 7.1 جلب السيارة
+            car = Car.objects.get(id=car_id_post)
+            print(f"✅ تم العثور على السيارة: {car}")
             
-            # إضافة معالجة ملف PDF للفحص الإلكتروني
-            inspection_type = request.POST.get('inspection_type', 'manual')
+            # 7.2 إنشاء التقرير الأساسي
+            report = CarConditionReport(
+                car=car,
+                report_type=report_type,
+                inspection_type=inspection_type,
+                created_by=request.user,
+                date=timezone.now(),
+                car_condition=request.POST.get('car_condition', 'good'),
+                fuel_level=request.POST.get('fuel_level', 'full'),
+                notes=request.POST.get('notes', '')
+            )
+            
+            # 7.3 إضافة قراءة عداد المسافات
+            try:
+                mileage = request.POST.get('mileage', '0')
+                report.mileage = int(mileage) if mileage and mileage.isdigit() else 0
+            except (ValueError, TypeError):
+                report.mileage = 0
+                print(f"⚠️ تعذر تحويل قراءة عداد المسافات '{mileage}' إلى رقم صحيح")
+            
+            # 7.4 إضافة الحجز إذا كان متاحاً
+            reservation_id_post = request.POST.get('reservation')
+            if reservation_id_post:
+                try:
+                    reservation = Reservation.objects.get(id=reservation_id_post)
+                    report.reservation = reservation
+                    print(f"✅ تم ربط التقرير بالحجز: {reservation}")
+                except Reservation.DoesNotExist:
+                    print(f"⚠️ الحجز برقم {reservation_id_post} غير موجود")
+            
+            # 7.5 معالجة ملف PDF للفحص الإلكتروني
             if inspection_type == 'electronic':
-                # حفظ ملخص الفحص في ملاحظات التقرير
+                if 'inspection_pdf_file' in request.FILES:
+                    pdf_file = request.FILES['inspection_pdf_file']
+                    report.electronic_report_pdf = pdf_file
+                    report.is_electronic_inspection = True
+                    print("✅ تم إضافة ملف PDF للفحص الإلكتروني")
+                
+                # إضافة ملخص الفحص الإلكتروني
                 inspection_summary = request.POST.get('inspection_summary', '')
                 if inspection_summary:
                     report.notes = inspection_summary
-                
-                # معالجة ملف PDF المرفق
-                if 'inspection_pdf_file' in request.FILES:
-                    # حفظ ملف PDF كمستند مرفق
-                    pdf_file = request.FILES['inspection_pdf_file']
-                    report.electronic_report_pdf = pdf_file
-                    # إضافة علامة لتوضيح أن هذا فحص إلكتروني
-                    report.is_electronic_inspection = True
             
-            # حفظ تقرير حالة السيارة
+            # 7.6 حفظ التقرير
             try:
                 report.save()
-                print(f"✅ تم حفظ تقرير حالة السيارة بشكل نهائي: {report.id}")
+                print(f"✅ تم حفظ تقرير حالة السيارة بنجاح! (معرف: {report.id})")
             except Exception as save_err:
-                print(f"❌ خطأ أثناء حفظ التقرير النهائي: {str(save_err)}")
-                
-                # محاولة إصلاح المشكلة والحفظ مرة أخرى
-                try:
-                    # التأكد من توفر جميع البيانات المطلوبة
-                    if not report.date:
-                        from django.utils import timezone
-                        report.date = timezone.now()
-                        print("✅ تم تعيين تاريخ افتراضي للتقرير")
-                        
-                    if not report.car_condition:
-                        report.car_condition = 'good'
-                        print("✅ تم تعيين حالة السيارة افتراضياً إلى 'جيدة'")
-                        
-                    # الحفظ مرة أخرى
-                    report.save()
-                    print(f"✅ تم حفظ التقرير بنجاح بعد المحاولة الثانية: {report.id}")
-                except Exception as e2:
-                    print(f"❌ فشلت المحاولة الثانية لحفظ التقرير: {str(e2)}")
-                    messages.error(request, "حدث خطأ أثناء محاولة حفظ التقرير")
-                    return redirect('car_condition_list')
+                print(f"❌ خطأ أثناء حفظ التقرير: {str(save_err)}")
+                messages.error(request, f"حدث خطأ أثناء حفظ التقرير: {str(save_err)}")
+                form = CarConditionReportForm(request.POST, request.FILES, user=request.user, initial=initial_data)
+                context = {
+                    'form': form,
+                    'reservations_json': json.dumps(reservations_with_details),
+                    'inspection_categories': CarInspectionCategory.objects.filter(is_active=True).prefetch_related(
+                        Prefetch('inspection_items', queryset=CarInspectionItem.objects.filter(is_active=True).order_by('display_order'))
+                    ).order_by('display_order')
+                }
+                return render(request, 'admin/car_condition/car_condition_form_new.html', context)
             
-            # معالجة صور الهيكل الخارجي
-            print("\n=== بدء معالجة صور الهيكل الخارجي ===")
-            image_types = ['front_image', 'rear_image', 'side_image', 'interior_image']
+            # 8. معالجة صور الهيكل الخارجي
+            print("\n=== معالجة صور الهيكل الخارجي ===")
+            image_types = {
+                'front_image': 'الواجهة الأمامية',
+                'rear_image': 'الواجهة الخلفية',
+                'side_image': 'الجانب',
+                'interior_image': 'المقصورة الداخلية'
+            }
             
-            for image_type in image_types:
-                if image_type in request.FILES:
-                    image_file = request.FILES[image_type]
-                    notes = request.POST.get(f'{image_type}_notes', '')
+            for image_field, description in image_types.items():
+                if image_field in request.FILES:
+                    image_file = request.FILES[image_field]
+                    notes = request.POST.get(f'{image_field}_notes', '')
                     
-                    description = ''
-                    if image_type == 'front_image':
-                        description = 'صورة أمامية'
-                    elif image_type == 'rear_image':
-                        description = 'صورة خلفية'
-                    elif image_type == 'side_image':
-                        description = 'صورة جانبية'
-                    elif image_type == 'interior_image':
-                        description = 'صورة داخلية'
-                    
+                    image_description = description
                     if notes:
-                        description = f"{description} - {notes}"
+                        image_description = f"{description} - {notes}"
                     
-                    # ضغط الصورة قبل الحفظ
-                    compressed_image = compress_image(image_file, max_size=(800, 600), quality=80)
-                    
-                    # إنشاء سجل لصورة الفحص
-                    CarInspectionImage.objects.create(
-                        report=report,
-                        image=compressed_image,
-                        description=description,
-                        inspection_detail=None  # صورة عامة للهيكل الخارجي
-                    )
-            
-            # حفظ تفاصيل الفحص من النموذج المرسل (فقط للفحص اليدوي)
-            if inspection_type == 'manual':
-                print("معالجة بيانات الفحص اليدوي...")
-                
-                # طباعة جميع العناصر المرسلة من النموذج للتصحيح
-                inspection_items = [key for key in request.POST.keys() if key.startswith('inspection_item_') or key.startswith('item_')]
-                print(f"عناصر الفحص المرسلة من النموذج: {inspection_items}")
-                
-                # البحث عن جميع الأنماط المحتملة لحقول الفحص
-                for key, value in request.POST.items():
-                    # معالجة حقول عناصر الفحص
-                    item_id = None
-                    
-                    # فحص النمط الأول: inspection_item_XX
-                    if key.startswith('inspection_item_') and value:
-                        item_id = key.replace('inspection_item_', '')
-                    # فحص النمط الثاني: item_XX
-                    elif key.startswith('item_') and value:
-                        item_id = key.replace('item_', '')
+                    try:
+                        # ضغط الصورة قبل الحفظ
+                        compressed_image = compress_image(image_file, max_size=(800, 600), quality=80)
                         
-                    # إذا تم العثور على معرف العنصر، نتابع المعالجة
-                    if item_id:
-                        try:
-                            item_id = int(item_id)
-                            print(f"معالجة عنصر الفحص معرف: {item_id}, القيمة: {value}")
-                            
-                            # البحث عن عنصر الفحص
-                            try:
-                                inspection_item = CarInspectionItem.objects.get(id=item_id)
-                                print(f"تم العثور على عنصر الفحص: {inspection_item.name}, الفئة: {inspection_item.category.name}")
-                                
-                                # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
-                                if inspection_item.category.name == 'الهيكل الخارجي':
-                                    print(f"تخطي عنصر هيكل خارجي: {inspection_item.name}")
-                                    continue
-                                
-                                # الحصول على الملاحظات واحتياج الإصلاح - محاولة جميع الأنماط المحتملة
-                                # النمط الأول: notes_item_XX
-                                notes_field = request.POST.get(f'notes_item_{item_id}', '')
-                                
-                                # النمط الثاني: item_XX_notes أو inspection_item_XX_notes
-                                if not notes_field:
-                                    notes_field = request.POST.get(f'{key}_notes', '')
-                                
-                                # النمط الثالث: عندما يكون اسم الحقل مضمناً في المفتاح نفسه
-                                for notes_key in request.POST.keys():
-                                    if f'notes_{item_id}' in notes_key or f'item_{item_id}_notes' in notes_key:
-                                        notes_field = request.POST.get(notes_key, '')
-                                        print(f"  تم العثور على ملاحظات في الحقل: {notes_key}")
-                                        break
-                                
-                                # البحث عن حقل احتياج الإصلاح بجميع الأنماط المحتملة
-                                # النمط الأول: needs_repair_XX
-                                needs_repair_field = request.POST.get(f'needs_repair_{item_id}', '') == 'on'
-                                
-                                # النمط الثاني: item_XX_needs_repair
-                                if not needs_repair_field:
-                                    needs_repair_field = request.POST.get(f'{key}_needs_repair', '') == 'on'
-                                
-                                # النمط الثالث: أي حقل يتضمن needs_repair و item_id
-                                for repair_key in request.POST.keys():
-                                    if f'repair_{item_id}' in repair_key or f'item_{item_id}_repair' in repair_key:
-                                        repair_value = request.POST.get(repair_key, '')
-                                        needs_repair_field = repair_value == 'on' or repair_value == 'true' or repair_value == '1'
-                                        print(f"  تم العثور على احتياج الإصلاح في الحقل: {repair_key}, القيمة: {repair_value}")
-                                        break
-                                
-                                # طباعة معلومات تفصيلية
-                                print(f"معلومات إضافية لعنصر الفحص {item_id}:")
-                                print(f"  - الشرط: {value}")
-                                print(f"  - الملاحظات: {notes_field}")
-                                print(f"  - بحاجة للإصلاح: {needs_repair_field}")
-                                
-                                # نستخدم القيمة المرسلة مباشرة بدون تحويل من JSON
-                                condition_value = value
-                                print(f"  استخدام قيمة الحالة مباشرة: {condition_value}")
-                                
-                                # إنشاء تفاصيل الفحص
-                                try:
-                                    detail = CarInspectionDetail.objects.create(
-                                        report=report,
-                                        item=inspection_item,
-                                        condition=condition_value,
-                                        notes=notes_field,
-                                        needs_repair=needs_repair_field
-                                    )
-                                    print(f"✅ تم إنشاء تفصيل فحص جديد بنجاح! (معرف: {detail.id})")
-                                except Exception as e:
-                                    print(f"❌ خطأ أثناء إنشاء تفصيل الفحص: {str(e)}")
-                            except CarInspectionItem.DoesNotExist:
-                                print(f"❌ خطأ: لم يتم العثور على عنصر الفحص بمعرف {item_id}")
-                        except ValueError:
-                            print(f"❌ خطأ: فشل تحويل معرف العنصر {item_id} إلى رقم صحيح")
-                        except Exception as e:
-                            print(f"❌ خطأ غير متوقع أثناء معالجة عنصر الفحص {item_id}: {str(e)}")
+                        # إنشاء سجل لصورة الفحص
+                        image = CarInspectionImage.objects.create(
+                            report=report,
+                            image=compressed_image,
+                            description=image_description,
+                            inspection_detail=None  # صورة عامة للهيكل الخارجي
+                        )
+                        print(f"✅ تم حفظ صورة {description} بنجاح!")
+                    except Exception as img_err:
+                        print(f"❌ خطأ أثناء معالجة صورة {description}: {str(img_err)}")
             
-            messages.success(request, _('تم إنشاء تقرير حالة السيارة وتفاصيل الفحص بنجاح'))
+            # 9. معالجة عناصر الفحص اليدوي
+            if inspection_type == 'manual':
+                print("\n=== معالجة عناصر الفحص اليدوي (طريقة مباشرة بدون JSON) ===")
+                
+                # الحصول على جميع عناصر الفحص النشطة
+                inspection_items = CarInspectionItem.objects.filter(is_active=True)
+                print(f"عدد عناصر الفحص المتاحة: {inspection_items.count()}")
+                
+                # معالجة كل عنصر فحص نشط
+                for item in inspection_items:
+                    # تخطي عناصر الهيكل الخارجي (نستخدم الصور بدلًا منها)
+                    if item.category.name == 'الهيكل الخارجي':
+                        print(f"⏭️ تخطي عنصر هيكل خارجي: {item.name}")
+                        continue
+                    
+                    # البحث عن قيمة العنصر في النموذج المرسل
+                    item_value = None
+                    
+                    # البحث عن جميع أنماط اسم الحقل المحتملة
+                    possible_field_names = [
+                        f'item_{item.id}',
+                        f'inspection_item_{item.id}'
+                    ]
+                    
+                    # البحث عن قيمة العنصر
+                    for field_name in possible_field_names:
+                        if field_name in request.POST and request.POST.get(field_name):
+                            item_value = request.POST.get(field_name)
+                            print(f"✓ تم العثور على قيمة للعنصر '{item.name}': {item_value}")
+                            break
+                    
+                    # إذا لم نجد قيمة، نتخطى هذا العنصر
+                    if not item_value:
+                        print(f"⏭️ تخطي عنصر '{item.name}' - لم يتم العثور على قيمة")
+                        continue
+                    
+                    # البحث عن الملاحظات
+                    notes_value = ''
+                    notes_fields = [
+                        f'notes_item_{item.id}',
+                        f'item_{item.id}_notes',
+                        f'inspection_item_{item.id}_notes'
+                    ]
+                    
+                    for field_name in notes_fields:
+                        if field_name in request.POST:
+                            notes_value = request.POST.get(field_name, '')
+                            if notes_value:
+                                print(f"✓ تم العثور على ملاحظات للعنصر '{item.name}': {notes_value}")
+                                break
+                    
+                    # البحث عن قيمة احتياج الإصلاح
+                    needs_repair = False
+                    repair_fields = [
+                        f'needs_repair_{item.id}',
+                        f'item_{item.id}_needs_repair',
+                        f'inspection_item_{item.id}_needs_repair'
+                    ]
+                    
+                    for field_name in repair_fields:
+                        if field_name in request.POST:
+                            repair_value = request.POST.get(field_name)
+                            needs_repair = repair_value == 'on' or repair_value == 'true' or repair_value == '1'
+                            print(f"✓ تم العثور على حالة إصلاح للعنصر '{item.name}': {needs_repair}")
+                            break
+                    
+                    # حفظ تفاصيل العنصر
+                    try:
+                        detail = CarInspectionDetail.objects.create(
+                            report=report,
+                            inspection_item=item,
+                            condition=item_value,
+                            notes=notes_value,
+                            needs_repair=needs_repair
+                        )
+                        print(f"✅ تم حفظ تفاصيل عنصر '{item.name}' بنجاح!")
+                    except Exception as detail_err:
+                        print(f"❌ خطأ أثناء حفظ تفاصيل عنصر '{item.name}': {str(detail_err)}")
+                
+                print("\n✅ تم الانتهاء من معالجة جميع عناصر الفحص بنجاح!")
             
-            # إذا كان التقرير من نوع "فحص صيانة" وكانت الحالة "سيئة" أو "متضررة"، 
-            # قم بتغيير حالة السيارة تلقائيًا إلى "في الصيانة"
+            # 10. تحديث حالة السيارة إذا كان التقرير يشير إلى حالة سيئة
             if report.report_type in ['maintenance', 'periodic'] and report.car_condition in ['poor', 'damaged']:
                 car = report.car
                 car.status = 'maintenance'
                 car.is_available = False
                 car.save()
-                messages.warning(request, _('تم تحديث حالة السيارة إلى "في الصيانة" بناءً على التقرير'))
+                messages.warning(request, _('تم تحديث حالة السيارة إلى "في الصيانة" بناءً على التقرير.'))
+                print("⚠️ تم تحديث حالة السيارة إلى 'في الصيانة'")
             
-            # الرجوع إلى صفحة قائمة التقارير
+            messages.success(request, _('تم إنشاء تقرير حالة السيارة وتفاصيل الفحص بنجاح.'))
+            print("\n===== تم إنشاء تقرير حالة السيارة بنجاح! =====")
+            
             return redirect('car_condition_list')
-        else:
-            # طباعة أخطاء النموذج للتصحيح
-            print("Form errors:", form.errors)
+            
+        except Car.DoesNotExist:
+            print(f"❌ خطأ: لم يتم العثور على السيارة برقم {car_id_post}")
+            messages.error(request, _('لم يتم العثور على السيارة المحددة.'))
+        except Exception as e:
+            print(f"❌ خطأ غير متوقع: {str(e)}")
+            messages.error(request, f"{_('حدث خطأ أثناء إنشاء التقرير')}: {str(e)}")
+        
+        # في حالة حدوث خطأ، عرض النموذج مرة أخرى مع البيانات المدخلة
+        form = CarConditionReportForm(request.POST, request.FILES, user=request.user, initial=initial_data)
     else:
+        # عرض النموذج الفارغ
         form = CarConditionReportForm(user=request.user, initial=initial_data)
     
     # جلب فئات الفحص وعناصرها المنشطة
