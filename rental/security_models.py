@@ -125,16 +125,17 @@ class UserSecurity(models.Model):
     def get_totp_uri(self):
         """الحصول على URI TOTP لتطبيقات المصادقة"""
         import pyotp
-        from django.conf import settings
+        from .security import get_system_setting
         
         if not self.totp_secret:
             return None
         
         # استخدام اسم المستخدم واسم الموقع في URI
-        return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(
-            name=self.user.username,
-            issuer_name=getattr(settings, 'SITE_NAME', 'Car Rental System')
-        )
+        totp = pyotp.TOTP(self.totp_secret)
+        site_name = get_system_setting('site_name', 'Car Rental System')
+        
+        # استخدام اسم المستخدم واسم الموقع في URI
+        return totp.provisioning_uri(name=self.user.username, issuer=site_name)
     
     def generate_backup_codes(self, count=8, force_regenerate=False):
         """توليد رموز احتياطية جديدة"""

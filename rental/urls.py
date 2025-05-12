@@ -14,6 +14,7 @@ from .fixed_analytics_view import direct_payment_analytics
 from django.urls import path
 from django.shortcuts import render
 from . import views, admin_views, payment_views, analytics_views
+from .superadmin_settings_views import superadmin_generate_2fa_qr, superadmin_enable_2fa
 from .admin_views_windows import admin_archive_windows_explorer
 from .windows_explorer_view import admin_archive_windows
 # CSRF Debug وظائف - تم إزالة الوظائف المفقودة
@@ -84,6 +85,10 @@ urlpatterns = [
 
     # API endpoints
     path('api/car/<int:car_id>/unavailable-dates/', views.get_unavailable_dates_api, name='get_unavailable_dates_api'),
+    path('api/superadmin/generate-2fa-qr/', superadmin_generate_2fa_qr, name='superadmin_generate_2fa_qr'),
+    path('api/superadmin/enable-2fa/', superadmin_enable_2fa, name='superadmin_enable_2fa'),
+    path('ar/api/superadmin/generate-2fa-qr/', superadmin_generate_2fa_qr, name='superadmin_generate_2fa_qr_ar'),
+    path('ar/api/superadmin/enable-2fa/', superadmin_enable_2fa, name='superadmin_enable_2fa_ar'),
     # Admin views
     path('dashboard/', admin_views.admin_index, name='admin_index'),
     path('dashboard/profile/', admin_views.admin_profile, name='admin_profile'),
