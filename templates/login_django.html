@@ -1,27 +1,221 @@
 <!-- CACHE_BUSTER 1746744424 -->{% extends 'layout_django.html' %}
 {% load i18n %}
 {% load crispy_forms_tags %}
+{% load static %}
 
-{% block title %}Login{% endblock %}
+{% block title %}{% trans "Login" %} - CarRental{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        min-height: 75vh;
+        display: flex;
+        align-items: center;
+        padding: 3rem 0;
+        background: linear-gradient(135deg, rgba(58, 134, 255, 0.05) 0%, rgba(255, 255, 255, 0.3) 100%);
+        border-radius: 20px;
+    }
+    
+    .auth-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .auth-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(58, 134, 255, 0.15);
+    }
+    
+    .auth-header {
+        background: linear-gradient(135deg, #3a86ff 0%, #4dabf7 100%);
+        padding: 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .auth-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTI4MCAxNDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTMyMCAyOEMxNjAgMjggODAgNDkgMCA3MFYwSDE0ODBWNzBDMTM2MCA0OSAxMjgwIDI4IDEyODAgMjhDMTE2MCAyOCAxMDQwIDI4IDkyMCAyOEM4MDAgMjggNjgwIDI4IDU2MCAyOEM0NDAgMjggMzIwIDI4IDMyMCAyOFoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvc3ZnPg==');
+        background-size: 100% 100%;
+        opacity: 0.2;
+    }
+    
+    .auth-header h2 {
+        margin: 0;
+        color: white;
+        font-weight: 700;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .auth-icon {
+        width: 80px;
+        height: 80px;
+        background-color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 2rem;
+        color: #3a86ff;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .auth-body {
+        padding: 2.5rem;
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: #3a86ff;
+        box-shadow: 0 0 0 0.2rem rgba(58, 134, 255, 0.15);
+    }
+    
+    .auth-btn {
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }
+    
+    .auth-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(58, 134, 255, 0.3);
+    }
+    
+    .auth-footer {
+        text-align: center;
+        padding: 1.5rem;
+        border-top: 1px solid #f0f0f0;
+        background-color: #f8f9fa;
+    }
+    
+    .auth-footer p {
+        margin-bottom: 0;
+        color: #6c757d;
+    }
+    
+    .auth-footer a {
+        color: #3a86ff;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .auth-footer a:hover {
+        text-decoration: none;
+        color: #2875e6;
+    }
+    
+    .social-login {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .social-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+        transition: all 0.3s;
+    }
+    
+    .social-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    }
+    
+    .google-btn {
+        background-color: #DB4437;
+    }
+    
+    .facebook-btn {
+        background-color: #3b5998;
+    }
+    
+    .twitter-btn {
+        background-color: #1DA1F2;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="card-title mb-0">Login</h2>
-                </div>
-                <div class="card-body">
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary">Login</button>
+<div class="container py-4 fade-in">
+    <div class="auth-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-6 col-md-8">
+                    <div class="auth-card slide-up">
+                        <div class="auth-header">
+                            <div class="auth-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <h2>{% trans "Welcome Back" %}</h2>
                         </div>
-                    </form>
-                    <div class="mt-3 text-center">
-                        <p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
+                        <div class="auth-body">
+                            <form method="post" novalidate>
+                                {% csrf_token %}
+                                {{ form|crispy }}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" value="" id="remember">
+                                    <label class="form-check-label" for="remember">
+                                        {% trans "Remember me" %}
+                                    </label>
+                                    <a href="#" class="float-end text-decoration-none">{% trans "Forgot password?" %}</a>
+                                </div>
+                                <div class="d-grid gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary auth-btn">
+                                        <i class="fas fa-sign-in-alt me-2"></i> {% trans "Login" %}
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="text-center mb-3">
+                                <p class="text-muted">{% trans "Or log in with" %}</p>
+                            </div>
+                            
+                            <div class="social-login">
+                                <a href="#" class="social-btn google-btn">
+                                    <i class="fab fa-google"></i>
+                                </a>
+                                <a href="#" class="social-btn facebook-btn">
+                                    <i class="fab fa-facebook-f"></i>
+                                </a>
+                                <a href="#" class="social-btn twitter-btn">
+                                    <i class="fab fa-twitter"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="auth-footer">
+                            <p>{% trans "Don't have an account?" %} <a href="{% url 'register' %}">{% trans "Register here" %}</a></p>
+                        </div>
                     </div>
                 </div>
             </div>
