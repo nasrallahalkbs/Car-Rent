@@ -1434,6 +1434,9 @@ def complete_car_inspection_create(request):
 
             # توجيه إلى صفحة تفاصيل التقرير
             return redirect('car_inspection_detail', report.id)
+        except Exception as e:
+            messages.error(request, f"حدث خطأ أثناء إنشاء التقرير: {str(e)}")
+            print(f"❌ خطأ في إنشاء التقرير: {str(e)}")
     else:
         form = CompleteCarInspectionForm(initial=initial_data, user=request.user)
 
