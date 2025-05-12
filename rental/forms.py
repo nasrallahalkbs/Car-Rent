@@ -34,9 +34,12 @@ class RegisterForm(UserCreationForm):
         ('female', 'أنثى'),
     ]
     
+    # استيراد قائمة الدول
+    from .country_list import COUNTRIES
+    
     age = forms.IntegerField(required=False, min_value=18, max_value=100, label=_("العمر"))
     gender = forms.ChoiceField(choices=GENDER_CHOICES, required=False, label=_("النوع"))
-    nationality = forms.CharField(max_length=50, required=False, label=_("الجنسية"))
+    nationality = forms.ChoiceField(choices=[('', '-- اختر الجنسية --')] + COUNTRIES, required=False, label=_("الجنسية"))
     
     class Meta:
         model = User
@@ -268,6 +271,12 @@ class ProfileForm(forms.ModelForm):
     
     gender = forms.ChoiceField(choices=GENDER_CHOICES, required=False, label=_("النوع"))
     
+    # استيراد قائمة الدول
+    from .country_list import COUNTRIES
+    
+    # تعديل حقل الجنسية ليكون قائمة منسدلة
+    nationality = forms.ChoiceField(choices=[('', '-- اختر الجنسية --')] + COUNTRIES, required=False, label=_("الجنسية"))
+    
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'email', 'phone', 
@@ -280,7 +289,6 @@ class ProfileForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'age': forms.NumberInput(attrs={'class': 'form-control', 'min': 18, 'max': 100}),
-            'nationality': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
 class PasswordChangeForm(forms.Form):
