@@ -1311,7 +1311,8 @@ def complete_car_inspection_create(request):
         form = CompleteCarInspectionForm(request.POST, files=request.FILES, user=request.user)
         print("✅ النموذج POST - FILES:", request.FILES)
         if form.is_valid():
-        print("✅ تم التحقق من صحة النموذج بنجاح")
+            print("✅ تم التحقق من صحة النموذج بنجاح")
+            print("البيانات المدخلة:", form.cleaned_data)
         print("البيانات المدخلة:", form.cleaned_data)
 
         # تأكد من وجود السيارة والحجز
