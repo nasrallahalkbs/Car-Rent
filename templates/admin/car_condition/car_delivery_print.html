@@ -686,7 +686,7 @@
                             <th style="width: 40%;">العنصر</th>
                             <th style="width: 15%;">الحالة</th>
                             <th style="width: 25%;">ملاحظات</th>
-                            <th style="width: 20%;">الإصلاحات</th>
+                            <th style="width: 20%;">صور</th>
                         </tr>
                         
                         {% for category_id, category in categories.items %}
@@ -701,16 +701,7 @@
                                     <tr>
                                         <td style="padding: 5px 8px; font-size: 11px; border-bottom: 1px solid #ddd;">
                                             {{ detail.inspection_item.name }}
-                                            {% if detail.inspection_item.is_critical %}
-                                                <span style="color: #d63031; font-weight: bold; font-size: 10px;">
-                                                    (مهم)
-                                                </span>
-                                            {% endif %}
-                                            {% if detail.inspection_item.is_expensive %}
-                                                <span style="color: #6c5ce7; font-weight: bold; font-size: 10px;">
-                                                    (مكلف)
-                                                </span>
-                                            {% endif %}
+
                                         </td>
                                         <td class="{% if detail.condition == 'poor' or detail.condition == 'damaged' %}status-damaged{% elif detail.condition == 'fair' %}status-warning{% else %}status-good{% endif %}" style="padding: 5px 8px; font-size: 11px; border-bottom: 1px solid #ddd; text-align: center; font-weight: bold;">
                                             {{ detail.get_condition_display }}
@@ -722,17 +713,17 @@
                                             {{ detail.notes|default:"-" }}
                                         </td>
                                         <td style="padding: 5px 8px; font-size: 10px; border-bottom: 1px solid #ddd; text-align: center;">
-                                            {% if detail.needs_repair %}
-                                                <div style="display: inline-block; background-color: #dc3545; color: white; padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: bold;">
-                                                    يحتاج إصلاح
+                                            {% if detail.images_list %}
+                                                <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+                                                    {% for image in detail.images_list|slice:":2" %}
+                                                        <img src="{{ image.image.url }}" alt="{{ image.description|default:'صورة' }}" style="width: 30px; height: 30px; object-fit: cover; margin: 2px; border: 1px solid #ccc;">
+                                                    {% endfor %}
+                                                    {% if detail.images_list|length > 2 %}
+                                                        <span style="font-size: 9px; color: #666;">+{{ detail.images_list|length|add:"-2" }}</span>
+                                                    {% endif %}
                                                 </div>
-                                                {% if detail.condition == 'poor' or detail.condition == 'damaged' %}
-                                                <div style="margin-top: 2px; font-size: 9px; color: #555;">
-                                                    حالة متضررة
-                                                </div>
-                                                {% endif %}
                                             {% else %}
-                                                <span style="color: #28a745; font-size: 9px;">لا يحتاج إصلاح</span>
+                                                <span style="font-style: italic; color: #999; font-size: 9px;">لا توجد صور</span>
                                             {% endif %}
                                         </td>
                                     </tr>
