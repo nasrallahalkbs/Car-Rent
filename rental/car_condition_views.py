@@ -60,6 +60,17 @@ def compress_image(image_file, max_size=(800, 600), quality=85):
 @login_required
 def car_condition_list(request):
     """عرض قائمة بجميع تقارير حالة السيارات"""
+    
+    # مسح معلومات جلسة حفظ التقرير إذا تم الطلب عبر AJAX
+    if request.method == 'POST' and request.POST.get('action') == 'clear_session_data':
+        # مسح معلومات التقرير من الجلسة
+        if 'report_saved' in request.session:
+            del request.session['report_saved']
+        if 'report_id' in request.session:
+            del request.session['report_id']
+        if 'car_info' in request.session:
+            del request.session['car_info']
+        return JsonResponse({'status': 'success'})
 
     # الحصول على معلمات التصفية
     report_type = request.GET.get('report_type', '')
