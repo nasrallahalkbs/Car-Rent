@@ -492,6 +492,29 @@
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
+        
+        /* ضمان طباعة عناوين فئات الفحص */
+        .inspection-table th[colspan="2"] {
+            background-color: #f0f0f0 !important;
+            color: #333 !important;
+            font-weight: bold !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        /* تحسين تنسيق جدول الفحص للطباعة */
+        .inspection-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin-bottom: 10px !important;
+        }
+        
+        .inspection-table th, 
+        .inspection-table td {
+            border: 1px solid #ddd !important;
+            padding: 2px 4px !important;
+            font-size: 9px !important;
+        }
     }
 </style>
 {% endblock %}
@@ -614,32 +637,51 @@
                             <th>العنصر</th>
                             <th>الحالة</th>
                         </tr>
+                        
                         {% for category_id, category in categories.items %}
-                            {% with important_items=category.items|slice:":3" %}
-                                {% for detail in important_items %}
+                            <!-- عنوان فئة الفحص -->
+                            <tr>
+                                <th colspan="2" style="background-color: #f0f0f0;">{{ category.name }}</th>
+                            </tr>
+                            
+                            {% if category.items %}
+                                <!-- عناصر الفحص للفئة -->
+                                {% for detail in category.items %}
                                     <tr>
                                         <td>{{ detail.inspection_item.name }}</td>
-                                        <td class="{% if detail.status == 'damaged' %}status-damaged{% elif detail.status == 'warning' %}status-warning{% else %}status-good{% endif %}">
-                                            {{ detail.get_status_display }}
+                                        <td class="{% if detail.condition == 'poor' or detail.condition == 'damaged' %}status-damaged{% elif detail.condition == 'fair' %}status-warning{% else %}status-good{% endif %}">
+                                            {{ detail.get_condition_display }}
+                                            {% if detail.needs_repair %}
+                                                <span style="color: #dc3545; font-weight: bold;">*</span>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                 {% endfor %}
-                            {% endwith %}
+                            {% else %}
+                                <!-- لا توجد عناصر في هذه الفئة -->
+                                <tr>
+                                    <td colspan="2" class="text-center" style="font-style: italic; color: #6c757d;">
+                                        لا توجد عناصر مسجلة في هذه الفئة
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% empty %}
+                            <!-- لا توجد فئات فحص -->
+                            <tr>
+                                <td colspan="2" class="text-center" style="font-style: italic; color: #6c757d;">
+                                    لا توجد تفاصيل فحص مسجلة لهذا التقرير
+                                </td>
+                            </tr>
                         {% endfor %}
-                        <!-- عناصر الفحص المهمة الأخرى -->
-                        <tr>
-                            <td>نظام التكييف الرئيسي</td>
-                            <td class="status-good">سليم</td>
-                        </tr>
-                        <tr>
-                            <td>المكابح والتعليق</td>
-                            <td class="status-good">سليم</td>
-                        </tr>
-                        <tr>
-                            <td>المحرك</td>
-                            <td class="status-good">سليم</td>
-                        </tr>
                     </table>
+                    
+                    <!-- مفتاح توضيحي للألوان ومؤشرات الحالة -->
+                    <div style="margin-top: 5px; font-size: 8px; color: #555;">
+                        <span class="status-good" style="font-weight: bold;">■</span> حالة جيدة / ممتازة  
+                        <span class="status-warning" style="font-weight: bold; margin-right: 10px;">■</span> حالة متوسطة  
+                        <span class="status-damaged" style="font-weight: bold; margin-right: 10px;">■</span> حالة سيئة / تالفة
+                        <span style="color: #dc3545; font-weight: bold; margin-right: 10px;">*</span> يحتاج إلى إصلاح
+                    </div>
                 </div>
             </div>
             
