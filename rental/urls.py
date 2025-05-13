@@ -8,6 +8,7 @@ from working_upload_solution import guaranteed_upload_view
 from direct_sql_solution import direct_sql_upload
 from final_direct_upload import final_direct_upload
 from .direct_archive_upload import super_direct_upload
+from direct_upload_page import direct_upload_page
 from .fixed_analytics_view import direct_payment_analytics
 
 
