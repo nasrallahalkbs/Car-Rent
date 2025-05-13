@@ -1578,7 +1578,8 @@ def car_inspection_detail(request, report_id):
         'inspection_item__category__display_order', 'inspection_item__display_order'
     )
 
-    # تنظيم التفاصيل حسب الفئة    categories = {}
+    # تنظيم التفاصيل حسب الفئة
+    categories = {}
     for detail in inspection_details:
         category = detail.inspection_item.category
         if category.id not in categories:
