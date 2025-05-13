@@ -1809,6 +1809,7 @@ def print_car_delivery_report(request, report_id):
 
     # تنظيم التفاصيل حسب الفئة
     categories = {}
+    has_images = False
     for detail in inspection_details:
         category = detail.inspection_item.category
         if category.id not in categories:
@@ -1818,8 +1819,12 @@ def print_car_delivery_report(request, report_id):
                 'items': []
             }
 
-        # إضافة الصور لكل عنصر
-        detail.images_list = detail.images.all()
+        # إضافة الصور لكل عنصر - استخدام prefetch_related لتحسين الأداء
+        detail.images_list = detail.images.prefetch_related('image').all()
+        
+        # تسجيل ما إذا كان هناك أي صور في التقرير
+        if detail.images_list.exists():
+            has_images = True
 
         categories[category.id]['items'].append(detail)
 
@@ -1840,6 +1845,7 @@ def print_car_delivery_report(request, report_id):
     context = {
         'report': report,
         'categories': categories,
+        'has_images': has_images,
         'general_images': general_images,
         'customer_signature': customer_signature,
         'staff_signature': staff_signature,
