@@ -527,6 +527,54 @@
             $('#modalImage').attr('src', imageUrl);
             $('#modalImageDesc').text(imageDesc);
         });
+        
+        // تحقق من وجود رسائل نجاح للإظهار
+        {% if request.session.report_saved %}
+            // إظهار النافذة المنبثقة
+            $('#successModal').modal('show');
+            
+            // إضافة تفاصيل التقرير
+            {% if request.session.car_info %}
+                $('#reportDetails').text("{% trans 'السيارة:' %} {{ request.session.car_info }}");
+            {% endif %}
+            
+            // حذف المعلومات من الجلسة بعد عرضها
+            $.ajax({
+                url: '{% url "car_condition_list" %}',
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'action': 'clear_session_data'
+                },
+                success: function(response) {
+                    console.log('تم مسح معلومات الجلسة');
+                }
+            });
+        {% endif %}
     });
 </script>
+{% endblock %}
+
+{% block after_content %}
+<!-- نافذة التأكيد المنبثقة -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="successModalLabel">{% trans "تم الحفظ بنجاح" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-check-circle text-success fa-4x"></i>
+                </div>
+                <p class="text-center fs-5">{% trans "تم حفظ تقرير حالة السيارة بنجاح!" %}</p>
+                <p class="text-center" id="reportDetails"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">{% trans "موافق" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

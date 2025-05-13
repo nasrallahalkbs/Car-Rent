@@ -652,6 +652,28 @@
         $('#id_inspection_type').change(function() {
             checkInspectionType();
         });
+        
+        // معالجة نموذج إنشاء تقرير الحالة والتحقق من صحته قبل الإرسال
+        $('#carInspectionForm').on('submit', function(e) {
+            // التحقق من وجود حقل حالة السيارة
+            var carCondition = $('#id_car_condition').val();
+            if (!carCondition) {
+                e.preventDefault();
+                alert("{% trans 'يرجى تحديد حالة السيارة العامة قبل الحفظ' %}");
+                $('#id_car_condition').focus();
+                return false;
+            }
+        });
+        
+        // التحقق من وجود رسائل نجاح من الخادم
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                    // إظهار نافذة النجاح المنبثقة
+                    $('#successModal').modal('show');
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     });
 </script>
 {% endblock %}

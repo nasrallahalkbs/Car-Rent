@@ -1432,6 +1432,13 @@ def complete_car_inspection_create(request):
             # رسالة النجاح
             messages.success(request, _('تم إنشاء تقرير فحص السيارة بنجاح'))
 
+            # إضافة معلومات لجلسة المستخدم لإظهار رسالة تأكيد منبثقة
+            request.session['report_saved'] = True
+            request.session['report_id'] = report.id
+            
+            # تخزين معلومات التقرير في الجلسة للإظهار في الرسالة المنبثقة
+            request.session['car_info'] = f"{report.car.make} {report.car.model}" if report.car else ""
+            
             # توجيه إلى صفحة تفاصيل التقرير
             return redirect('car_inspection_detail', report.id)
         except Exception as e:
