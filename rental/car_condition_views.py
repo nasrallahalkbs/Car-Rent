@@ -710,9 +710,10 @@ def car_condition_detail(request, report_id):
     inspection_categories = {}
     if inspection_details:
         for detail in inspection_details:
-            # لم نعد نتخطى عناصر "أجزاء السيارة الرئيسية" لأننا نعرضها كصور
-            if detail.inspection_item.category.name == 'الهيكل الخارجي':
-                continue
+            # لم نعد نتخطى عناصر "أجزاء السيارة الرئيسية" 
+            # تم تغيير هذا السلوك ليعرض عناصر الفئة كباقي الفئات
+            # if detail.inspection_item.category.name == 'أجزاء السيارة الرئيسية':
+            #     continue
 
             category = detail.inspection_item.category
             if category.id not in inspection_categories:
@@ -1464,7 +1465,7 @@ def complete_car_inspection_create(request):
     # جلب الفئات المهمة والمكلفة فقط (حدد 4 فئات مهمة)
     # نحن نختار 4 فئات رئيسية فقط حسب طلب المستخدم
     important_categories = [
-        'الهيكل الخارجي',  # يتضمن عناصر مكلفة ومهمة للفحص
+        'أجزاء السيارة الرئيسية',  # تم تغيير الاسم من "الهيكل الخارجي" ليعكس المحتوى بشكل أفضل
         'المحرك ومكونات أسفل غطاء المحرك',  # فئة حرجة وأساسية للفحص
         'الإطارات والعجلات',  # مكلفة ومتعلقة بالسلامة
         'أنظمة السلامة والتشغيل'  # حرجة وتؤثر على السلامة
