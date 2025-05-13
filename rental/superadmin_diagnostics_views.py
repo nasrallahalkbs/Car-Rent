@@ -8,6 +8,7 @@ import subprocess
 import sqlite3
 import django
 import tempfile
+import time
 
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -711,15 +712,171 @@ def fix_issue(request, issue_id):
     return redirect('superadmin_diagnostics')
 
 def run_database_check():
-    """تشغيل فحص قاعدة البيانات"""
+    """تشغيل فحص قاعدة البيانات بناءً على معلومات حقيقية"""
     issues = []
     warnings = []
     success = []
     
-    # التحقق من نوع قاعدة البيانات
-    db_engine = settings.DATABASES['default']['ENGINE']
-    db_name = settings.DATABASES['default']['NAME']
+    try:
+        # اختبار الاتصال بقاعدة البيانات
+        db_connected = check_db_connection()
+        if not db_connected:
+            issues.append({
+                'title': _('فشل الاتصال بقاعدة البيانات'),
+                'description': _('لا يمكن الاتصال بقاعدة البيانات. قد تكون قاعدة البيانات متوقفة أو هناك مشكلة في التكوين.'),
+                'solution': _('تحقق من إعدادات الاتصال بقاعدة البيانات وتأكد من تشغيل خدمة قاعدة البيانات'),
+                'severity': 'critical',
+                'issue_id': 'db_connection_failed',
+                'timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            })
+        else:
+            success.append({
+                'title': _('الاتصال بقاعدة البيانات يعمل بشكل صحيح'),
+                'description': _('تم الاتصال بقاعدة البيانات بنجاح')
+            })
+            
+            # اختبار حجم قاعدة البيانات
+            db_size_str = get_database_size()
+            db_size_mb = 0
+            
+            try:
+                if isinstance(db_size_str, str) and 'MB' in db_size_str:
+                    db_size_mb = float(db_size_str.split()[0])
+                    
+                    if db_size_mb > 500:  # اختبار حجم قاعدة البيانات أكبر من 500 ميجا
+                        warnings.append({
+                            'title': _('حجم قاعدة البيانات كبير'),
+                            'description': _('حجم قاعدة البيانات {size}. قد يؤثر ذلك على الأداء.').format(size=db_size_str),
+                            'solution': _('فكر في تنظيف البيانات القديمة أو غير المستخدمة')
+                        })
+                    else:
+                        success.append({
+                            'title': _('حجم قاعدة البيانات مقبول'),
+                            'description': _('حجم قاعدة البيانات الحالي {size}').format(size=db_size_str)
+                        })
+            except Exception:
+                # في حالة عدم القدرة على تحويل حجم قاعدة البيانات، تخطي هذا الاختبار
+                pass
+                
+            # اختبار أداء قاعدة البيانات
+            try:
+                # قياس وقت تنفيذ استعلام بسيط
+                start_time = time.time()
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+                    cursor.fetchone()
+                query_time = time.time() - start_time
+                
+                if query_time > 0.5:  # إذا استغرق الاستعلام أكثر من نصف ثانية
+                    warnings.append({
+                        'title': _('بطء في استجابة قاعدة البيانات'),
+                        'description': _('استغرق الاستعلام البسيط {time:.4f} ثانية').format(time=query_time),
+                        'solution': _('تحقق من أداء خادم قاعدة البيانات وإعدادات التكوين')
+                    })
+                else:
+                    success.append({
+                        'title': _('أداء قاعدة البيانات جيد'),
+                        'description': _('استغرق الاستعلام البسيط {time:.4f} ثانية فقط').format(time=query_time)
+                    })
+                    
+                # التحقق من الجداول والفهارس
+                try:
+                    db_engine = settings.DATABASES['default']['ENGINE']
+                    if 'sqlite' in db_engine:
+                        # اختبارات خاصة بقاعدة بيانات SQLite
+                        with connection.cursor() as cursor:
+                            cursor.execute("PRAGMA integrity_check")
+                            integrity_result = cursor.fetchone()[0]
+                            if integrity_result != 'ok':
+                                issues.append({
+                                    'title': _('مشكلة في سلامة قاعدة بيانات SQLite'),
+                                    'description': _('نتيجة فحص السلامة: {result}').format(result=integrity_result),
+                                    'solution': _('قم بإصلاح قاعدة البيانات أو استعادة نسخة احتياطية'),
+                                    'severity': 'critical',
+                                    'issue_id': 'sqlite_integrity_failed',
+                                })
+                            else:
+                                success.append({
+                                    'title': _('سلامة قاعدة بيانات SQLite جيدة'),
+                                    'description': _('تم اجتياز فحص سلامة قاعدة البيانات')
+                                })
+                    elif 'postgresql' in db_engine:
+                        # اختبارات خاصة بقاعدة بيانات PostgreSQL
+                        with connection.cursor() as cursor:
+                            # فحص الجداول بدون فهارس (قد يؤثر على الأداء)
+                            cursor.execute("""
+                                SELECT relname
+                                FROM pg_class
+                                WHERE relkind = 'r'
+                                AND relname NOT LIKE 'pg_%'
+                                AND relname NOT LIKE 'sql_%'
+                                AND NOT EXISTS (
+                                    SELECT 1
+                                    FROM pg_index
+                                    WHERE indrelid = pg_class.oid
+                                );
+                            """)
+                            tables_without_indices = cursor.fetchall()
+                            if tables_without_indices:
+                                # إذا وجدت جداول بدون فهارس، قد يكون هذا يؤثر على الأداء
+                                table_list = ', '.join([t[0] for t in tables_without_indices])
+                                warnings.append({
+                                    'title': _('جداول بدون فهارس'),
+                                    'description': _('تم العثور على {count} جداول بدون فهارس: {tables}').format(
+                                        count=len(tables_without_indices),
+                                        tables=table_list
+                                    ),
+                                    'solution': _('فكر في إضافة فهارس للجداول المستخدمة بكثرة في الاستعلامات')
+                                })
+                except Exception as e:
+                    print(f"خطأ أثناء فحص الجداول والفهارس: {e}")
+            except Exception as e:
+                print(f"خطأ أثناء اختبار أداء قاعدة البيانات: {e}")
+                issues.append({
+                    'title': _('خطأ أثناء اختبار أداء قاعدة البيانات'),
+                    'description': _('حدث خطأ أثناء محاولة قياس أداء قاعدة البيانات: {error}').format(error=str(e)),
+                    'solution': _('تحقق من سجلات الأخطاء للحصول على مزيد من المعلومات'),
+                    'severity': 'medium',
+                    'issue_id': 'db_performance_test_error',
+                })
+    except Exception as e:
+        print(f"خطأ أثناء فحص قاعدة البيانات: {e}")
+        issues.append({
+            'title': _('خطأ أثناء فحص قاعدة البيانات'),
+            'description': _('حدث خطأ غير متوقع أثناء إجراء فحص قاعدة البيانات: {error}').format(error=str(e)),
+            'solution': _('تحقق من سجلات الأخطاء للحصول على مزيد من المعلومات'),
+            'severity': 'high',
+            'issue_id': 'db_check_error',
+        })
     
+    # إحصائيات قاعدة البيانات
+    stats = {}
+    try:
+        with connection.cursor() as cursor:
+            # عدد الجداول
+            if 'sqlite' in settings.DATABASES['default']['ENGINE']:
+                cursor.execute("SELECT count(*) FROM sqlite_master WHERE type='table'")
+                table_count = cursor.fetchone()[0]
+                stats['table_count'] = table_count
+            elif 'postgresql' in settings.DATABASES['default']['ENGINE']:
+                cursor.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'")
+                table_count = cursor.fetchone()[0]
+                stats['table_count'] = table_count
+            
+            # إضافة إحصائيات إلى النتائج
+            success.append({
+                'title': _('إحصائيات قاعدة البيانات'),
+                'description': _('عدد الجداول: {table_count}').format(table_count=stats.get('table_count', 'غير متاح')),
+            })
+    except Exception as e:
+        print(f"خطأ أثناء جمع إحصائيات قاعدة البيانات: {e}")
+    
+    return {
+        'issues': issues,
+        'warnings': warnings,
+        'success': success,
+        'stats': stats
+    }
     # فحص اتصالات قاعدة البيانات
     try:
         with connection.cursor() as cursor:
