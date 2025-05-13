@@ -810,40 +810,39 @@
             
             <!-- صور السيارة -->
             <div class="car-views">
-                <!-- عرض صور السيارة الرئيسية فقط إذا كانت متوفرة -->
-                {% if report.front_image %}
-                    <div class="car-view-header">صورة أمامية</div>
-                    <div class="car-view">
-                        <img src="{{ report.front_image.url }}?v={{ report.updated_at|date:'U' }}" alt="الواجهة الأمامية">
-                    </div>
-                {% endif %}
-                
-                {% if report.rear_image %}
-                    <div class="car-view-header">صورة خلفية</div>
-                    <div class="car-view">
-                        <img src="{{ report.rear_image.url }}?v={{ report.updated_at|date:'U' }}" alt="الواجهة الخلفية">
-                    </div>
-                {% endif %}
-                
-                {% if report.side_image %}
-                    <div class="car-view-header">صورة جانبية</div>
-                    <div class="car-view">
-                        <img src="{{ report.side_image.url }}?v={{ report.updated_at|date:'U' }}" alt="المنظر الجانبي">
-                    </div>
-                {% endif %}
-                
-                {% if report.interior_image %}
-                    <div class="car-view-header">صورة داخلية</div>
-                    <div class="car-view">
-                        <img src="{{ report.interior_image.url }}?v={{ report.updated_at|date:'U' }}" alt="المنظر الداخلي">
-                    </div>
-                {% endif %}
-                
-                {% if not report.front_image and not report.rear_image and not report.side_image and not report.interior_image %}
-                    <div class="text-center" style="padding: 20px; color: #777; font-style: italic;">
-                        لا توجد صور رئيسية للسيارة
-                    </div>
-                {% endif %}
+                <!-- عرض جميع صور السيارة من نموذج CarInspectionImage -->
+                {% with exterior_images=report.images.all %}
+                    {% if exterior_images %}
+                        <!-- عرض الصور بناءً على وصفها -->
+                        {% for img in exterior_images %}
+                            {% if 'صورة أمامية' in img.description %}
+                                <div class="car-view-header">صورة أمامية</div>
+                                <div class="car-view">
+                                    <img src="{{ img.image.url }}?v={{ report.updated_at|date:'U' }}" alt="الواجهة الأمامية">
+                                </div>
+                            {% elif 'صورة خلفية' in img.description %}
+                                <div class="car-view-header">صورة خلفية</div>
+                                <div class="car-view">
+                                    <img src="{{ img.image.url }}?v={{ report.updated_at|date:'U' }}" alt="الواجهة الخلفية">
+                                </div>
+                            {% elif 'صورة جانبية' in img.description %}
+                                <div class="car-view-header">صورة جانبية</div>
+                                <div class="car-view">
+                                    <img src="{{ img.image.url }}?v={{ report.updated_at|date:'U' }}" alt="المنظر الجانبي">
+                                </div>
+                            {% elif 'صورة داخلية' in img.description %}
+                                <div class="car-view-header">صورة داخلية</div>
+                                <div class="car-view">
+                                    <img src="{{ img.image.url }}?v={{ report.updated_at|date:'U' }}" alt="المنظر الداخلي">
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center" style="padding: 20px; color: #777; font-style: italic;">
+                            لا توجد صور رئيسية للسيارة
+                        </div>
+                    {% endif %}
+                {% endwith %}
             </div>
         </div>
     </div>
