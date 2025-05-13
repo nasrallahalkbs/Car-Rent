@@ -37,6 +37,43 @@
     {% if dark_mode %}
     <link rel="stylesheet" href="{% static 'css/dark-mode.css' %}?v={{ timestamp }}">
     {% endif %}
+    
+    <!-- Dropdown submenu styles -->
+    <style>
+        .dropdown-submenu {
+            position: relative;
+        }
+        
+        .dropdown-submenu > .dropdown-menu {
+            top: 0;
+            {% if LANGUAGE_CODE == 'ar' %}
+            right: 100%;
+            margin-right: -1px;
+            {% else %}
+            left: 100%;
+            margin-left: -1px;
+            {% endif %}
+            border-radius: 0.25rem;
+        }
+        
+        .dropdown-submenu:hover > .dropdown-menu {
+            display: block;
+        }
+        
+        .dropdown-submenu > a:after {
+            display: block;
+            content: " ";
+            float: {% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %};
+            width: 0;
+            height: 0;
+            border-color: transparent;
+            border-style: solid;
+            border-width: 5px 0 5px 5px;
+            border-left-color: #ccc;
+            margin-top: 5px;
+            margin-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: -10px;
+        }
+    </style>
 
 
     <style>
@@ -155,33 +192,7 @@
                             <i class="fas fa-moon {% trans "me-1" %}"></i> {% endif %}
                         </a>
                      </li>
-                    <!-- Language Toggle -->
-                    <li class="nav-item">
-                        <div class="dropdown">
-                            <a class="btn btn-sm btn-outline-primary dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-language {% if LANGUAGE_CODE == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
-                                {% if LANGUAGE_CODE == 'ar' %}تغيير اللغة{% else %}Change Language{% endif %}
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <form action="{% url 'set_language' %}" method="post">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="next" value="{{ request.path }}">
-                                        <input type="hidden" name="language" value="ar">
-                                        <button type="submit" class="dropdown-item">العربية</button>
-                                    </form>
-                                </li>
-                                <li>
-                                    <form action="{% url 'set_language' %}" method="post">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="next" value="{{ request.path }}">
-                                        <input type="hidden" name="language" value="en">
-                                        <button type="submit" class="dropdown-item">English</button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
+                    <!-- Language Toggle Removed -->
 
                     {% if user.is_authenticated %}
                     <!-- Favorites -->
@@ -223,22 +234,28 @@
                             <li><a class="dropdown-item" href="{% url 'admin_index' %}"><i class="fas fa-tachometer-alt {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i> {% trans "Dashboard" %}</a></li>
                             {% endif %}
                             <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form action="{% url 'set_language' %}" method="post" class="px-2">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="{{ request.path }}">
-                                    {% if LANGUAGE_CODE == 'ar' %}
-                                    <input type="hidden" name="language" value="en">
-                                    <button type="submit" class="dropdown-item">
-                                        <i class="fas fa-language me-2"></i> Switch to English
-                                    </button>
-                                    {% else %}
-                                    <input type="hidden" name="language" value="ar">
-                                    <button type="submit" class="dropdown-item">
-                                        <i class="fas fa-language ms-2"></i> التحويل إلى العربية
-                                    </button>
-                                    {% endif %}
-                                </form>
+                            <li class="dropdown-submenu">
+                                <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                    <i class="fas fa-language {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i> {% trans "Language" %}
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <form action="{% url 'set_language' %}" method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next" value="{{ request.path }}">
+                                            <input type="hidden" name="language" value="ar">
+                                            <button type="submit" class="dropdown-item">العربية</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form action="{% url 'set_language' %}" method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next" value="{{ request.path }}">
+                                            <input type="hidden" name="language" value="en">
+                                            <button type="submit" class="dropdown-item">English</button>
+                                        </form>
+                                    </li>
+                                </ul>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i> {% trans "Logout" %}</a></li>
