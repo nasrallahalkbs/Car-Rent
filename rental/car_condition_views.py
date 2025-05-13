@@ -1819,8 +1819,8 @@ def print_car_delivery_report(request, report_id):
                 'items': []
             }
 
-        # إضافة الصور لكل عنصر - استخدام prefetch_related لتحسين الأداء
-        detail.images_list = detail.images.prefetch_related('image').all()
+        # إضافة الصور لكل عنصر
+        detail.images_list = detail.images.all()
         
         # تسجيل ما إذا كان هناك أي صور في التقرير
         if detail.images_list.exists():
