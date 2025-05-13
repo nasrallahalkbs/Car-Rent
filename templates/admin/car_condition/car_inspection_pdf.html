@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تقرير فحص السيارة #{{ report.id }}</title>
+    <style>
+        /* الأساسيات */
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* ترويسة الصفحة */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1e88e5;
+        }
+        .header h1 {
+            font-size: 22pt;
+            margin: 0;
+            color: #1e88e5;
+        }
+        .header p {
+            margin: 5px 0;
+            font-size: 12pt;
+            color: #666;
+        }
+        
+        /* معلومات السيارة والتقرير */
+        .car-info {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .info-section {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .info-column {
+            width: 48%;
+            margin-right: 2%;
+        }
+        .info-item {
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        /* مستوى الوقود */
+        .fuel-container {
+            margin-top: 5px;
+            width: 100%;
+            height: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .fuel-level {
+            height: 100%;
+            background-color: #4caf50;
+        }
+        
+        /* حالة السيارة */
+        .condition-badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10pt;
+            font-weight: bold;
+        }
+        .condition-excellent {
+            background-color: #4caf50;
+            color: white;
+        }
+        .condition-good {
+            background-color: #8bc34a;
+            color: white;
+        }
+        .condition-fair {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .condition-poor {
+            background-color: #ff9800;
+            color: white;
+        }
+        .condition-damaged {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        /* بيانات الفحص */
+        .section-title {
+            font-size: 16pt;
+            color: #1e88e5;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #1e88e5;
+            padding-bottom: 5px;
+        }
+        
+        /* الجداول */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f5f5f5;
+            padding: 8px;
+            text-align: right;
+            font-weight: bold;
+        }
+        td {
+            padding: 8px;
+            text-align: right;
+        }
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        /* الصور */
+        .image-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .image-container {
+            width: 24%;
+            margin-right: 1%;
+            margin-bottom: 10px;
+        }
+        .inspection-image {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            height: auto;
+        }
+        
+        /* المسافات والهوامش */
+        .mr-1 {
+            margin-right: 5px;
+        }
+        .mb-2 {
+            margin-bottom: 10px;
+        }
+        
+        /* التوقيعات */
+        .signatures {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            width: 45%;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            text-align: center;
+        }
+        .signature-title {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .signature-image {
+            max-width: 200px;
+            max-height: 100px;
+        }
+        .signature-date {
+            margin-top: 10px;
+            font-size: 10pt;
+            color: #777;
+        }
+        
+        /* الأضرار والملاحظات */
+        .notes-box {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #fff;
+            border-radius: 4px;
+        }
+        .notes-title {
+            font-size: 14pt;
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        
+        /* نهاية الصفحة */
+        .page-footer {
+            text-align: center;
+            font-size: 10pt;
+            color: #777;
+            margin-top: 50px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <!-- ترويسة التقرير -->
+    <div class="header">
+        <h1>تقرير فحص السيارة</h1>
+        <p>رقم التقرير: {{ report.id }} | نوع التقرير: {{ report.get_report_type_display }}</p>
+        <p>تاريخ الفحص: {{ report.date|date:"Y-m-d H:i" }}</p>
+    </div>
+    
+    <!-- معلومات السيارة والتقرير -->
+    <div class="car-info">
+        <div class="info-section">
+            <div class="info-column">
+                <div class="info-item">
+                    <span class="info-label">السيارة:</span>
+                    <span>{{ report.car.year }} {{ report.car.make }} {{ report.car.model }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">رقم اللوحة:</span>
+                    <span>{{ report.car.license_plate }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">الفئة:</span>
+                    <span>{{ report.car.get_category_display }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">ناقل الحركة:</span>
+                    <span>{{ report.car.get_transmission_display }}</span>
+                </div>
+            </div>
+            <div class="info-column">
+                <div class="info-item">
+                    <span class="info-label">نوع التقرير:</span>
+                    <span>{{ report.get_report_type_display }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">تاريخ التقرير:</span>
+                    <span>{{ report.date|date:"Y-m-d H:i" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">عداد المسافة:</span>
+                    <span>{{ report.mileage }} كم</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">حالة السيارة:</span>
+                    <span class="condition-badge condition-{{ report.car_condition }}">{{ report.get_car_condition_display }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">مستوى الوقود:</span>
+                    <span>{{ report.get_fuel_level_display }}</span>
+                    <div class="fuel-container">
+                        {% if report.fuel_level == 0 %}
+                            <div class="fuel-level" style="width: 0%"></div>
+                        {% elif report.fuel_level == 1 %}
+                            <div class="fuel-level" style="width: 25%"></div>
+                        {% elif report.fuel_level == 2 %}
+                            <div class="fuel-level" style="width: 50%"></div>
+                        {% elif report.fuel_level == 3 %}
+                            <div class="fuel-level" style="width: 75%"></div>
+                        {% elif report.fuel_level == 4 %}
+                            <div class="fuel-level" style="width: 100%"></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- تفاصيل الفحص -->
+    {% if categories %}
+        <h2 class="section-title">تفاصيل الفحص</h2>
+        
+        {% for category_id, category in categories.items %}
+            <div class="category-section mb-2">
+                <h3 style="background-color: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 10px;">{{ category.name }}</h3>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="30%">عنصر الفحص</th>
+                            <th width="15%">الحالة</th>
+                            <th>ملاحظات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detail in category.items %}
+                            <tr>
+                                <td>{{ detail.inspection_item.name }}</td>
+                                <td>
+                                    <span class="condition-badge condition-{{ detail.condition }}">
+                                        {{ detail.get_condition_display }}
+                                    </span>
+                                </td>
+                                <td>{{ detail.notes|default:"-" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <!-- صور الفئة -->
+                {% with images_exist=False %}
+                    {% for detail in category.items %}
+                        {% if detail.images_list %}
+                            {% if not images_exist %}
+                                <h4>الصور:</h4>
+                                <div class="image-gallery">
+                                {% with images_exist=True %}
+                                {% endwith %}
+                            {% endif %}
+                            
+                            {% for image in detail.images_list %}
+                                <div class="image-container">
+                                    <img src="{{ protocol }}://{{ domain }}{{ image.image.url }}" class="inspection-image" alt="{{ detail.inspection_item.name }} - {{ image.description|default:'صورة' }}">
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if images_exist %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div style="padding: 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px;">
+            <p style="color: #666; margin: 0;">لا توجد تفاصيل فحص مسجلة لهذا التقرير.</p>
+        </div>
+    {% endif %}
+    
+    <!-- الأضرار والملاحظات -->
+    <h2 class="section-title">الأضرار والملاحظات</h2>
+    <div class="notes-section">
+        <div class="row" style="display: flex; margin: 0 -10px;">
+            <div style="width: 50%; padding: 0 10px;">
+                <div class="notes-box">
+                    <h3 class="notes-title">ملاحظات عامة</h3>
+                    {% if report.notes %}
+                        <p>{{ report.notes|linebreaks }}</p>
+                    {% else %}
+                        <p style="color: #999; font-style: italic;">لا توجد ملاحظات عامة</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div style="width: 50%; padding: 0 10px;">
+                <div class="notes-box">
+                    <h3 class="notes-title">الأضرار المكتشفة</h3>
+                    {% if report.defects %}
+                        <div style="margin-bottom: 15px;">
+                            <h4 style="margin-top: 0; color: #555;">وصف الأضرار:</h4>
+                            <p>{{ report.defects|linebreaks }}</p>
+                        </div>
+                        
+                        {% if report.defect_cause %}
+                            <div style="margin-bottom: 15px;">
+                                <h4 style="margin-top: 0; color: #555;">سبب الضرر:</h4>
+                                <p>{{ report.defect_cause }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        {% if report.defect_responsibility %}
+                            <div>
+                                <h4 style="margin-top: 0; color: #555;">المسؤولية:</h4>
+                                <p>{{ report.get_defect_responsibility_display }}</p>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <p style="color: #999; font-style: italic;">لم يتم اكتشاف أضرار</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- الصور العامة -->
+    {% if general_images %}
+        <h2 class="section-title">الصور العامة</h2>
+        <div class="image-gallery">
+            {% for image in general_images %}
+                <div class="image-container">
+                    <img src="{{ protocol }}://{{ domain }}{{ image.image.url }}" class="inspection-image" alt="{{ image.description|default:'صورة عامة' }}">
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- التوقيعات -->
+    <div class="signatures">
+        <div class="signature-box">
+            <div class="signature-title">توقيع الموظف</div>
+            {% if staff_signature %}
+                <img src="{{ protocol }}://{{ domain }}{{ staff_signature.image.url }}" class="signature-image" alt="توقيع الموظف">
+                <div class="signature-date">{{ staff_signature.created_at|date:"Y-m-d H:i" }}</div>
+            {% else %}
+                <p style="color: #999; font-style: italic;">لا يوجد توقيع</p>
+            {% endif %}
+        </div>
+        <div class="signature-box">
+            <div class="signature-title">توقيع العميل</div>
+            {% if customer_signature %}
+                <img src="{{ protocol }}://{{ domain }}{{ customer_signature.image.url }}" class="signature-image" alt="توقيع العميل">
+                <div class="signature-date">{{ customer_signature.created_at|date:"Y-m-d H:i" }}</div>
+            {% else %}
+                <p style="color: #999; font-style: italic;">لا يوجد توقيع</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- نهاية الصفحة -->
+    <div class="page-footer">
+        <p>تم إنشاء هذا التقرير بواسطة نظام إدارة تأجير السيارات | تاريخ الطباعة: {% now "Y-m-d H:i" %}</p>
+    </div>
+</body>
+</html>
