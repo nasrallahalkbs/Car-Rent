@@ -666,6 +666,50 @@ def run_system_check():
         'success': success,
     }
 
+@login_required
+def fix_issue(request, issue_id):
+    """إصلاح مشكلة محددة في النظام"""
+    if not is_superadmin(request.user):
+        messages.error(request, _('ليس لديك صلاحية لإصلاح مشاكل النظام'))
+        return redirect('superadmin_diagnostics')
+    
+    try:
+        # الحصول على تفاصيل المشكلة
+        issue = SystemIssue.objects.get(id=issue_id)
+        
+        # محاولة إصلاح المشكلة حسب نوعها
+        success = False
+        if issue.issue_type == 'disk_space_low':
+            success = fix_disk_space()
+        elif issue.issue_type == 'media_permissions':
+            success = fix_media_permissions()
+        elif issue.issue_type == 'project_permissions':
+            success = fix_project_permissions()
+        elif issue.issue_type == 'db_permissions':
+            success = fix_db_permissions()
+        elif issue.issue_type == 'missing_media_dir':
+            success = create_media_directory()
+        elif issue.issue_type == 'db_connection':
+            success = check_db_connection()
+        
+        # تحديث حالة المشكلة
+        if success:
+            issue.status = 'fixed'
+            issue.fixed_at = timezone.now()
+            issue.fixed_by = request.user
+            issue.save()
+            messages.success(request, _('تم إصلاح المشكلة بنجاح'))
+        else:
+            issue.status = 'in_progress'
+            issue.save()
+            messages.warning(request, _('تم محاولة إصلاح المشكلة، ولكن قد تحتاج إلى مزيد من الإجراءات'))
+    except SystemIssue.DoesNotExist:
+        messages.error(request, _('المشكلة المطلوبة غير موجودة'))
+    except Exception as e:
+        messages.error(request, _('حدث خطأ أثناء محاولة إصلاح المشكلة: {0}').format(str(e)))
+    
+    return redirect('superadmin_diagnostics')
+
 def run_database_check():
     """تشغيل فحص قاعدة البيانات"""
     issues = []

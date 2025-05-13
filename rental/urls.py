@@ -16,6 +16,7 @@ from .fixed_analytics_view import direct_payment_analytics
 from django.urls import path
 from django.shortcuts import render
 from . import views, admin_views, payment_views, analytics_views
+from .superadmin_diagnostics_views import system_diagnostics, run_diagnostic, fix_issue
 from .superadmin_settings_views import superadmin_generate_2fa_qr, superadmin_enable_2fa
 from .admin_views_windows import admin_archive_windows_explorer
 from .windows_explorer_view import admin_archive_windows
@@ -169,7 +170,10 @@ urlpatterns = [
     path('dashboard/archive/delete/<int:document_id>/', admin_views.delete_document, name='delete_document'),
     path('dashboard/archive/upload-direct/', admin_views.admin_archive_upload_direct, name='admin_archive_upload_direct'),
 
-    # Diagnostic routes - معلقة مؤقتاً حتى يتم إنشاء الدوال
+    # Diagnostic routes - مسارات صفحات التشخيص
+    path('superadmin/diagnostics/', system_diagnostics, name='superadmin_diagnostics'),
+    path('superadmin/diagnostics/run/<str:diagnostic_type>/', run_diagnostic, name='superadmin_run_diagnostic'),
+    path('superadmin/diagnostics/fix/<int:issue_id>/', fix_issue, name='superadmin_fix_issue'),
     # path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
     # path('csrf-debug-page/', csrf_debug_page, name='csrf_debug_page'),
 
