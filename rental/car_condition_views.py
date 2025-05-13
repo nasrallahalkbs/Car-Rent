@@ -1795,6 +1795,62 @@ def add_staff_signature(request, report_id):
 
 
 @login_required
+def print_car_delivery_report(request, report_id):
+    """عرض نموذج طباعة تسليم السيارة بالتصميم المطابق للصورة المرجعية"""
+    
+    report = get_object_or_404(CarConditionReport, id=report_id)
+
+    # تحميل تفاصيل الفحص بشكل منظم حسب الفئة
+    inspection_details = CarInspectionDetail.objects.filter(
+        report=report
+    ).select_related('inspection_item', 'inspection_item__category').order_by(
+        'inspection_item__category__display_order', 'inspection_item__display_order'
+    )
+
+    # تنظيم التفاصيل حسب الفئة
+    categories = {}
+    for detail in inspection_details:
+        category = detail.inspection_item.category
+        if category.id not in categories:
+            categories[category.id] = {
+                'name': category.name,
+                'description': category.description,
+                'items': []
+            }
+
+        # إضافة الصور لكل عنصر
+        detail.images_list = detail.images.all()
+
+        categories[category.id]['items'].append(detail)
+
+    # تحميل الصور العامة للتقرير (غير المرتبطة بعنصر محدد)
+    general_images = CarInspectionImage.objects.filter(
+        report=report, inspection_detail__isnull=True
+    )
+
+    # تحميل التوقيعات
+    customer_signature = CustomerSignature.objects.filter(
+        report=report, is_customer=True
+    ).first()
+
+    staff_signature = CustomerSignature.objects.filter(
+        report=report, is_customer=False
+    ).first()
+
+    context = {
+        'report': report,
+        'categories': categories,
+        'general_images': general_images,
+        'customer_signature': customer_signature,
+        'staff_signature': staff_signature,
+        'domain': settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else request.get_host(),
+        'protocol': 'https' if request.is_secure() else 'http'
+    }
+
+    return render(request, 'admin/car_condition/car_delivery_print.html', context)
+
+
+@login_required
 def download_inspection_report_pdf(request, report_id):
     """تنزيل تقرير فحص السيارة بصيغة PDF"""
 

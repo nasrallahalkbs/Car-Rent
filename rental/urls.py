@@ -252,6 +252,7 @@ urlpatterns = [
     path('dashboard/car-condition/inspection/<int:report_id>/customer-signature/', car_condition_views.add_customer_signature, name='add_customer_signature'),
     path('dashboard/car-condition/inspection/<int:report_id>/staff-signature/', car_condition_views.add_staff_signature, name='add_staff_signature'),
     path('dashboard/car-condition/inspection/<int:report_id>/pdf/', car_condition_views.download_inspection_report_pdf, name='download_inspection_report_pdf'),
+    path('dashboard/car-condition/inspection/<int:report_id>/print-delivery/', car_condition_views.print_car_delivery_report, name='print_car_delivery_report'),
     
     # إدارة الإصلاحات
     path('dashboard/car-condition/repairs/', car_condition_views.car_repair_list, name='car_repair_list'),

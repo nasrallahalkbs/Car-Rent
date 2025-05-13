@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>نموذج تسليم سيارة</title>
+    <style>
+        /* الأساسيات */
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        
+        body {
+            font-family: 'Arial', 'Segoe UI', sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+        
+        /* تصميم الطباعة */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+        
+        /* عنوان النموذج */
+        .form-title {
+            text-align: center;
+            font-size: 24pt;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        /* وصف النموذج */
+        .form-description {
+            text-align: right;
+            font-size: 10pt;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        /* معلومات السيارة والعقد */
+        .info-box {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .info-section {
+            border: 1px solid #000;
+            padding: 5px;
+            flex: 1;
+            margin: 0 5px;
+        }
+        
+        .info-heading {
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            width: 40%;
+        }
+        
+        .info-value {
+            width: 60%;
+        }
+        
+        /* صور السيارة */
+        .car-images {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .car-image {
+            text-align: center;
+            margin: 0 5px;
+        }
+        
+        .car-image img {
+            border: 1px solid #ccc;
+            width: 150px;
+            height: auto;
+        }
+        
+        /* جدول تفاصيل الفحص */
+        .inspection-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .inspection-table th, .inspection-table td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: right;
+        }
+        
+        .inspection-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        /* كتلة النص الوصفي */
+        .description-block {
+            border: 1px solid #000;
+            padding: 10px;
+            margin: 20px 0;
+        }
+        
+        /* منطقة التوقيعات */
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .signature-block {
+            text-align: center;
+            width: 20%;
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid #000;
+            height: 60px;
+            margin-bottom: 5px;
+        }
+        
+        /* الأزرار */
+        .action-buttons {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- أزرار التحكم في الطباعة - لا تظهر في النسخة المطبوعة -->
+    <div class="action-buttons no-print">
+        <button class="btn btn-primary" onclick="window.print()">طباعة النموذج</button>
+        <button class="btn btn-secondary" onclick="window.history.back()">العودة</button>
+    </div>
+    
+    <!-- عنوان النموذج -->
+    <div class="form-title">نموذج تسليم سيارة</div>
+    
+    <!-- وصف النموذج -->
+    <div class="form-description">
+        <p>
+            تمثل هذه الوثيقة إقرارًا بأن العميل قد استلم السيارة في حالتها الراهنة، وأن جميع البيانات المسجلة تعكس
+            الحالة الفعلية للسيارة عند التسليم. وتوضح الوثيقة تفاصيل المركبة وحالتها وأي ملاحظات ذات صلة.
+        </p>
+    </div>
+    
+    <!-- معلومات السيارة والعقد -->
+    <div class="info-box">
+        <div class="info-section">
+            <div class="info-heading">بيانات السيارة</div>
+            <div class="info-row">
+                <div class="info-label">الشركة المصنعة:</div>
+                <div class="info-value">{{ report.car.make }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">الموديل:</div>
+                <div class="info-value">{{ report.car.model }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">سنة الصنع:</div>
+                <div class="info-value">{{ report.car.year }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">رقم اللوحة:</div>
+                <div class="info-value">{{ report.car.license_plate }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">اللون:</div>
+                <div class="info-value">{{ report.car.color }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">نوع الوقود:</div>
+                <div class="info-value">{{ report.car.get_fuel_type_display }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">ناقل الحركة:</div>
+                <div class="info-value">{{ report.car.get_transmission_display }}</div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-heading">بيانات الحجز</div>
+            {% if report.reservation %}
+            <div class="info-row">
+                <div class="info-label">رقم الحجز:</div>
+                <div class="info-value">{{ report.reservation.reservation_number }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">اسم العميل:</div>
+                <div class="info-value">{{ report.reservation.user.get_full_name }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">تاريخ الاستلام:</div>
+                <div class="info-value">{{ report.reservation.start_date|date:"Y-m-d" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">تاريخ الإرجاع:</div>
+                <div class="info-value">{{ report.reservation.end_date|date:"Y-m-d" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">مدة الإيجار:</div>
+                <div class="info-value">{{ report.reservation.duration }} يوم</div>
+            </div>
+            {% else %}
+            <div class="info-row">
+                <div class="info-label">تاريخ التقرير:</div>
+                <div class="info-value">{{ report.date|date:"Y-m-d" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">منشئ التقرير:</div>
+                <div class="info-value">{{ report.created_by.get_full_name|default:report.created_by.username }}</div>
+            </div>
+            {% endif %}
+            <div class="info-row">
+                <div class="info-label">قراءة العداد:</div>
+                <div class="info-value">{{ report.mileage }} كم</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">مستوى الوقود:</div>
+                <div class="info-value">{{ report.get_fuel_level_display }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">حالة السيارة:</div>
+                <div class="info-value">{{ report.get_car_condition_display }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- صور السيارة -->
+    <div class="car-images">
+        {% for image in general_images|slice:":4" %}
+            <div class="car-image">
+                {% if image.description %}
+                <p>{{ image.description }}</p>
+                {% endif %}
+                <img src="{{ protocol }}://{{ domain }}{{ image.image.url }}" alt="صورة السيارة">
+            </div>
+        {% empty %}
+            <!-- رسومات تخطيطية للسيارة -->
+            <div class="car-image">
+                <p>المقدمة</p>
+                <div style="width: 150px; height: 100px; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center;">
+                    <svg width="100" height="60" viewBox="0 0 100 60">
+                        <rect x="20" y="10" width="60" height="40" rx="5" stroke="#333" stroke-width="2" fill="none"/>
+                        <line x1="20" y1="30" x2="80" y2="30" stroke="#333" stroke-width="1"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="car-image">
+                <p>الجانب</p>
+                <div style="width: 150px; height: 100px; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center;">
+                    <svg width="120" height="60" viewBox="0 0 120 60">
+                        <path d="M10,40 L30,40 C35,40 40,30 50,30 L80,30 C90,30 95,35 100,40 L110,40 L110,50 L10,50 Z" stroke="#333" stroke-width="2" fill="none"/>
+                        <circle cx="30" cy="50" r="10" stroke="#333" stroke-width="2" fill="none"/>
+                        <circle cx="90" cy="50" r="10" stroke="#333" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="car-image">
+                <p>الخلف</p>
+                <div style="width: 150px; height: 100px; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center;">
+                    <svg width="100" height="60" viewBox="0 0 100 60">
+                        <rect x="20" y="10" width="60" height="40" rx="5" stroke="#333" stroke-width="2" fill="none"/>
+                        <line x1="20" y1="30" x2="80" y2="30" stroke="#333" stroke-width="1"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="car-image">
+                <p>من أعلى</p>
+                <div style="width: 150px; height: 100px; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center;">
+                    <svg width="100" height="60" viewBox="0 0 100 60">
+                        <ellipse cx="50" cy="30" rx="40" ry="20" stroke="#333" stroke-width="2" fill="none"/>
+                        <line x1="50" y1="10" x2="50" y2="50" stroke="#333" stroke-width="1"/>
+                    </svg>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- جدول تفاصيل الفحص -->
+    <table class="inspection-table">
+        <thead>
+            <tr>
+                <th colspan="2">البيان</th>
+                <th>الحالة</th>
+                <th>ملاحظات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if categories %}
+                {% for category_id, category in categories.items %}
+                    <tr>
+                        <td colspan="4" style="font-weight: bold; background-color: #f9f9f9">{{ category.name }}</td>
+                    </tr>
+                    {% for detail in category.items %}
+                        <tr>
+                            <td width="5%">{{ forloop.counter }}</td>
+                            <td width="35%">{{ detail.inspection_item.name }}</td>
+                            <td width="20%">{{ detail.get_condition_display }}</td>
+                            <td width="40%">{{ detail.notes|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center;">لا توجد بيانات فحص متاحة</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- كتلة النص الوصفي -->
+    <div class="description-block">
+        <p>
+            أقر أنا الموقع أدناه بأنني استلمت السيارة الموضحة بياناتها أعلاه، وأن حالتها مطابقة للوصف المذكور في هذا النموذج.
+            كما أتعهد بإعادة السيارة بنفس الحالة عند انتهاء فترة الإيجار، وأن أتحمل مسؤولية أي أضرار تلحق بها أثناء فترة استلامي لها.
+        </p>
+        {% if report.notes %}
+        <p>
+            <strong>ملاحظات إضافية:</strong> {{ report.notes }}
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- منطقة التوقيعات -->
+    <div class="signatures">
+        <div class="signature-block">
+            <div class="signature-line">
+                {% if customer_signature %}
+                <img src="{{ protocol }}://{{ domain }}{{ customer_signature.signature_image.url }}" style="max-width: 100%; max-height: 60px;" alt="توقيع العميل">
+                {% endif %}
+            </div>
+            <div>توقيع العميل</div>
+        </div>
+        
+        <div class="signature-block">
+            <div class="signature-line">
+                {% if staff_signature %}
+                <img src="{{ protocol }}://{{ domain }}{{ staff_signature.signature_image.url }}" style="max-width: 100%; max-height: 60px;" alt="توقيع الموظف">
+                {% endif %}
+            </div>
+            <div>توقيع الموظف</div>
+        </div>
+        
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <div>توقيع المدير</div>
+        </div>
+        
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <div>ختم الشركة</div>
+        </div>
+    </div>
+
+    <!-- تاريخ وتوقيت التقرير -->
+    <div style="text-align: center; margin-top: 20px; font-size: 10pt;">
+        تم إنشاء هذا التقرير بتاريخ: {{ report.date|date:"Y-m-d H:i" }}
+    </div>
+</body>
+</html>
