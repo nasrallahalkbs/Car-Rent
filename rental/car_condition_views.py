@@ -317,7 +317,8 @@ def car_condition_create(request):
                 # معالجة كل عنصر فحص نشط
                 for item in inspection_items:
                     # تم تعديل السلوك ليشمل عناصر الهيكل الخارجي
-# if item.category.name == 'الهيكل الخارجي':
+# # لم نعد نتخطى عناصر 'أجزاء السيارة الرئيسية'
+# if item.category.name == 'أجزاء السيارة الرئيسية':
 #     print(f"⏭️ تخطي عنصر هيكل خارجي: {item.name}")
 #     continue
 
@@ -498,7 +499,7 @@ def car_condition_create(request):
         'form': form,
         'title': _('إنشاء تقرير حالة سيارة جديد'),
         'inspection_categories': inspection_categories,
-        'exterior_images': [],  # قائمة فارغة لصور الهيكل الخارجي في حالة الإنشاء
+        'exterior_images': [],  # قائمة فارغة لصور أجزاء السيارة الرئيسية في حالة الإنشاء
         'important_items': important_items,
         'expensive_items': expensive_items,
         'critical_items': critical_items,
@@ -614,7 +615,8 @@ def car_condition_edit(request, report_id):
                             inspection_item = CarInspectionItem.objects.get(id=item_id)
 
                             # تم تعديل السلوك ليشمل عناصر الهيكل الخارجي
-# if inspection_item.category.name == 'الهيكل الخارجي':
+# # لم نعد نتخطى عناصر 'أجزاء السيارة الرئيسية'
+# if inspection_item.category.name == 'أجزاء السيارة الرئيسية':
 #     continue
 
                             # الحصول على الملاحظات واحتياج الإصلاح
@@ -708,7 +710,7 @@ def car_condition_detail(request, report_id):
     inspection_categories = {}
     if inspection_details:
         for detail in inspection_details:
-            # تخطي عناصر "الهيكل الخارجي" لأننا نعرضها كصور
+            # لم نعد نتخطى عناصر "أجزاء السيارة الرئيسية" لأننا نعرضها كصور
             if detail.inspection_item.category.name == 'الهيكل الخارجي':
                 continue
 
@@ -1399,10 +1401,11 @@ def complete_car_inspection_create(request):
                         # البحث عن عنصر الفحص
                         inspection_item = CarInspectionItem.objects.get(id=item_id)
 
-                        # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
-                        if inspection_item.category.name == 'الهيكل الخارجي':
-                            print(f"⚠️ تخطي عنصر من فئة الهيكل الخارجي: {inspection_item.name}")
-                            continue
+                        # لم نعد نتخطى عناصر "أجزاء السيارة الرئيسية" لأننا نستخدم الصور بدلاً منها
+                        # لم نعد نتخطى عناصر 'أجزاء السيارة الرئيسية'
+                        # if inspection_item.category.name == 'أجزاء السيارة الرئيسية':
+                        #     print(f"⚠️ تخطي عنصر من فئة أجزاء السيارة الرئيسية: {inspection_item.name}")
+                        #     continue
 
                         # الحصول على الملاحظات واحتياج الإصلاح
                         notes = request.POST.get(f'notes_item_{item_id}', '')
