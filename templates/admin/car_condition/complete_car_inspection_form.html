@@ -432,26 +432,87 @@
         </div>
     </div>
 
-    <!-- نافذة التأكيد المنبثقة -->
+    <!-- نافذة التأكيد المنبثقة المحسنة -->
     <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title" id="successModalLabel">{% trans "تم الحفظ بنجاح" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="text-center mb-3">
-                        <i class="fas fa-check-circle text-success fa-4x"></i>
+                    <div class="text-center mb-4">
+                        <div class="success-animation">
+                            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                                <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                            </svg>
+                        </div>
                     </div>
-                    <p class="text-center fs-5">{% trans "تم حفظ تقرير حالة السيارة بنجاح!" %}</p>
+                    <h4 class="text-center text-success mb-3">{% trans "تم حفظ تقرير حالة السيارة بنجاح!" %}</h4>
+                    <p class="text-center">{% trans "تم حفظ جميع البيانات المدخلة وتسجيل حالة السيارة بنجاح" %}</p>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>{% trans "يمكنك الآن العودة إلى القائمة أو إكمال التقرير بإضافة صور إضافية" %}
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">{% trans "موافق" %}</button>
+                    <a href="{% url 'car_condition_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-1"></i> {% trans "العودة للقائمة" %}
+                    </a>
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-1"></i> {% trans "موافق" %}
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+    
+    <style>
+        /* أنيميشن علامة النجاح */
+        .success-animation {
+            margin: 20px auto;
+            width: 80px;
+            height: 80px;
+        }
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 3;
+            stroke: #4BB543;
+            stroke-miterlimit: 10;
+            box-shadow: 0 0 20px #4BB543;
+            animation: scale .5s ease-in-out;
+        }
+        .checkmark__circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke: #4BB543;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        .checkmark__check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+        @keyframes scale {
+            0%, 100% {
+                transform: none;
+            }
+            50% {
+                transform: scale3d(1.1, 1.1, 1);
+            }
+        }
+    </style>
 </div>
 {% endblock %}
 
@@ -685,14 +746,77 @@
             var carCondition = $('select[name="car_condition"]').val();
             if (!carCondition) {
                 e.preventDefault();
-                alert("{% trans 'يرجى تحديد حالة السيارة العامة قبل الحفظ' %}");
-                $('select[name="car_condition"]').focus();
-                // إضافة تأثير بصري إضافي لجذب الانتباه
-                $('.car-condition-field-wrapper').addClass('border-danger').addClass('bg-danger-subtle');
-                setTimeout(function() {
-                    $('.car-condition-field-wrapper').removeClass('border-danger').removeClass('bg-danger-subtle');
-                }, 2000);
+                
+                // إنشاء نافذة منبثقة مخصصة بدلاً من استخدام alert() البدائية
+                var alertModal = $(`
+                    <div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title">{% trans "تنبيه!" %}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-exclamation-triangle text-danger fa-4x"></i>
+                                    </div>
+                                    <h5 class="text-center text-danger mb-3">{% trans "لم يتم اختيار حالة السيارة" %}</h5>
+                                    <p class="text-center">{% trans "يرجى تحديد حالة السيارة العامة قبل حفظ التقرير" %}</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="goToCarConditionBtn">
+                                        <i class="fas fa-check me-1"></i> {% trans "حسناً، سأقوم بتحديدها" %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                
+                // إضافة النافذة للصفحة
+                $('body').append(alertModal);
+                
+                // إظهار النافذة
+                var modal = new bootstrap.Modal(document.getElementById('alertModal'));
+                modal.show();
+                
+                // إضافة التركيز على حقل حالة السيارة عند إغلاق النافذة
+                $('#alertModal').on('hidden.bs.modal', function () {
+                    // التمرير إلى حقل حالة السيارة
+                    $('html, body').animate({
+                        scrollTop: $('.car-condition-field-wrapper').offset().top - 100
+                    }, 500);
+                    
+                    // التركيز على الحقل
+                    $('select[name="car_condition"]').focus();
+                    
+                    // إضافة تأثير وميض للفت الانتباه
+                    $('.car-condition-field-wrapper').addClass('border-danger').addClass('bg-danger-subtle');
+                    setTimeout(function() {
+                        $('.car-condition-field-wrapper').removeClass('border-danger').removeClass('bg-danger-subtle');
+                    }, 1500);
+                    
+                    // حذف النافذة من الصفحة بعد الإغلاق
+                    alertModal.remove();
+                });
+                
+                // عند النقر على زر الذهاب إلى حقل حالة السيارة
+                $('#goToCarConditionBtn').on('click', function() {
+                    // النافذة ستغلق تلقائياً وسيتم تنفيذ الكود في حدث hidden.bs.modal
+                });
+                
                 return false;
+            }
+            
+            // التحقق من الحقول الأخرى الإلزامية
+            var car = $('select[name="car"]').val();
+            var inspection_type = $('select[name="inspection_type"]').val();
+            var mileage = $('input[name="mileage"]').val();
+            
+            if (!car || !inspection_type || !mileage) {
+                // يمكن إضافة منطق تحقق إضافي هنا للحقول الأخرى...
+                console.log("هناك حقول إلزامية أخرى غير مكتملة");
+                // نستمر بإرسال النموذج لأن Django سيتعامل مع التحقق من هذه الحقول
             }
         });
         
