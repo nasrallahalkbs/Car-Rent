@@ -779,6 +779,25 @@ def admin_reservation_detail(request, reservation_id):
         user = reservation.user
         user.reservation_count = Reservation.objects.filter(user=user).count()
         
+        # تسجيل تشخيصي للتحقق من بيانات العميل
+        has_customer_details = any([
+            reservation.full_name, 
+            reservation.national_id, 
+            reservation.rental_type,
+            reservation.guarantee_type,
+            reservation.guarantee_details,
+            reservation.deposit_amount
+        ])
+        print(f"DIAGNOSTIC: reservation has customer details: {has_customer_details}")
+        print(f"DIAGNOSTIC: full_name: {reservation.full_name}")
+        print(f"DIAGNOSTIC: national_id: {reservation.national_id}")
+        print(f"DIAGNOSTIC: rental_type: {reservation.rental_type}")
+        print(f"DIAGNOSTIC: guarantee_type: {reservation.guarantee_type}")
+        
+        # إضافة timestamp لمنع استخدام الكاش
+        import time
+        cache_buster = int(time.time())
+        
         # إعداد سياق القالب بجميع المعلومات المطلوبة
         context = {
             'reservation': reservation,
@@ -786,6 +805,8 @@ def admin_reservation_detail(request, reservation_id):
             'is_english': is_english,
             'is_rtl': is_rtl,
             'current_user': request.user,
+            'has_customer_details': has_customer_details,
+            'cache_buster': cache_buster,
         }
         
         # إضافة معلومات الدفع إذا كانت متوفرة
