@@ -1,5 +1,5 @@
 """
-نظام التحقق من البريد الإلكتروني للمستخدمين الجدد
+نظام التحقق من البريد الإلكتروني للمستخدمين الجدد باستخدام Mailjet
 
 هذا الملف يحتوي على الوظائف الأساسية للتحقق من البريد الإلكتروني عند إنشاء حساب جديد
 """
@@ -8,6 +8,7 @@ import os
 import uuid
 import secrets
 import string
+import json
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -20,7 +21,10 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import login
 from django.http import HttpResponse
 
-from .models import User
+# استيراد Mailjet
+from mailjet_rest import Client
+
+from .models import User, EmailVerification
 
 # الوقت الذي يستمر فيه رمز التحقق صالحًا (7 أيام بالثواني)
 VERIFICATION_TOKEN_EXPIRY = 60 * 60 * 24 * 7
