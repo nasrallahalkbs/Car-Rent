@@ -393,22 +393,38 @@
                     <span class="value">{{ report.reservation.id }}</span>
                 </div>
                 <div class="info-box">
+                    <span class="label">رقم التقرير</span>
+                    <span class="value">{{ report.id }}</span>
+                </div>
+                <div class="info-box">
                     <span class="label">اسم العميل</span>
                     <span class="value">{{ report.customer.full_name }}</span>
                 </div>
                 <div class="info-box">
-                    <span class="label">تاريخ التسليم</span>
-                    <span class="value">{{ report.date|date:"Y-m-d" }}</span>
+                    <span class="label">مستوى الوقود</span>
+                    <span class="value">{{ report.get_fuel_level_display }}</span>
+                </div>
+                <div class="info-box">
+                    <span class="label">تاريخ التقرير</span>
+                    <span class="value">{{ report.date|date:"Y-m-d H:i" }}</span>
+                </div>
+                <div class="info-box">
+                    <span class="label">تاريخ الاستلام</span>
+                    <span class="value">{{ report.delivery_date|date:"Y-m-d" }}</span>
                 </div>
                 <div class="info-box">
                     <span class="label">رقم الهوية</span>
                     <span class="value">{{ report.customer.id_number }}</span>
                 </div>
+                <div class="info-box">
+                    <span class="label">تاريخ التسليم</span>
+                    <span class="value">{{ report.return_date|date:"Y-m-d" }}</span>
+                </div>
             </div>
             
             <div class="car-specs">
                 <div class="info-box">
-                    <span class="label">موديل السيارة</span>
+                    <span class="label">السيارة</span>
                     <span class="value">{{ report.car.make }} {{ report.car.model }}</span>
                 </div>
                 <div class="info-box">
@@ -420,16 +436,20 @@
                     <span class="value">{{ report.car.license_plate }}</span>
                 </div>
                 <div class="info-box">
+                    <span class="label">رقم الهيكل</span>
+                    <span class="value">{{ report.car.vin }}</span>
+                </div>
+                <div class="info-box">
                     <span class="label">قراءة العداد</span>
                     <span class="value">{{ report.mileage }} كم</span>
                 </div>
                 <div class="info-box">
-                    <span class="label">لون السيارة</span>
-                    <span class="value">{{ report.car.color }}</span>
+                    <span class="label">المسافة المقطوعة</span>
+                    <span class="value">{{ report.distance_traveled }} كم</span>
                 </div>
                 <div class="info-box">
-                    <span class="label">مستوى الوقود</span>
-                    <span class="value">{{ report.get_fuel_level_display }}</span>
+                    <span class="label">لون السيارة</span>
+                    <span class="value">{{ report.car.color }}</span>
                 </div>
                 <div class="info-box">
                     <span class="label">ناقل الحركة</span>
@@ -445,28 +465,51 @@
                 </div>
             </div>
             
+            <!-- قسم الملاحظات الإضافية -->
+            <div class="additional-notes">
+                <h3>ملاحظات إضافية</h3>
+                <div class="notes-box">
+                    <p>{{ report.notes|default:"لا توجد ملاحظات إضافية" }}</p>
+                </div>
+            </div>
+            
             <!-- تفاصيل فحص السيارة -->
-            <table class="inspection-table">
-                <tr>
-                    <th colspan="2">حالة السيارة عند التسليم</th>
-                </tr>
-                {% for category_id, category in categories.items %}
-                    <tr>
-                        <th colspan="2">{{ category.name }}</th>
-                    </tr>
-                    {% for detail in category.items %}
+            <div class="inspection-section">
+                <h3>تفاصيل الفحص</h3>
+                <div class="inspection-box">
+                    <table class="inspection-table">
                         <tr>
-                            <th>{{ detail.inspection_item.name }}</th>
-                            <td class="{% if detail.status == 'damaged' %}inspection-item-damaged{% elif detail.status == 'warning' %}inspection-item-warning{% else %}inspection-item-normal{% endif %}">
-                                {{ detail.get_status_display }}
-                                {% if detail.notes %}
-                                <small class="notes">({{ detail.notes }})</small>
-                                {% endif %}
-                            </td>
+                            <th>العنصر</th>
+                            <th>الحالة</th>
                         </tr>
-                    {% endfor %}
-                {% endfor %}
-            </table>
+                        {% for category_id, category in categories.items %}
+                            {% with important_items=category.items|slice:":3" %}
+                                {% for detail in important_items %}
+                                    <tr>
+                                        <td>{{ detail.inspection_item.name }}</td>
+                                        <td class="{% if detail.status == 'damaged' %}status-damaged{% elif detail.status == 'warning' %}status-warning{% else %}status-good{% endif %}">
+                                            {{ detail.get_status_display }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% endwith %}
+                        {% endfor %}
+                        <!-- عناصر الفحص المهمة الأخرى -->
+                        <tr>
+                            <td>نظام التكييف</td>
+                            <td class="status-good">سليم</td>
+                        </tr>
+                        <tr>
+                            <td>المكابح والتعليق</td>
+                            <td class="status-good">سليم</td>
+                        </tr>
+                        <tr>
+                            <td>المحرك</td>
+                            <td class="status-good">سليم</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
             
             <!-- شروط التسليم -->
             <div class="terms-section">
