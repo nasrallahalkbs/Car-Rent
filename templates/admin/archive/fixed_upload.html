@@ -1,0 +1,116 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "رفع ملف" %}{% endblock %}
+
+{% block content %}
+<div class="container p-4">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">{% trans "رفع ملف جديد" %}</h4>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <form method="POST" enctype="multipart/form-data" id="fixed-upload-form">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="title" class="form-label">{% trans "عنوان المستند" %} *</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label">{% trans "وصف المستند" %}</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="document_type" class="form-label">{% trans "نوع المستند" %} *</label>
+                    <select class="form-select" id="document_type" name="document_type" required>
+                        <option value="other">{% trans "آخر" %}</option>
+                        <option value="contract">{% trans "عقد" %}</option>
+                        <option value="id">{% trans "هوية" %}</option>
+                        <option value="license">{% trans "رخصة" %}</option>
+                        <option value="receipt">{% trans "إيصال" %}</option>
+                        <option value="report">{% trans "تقرير" %}</option>
+                        <option value="form">{% trans "نموذج" %}</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="folder_id" class="form-label">{% trans "المجلد" %}</label>
+                    <select class="form-select" id="folder_id" name="folder_id">
+                        <option value="">{% trans "المجلد الرئيسي" %}</option>
+                        {% for folder in folders %}
+                        <option value="{{ folder.id }}">{{ folder.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="file" class="form-label">{% trans "الملف" %} *</label>
+                    <input type="file" class="form-control" id="file" name="file" required>
+                    <div class="form-text text-muted">
+                        {% trans "الحد الأقصى لحجم الملف: 10 ميجابايت" %}
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'admin_archive' %}" class="btn btn-secondary">{% trans "إلغاء" %}</a>
+                    <button type="submit" class="btn btn-primary" id="upload-btn">
+                        {% trans "رفع الملف" %}
+                        <i class="fas fa-upload ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // تفعيل المعالجة عند تقديم النموذج
+        $('#fixed-upload-form').on('submit', function() {
+            // تعطيل زر الرفع أثناء المعالجة
+            $('#upload-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> {% trans "جاري الرفع..." %}');
+        });
+        
+        // التحقق من حجم الملف عند اختياره
+        $('#file').on('change', function() {
+            const maxSize = 10 * 1024 * 1024; // 10 ميجابايت
+            const fileSize = this.files[0]?.size || 0;
+            
+            if (fileSize > maxSize) {
+                alert('{% trans "حجم الملف كبير جداً. الحد الأقصى هو 10 ميجابايت." %}');
+                this.value = ''; // مسح الملف المحدد
+            }
+        });
+        
+        // ضبط عنوان المستند تلقائياً من اسم الملف
+        $('#file').on('change', function() {
+            const fileName = this.files[0]?.name || '';
+            const currentTitle = $('#title').val();
+            
+            // ضبط العنوان تلقائياً فقط إذا كان فارغاً
+            if (!currentTitle && fileName) {
+                // استخراج اسم الملف بدون الامتداد
+                const baseName = fileName.split('.').slice(0, -1).join('.');
+                $('#title').val(baseName);
+            }
+        });
+    });
+</script>
+{% endblock %}

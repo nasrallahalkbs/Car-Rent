@@ -56,20 +56,30 @@ def test_direct_upload():
         print(f"❌ خطأ في حفظ الملف: {str(e)}")
         return False
     
-    # الحصول على معرف المستخدم الأول (عادة المشرف)
-    user_id = None
+    # استخدام معرف المستخدم superadmin
+    user_id = 1  # معرف المستخدم superadmin
+    print(f"👤 استخدام معرف المستخدم: {user_id}")
+    
+    # التحقق من وجود المستخدم
     try:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id FROM rental_user WHERE is_superuser=1 LIMIT 1")
+            cursor.execute("SELECT id, username FROM rental_user WHERE id = %s", [user_id])
             row = cursor.fetchone()
             if row:
-                user_id = row[0]
-                print(f"👤 معرف المستخدم المشرف: {user_id}")
+                print(f"✅ تم العثور على المستخدم: {row[1]} (ID: {row[0]})")
             else:
-                print("⚠️ لم يتم العثور على مستخدم مشرف")
-                return False
+                print(f"⚠️ لم يتم العثور على مستخدم بمعرف {user_id}")
+                # استخدام أي مستخدم آخر موجود
+                cursor.execute("SELECT id, username FROM rental_user LIMIT 1")
+                row = cursor.fetchone()
+                if row:
+                    user_id = row[0]
+                    print(f"🔄 استخدام مستخدم بديل: {row[1]} (ID: {row[0]})")
+                else:
+                    print("❌ لا يوجد مستخدمين في النظام")
+                    return False
     except Exception as e:
-        print(f"❌ خطأ في الحصول على معرف المستخدم: {str(e)}")
+        print(f"❌ خطأ في الحصول على معلومات المستخدم: {str(e)}")
         return False
     
     # استخدام SQL مباشرة لإنشاء المستند
