@@ -1440,12 +1440,19 @@ def complete_car_inspection_create(request):
     else:
         form = CompleteCarInspectionForm(initial=initial_data, user=request.user)
 
-    # جلب فئات الفحص وعناصرها المنشطة بطريقة مُحسنة
-    # جلب جميع فئات الفحص المنشطة باستثناء فئة أنظمة السلامة
+    # جلب الفئات المهمة والمكلفة فقط (حدد 4 فئات مهمة)
+    # نحن نختار 4 فئات رئيسية فقط حسب طلب المستخدم
+    important_categories = [
+        'الهيكل الخارجي',  # يتضمن عناصر مكلفة ومهمة للفحص
+        'المحرك ومكونات أسفل غطاء المحرك',  # فئة حرجة وأساسية للفحص
+        'الإطارات والعجلات',  # مكلفة ومتعلقة بالسلامة
+        'أنظمة السلامة والتشغيل'  # حرجة وتؤثر على السلامة
+    ]
+    
+    # جلب الـ 4 فئات المهمة والمكلفة فقط
     inspection_categories = list(CarInspectionCategory.objects.filter(
-        is_active=True
-    ).exclude(
-        name='أنظمة السلامة'  # استبعاد فئة أنظمة السلامة
+        is_active=True,
+        name__in=important_categories
     ).order_by('display_order'))
 
     # جلب فقط العناصر المهمة والمكلفة (حسب طلب المستخدم)
