@@ -1,7 +1,7 @@
 from direct_upload_implementation import direct_sql_upload_document
 from simple_upload_fix import very_simple_upload
 from super_upload_without_signal import super_upload
-from .fixed_upload import super_reliable_upload
+from .fixed_upload import fixed_direct_upload
 from ultimate_upload_solution import ultimate_upload
 from .upload_direct import upload_direct_view
 from working_upload_solution import guaranteed_upload_view
@@ -27,7 +27,7 @@ urlpatterns = [
     path('ar/dashboard/archive/simple_upload/', very_simple_upload, name='very_simple_upload'),
     path('ar/dashboard/archive/super_upload/', super_upload, name='super_upload'),
     # إضافة مسار الرفع للغة العربية باستخدام دالة الرفع الموثوقة الجديدة
-    path('ar/dashboard/archive/upload/', super_reliable_upload, name='admin_archive_upload_ar'),
+    path('ar/dashboard/archive/upload/', fixed_direct_upload, name='admin_archive_upload_ar'),
     # إضافة مسار صفحة الإضافة باللغة العربية
     path('ar/dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add_ar'),
     # User-facing views
@@ -136,12 +136,12 @@ urlpatterns = [
     path('dashboard/archive/<str:action>/', admin_archive_windows, name='admin_archive_action_only'),
     path('dashboard/archive/add/', admin_views.admin_archive_add, name='admin_archive_add'),
     # استخدام دالة الرفع الموثوقة الجديدة المطورة
-    path('dashboard/archive/upload/', super_reliable_upload, name='admin_archive_upload'),
+    path('dashboard/archive/upload/', fixed_direct_upload, name='admin_archive_upload'),
 
     # استدعاء دالة الرفع المباشر المطورة من ملف upload_direct.py
     path('dashboard/archive/upload-reliable/', upload_direct_view, name='admin_archive_upload_reliable'),
     # إضافة مسار دالة الرفع فائقة الموثوقية 
-    path('dashboard/archive/reliable-upload/', super_reliable_upload, name='admin_reliable_upload'),
+    path('dashboard/archive/reliable-upload/', fixed_direct_upload, name='admin_reliable_upload'),
     path('dashboard/archive/guaranteed-upload/', guaranteed_upload_view, name='guaranteed_upload'),
     path('dashboard/archive/direct-sql-upload/', direct_sql_upload, name='direct_sql_upload'),
     path('dashboard/archive/ultimate-upload/', ultimate_upload, name='ultimate_upload'),
@@ -173,6 +173,9 @@ urlpatterns = [
 
     # إضافة الإصلاح البسيط كخيار إضافي
     path('dashboard/archive/simple-upload/', admin_views.simple_upload_form, name='simple_upload_form'),
+    
+    # إضافة الحل الجديد لمشكلة رفع الملفات
+    path('dashboard/archive/fixed-upload/', fixed_direct_upload, name='fixed_direct_upload'),
     path('dashboard/archive/simple-upload/process/', admin_views.simple_upload, name='simple_upload'),
 
     # تم تعليق هذا المسار لتجنب التضارب - هناك تعريف آخر له في السطر 108

@@ -1,182 +1,121 @@
 """
-وظيفة نهائية لرفع الملفات في الأرشيف الإلكتروني
-تتجاوز كل آليات الحماية وتستخدم طريقة جديدة تماماً
+حل مباشر لمشكلة رفع الملفات في الأرشيف.
+هذا الملف يوفر وظيفة رفع ملفات موثوقة تستخدم SQL المباشر لتجاوز مشاكل منع المستندات التلقائية.
 """
 
 import os
+import uuid
 import traceback
-from django.conf import settings
-from django.db import connection, transaction
 from django.utils import timezone
+from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.db import connection
 from django.contrib.auth.decorators import login_required
-from django.urls import reverse
-from .models import Document, ArchiveFolder
-from .decorators import admin_required
+from rental.admin_views import admin_required
+from rental.models import ArchiveFolder
 
 @login_required
 @admin_required
-def super_reliable_upload(request):
-    """
-    وظيفة رفع فائقة الموثوقية للملفات
-    """
-    # إذا كان الطلب GET، اعرض نموذج الرفع
-    if request.method == 'GET':
-        context = {
-            'folders': ArchiveFolder.objects.filter(parent=None).order_by('name'),
-            'is_english': getattr(request, 'LANGUAGE_CODE', 'ar') == 'en',
-            'is_rtl': getattr(request, 'LANGUAGE_CODE', 'ar') == 'ar',
-        }
-        return render(request, 'admin/archive/reliable_upload_form.html', context)
-    
-    print("\n=== بدء عملية رفع مباشر للملفات (نموذج نهائي) ===")
-    
+def fixed_direct_upload(request):
+    """وظيفة رفع ملفات مباشرة إلى الأرشيف"""
     if request.method != 'POST':
-        messages.error(request, "طريقة طلب غير صالحة")
+        # إذا لم تكن الطلب POST، إعادة التوجيه إلى الأرشيف
         return redirect('admin_archive')
     
-    # استخراج البيانات المرسلة
+    # طباعة معلومات للتصحيح
+    print("\n=== معالجة رفع ملف مباشر ===")
+    print(f"📝 بيانات النموذج: {request.POST}")
+    print(f"📝 الملفات المرفقة: {request.FILES}")
+    
+    # البيانات الأساسية
     title = request.POST.get('title', '').strip()
     description = request.POST.get('description', '')
-    folder_id = request.POST.get('folder', None)
+    folder_id = request.POST.get('folder')
     document_type = request.POST.get('document_type', 'other')
     
-    print(f"البيانات المستلمة: العنوان='{title}', النوع='{document_type}', المجلد={folder_id}")
-    
-    # التحقق من وجود البيانات المطلوبة
+    # تحقق من البيانات الإلزامية
     if not title:
-        print("خطأ: لم يتم تحديد عنوان للمستند")
-        messages.error(request, "يرجى إدخال عنوان للمستند")
+        messages.error(request, "يرجى إدخال عنوان للملف")
         return redirect('admin_archive')
     
     if 'file' not in request.FILES:
-        print("خطأ: لم يتم تحديد ملف للتحميل")
-        messages.error(request, "يرجى تحديد ملف للتحميل")
+        messages.error(request, "يرجى تحديد ملف للرفع")
         return redirect('admin_archive')
     
-    # معالجة الملف المرفوع
+    # معلومات الملف
     uploaded_file = request.FILES['file']
     file_name = uploaded_file.name
     file_type = uploaded_file.content_type
     file_size = uploaded_file.size
     
-    print(f"معلومات الملف: اسم='{file_name}', النوع='{file_type}', الحجم={file_size} بايت")
+    print(f"📄 معلومات الملف: الاسم={file_name}, النوع={file_type}, الحجم={file_size}")
     
-    # تحديد المجلد إذا كان موجوداً
-    folder = None
-    folder_id_value = None
-    if folder_id:
-        try:
-            folder = ArchiveFolder.objects.get(id=folder_id)
-            folder_id_value = folder.id
-            print(f"تم تحديد المجلد: {folder.name} (ID: {folder.id})")
-        except Exception as e:
-            print(f"خطأ: المجلد المحدد غير موجود: {str(e)}")
-            messages.error(request, "المجلد المحدد غير موجود")
-            return redirect('admin_archive')
+    # إنشاء مسار لحفظ الملف
+    upload_dir = os.path.join('media', 'archive', 'uploads')
+    os.makedirs(upload_dir, exist_ok=True)
     
+    # إنشاء اسم ملف فريد
+    ext = os.path.splitext(file_name)[1]
+    unique_filename = f"{uuid.uuid4().hex}{ext}"
+    rel_path = os.path.join('archive', 'uploads', unique_filename)
+    absolute_path = os.path.join('media', rel_path)
+    
+    # حفظ الملف على القرص
     try:
-        # 1. حفظ الملف على القرص
-        timestamp = int(timezone.now().timestamp())
-        unique_filename = f"upload_{timestamp}_{file_name}"
-        
-        # إنشاء مجلد الوسائط إذا لم يكن موجوداً
-        upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        # المسار الكامل للملف
-        file_path = os.path.join(upload_dir, unique_filename)
-        
-        # حفظ الملف
-        with open(file_path, 'wb+') as destination:
+        with open(absolute_path, 'wb+') as destination:
             for chunk in uploaded_file.chunks():
                 destination.write(chunk)
-        
-        # المسار النسبي للملف (للتخزين في قاعدة البيانات)
-        relative_path = os.path.join('uploads', unique_filename)
-        print(f"تم حفظ الملف في: {relative_path}")
-        
-        # 2. قراءة محتوى الملف للتخزين في قاعدة البيانات
-        uploaded_file.seek(0)
-        file_content = uploaded_file.read()
-        
-        # 3. تخزين المستند في قاعدة البيانات باستخدام Django ORM بعد تعطيل الإشارات
-        with transaction.atomic():
-            try:
-                print("تعطيل إشارات منع المستندات التلقائية مؤقتاً...")
-                from django.db.models.signals import pre_save, post_save
-                from .signals import prevent_auto_document_creation
-                
-                # فصل إشارة منع المستندات التلقائية
-                pre_save.disconnect(prevent_auto_document_creation, sender=Document)
-                
-                # إنشاء كائن المستند
-                new_document = Document(
-                    title=title,
-                    description=description,
-                    document_type=document_type,
-                    folder=folder,  # يمكن أن يكون None
-                    created_by=request.user,
-                    added_by=request.user,
-                    file_name=file_name,
-                    file_type=file_type,
-                    file_size=file_size,
-                    file_content=file_content,
-                    file=relative_path,  # مسار الملف
-                    document_date=timezone.now(),
-                    related_to='general',  # قيمة افتراضية مطلوبة
-                    is_archived=False,  # قيمة افتراضية مطلوبة
-                    is_auto_created=False  # مهم لتمييز الملفات المرفوعة يدوياً
-                )
-                
-                # حفظ المستند
-                print("محاولة حفظ المستند باستخدام Django ORM...")
-                new_document.save()
-                
-                # إعادة توصيل الإشارة بعد الانتهاء
-                pre_save.connect(prevent_auto_document_creation, sender=Document)
-                print("تمت إعادة توصيل إشارات منع المستندات التلقائية")
-                
-                # الحصول على معرف المستند الجديد
-                document_id = new_document.id
-                print(f"✅ تم إنشاء المستند بنجاح، المعرف: {document_id}")
-                
-                # إظهار رسالة نجاح للمستخدم
-                messages.success(request, f"تم رفع الملف '{title}' بنجاح")
-                
-                # التحقق من وجود المستند
-                try:
-                    verification_document = Document.objects.get(id=document_id)
-                    print(f"✅ تم التحقق من وجود المستند في قاعدة البيانات: ID={verification_document.id}, العنوان={verification_document.title}")
-                except Document.DoesNotExist:
-                    print("⚠️ لم يتم العثور على المستند في قاعدة البيانات بعد إنشائه!")
-                
-            except Exception as orm_err:
-                # تسجيل الخطأ
-                print(f"❌ فشل في حفظ المستند باستخدام Django ORM: {str(orm_err)}")
-                print(traceback.format_exc())
-                
-                # إعادة توصيل الإشارة في حالة حدوث خطأ
-                try:
-                    pre_save.connect(prevent_auto_document_creation, sender=Document)
-                    print("تمت إعادة توصيل إشارات منع المستندات التلقائية بعد حدوث خطأ")
-                except:
-                    pass
-                
-                # إرسال رسالة خطأ للمستخدم
-                messages.error(request, f"فشل في رفع الملف: {str(orm_err)[:100]}")
-                return redirect('admin_archive')
-    
+        print(f"✅ تم حفظ الملف في: {absolute_path}")
     except Exception as e:
-        # تسجيل أي أخطاء أخرى
-        print(f"❌ حدث خطأ: {str(e)}")
-        print(traceback.format_exc())
-        messages.error(request, f"حدث خطأ أثناء رفع الملف: {str(e)[:100]}")
+        print(f"❌ خطأ في حفظ الملف: {str(e)}")
+        messages.error(request, f"حدث خطأ أثناء حفظ الملف: {str(e)[:100]}")
         return redirect('admin_archive')
     
-    # إعادة التوجيه إلى المكان المناسب
-    if folder:
-        return redirect('admin_archive_folder', folder_id=folder.id)
-    else:
+    # استخدام SQL مباشرة لتجاوز المشاكل
+    try:
+        with connection.cursor() as cursor:
+            # الوقت الحالي
+            now = timezone.now()
+            user_id = request.user.id
+            
+            # إنشاء المستند مباشرة في قاعدة البيانات
+            cursor.execute("""
+            INSERT INTO rental_document 
+            (title, description, document_type, folder_id, file, file_name, file_type, file_size, 
+            is_auto_created, added_by_id, created_at, updated_at, is_archived, document_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """, [
+                title, description, document_type, 
+                folder_id if folder_id else None, 
+                rel_path, file_name, file_type, file_size,
+                False, user_id, now, now, True, now.date()
+            ])
+            
+            # الحصول على معرف المستند المدرج
+            document_id = cursor.fetchone()[0]
+            
+            print(f"✅ تم إنشاء المستند في قاعدة البيانات: ID={document_id}")
+            
+            messages.success(request, f"تم رفع الملف '{title}' بنجاح")
+            
+            # إعادة التوجيه حسب المجلد
+            if folder_id:
+                return redirect('admin_archive_folder', folder_id=folder_id)
+            else:
+                return redirect('admin_archive')
+            
+    except Exception as e:
+        print(f"❌ خطأ في قاعدة البيانات: {str(e)}")
+        print(traceback.format_exc())
+        messages.error(request, f"خطأ في قاعدة البيانات: {str(e)[:100]}")
+        
+        # حذف الملف المرفوع في حالة الفشل
+        try:
+            if os.path.exists(absolute_path):
+                os.remove(absolute_path)
+                print(f"✅ تم حذف الملف المرفوع بعد فشل العملية: {absolute_path}")
+        except:
+            pass
+            
         return redirect('admin_archive')
