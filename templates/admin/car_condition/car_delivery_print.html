@@ -356,6 +356,55 @@
     .inspection-item-warning {
         color: #ffc107;
     }
+    
+    /* إضافة أنماط جديدة لتناسب التصميم المرجعي */
+    .status-good {
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .status-warning {
+        color: #ffc107;
+        font-weight: bold;
+    }
+    
+    .status-damaged {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .additional-notes h3,
+    .inspection-section h3 {
+        font-size: 12px;
+        margin-bottom: 5px;
+        color: #0056b3;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 3px;
+    }
+    
+    .notes-box {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 5px;
+        margin-bottom: 8px;
+        font-size: 9px;
+        min-height: 30px;
+    }
+    
+    .inspection-box {
+        margin-bottom: 10px;
+    }
+    
+    .detail-section {
+        background-color: #0056b3;
+        color: white;
+        padding: 5px 8px;
+        margin-bottom: 8px;
+        font-size: 11px;
+        font-weight: bold;
+        border-radius: 3px;
+    }
 
     .print-button {
         display: block;
@@ -367,6 +416,82 @@
         border-radius: 5px;
         cursor: pointer;
         font-size: 1em;
+    }
+    
+    /* أنماط إضافية جديدة تم إضافتها */
+    .car-view-header {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        padding: 3px 5px;
+        margin-top: 10px;
+        margin-bottom: 3px;
+        font-size: 10px;
+        font-weight: bold;
+        text-align: center;
+        border-radius: 3px;
+    }
+    
+    .car-view {
+        border: 1px solid #dee2e6;
+        padding: 5px;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    .signature-placeholder {
+        border-bottom: 1px solid #999;
+        height: 20px;
+        margin-top: 5px;
+        font-size: 10px;
+        color: #777;
+        text-align: center;
+    }
+    
+    .stamp-placeholder {
+        border: 1px dashed #999;
+        border-radius: 5px;
+        height: 40px;
+        margin-top: 5px;
+    }
+    
+    .date-value {
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    /* تأكيد الألوان في وضع الطباعة */
+    @media print {
+        .status-good {
+            color: #28a745 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .status-warning {
+            color: #ffc107 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .status-damaged {
+            color: #dc3545 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        /* ضمان طباعة القسم الأزرق باللون */
+        .detail-section {
+            background-color: #0056b3 !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        /* ضمان طباعة عناوين صور السيارة */
+        .car-view-header {
+            background-color: #f8f9fa !important;
+            border: 1px solid #e9ecef !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
     }
 </style>
 {% endblock %}
@@ -465,17 +590,24 @@
                 </div>
             </div>
             
-            <!-- قسم الملاحظات الإضافية -->
+            <!-- شريط أزرق للملاحظات الإضافية -->
+            <div class="detail-section">
+                <i class="fas fa-sticky-note"></i> ملاحظات إضافية
+            </div>
+            
             <div class="additional-notes">
-                <h3>ملاحظات إضافية</h3>
                 <div class="notes-box">
                     <p>{{ report.notes|default:"لا توجد ملاحظات إضافية" }}</p>
                 </div>
             </div>
             
             <!-- تفاصيل فحص السيارة -->
+            <!-- شريط أزرق للتفاصيل -->
+            <div class="detail-section">
+                <i class="fas fa-clipboard-check"></i> تفاصيل الفحص
+            </div>
+            
             <div class="inspection-section">
-                <h3>تفاصيل الفحص</h3>
                 <div class="inspection-box">
                     <table class="inspection-table">
                         <tr>
@@ -496,7 +628,7 @@
                         {% endfor %}
                         <!-- عناصر الفحص المهمة الأخرى -->
                         <tr>
-                            <td>نظام التكييف</td>
+                            <td>نظام التكييف الرئيسي</td>
                             <td class="status-good">سليم</td>
                         </tr>
                         <tr>
@@ -516,47 +648,66 @@
                 <p>أقر أنا الموقع أدناه بأنني استلمت السيارة المذكورة أعلاه بالحالة الموضحة في هذا النموذج وأتعهد بإعادتها بنفس الحالة. وفي حال وجود أي تلف او ضرر جديد سيتم احتساب تكلفة الإصلاح حسب سياسة الشركة.</p>
             </div>
             
+            <!-- شريط أزرق للتوقيعات -->
+            <div class="detail-section">
+                <i class="fas fa-signature"></i> التوقيعات
+            </div>
+            
             <!-- التوقيعات -->
             <div class="signatures">
                 <div class="signature-box">
                     <p>توقيع المستلم</p>
                     {% if customer_signature %}
                         <img src="{{ customer_signature.signature.url }}" alt="توقيع العميل" style="max-height: 40px;">
+                    {% else %}
+                        <div class="signature-placeholder">_________________</div>
                     {% endif %}
                 </div>
                 <div class="signature-box">
                     <p>ختم الشركة</p>
+                    <div class="stamp-placeholder"></div>
                 </div>
                 <div class="signature-box">
                     <p>توقيع الموظف</p>
                     {% if staff_signature %}
                         <img src="{{ staff_signature.signature.url }}" alt="توقيع الموظف" style="max-height: 40px;">
+                    {% else %}
+                        <div class="signature-placeholder">_________________</div>
                     {% endif %}
                 </div>
                 <div class="signature-box">
                     <p>تاريخ الاستلام</p>
-                    <p>{{ report.date|date:"Y-m-d" }}</p>
+                    <p class="date-value">{{ report.date|date:"Y-m-d" }}</p>
                 </div>
             </div>
         </div>
         
         <div class="right-column">
+            <!-- شريط أزرق للضمان البصري -->
+            <div class="detail-section">
+                <i class="fas fa-car"></i> الضمان البصري
+            </div>
+            
             <!-- صور السيارة -->
             <div class="car-views">
+                <div class="car-view-header">صورة front</div>
                 <div class="car-view">
                     <img src="{% static 'car_images/front.png' %}" alt="الواجهة الأمامية">
                 </div>
+                
+                <div class="car-view-header">صورة rear</div>
                 <div class="car-view">
                     <img src="{% static 'car_images/rear.png' %}" alt="الواجهة الخلفية">
                 </div>
+                
+                <div class="car-view-header">صورة side</div>
                 <div class="car-view">
                     <img src="{% static 'car_images/side.png' %}" alt="المنظر الجانبي">
                 </div>
+                
+                <div class="car-view-header">صورة interior</div>
                 <div class="car-view">
-                    <img src="{% static 'car_images/side2.png' %}" alt="المنظر الجانبي الآخر">
-                </div>
-                <div class="car-view">
-                    <img src="{% static 'car_images/top.png' %}" alt="المنظر العلوي">
+                    <img src="{% static 'car_images/side2.png' %}" alt="المنظر الداخلي">
                 </div>
             </div>
         </div>
