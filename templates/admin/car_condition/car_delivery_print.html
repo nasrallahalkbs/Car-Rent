@@ -34,18 +34,69 @@
             text-align: right;
             margin-bottom: 10px;
             padding-bottom: 5px;
-            border-bottom: 1px solid #ccc;
+            border-bottom: 2px solid #0056b3;
         }
         
         .header-section h2 {
             margin: 0;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
+            color: #0056b3;
         }
         
         .header-section p {
             margin: 5px 0;
             font-size: 10px;
+        }
+        
+        .report-header {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .company-logo {
+            text-align: center;
+        }
+        
+        .company-logo img {
+            max-width: 100px;
+            height: auto;
+        }
+        
+        .report-title {
+            text-align: center;
+        }
+        
+        .report-title h1 {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0;
+            color: #0056b3;
+        }
+        
+        .report-title h2 {
+            font-size: 16px;
+            margin: 5px 0;
+            color: #444;
+        }
+        
+        .report-meta {
+            text-align: left;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .report-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
         }
         
         .main-grid {
@@ -491,8 +542,28 @@
         }
         
         /* منع فواصل الصفحات في وسط العناصر المهمة */
-        .inspection-section, .car-specs, .customer-info, .signatures, .notes-box {
+        .inspection-section, .car-specs, .customer-info, .signatures, .notes-box, .report-header, .report-info-grid {
             page-break-inside: avoid;
+        }
+        
+        /* تأكيد ألوان الترويسة */
+        .header-section {
+            border-bottom: 2px solid #0056b3 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .report-title h1, .report-title h2, .header-section h2 {
+            color: #0056b3 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .report-info-grid {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            border: 1px solid #ddd !important;
         }
         
         /* التأكد من أن ألوان خلفية العناوين تظهر عند الطباعة */
@@ -555,58 +626,70 @@
 
 {% block content %}
 <div class="print-container">
+    <!-- ترويسة التقرير المطورة -->
     <div class="header-section">
-        <h2>نموذج تسليم سيارة</h2>
+        <div class="report-header">
+            <div class="company-logo">
+                <img src="/static/images/logo.png" alt="شعار الشركة" onerror="this.src='/static/images/car-logo.png'; this.onerror='';">
+            </div>
+            <div class="report-title">
+                <h1>شركة تأجير السيارات</h1>
+                <h2>نموذج تسليم سيارة</h2>
+                <p>تقرير #{{ report.id }} | رقم الحجز: {{ report.reservation.id }}</p>
+            </div>
+            <div class="report-meta">
+                <p>تاريخ الإصدار: {{ report.date|date:"Y-m-d" }}</p>
+                <p>وقت الإصدار: {{ report.date|date:"H:i" }}</p>
+                <p>{{ report.get_report_type_display }}</p>
+            </div>
+        </div>
         <p>
             يحتوي هذا النموذج على معلومات حالة السيارة عند تسليمها للعميل، ويتضمن تفاصيل السيارة والعميل وحالة أجزاء السيارة.
         </p>
     </div>
 
+    <!-- معلومات العميل والسيارة في جدول منظم -->
+    <div class="report-info-grid">
+        <div class="info-box">
+            <span class="label">اسم العميل</span>
+            <span class="value">{{ report.customer.full_name }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">رقم الهوية</span>
+            <span class="value">{{ report.customer.id_number }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">رقم عقد الإيجار</span>
+            <span class="value">{{ report.reservation.id }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">نوع التقرير</span>
+            <span class="value"><strong>{{ report.get_report_type_display }}</strong></span>
+        </div>
+        <div class="info-box">
+            <span class="label">تاريخ التقرير</span>
+            <span class="value">{{ report.date|date:"Y-m-d H:i" }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">رقم التقرير</span>
+            <span class="value">{{ report.id }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">تاريخ الاستلام</span>
+            <span class="value">{{ report.delivery_date|date:"Y-m-d" }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">تاريخ التسليم</span>
+            <span class="value">{{ report.return_date|date:"Y-m-d" }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">مستوى الوقود</span>
+            <span class="value">{{ report.get_fuel_level_display }}</span>
+        </div>
+    </div>
+
     <div class="main-grid">
         <div class="left-column">
-            <!-- معلومات العميل والسيارة -->
-            <div class="search-box">
-                <input type="text" placeholder="بحث عن حالة السيارة" disabled>
-            </div>
-            
-            <div class="customer-info">
-                <div class="info-box">
-                    <span class="label">رقم عقد الإيجار</span>
-                    <span class="value">{{ report.reservation.id }}</span>
-                </div>
-                <div class="info-box">
-                    <span class="label">رقم التقرير</span>
-                    <span class="value">{{ report.id }}</span>
-                </div>
-                <div class="info-box">
-                    <span class="label">نوع التقرير</span>
-                    <span class="value"><strong>{{ report.get_report_type_display }}</strong></span>
-                </div>
-                <div class="info-box">
-                    <span class="label">اسم العميل</span>
-                    <span class="value">{{ report.customer.full_name }}</span>
-                </div>
-                <div class="info-box">
-                    <span class="label">مستوى الوقود</span>
-                    <span class="value">{{ report.get_fuel_level_display }}</span>
-                </div>
-                <div class="info-box">
-                    <span class="label">تاريخ التقرير</span>
-                    <span class="value">{{ report.date|date:"Y-m-d H:i" }}</span>
-                </div>
-                <div class="info-box">
-                    <span class="label">تاريخ الاستلام</span>
-                    <span class="value">{{ report.delivery_date|date:"Y-m-d" }}</span>
-                </div>
-                <div class="info-box">
-                    <span class="label">رقم الهوية</span>
-                    <span class="value">{{ report.customer.id_number }}</span>
-                </div>
-                <div class="info-box">
-                    <span class="label">تاريخ التسليم</span>
-                    <span class="value">{{ report.return_date|date:"Y-m-d" }}</span>
-                </div>
-            </div>
             
             <div class="car-specs">
                 <div class="info-box">
