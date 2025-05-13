@@ -966,334 +966,511 @@ def run_media_check():
     warnings = []
     success = []
     
-    # التحقق من وجود مجلد MEDIA_ROOT
-    if not os.path.exists(settings.MEDIA_ROOT):
-        issues.append({
-            'title': _('مجلد الوسائط غير موجود'),
-            'description': _('مجلد الوسائط {media_root} غير موجود').format(media_root=settings.MEDIA_ROOT),
-            'solution': _('قم بإنشاء مجلد الوسائط'),
-            'severity': 'high',
-            'issue_id': 'missing_media_root',
-        })
-    else:
-        success.append({
-            'title': _('مجلد الوسائط موجود'),
-            'description': _('مجلد الوسائط {media_root} موجود').format(media_root=settings.MEDIA_ROOT),
-        })
-        
-        # فحص أذونات مجلد الوسائط
-        if not os.access(settings.MEDIA_ROOT, os.W_OK):
+    try:
+        # فحص وجود مجلد الوسائط
+        media_root = settings.MEDIA_ROOT
+        if not os.path.exists(media_root):
             issues.append({
-                'title': _('لا توجد أذونات كتابة لمجلد الوسائط'),
-                'description': _('لا توجد أذونات كتابة لمجلد الوسائط {media_root}').format(media_root=settings.MEDIA_ROOT),
-                'solution': _('قم بتغيير أذونات مجلد الوسائط للسماح بالكتابة'),
+                'title': _('مجلد الوسائط غير موجود'),
+                'description': _('مجلد الوسائط (MEDIA_ROOT) غير موجود: {path}').format(path=media_root),
+                'solution': _('قم بإنشاء مجلد الوسائط أو أعد تكوين MEDIA_ROOT'),
                 'severity': 'high',
-                'issue_id': 'media_root_not_writable',
+                'issue_id': 'media_root_missing',
             })
         else:
-            success.append({
-                'title': _('أذونات كتابة لمجلد الوسائط صحيحة'),
-                'description': _('يمكن الكتابة إلى مجلد الوسائط {media_root}').format(media_root=settings.MEDIA_ROOT),
-            })
+            # فحص أذونات مجلد الوسائط
+            if not os.access(media_root, os.R_OK | os.W_OK):
+                issues.append({
+                    'title': _('مشكلة في أذونات مجلد الوسائط'),
+                    'description': _('لا يمكن القراءة من أو الكتابة إلى مجلد الوسائط: {path}').format(path=media_root),
+                    'solution': _('قم بتغيير أذونات مجلد الوسائط للسماح بالقراءة والكتابة'),
+                    'severity': 'high',
+                    'issue_id': 'media_root_permissions',
+                })
+            else:
+                success.append({
+                    'title': _('مجلد الوسائط موجود وقابل للوصول'),
+                    'description': _('مجلد الوسائط (MEDIA_ROOT) قابل للقراءة والكتابة')
+                })
+            
+            # فحص حجم مجلد الوسائط
+            try:
+                total_size = 0
+                file_count = 0
+                for dirpath, dirnames, filenames in os.walk(media_root):
+                    for f in filenames:
+                        fp = os.path.join(dirpath, f)
+                        if os.path.exists(fp):
+                            total_size += os.path.getsize(fp)
+                            file_count += 1
+                
+                # تحويل الحجم إلى تنسيق مقروء (ميجابايت)
+                size_mb = total_size / (1024 * 1024)
+                
+                # إضافة معلومات الحجم إلى نتائج النجاح
+                success.append({
+                    'title': _('إحصائيات مجلد الوسائط'),
+                    'description': _('إجمالي الحجم: {size:.2f} ميجابايت، عدد الملفات: {count}').format(
+                        size=size_mb, count=file_count)
+                })
+                
+                # التحقق من الحجم الكبير (> 1 جيجابايت)
+                if size_mb > 1024:  # أكثر من 1 جيجابايت
+                    warnings.append({
+                        'title': _('حجم مجلد الوسائط كبير'),
+                        'description': _('مجلد الوسائط كبير جداً ({size:.2f} ميجابايت)').format(size=size_mb),
+                        'solution': _('فكر في تنظيف الملفات القديمة أو غير المستخدمة')
+                    })
+            except Exception as e:
+                warnings.append({
+                    'title': _('مشكلة في حساب حجم مجلد الوسائط'),
+                    'description': _('تعذر حساب حجم مجلد الوسائط: {error}').format(error=str(e)),
+                    'solution': _('تحقق من حقوق الوصول وحجم مجلد الوسائط يدوياً')
+                })
+            
+            # البحث عن أنواع ملفات غير مدعومة
+            unsupported_extensions = ['.exe', '.dll', '.jar', '.sh', '.php', '.aspx', '.asp']
+            unsupported_files = []
+            for dirpath, dirnames, filenames in os.walk(media_root):
+                for f in filenames:
+                    ext = os.path.splitext(f)[1].lower()
+                    if ext in unsupported_extensions:
+                        unsupported_files.append(os.path.join(dirpath, f))
+            
+            if unsupported_files:
+                warnings.append({
+                    'title': _('ملفات ذات امتدادات غير آمنة'),
+                    'description': _('تم العثور على {count} ملفات ذات امتدادات غير آمنة في مجلد الوسائط').format(
+                        count=len(unsupported_files)),
+                    'solution': _('قم بمراجعة وإزالة الملفات غير الآمنة')
+                })
+            else:
+                success.append({
+                    'title': _('لم يتم العثور على امتدادات ملفات غير آمنة'),
+                    'description': _('لا توجد ملفات ذات امتدادات غير آمنة معروفة في مجلد الوسائط')
+                })
+            
+            # البحث عن ملفات كبيرة جداً (> 50 ميجابايت)
+            large_files = []
+            for dirpath, dirnames, filenames in os.walk(media_root):
+                for f in filenames:
+                    fp = os.path.join(dirpath, f)
+                    if os.path.exists(fp) and os.path.getsize(fp) > 50 * 1024 * 1024:  # > 50 ميجابايت
+                        large_files.append(fp)
+            
+            if large_files:
+                warnings.append({
+                    'title': _('ملفات كبيرة جداً في مجلد الوسائط'),
+                    'description': _('تم العثور على {count} ملفات أكبر من 50 ميجابايت').format(
+                        count=len(large_files)),
+                    'solution': _('راجع الملفات الكبيرة وتأكد من أنها ضرورية')
+                })
     
-    # التحقق من وجود مجلد STATIC_ROOT إذا كان محدداً
-    if hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT:
-        if not os.path.exists(settings.STATIC_ROOT):
-            warnings.append({
-                'title': _('مجلد الملفات الثابتة غير موجود'),
-                'description': _('مجلد الملفات الثابتة {static_root} غير موجود').format(static_root=settings.STATIC_ROOT),
-                'solution': _('قم بتشغيل أمر collectstatic لإنشاء مجلد الملفات الثابتة'),
-            })
-        else:
-            success.append({
-                'title': _('مجلد الملفات الثابتة موجود'),
-                'description': _('مجلد الملفات الثابتة {static_root} موجود').format(static_root=settings.STATIC_ROOT),
-            })
+    except Exception as e:
+        issues.append({
+            'title': _('خطأ أثناء فحص ملفات الوسائط'),
+            'description': _('حدث خطأ غير متوقع أثناء فحص ملفات الوسائط: {error}').format(error=str(e)),
+            'solution': _('تحقق من سجلات الأخطاء للحصول على مزيد من المعلومات'),
+            'severity': 'high',
+            'issue_id': 'media_check_error',
+        })
     
-    # تسجيل المشاكل المكتشفة في قاعدة البيانات
-    for issue in issues:
-        if 'issue_id' in issue:
-            # التحقق مما إذا كانت المشكلة موجودة بالفعل
-            existing_issue = SystemIssue.objects.filter(title__contains=issue['issue_id'], status__in=['new', 'in_progress']).first()
-            if not existing_issue:
-                # إنشاء مشكلة جديدة
-                db_issue = SystemIssue.objects.create(
-                    title=issue['title'],
-                    description=issue['description'],
-                    area='media',
-                    severity=issue['severity'],
-                    status='new'
-                )
-                # إضافة معرف قاعدة البيانات إلى القاموس لاستخدامه في القالب
-                issue['db_id'] = db_issue.id
+    return {
+        'issues': issues,
+        'warnings': warnings,
+        'success': success
+    }
+    
+def run_permission_check():
+    """تشغيل فحص الأذونات لمجلدات وملفات النظام"""
+    issues = []
+    warnings = []
+    success = []
+    
+    try:
+        # قائمة المجلدات المهمة للتحقق من أذوناتها
+        important_dirs = [
+            os.path.join(settings.BASE_DIR, 'media'),
+            os.path.join(settings.BASE_DIR, 'static'),
+            os.path.join(settings.BASE_DIR, 'staticfiles'),
+            os.path.join(settings.BASE_DIR, 'temp'),
+            os.path.join(settings.BASE_DIR, 'templates'),
+            os.path.join(settings.BASE_DIR, 'locale'),
+        ]
+        
+        # قائمة الملفات المهمة للتحقق من أذوناتها
+        important_files = [
+            settings.BASE_DIR / 'manage.py',
+            settings.BASE_DIR / 'db.sqlite3',
+        ]
+        
+        # فحص المجلدات
+        for dir_path in important_dirs:
+            if os.path.exists(dir_path):
+                # التحقق من إمكانية القراءة
+                if not os.access(dir_path, os.R_OK):
+                    issues.append({
+                        'title': _('مشكلة في أذونات القراءة للمجلد'),
+                        'description': _('لا يمكن قراءة المجلد: {path}').format(path=dir_path),
+                        'solution': _('قم بتغيير أذونات المجلد للسماح بالقراءة'),
+                        'severity': 'high',
+                        'issue_id': f'dir_read_permission_{os.path.basename(dir_path)}',
+                    })
+                
+                # التحقق من إمكانية الكتابة
+                if not os.access(dir_path, os.W_OK):
+                    issues.append({
+                        'title': _('مشكلة في أذونات الكتابة للمجلد'),
+                        'description': _('لا يمكن الكتابة في المجلد: {path}').format(path=dir_path),
+                        'solution': _('قم بتغيير أذونات المجلد للسماح بالكتابة'),
+                        'severity': 'high',
+                        'issue_id': f'dir_write_permission_{os.path.basename(dir_path)}',
+                    })
+                
+                # في حالة عدم وجود مشاكل
+                if os.access(dir_path, os.R_OK) and os.access(dir_path, os.W_OK):
+                    success.append({
+                        'title': _('أذونات المجلد صحيحة'),
+                        'description': _('المجلد {path} لديه أذونات قراءة وكتابة صحيحة').format(path=dir_path),
+                    })
+            else:
+                warnings.append({
+                    'title': _('مجلد مهم غير موجود'),
+                    'description': _('المجلد المهم غير موجود: {path}').format(path=dir_path),
+                    'solution': _('قم بإنشاء المجلد المفقود')
+                })
+        
+        # فحص الملفات
+        for file_path in important_files:
+            if os.path.exists(file_path):
+                # التحقق من إمكانية القراءة
+                if not os.access(file_path, os.R_OK):
+                    issues.append({
+                        'title': _('مشكلة في أذونات القراءة للملف'),
+                        'description': _('لا يمكن قراءة الملف: {path}').format(path=file_path),
+                        'solution': _('قم بتغيير أذونات الملف للسماح بالقراءة'),
+                        'severity': 'high',
+                        'issue_id': f'file_read_permission_{os.path.basename(file_path)}',
+                    })
+                
+                # التحقق من إمكانية الكتابة
+                if not os.access(file_path, os.W_OK):
+                    warnings.append({
+                        'title': _('مشكلة في أذونات الكتابة للملف'),
+                        'description': _('لا يمكن الكتابة في الملف: {path}').format(path=file_path),
+                        'solution': _('قم بتغيير أذونات الملف للسماح بالكتابة'),
+                    })
+                
+                # في حالة عدم وجود مشاكل
+                if os.access(file_path, os.R_OK):
+                    success.append({
+                        'title': _('أذونات الملف صحيحة للقراءة'),
+                        'description': _('الملف {path} لديه أذونات قراءة صحيحة').format(path=file_path),
+                    })
+            else:
+                if str(file_path).endswith('db.sqlite3'):
+                    # إذا كان يستخدم PostgreSQL، فلا داعي لملف SQLite
+                    if 'postgresql' in settings.DATABASES['default']['ENGINE']:
+                        success.append({
+                            'title': _('لا حاجة لملف SQLite'),
+                            'description': _('النظام يستخدم PostgreSQL، لذا لا حاجة لملف db.sqlite3'),
+                        })
+                    else:
+                        issues.append({
+                            'title': _('ملف قاعدة البيانات مفقود'),
+                            'description': _('ملف قاعدة البيانات SQLite غير موجود: {path}').format(path=file_path),
+                            'solution': _('استعد ملف قاعدة البيانات من النسخة الاحتياطية أو أعد تهيئة قاعدة البيانات'),
+                            'severity': 'critical',
+                            'issue_id': 'sqlite_db_missing',
+                        })
+                else:
+                    warnings.append({
+                        'title': _('ملف مهم غير موجود'),
+                        'description': _('الملف المهم غير موجود: {path}').format(path=file_path),
+                        'solution': _('قم باستعادة الملف المفقود')
+                    })
+        
+        # فحص أذونات مجلدات الوسائط بعمق
+        if os.path.exists(settings.MEDIA_ROOT):
+            try:
+                # قم بعمل اختبار كتابة ملف صغير
+                test_file_path = os.path.join(settings.MEDIA_ROOT, 'permission_test.txt')
+                try:
+                    with open(test_file_path, 'w') as f:
+                        f.write('test')
+                    os.remove(test_file_path)
+                    success.append({
+                        'title': _('اختبار الكتابة في مجلد الوسائط ناجح'),
+                        'description': _('يمكن للنظام الكتابة في مجلد الوسائط بنجاح')
+                    })
+                except PermissionError:
+                    issues.append({
+                        'title': _('فشل اختبار الكتابة في مجلد الوسائط'),
+                        'description': _('لا يمكن للنظام الكتابة في مجلد الوسائط: {path}').format(path=settings.MEDIA_ROOT),
+                        'solution': _('قم بتغيير أذونات مجلد الوسائط للسماح بالكتابة'),
+                        'severity': 'high',
+                        'issue_id': 'media_write_test_failed',
+                    })
+                except Exception as e:
+                    issues.append({
+                        'title': _('خطأ في اختبار الكتابة في مجلد الوسائط'),
+                        'description': _('حدث خطأ أثناء اختبار الكتابة في مجلد الوسائط: {error}').format(error=str(e)),
+                        'solution': _('تحقق من أذونات مجلد الوسائط وحالته'),
+                        'severity': 'medium',
+                        'issue_id': 'media_write_test_error',
+                    })
+            except Exception as e:
+                issues.append({
+                    'title': _('خطأ في اختبار أذونات مجلد الوسائط'),
+                    'description': _('حدث خطأ أثناء اختبار أذونات مجلد الوسائط: {error}').format(error=str(e)),
+                    'solution': _('تحقق من حالة مجلد الوسائط'),
+                    'severity': 'medium',
+                    'issue_id': 'media_permission_test_error',
+                })
+        
+        # فحص أذونات المجلدات المؤقتة
+        temp_dir = settings.TEMP_DIR if hasattr(settings, 'TEMP_DIR') else os.path.join(settings.BASE_DIR, 'temp')
+        if os.path.exists(temp_dir):
+            try:
+                # قم بعمل اختبار كتابة ملف صغير
+                test_file_path = os.path.join(temp_dir, 'permission_test.txt')
+                try:
+                    with open(test_file_path, 'w') as f:
+                        f.write('test')
+                    os.remove(test_file_path)
+                    success.append({
+                        'title': _('اختبار الكتابة في المجلد المؤقت ناجح'),
+                        'description': _('يمكن للنظام الكتابة في المجلد المؤقت بنجاح')
+                    })
+                except PermissionError:
+                    issues.append({
+                        'title': _('فشل اختبار الكتابة في المجلد المؤقت'),
+                        'description': _('لا يمكن للنظام الكتابة في المجلد المؤقت: {path}').format(path=temp_dir),
+                        'solution': _('قم بتغيير أذونات المجلد المؤقت للسماح بالكتابة'),
+                        'severity': 'high',
+                        'issue_id': 'temp_write_test_failed',
+                    })
+                except Exception as e:
+                    issues.append({
+                        'title': _('خطأ في اختبار الكتابة في المجلد المؤقت'),
+                        'description': _('حدث خطأ أثناء اختبار الكتابة في المجلد المؤقت: {error}').format(error=str(e)),
+                        'solution': _('تحقق من أذونات المجلد المؤقت وحالته'),
+                        'severity': 'medium',
+                        'issue_id': 'temp_write_test_error',
+                    })
+            except Exception as e:
+                issues.append({
+                    'title': _('خطأ في اختبار أذونات المجلد المؤقت'),
+                    'description': _('حدث خطأ أثناء اختبار أذونات المجلد المؤقت: {error}').format(error=str(e)),
+                    'solution': _('تحقق من حالة المجلد المؤقت'),
+                    'severity': 'medium',
+                    'issue_id': 'temp_permission_test_error',
+                })
+    
+    except Exception as e:
+        issues.append({
+            'title': _('خطأ أثناء فحص الأذونات'),
+            'description': _('حدث خطأ غير متوقع أثناء إجراء فحص الأذونات: {error}').format(error=str(e)),
+            'solution': _('تحقق من سجلات الأخطاء للحصول على مزيد من المعلومات'),
+            'severity': 'high',
+            'issue_id': 'permission_check_error',
+        })
+    
+    # تجميع الإحصائيات
+    stats = {
+        'total_issues': len(issues),
+        'total_warnings': len(warnings),
+        'total_success': len(success)
+    }
     
     return {
         'issues': issues,
         'warnings': warnings,
         'success': success,
+        'stats': stats
     }
-
+    
 def run_cache_check():
     """تشغيل فحص ذاكرة التخزين المؤقت"""
     issues = []
     warnings = []
     success = []
     
-    # فحص إعدادات ذاكرة التخزين المؤقت
-    cache_backend = settings.CACHES.get('default', {}).get('BACKEND', '')
-    if not cache_backend:
-        warnings.append({
-            'title': _('لم يتم تعريف ذاكرة التخزين المؤقت'),
-            'description': _('لم يتم تعريف ذاكرة التخزين المؤقت في إعدادات Django'),
-            'solution': _('قم بتعريف ذاكرة التخزين المؤقت لتحسين أداء النظام'),
-        })
-    else:
-        success.append({
-            'title': _('تم تعريف ذاكرة التخزين المؤقت'),
-            'description': _('ذاكرة التخزين المؤقت معرفة باستخدام {backend}').format(backend=cache_backend.split('.')[-1]),
-        })
-    
-    # التحقق من ملفات __pycache__
-    pycache_count = 0
-    for root, dirs, files in os.walk(settings.BASE_DIR):
-        if '__pycache__' in dirs:
-            pycache_count += 1
-    
-    if pycache_count > 50:  # عتبة افتراضية
-        warnings.append({
-            'title': _('عدد كبير من مجلدات __pycache__'),
-            'description': _('تم العثور على {count} مجلد __pycache__').format(count=pycache_count),
-            'solution': _('قم بتنظيف مجلدات __pycache__ لتوفير مساحة وتحسين الأداء'),
-        })
-    else:
-        success.append({
-            'title': _('عدد طبيعي من مجلدات __pycache__'),
-            'description': _('تم العثور على {count} مجلد __pycache__').format(count=pycache_count),
-        })
-    
-    return {
-        'issues': issues,
-        'warnings': warnings,
-        'success': success,
-    }
-
-def run_permission_check():
-    """تشغيل فحص الأذونات"""
-    issues = []
-    warnings = []
-    success = []
-    
-    # فحص أذونات مجلد المشروع
-    project_dir_writable = os.access(settings.BASE_DIR, os.W_OK)
-    if not project_dir_writable:
-        issues.append({
-            'title': _('لا توجد أذونات كتابة لمجلد المشروع'),
-            'description': _('لا توجد أذونات كتابة لمجلد المشروع {base_dir}').format(base_dir=settings.BASE_DIR),
-            'solution': _('قم بتغيير أذونات مجلد المشروع للسماح بالكتابة'),
-            'severity': 'high',
-            'issue_id': 'project_dir_not_writable',
-        })
-    else:
-        success.append({
-            'title': _('أذونات كتابة لمجلد المشروع صحيحة'),
-            'description': _('يمكن الكتابة إلى مجلد المشروع {base_dir}').format(base_dir=settings.BASE_DIR),
-        })
-    
-    # فحص أذونات ملف قاعدة البيانات إذا كانت SQLite
-    db_engine = settings.DATABASES['default']['ENGINE']
-    if 'sqlite3' in db_engine:
-        db_file = settings.DATABASES['default']['NAME']
-        if os.path.exists(db_file):
-            db_file_writable = os.access(db_file, os.W_OK)
-            if not db_file_writable:
-                issues.append({
-                    'title': _('لا توجد أذونات كتابة لملف قاعدة البيانات SQLite'),
-                    'description': _('لا توجد أذونات كتابة لملف قاعدة البيانات {db_file}').format(db_file=db_file),
-                    'solution': _('قم بتغيير أذونات ملف قاعدة البيانات للسماح بالكتابة'),
-                    'severity': 'high',
-                    'issue_id': 'db_file_not_writable',
+    try:
+        # فحص وجود مجلد cache
+        cache_dirs = []
+        
+        # مجلدات الكاش المعروفة
+        cache_patterns = [
+            os.path.join(settings.BASE_DIR, '__pycache__'),
+            os.path.join(settings.BASE_DIR, 'rental', '__pycache__'),
+            os.path.join(settings.BASE_DIR, '.cache'),
+            os.path.join(settings.BASE_DIR, 'staticfiles'),
+        ]
+        
+        # البحث عن جميع مجلدات __pycache__
+        for root, dirnames, _ in os.walk(settings.BASE_DIR):
+            for dirname in dirnames:
+                if dirname == '__pycache__':
+                    cache_dirs.append(os.path.join(root, dirname))
+        
+        if not cache_dirs and not any(os.path.exists(p) for p in cache_patterns):
+            success.append({
+                'title': _('لا توجد مجلدات تخزين مؤقت'),
+                'description': _('لم يتم العثور على مجلدات تخزين مؤقت في المشروع')
+            })
+        else:
+            # حساب حجم ملفات التخزين المؤقت
+            total_size = 0
+            file_count = 0
+            
+            # فحص المجلدات المكتشفة
+            for cache_dir in cache_dirs:
+                if os.path.exists(cache_dir):
+                    dir_size = 0
+                    dir_files = 0
+                    
+                    for root, _, filenames in os.walk(cache_dir):
+                        for filename in filenames:
+                            file_path = os.path.join(root, filename)
+                            if os.path.exists(file_path):
+                                try:
+                                    file_size = os.path.getsize(file_path)
+                                    dir_size += file_size
+                                    dir_files += 1
+                                except Exception:
+                                    pass
+                    
+                    total_size += dir_size
+                    file_count += dir_files
+            
+            # فحص المجلدات المعروفة
+            for cache_pattern in cache_patterns:
+                if os.path.exists(cache_pattern) and os.path.isdir(cache_pattern):
+                    dir_size = 0
+                    dir_files = 0
+                    
+                    for root, _, filenames in os.walk(cache_pattern):
+                        for filename in filenames:
+                            file_path = os.path.join(root, filename)
+                            if os.path.exists(file_path):
+                                try:
+                                    file_size = os.path.getsize(file_path)
+                                    dir_size += file_size
+                                    dir_files += 1
+                                except Exception:
+                                    pass
+                    
+                    total_size += dir_size
+                    file_count += dir_files
+            
+            # تحويل إلى ميجابايت
+            size_mb = total_size / (1024 * 1024)
+            
+            if size_mb > 100:  # أكثر من 100 ميجابايت
+                warnings.append({
+                    'title': _('حجم ملفات التخزين المؤقت كبير'),
+                    'description': _('حجم ملفات التخزين المؤقت {size:.2f} ميجابايت ({files} ملف)').format(
+                        size=size_mb, files=file_count),
+                    'solution': _('قم بتنظيف ملفات التخزين المؤقت باستخدام أداة التنظيف')
                 })
             else:
                 success.append({
-                    'title': _('أذونات كتابة لملف قاعدة البيانات SQLite صحيحة'),
-                    'description': _('يمكن الكتابة إلى ملف قاعدة البيانات {db_file}').format(db_file=db_file),
+                    'title': _('حجم ملفات التخزين المؤقت مقبول'),
+                    'description': _('حجم ملفات التخزين المؤقت {size:.2f} ميجابايت ({files} ملف)').format(
+                        size=size_mb, files=file_count),
                 })
+        
+        # فحص إعدادات Django للتخزين المؤقت
+        cache_backend = settings.CACHES.get('default', {}).get('BACKEND', '')
+        
+        if 'LocMemCache' in cache_backend or 'DummyCache' in cache_backend:
+            warnings.append({
+                'title': _('إعدادات التخزين المؤقت غير مثالية'),
+                'description': _('يستخدم النظام {backend} كنظام تخزين مؤقت').format(backend=cache_backend),
+                'solution': _('فكر في استخدام Redis أو Memcached لتحسين الأداء في بيئة الإنتاج')
+            })
+        elif 'Redis' in cache_backend or 'Memcached' in cache_backend:
+            success.append({
+                'title': _('إعدادات التخزين المؤقت مثالية'),
+                'description': _('يستخدم النظام {backend} للتخزين المؤقت').format(backend=cache_backend),
+            })
+            
+            # فحص اتصال Redis/Memcached
+            try:
+                from django.core.cache import cache
+                cache.set('diagnostics_test', 'test', 10)
+                test_value = cache.get('diagnostics_test')
+                
+                if test_value == 'test':
+                    success.append({
+                        'title': _('نظام التخزين المؤقت يعمل بشكل صحيح'),
+                        'description': _('تم الاتصال بنظام التخزين المؤقت {backend} بنجاح').format(backend=cache_backend),
+                    })
+                else:
+                    issues.append({
+                        'title': _('مشكلة في نظام التخزين المؤقت'),
+                        'description': _('فشل اختبار الكتابة والقراءة من نظام التخزين المؤقت {backend}').format(
+                            backend=cache_backend),
+                        'solution': _('تحقق من إعدادات الاتصال بنظام التخزين المؤقت'),
+                        'severity': 'medium',
+                        'issue_id': 'cache_test_failed',
+                    })
+            except Exception as e:
+                issues.append({
+                    'title': _('خطأ في الاتصال بنظام التخزين المؤقت'),
+                    'description': _('حدث خطأ أثناء محاولة الاتصال بنظام التخزين المؤقت: {error}').format(
+                        error=str(e)),
+                    'solution': _('تحقق من إعدادات الاتصال بنظام التخزين المؤقت'),
+                    'severity': 'medium',
+                    'issue_id': 'cache_connection_error',
+                })
+        
+        # فحص ملفات .pyc القديمة
+        try:
+            stale_pyc_files = []
+            py_files_map = {}
+            
+            # جمع معلومات عن ملفات .py
+            for root, _, filenames in os.walk(settings.BASE_DIR):
+                for filename in filenames:
+                    if filename.endswith('.py'):
+                        file_path = os.path.join(root, filename)
+                        py_files_map[file_path] = os.path.getmtime(file_path)
+            
+            # فحص ملفات .pyc
+            for root, _, filenames in os.walk(settings.BASE_DIR):
+                for filename in filenames:
+                    if filename.endswith('.pyc'):
+                        pyc_path = os.path.join(root, filename)
+                        py_path = pyc_path.replace('.pyc', '.py')
+                        
+                        # إذا لم يكن هناك ملف .py مقابل، أو كان ملف .pyc أقدم من ملف .py
+                        if py_path not in py_files_map or os.path.getmtime(pyc_path) < py_files_map[py_path]:
+                            stale_pyc_files.append(pyc_path)
+            
+            if stale_pyc_files:
+                warnings.append({
+                    'title': _('ملفات .pyc قديمة'),
+                    'description': _('تم العثور على {count} ملفات .pyc قديمة').format(count=len(stale_pyc_files)),
+                    'solution': _('قم بتنظيف ملفات .pyc القديمة')
+                })
+        except Exception:
+            # تجاهل أخطاء فحص ملفات .pyc
+            pass
     
-    # تسجيل المشاكل المكتشفة في قاعدة البيانات
-    for issue in issues:
-        if 'issue_id' in issue:
-            # التحقق مما إذا كانت المشكلة موجودة بالفعل
-            existing_issue = SystemIssue.objects.filter(title__contains=issue['issue_id'], status__in=['new', 'in_progress']).first()
-            if not existing_issue:
-                # إنشاء مشكلة جديدة
-                db_issue = SystemIssue.objects.create(
-                    title=issue['title'],
-                    description=issue['description'],
-                    area='permissions',
-                    severity=issue['severity'],
-                    status='new'
-                )
-                # إضافة معرف قاعدة البيانات إلى القاموس لاستخدامه في القالب
-                issue['db_id'] = db_issue.id
+    except Exception as e:
+        issues.append({
+            'title': _('خطأ أثناء فحص ذاكرة التخزين المؤقت'),
+            'description': _('حدث خطأ غير متوقع أثناء فحص ذاكرة التخزين المؤقت: {error}').format(error=str(e)),
+            'solution': _('تحقق من سجلات الأخطاء للحصول على مزيد من المعلومات'),
+            'severity': 'medium',
+            'issue_id': 'cache_check_error',
+        })
     
     return {
         'issues': issues,
         'warnings': warnings,
-        'success': success,
+        'success': success
     }
-
-@login_required
-def fix_system_issue(request, issue_id):
-    """معالجة مشكلة النظام"""
-    if not is_superadmin(request.user):
-        messages.error(request, _('ليس لديك صلاحية لإصلاح مشاكل النظام'))
-        return redirect('superadmin_diagnostics')
     
-    # التحقق إذا كان issue_id رقمي (معرف قاعدة بيانات) أو نصي (معرف مشكلة)
-    if issue_id.isdigit():
-        # الحصول على المشكلة من قاعدة البيانات باستخدام المعرف
-        try:
-            issue = get_object_or_404(SystemIssue, id=issue_id)
-            issue_type = issue.area
-            issue_key = None
-            
-            # تحديث حالة المشكلة
-            issue.status = 'in_progress'
-            issue.save()
-            
-            messages.success(request, _('تم بدء معالجة المشكلة'))
-            
-            # إعادة التوجيه لصفحة التشخيص
-            return redirect('superadmin_diagnostics')
-            
-        except Exception as e:
-            messages.error(request, _('حدث خطأ أثناء معالجة المشكلة: {error}').format(error=str(e)))
-            return redirect('superadmin_diagnostics')
-    else:
-        # معالجة المشكلة بناءً على المعرف النصي
-        issue_fixed = False
-        
-        if issue_id == 'disk_space_low':
-            # معالجة مشكلة انخفاض مساحة القرص
-            issue_fixed = fix_disk_space()
-        elif issue_id == 'media_root_not_writable':
-            # معالجة مشكلة أذونات مجلد الوسائط
-            issue_fixed = fix_media_permissions()
-        elif issue_id == 'project_dir_not_writable':
-            # معالجة مشكلة أذونات مجلد المشروع
-            issue_fixed = fix_project_permissions()
-        elif issue_id == 'db_file_not_writable':
-            # معالجة مشكلة أذونات ملف قاعدة البيانات
-            issue_fixed = fix_db_permissions()
-        elif issue_id == 'missing_media_root':
-            # معالجة مشكلة عدم وجود مجلد الوسائط
-            issue_fixed = create_media_directory()
-        elif issue_id == 'db_connection_error':
-            # معالجة مشكلة الاتصال بقاعدة البيانات
-            issue_fixed = check_db_connection()
-        
-        if issue_fixed:
-            messages.success(request, _('تم إصلاح المشكلة بنجاح'))
-        else:
-            messages.warning(request, _('تم محاولة إصلاح المشكلة، لكن قد تحتاج إلى تدخل يدوي'))
-        
-        return redirect('superadmin_diagnostics')
-    
-    # التحقق من حالة المشكلة
-    if issue.status == 'fixed':
-        messages.error(request, _('هذه المشكلة تم إصلاحها بالفعل'))
-        return redirect('superadmin_diagnostics')
-    
-    # محاولة إصلاح المشكلة
-    success = False
-    error_message = None
-    
-    try:
-        # تنفيذ الإصلاح حسب نوع المشكلة
-        if 'missing_media_root' in issue.title:
-            # إنشاء مجلد الوسائط
-            os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-            success = True
-        
-        elif 'media_root_not_writable' in issue.title:
-            # تغيير أذونات مجلد الوسائط
-            subprocess.run(['chmod', '-R', '755', settings.MEDIA_ROOT])
-            success = True
-        
-        elif 'db_file_not_writable' in issue.title:
-            # تغيير أذونات ملف قاعدة البيانات
-            db_file = settings.DATABASES['default']['NAME']
-            if os.path.exists(db_file):
-                subprocess.run(['chmod', '666', db_file])
-                success = True
-        
-        elif 'disk_space_low' in issue.title:
-            # تنظيف الملفات المؤقتة
-            temp_dirs = ['/tmp', tempfile.gettempdir()]
-            for temp_dir in temp_dirs:
-                if os.path.exists(temp_dir):
-                    subprocess.run(['find', temp_dir, '-type', 'f', '-mtime', '+7', '-delete'])
-            
-            # تنظيف ملفات __pycache__
-            subprocess.run(['find', settings.BASE_DIR, '-name', '__pycache__', '-type', 'd', '-exec', 'rm', '-rf', '{}', '\;'])
-            success = True
-        
-        else:
-            # التعامل مع باقي أنواع المشاكل
-            if 'database_integrity' in issue.title or issue_id == 'database_integrity':
-                # محاولة إصلاح سلامة قاعدة البيانات
-                try:
-                    from django.core.management import call_command
-                    call_command('migrate', verbosity=0)
-                    call_command('check', '--database', 'default')
-                    success = True
-                except Exception as e:
-                    error_message = str(e)
-            
-            elif 'cache_error' in issue.title or issue_id == 'cache_error':
-                # تنظيف ذاكرة التخزين المؤقت
-                try:
-                    from django.core.cache import cache
-                    cache.clear()
-                    success = True
-                except Exception as e:
-                    error_message = str(e)
-            
-            elif 'media_files' in issue.title or issue_id == 'media_files':
-                # إصلاح ملفات الوسائط المفقودة
-                try:
-                    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-                    os.makedirs(os.path.join(settings.MEDIA_ROOT, 'documents'), exist_ok=True)
-                    os.makedirs(os.path.join(settings.MEDIA_ROOT, 'uploads'), exist_ok=True)
-                    os.makedirs(os.path.join(settings.MEDIA_ROOT, 'profiles'), exist_ok=True)
-                    success = True
-                except Exception as e:
-                    error_message = str(e)
-            
-            # مشكلة غير معروفة
-            else:
-                error_message = _('لا يوجد إصلاح تلقائي لهذه المشكلة')
-        
-        if success:
-            # تحديث حالة المشكلة
-            issue.status = 'fixed'
-            issue.fixed_at = timezone.now()
-            issue.fixed_by = request.user
-            issue.fix_notes = _('تم إصلاحها تلقائياً بواسطة أداة التشخيص')
-            issue.save()
-            
-            messages.success(request, _('تم إصلاح المشكلة بنجاح'))
-        else:
-            # تعيين حالة قيد المعالجة
-            issue.status = 'in_progress'
-            issue.save()
-            
-            messages.error(request, error_message or _('تعذر إصلاح المشكلة تلقائياً. يرجى الإصلاح يدوياً'))
-    except Exception as e:
-        # تسجيل الخطأ
-        issue.fix_notes = f"{_('حدث خطأ أثناء محاولة الإصلاح')}: {str(e)}"
-        issue.save()
-        
-        messages.error(request, _('حدث خطأ أثناء محاولة إصلاح المشكلة: {error}').format(error=str(e)))
-    
-    return redirect('superadmin_diagnostics')

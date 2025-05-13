@@ -35,7 +35,7 @@ from .superadmin_scheduler_views import scheduler_dashboard, add_scheduled_job, 
 from .superadmin_settings_views import system_settings, security_settings, notification_settings, advanced_permissions
 
 # دوال تشخيص وإصلاح النظام
-from .superadmin_diagnostics_views import system_diagnostics, run_diagnostic, fix_system_issue
+from .superadmin_diagnostics_views import system_diagnostics, run_diagnostic, fix_issue
 
 # استيراد وظائف أمان إضافية
 from .security import (

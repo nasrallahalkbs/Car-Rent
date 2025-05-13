@@ -88,5 +88,5 @@ urlpatterns = [
     # تشخيص وإصلاح النظام
     path('diagnostics/', superadmin_diagnostics_views.system_diagnostics, name='superadmin_diagnostics'),
     path('diagnostics/run/<str:diagnostic_type>/', superadmin_diagnostics_views.run_diagnostic, name='superadmin_run_diagnostic'),
-    path('diagnostics/fix/<int:issue_id>/', superadmin_diagnostics_views.fix_system_issue, name='superadmin_fix_issue'),
+    path('diagnostics/fix/<int:issue_id>/', superadmin_diagnostics_views.fix_issue, name='superadmin_fix_issue'),
 ]
