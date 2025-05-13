@@ -1723,7 +1723,7 @@
             }, 300);
         });
         
-        // إرسال نموذج رفع الملف
+        // إرسال نموذج رفع الملف باستخدام الوظيفة الموثوقة الجديدة
         $('#submitUploadForm').click(function() {
             const fileInput = $('#file')[0];
             const titleInput = $('#title').val();
@@ -1738,16 +1738,18 @@
                 return;
             }
             
-            // محاكاة رفع الملف
+            // إظهار رسالة التحميل
+            $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> {% trans "جاري الرفع..." %}');
+            
+            // إرسال النموذج مباشرة للخادم
+            $('#uploadFileForm').submit();
+            
+            // ملاحظة: سيتم التعامل مع العودة والرسائل بواسطة الخادم
+            // لذلك لا نحتاج إلى إغلاق النموذج أو تنفيذ أي عمليات أخرى هنا
+            
+            // نحتفظ بالكود التالي للتوافق مع باقي البرنامج
             const fileName = fileInput.files[0].name;
-            alert(`{% trans "تم رفع الملف بنجاح:" %} ${fileName}`);
-            
-            // إغلاق النافذة المنبثقة
-            $('#uploadFileModal').modal('hide');
-            
-            // إظهار الملف الجديد في العرض
-            if (navigationHistory.current) {
-                const fileType = fileName.split('.').pop().toLowerCase();
+            const fileType = fileName.split('.').pop().toLowerCase();
                 let iconClass = 'file';
                 
                 if (fileType === 'pdf') {
