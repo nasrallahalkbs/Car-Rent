@@ -157,13 +157,30 @@
                      </li>
                     <!-- Language Toggle -->
                     <li class="nav-item">
-                        <a href="{% url 'toggle_language' %}" class="btn btn-sm btn-primary rounded-pill px-3">
-                            {% if LANGUAGE_CODE == 'ar' %}
-                            <i class="fas fa-globe me-2"></i> English
-                            {% else %}
-                            <i class="fas fa-globe ms-2"></i> العربية
-                            {% endif %}
-                        </a>
+                        <div class="dropdown">
+                            <a class="btn btn-sm btn-outline-primary dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-language {% if LANGUAGE_CODE == 'ar' %}ms-1{% else %}me-1{% endif %}"></i> 
+                                {% if LANGUAGE_CODE == 'ar' %}تغيير اللغة{% else %}Change Language{% endif %}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <form action="{% url 'set_language' %}" method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.path }}">
+                                        <input type="hidden" name="language" value="ar">
+                                        <button type="submit" class="dropdown-item">العربية</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form action="{% url 'set_language' %}" method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.path }}">
+                                        <input type="hidden" name="language" value="en">
+                                        <button type="submit" class="dropdown-item">English</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
 
                     {% if user.is_authenticated %}
