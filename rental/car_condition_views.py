@@ -316,10 +316,10 @@ def car_condition_create(request):
 
                 # معالجة كل عنصر فحص نشط
                 for item in inspection_items:
-                    # تخطي عناصر الهيكل الخارجي (نستخدم الصور بدلًا منها)
-                    if item.category.name == 'الهيكل الخارجي':
-                        print(f"⏭️ تخطي عنصر هيكل خارجي: {item.name}")
-                        continue
+                    # تم تعديل السلوك ليشمل عناصر الهيكل الخارجي
+# if item.category.name == 'الهيكل الخارجي':
+#     print(f"⏭️ تخطي عنصر هيكل خارجي: {item.name}")
+#     continue
 
                     # البحث عن قيمة العنصر في النموذج المرسل
                     item_value = None
@@ -613,9 +613,9 @@ def car_condition_edit(request, report_id):
                         try:
                             inspection_item = CarInspectionItem.objects.get(id=item_id)
 
-                            # تخطي عناصر "الهيكل الخارجي" لأننا نستخدم الصور بدلاً منها
-                            if inspection_item.category.name == 'الهيكل الخارجي':
-                                continue
+                            # تم تعديل السلوك ليشمل عناصر الهيكل الخارجي
+# if inspection_item.category.name == 'الهيكل الخارجي':
+#     continue
 
                             # الحصول على الملاحظات واحتياج الإصلاح
                             notes = request.POST.get(f'notes_item_{item_id}', '')
