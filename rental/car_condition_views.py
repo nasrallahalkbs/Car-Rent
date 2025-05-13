@@ -1467,11 +1467,21 @@ def complete_car_inspection_create(request):
         'أنظمة السلامة والتشغيل'  # حرجة وتؤثر على السلامة
     ]
     
+    # طباعة جميع الفئات الموجودة في قاعدة البيانات للتشخيص
+    all_categories = list(CarInspectionCategory.objects.filter(is_active=True).order_by('display_order'))
+    print(f"📋 جميع الفئات المتاحة في قاعدة البيانات: {len(all_categories)}")
+    for cat in all_categories:
+        print(f"  - {cat.name} (ID: {cat.id})")
+    
     # جلب الـ 4 فئات المهمة والمكلفة فقط
     inspection_categories = list(CarInspectionCategory.objects.filter(
         is_active=True,
         name__in=important_categories
     ).order_by('display_order'))
+    
+    print(f"🔍 الفئات المهمة التي تم العثور عليها: {len(inspection_categories)}")
+    for cat in inspection_categories:
+        print(f"  + {cat.name} (ID: {cat.id})")
 
     # جلب فقط العناصر المهمة والمكلفة (حسب طلب المستخدم)
     inspection_items = CarInspectionItem.objects.filter(
