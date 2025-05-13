@@ -1832,6 +1832,17 @@ def print_car_delivery_report(request, report_id):
     general_images = CarInspectionImage.objects.filter(
         report=report, inspection_detail__isnull=True
     )
+    
+    # تحديد صور الهيكل الخارجي للتقرير من الصور العامة
+    for image in general_images:
+        if 'صورة أمامية' in image.description:
+            report.front_image = image.image
+        elif 'صورة خلفية' in image.description:
+            report.rear_image = image.image
+        elif 'صورة جانبية' in image.description:
+            report.side_image = image.image
+        elif 'صورة داخلية' in image.description:
+            report.interior_image = image.image
 
     # تحميل التوقيعات
     customer_signature = CustomerSignature.objects.filter(
