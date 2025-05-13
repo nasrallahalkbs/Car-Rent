@@ -469,18 +469,43 @@
     
     /* تأكيد الألوان في وضع الطباعة */
     @media print {
+        /* تحسين الألوان للطباعة */
         .status-good {
             color: #28a745 !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            font-weight: bold;
         }
         .status-warning {
             color: #ffc107 !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            font-weight: bold;
         }
         .status-damaged {
             color: #dc3545 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            font-weight: bold;
+        }
+        
+        /* منع فواصل الصفحات في وسط العناصر المهمة */
+        .inspection-section, .car-specs, .customer-info, .signatures, .notes-box {
+            page-break-inside: avoid;
+        }
+        
+        /* التأكد من أن ألوان خلفية العناوين تظهر عند الطباعة */
+        .detail-section {
+            background-color: #004A9F !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        /* تحسين عرض جدول الفحص عند الطباعة */
+        .inspection-table th[colspan="2"] {
+            background-color: #004A9F !important;
+            color: white !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
@@ -635,9 +660,17 @@
             </div>
             
             <div class="additional-notes">
-                <div class="notes-box">
-                    <p>{{ report.notes|default:"لا توجد ملاحظات إضافية" }}</p>
+                <div class="notes-box" style="padding: 5px 10px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; min-height: 60px;">
+                    <p style="white-space: pre-wrap; font-size: 12px; color: #333;">{{ report.notes|default:"لا توجد ملاحظات إضافية" }}</p>
                 </div>
+                {% if report.reservation.special_requests %}
+                <div style="margin-top: 10px; font-size: 11px;">
+                    <strong style="color: #004A9F;">طلبات خاصة:</strong>
+                    <div style="padding: 5px; background-color: #f0f0f0; border-radius: 3px; font-size: 11px;">
+                        {{ report.reservation.special_requests }}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             
             <!-- تفاصيل فحص السيارة -->
@@ -650,22 +683,34 @@
                 <div class="inspection-box">
                     <table class="inspection-table">
                         <tr>
-                            <th>العنصر</th>
-                            <th>الحالة</th>
+                            <th style="width: 60%;">العنصر</th>
+                            <th style="width: 40%;">الحالة</th>
                         </tr>
                         
                         {% for category_id, category in categories.items %}
                             <!-- عنوان فئة الفحص -->
                             <tr>
-                                <th colspan="2" style="background-color: #f0f0f0;">{{ category.name }}</th>
+                                <th colspan="2" style="background-color: #004A9F; color: white; font-weight: bold; text-align: center; padding: 5px;">{{ category.name }}</th>
                             </tr>
                             
                             {% if category.items %}
                                 <!-- عناصر الفحص للفئة -->
                                 {% for detail in category.items %}
                                     <tr>
-                                        <td>{{ detail.inspection_item.name }}</td>
-                                        <td class="{% if detail.condition == 'poor' or detail.condition == 'damaged' %}status-damaged{% elif detail.condition == 'fair' %}status-warning{% else %}status-good{% endif %}">
+                                        <td style="padding: 5px 8px; font-size: 11px; border-bottom: 1px solid #ddd;">
+                                            {{ detail.inspection_item.name }}
+                                            {% if detail.inspection_item.is_critical %}
+                                                <span style="color: #d63031; font-weight: bold; font-size: 10px;">
+                                                    (مهم)
+                                                </span>
+                                            {% endif %}
+                                            {% if detail.inspection_item.is_expensive %}
+                                                <span style="color: #6c5ce7; font-weight: bold; font-size: 10px;">
+                                                    (مكلف)
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="{% if detail.condition == 'poor' or detail.condition == 'damaged' %}status-damaged{% elif detail.condition == 'fair' %}status-warning{% else %}status-good{% endif %}" style="padding: 5px 8px; font-size: 11px; border-bottom: 1px solid #ddd; text-align: center; font-weight: bold;">
                                             {{ detail.get_condition_display }}
                                             {% if detail.needs_repair %}
                                                 <span style="color: #dc3545; font-weight: bold;">*</span>
@@ -676,7 +721,7 @@
                             {% else %}
                                 <!-- لا توجد عناصر في هذه الفئة -->
                                 <tr>
-                                    <td colspan="2" class="text-center" style="font-style: italic; color: #6c757d;">
+                                    <td colspan="2" class="text-center" style="font-style: italic; color: #6c757d; padding: 5px; font-size: 10px;">
                                         لا توجد عناصر مسجلة في هذه الفئة
                                     </td>
                                 </tr>
@@ -684,7 +729,7 @@
                         {% empty %}
                             <!-- لا توجد فئات فحص -->
                             <tr>
-                                <td colspan="2" class="text-center" style="font-style: italic; color: #6c757d;">
+                                <td colspan="2" class="text-center" style="font-style: italic; color: #6c757d; padding: 5px; font-size: 10px;">
                                     لا توجد تفاصيل فحص مسجلة لهذا التقرير
                                 </td>
                             </tr>
@@ -692,11 +737,18 @@
                     </table>
                     
                     <!-- مفتاح توضيحي للألوان ومؤشرات الحالة -->
-                    <div style="margin-top: 5px; font-size: 8px; color: #555;">
-                        <span class="status-good" style="font-weight: bold;">■</span> حالة جيدة / ممتازة  
-                        <span class="status-warning" style="font-weight: bold; margin-right: 10px;">■</span> حالة متوسطة  
-                        <span class="status-damaged" style="font-weight: bold; margin-right: 10px;">■</span> حالة سيئة / تالفة
-                        <span style="color: #dc3545; font-weight: bold; margin-right: 10px;">*</span> يحتاج إلى إصلاح
+                    <div style="margin-top: 10px; border: 1px solid #ddd; border-radius: 4px; padding: 5px; background-color: #f9f9f9;">
+                        <div style="font-size: 10px; font-weight: bold; margin-bottom: 3px; color: #444; text-align: center;">مفتاح الحالة</div>
+                        <div style="font-size: 9px; color: #555; display: flex; justify-content: space-around;">
+                            <span><span class="status-good" style="font-weight: bold; display: inline-block; width: 12px; height: 12px; margin-left: 3px;">■</span> حالة جيدة / ممتازة</span>
+                            <span><span class="status-warning" style="font-weight: bold; display: inline-block; width: 12px; height: 12px; margin-left: 3px;">■</span> حالة متوسطة</span>
+                            <span><span class="status-damaged" style="font-weight: bold; display: inline-block; width: 12px; height: 12px; margin-left: 3px;">■</span> حالة سيئة / تالفة</span>
+                        </div>
+                        <div style="font-size: 9px; color: #555; margin-top: 3px; text-align: center;">
+                            <span style="color: #dc3545; font-weight: bold; margin-left: 3px;">*</span> يحتاج إلى إصلاح
+                            <span style="color: #d63031; font-weight: bold; margin-right: 10px; margin-left: 3px;">(مهم)</span> عنصر مهم وحيوي
+                            <span style="color: #6c5ce7; font-weight: bold; margin-left: 3px;">(مكلف)</span> عنصر مكلف للإصلاح
+                        </div>
                     </div>
                 </div>
             </div>
@@ -716,21 +768,26 @@
                 <div class="signature-box">
                     <p>توقيع المستلم</p>
                     {% if customer_signature %}
-                        <img src="{{ customer_signature.signature.url }}" alt="توقيع العميل" style="max-height: 40px;">
+                        <img src="{{ customer_signature.signature.url }}" alt="توقيع العميل" style="max-height: 50px; display: block; margin: 5px auto;">
+                        <p style="font-size: 9px; text-align: center; margin-top: 3px;">{{ report.customer.full_name }}</p>
                     {% else %}
                         <div class="signature-placeholder">_________________</div>
+                        <p style="font-size: 9px; text-align: center; margin-top: 3px;">{{ report.customer.full_name }}</p>
                     {% endif %}
                 </div>
                 <div class="signature-box">
                     <p>ختم الشركة</p>
                     <div class="stamp-placeholder"></div>
+                    <p style="font-size: 9px; text-align: center; margin-top: 3px;">ختم رسمي</p>
                 </div>
                 <div class="signature-box">
                     <p>توقيع الموظف</p>
                     {% if staff_signature %}
-                        <img src="{{ staff_signature.signature.url }}" alt="توقيع الموظف" style="max-height: 40px;">
+                        <img src="{{ staff_signature.signature.url }}" alt="توقيع الموظف" style="max-height: 50px; display: block; margin: 5px auto;">
+                        <p style="font-size: 9px; text-align: center; margin-top: 3px;">{{ report.created_by.get_full_name|default:report.created_by.username }}</p>
                     {% else %}
                         <div class="signature-placeholder">_________________</div>
+                        <p style="font-size: 9px; text-align: center; margin-top: 3px;">{{ report.created_by.get_full_name|default:report.created_by.username }}</p>
                     {% endif %}
                 </div>
                 <div class="signature-box">
