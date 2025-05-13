@@ -812,7 +812,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="uploadFileForm" method="post" enctype="multipart/form-data">
+                <!-- نموذج رفع الملفات باستخدام الحل الموثوق -->
+                <form id="uploadFileForm" method="post" enctype="multipart/form-data" action="{% url 'admin_archive_upload' %}">
                     {% csrf_token %}
                     
                     <div class="mb-3">
@@ -834,16 +835,16 @@
                             <option value="custody">{% trans "مستند أمانة" %}</option>
                             <option value="custody_release">{% trans "مستند فك أمانة" %}</option>
                             <option value="official_document">{% trans "مستند رسمي" %}</option>
-                            <option value="other">{% trans "أخرى" %}</option>
+                            <option value="other" selected>{% trans "أخرى" %}</option>
                         </select>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="folder" class="form-label">{% trans "المجلد" %}</label>
-                        <select class="form-select" id="folder" name="folder">
+                        <label for="folder_id" class="form-label">{% trans "المجلد" %}</label>
+                        <select class="form-select" id="folder_id" name="folder_id">
                             <option value="">{% trans "المجلد الرئيسي" %}</option>
                             {% for folder in all_folders %}
-                                <option value="{{ folder.id }}">{{ folder.name }}</option>
+                                <option value="{{ folder.id }}" {% if current_folder and current_folder.id == folder.id %}selected{% endif %}>{{ folder.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
