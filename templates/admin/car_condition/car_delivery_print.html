@@ -683,14 +683,16 @@
                 <div class="inspection-box">
                     <table class="inspection-table">
                         <tr>
-                            <th style="width: 60%;">العنصر</th>
-                            <th style="width: 40%;">الحالة</th>
+                            <th style="width: 40%;">العنصر</th>
+                            <th style="width: 15%;">الحالة</th>
+                            <th style="width: 25%;">ملاحظات</th>
+                            <th style="width: 20%;">الإصلاحات</th>
                         </tr>
                         
                         {% for category_id, category in categories.items %}
                             <!-- عنوان فئة الفحص -->
                             <tr>
-                                <th colspan="2" style="background-color: #004A9F; color: white; font-weight: bold; text-align: center; padding: 5px;">{{ category.name }}</th>
+                                <th colspan="4" style="background-color: #004A9F; color: white; font-weight: bold; text-align: center; padding: 5px;">{{ category.name }}</th>
                             </tr>
                             
                             {% if category.items %}
@@ -716,12 +718,29 @@
                                                 <span style="color: #dc3545; font-weight: bold;">*</span>
                                             {% endif %}
                                         </td>
+                                        <td style="padding: 5px 8px; font-size: 10px; border-bottom: 1px solid #ddd;">
+                                            {{ detail.notes|default:"-" }}
+                                        </td>
+                                        <td style="padding: 5px 8px; font-size: 10px; border-bottom: 1px solid #ddd; text-align: center;">
+                                            {% if detail.needs_repair %}
+                                                <div style="display: inline-block; background-color: #dc3545; color: white; padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: bold;">
+                                                    يحتاج إصلاح
+                                                </div>
+                                                {% if detail.condition == 'poor' or detail.condition == 'damaged' %}
+                                                <div style="margin-top: 2px; font-size: 9px; color: #555;">
+                                                    حالة متضررة
+                                                </div>
+                                                {% endif %}
+                                            {% else %}
+                                                <span style="color: #28a745; font-size: 9px;">لا يحتاج إصلاح</span>
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             {% else %}
                                 <!-- لا توجد عناصر في هذه الفئة -->
                                 <tr>
-                                    <td colspan="2" class="text-center" style="font-style: italic; color: #6c757d; padding: 5px; font-size: 10px;">
+                                    <td colspan="4" class="text-center" style="font-style: italic; color: #6c757d; padding: 5px; font-size: 10px;">
                                         لا توجد عناصر مسجلة في هذه الفئة
                                     </td>
                                 </tr>
