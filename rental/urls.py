@@ -9,6 +9,7 @@ from direct_sql_solution import direct_sql_upload
 from final_direct_upload import final_direct_upload
 from .direct_archive_upload import super_direct_upload
 from direct_upload_page import direct_upload_page
+from fixed_direct_upload_page import fixed_direct_upload_page
 from .fixed_analytics_view import direct_payment_analytics
 
 
@@ -177,6 +178,8 @@ urlpatterns = [
     
     # إضافة الحل الجديد لمشكلة رفع الملفات
     path('dashboard/archive/fixed-upload/', fixed_direct_upload, name='fixed_direct_upload'),
+    path('dashboard/archive/new-upload/', fixed_direct_upload_page, name='fixed_direct_upload_page'),
+    path('ar/dashboard/archive/new-upload/', fixed_direct_upload_page, name='fixed_direct_upload_page_ar'),
     path('dashboard/archive/simple-upload/process/', admin_views.simple_upload, name='simple_upload'),
 
     # تم تعليق هذا المسار لتجنب التضارب - هناك تعريف آخر له في السطر 108
