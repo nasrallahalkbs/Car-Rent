@@ -852,7 +852,7 @@ def admin_reservation_detail(request, reservation_id):
 def print_reservation_contract(request, reservation_id, template_type='standard'):
     """طباعة عقد إيجار السيارة"""
     # التحقق من الصلاحيات
-    if not has_admin_permission(request, 'reservations:view_reservation_details'):
+    if not check_permission(request, 'reservations', 'view_reservation_details'):
         messages.error(request, "ليس لديك صلاحية لعرض هذه الصفحة")
         return redirect('login')
     
