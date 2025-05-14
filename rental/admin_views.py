@@ -849,7 +849,7 @@ def admin_reservation_detail(request, reservation_id):
         print(f"ERROR in admin_reservation_detail: {error_message}")
         
         
-def print_reservation_contract(request, reservation_id):
+def print_reservation_contract(request, reservation_id, template_type='standard'):
     """طباعة عقد إيجار السيارة"""
     # التحقق من الصلاحيات
     if not has_admin_permission(request, 'reservations:view_reservation_details'):
@@ -873,6 +873,27 @@ def print_reservation_contract(request, reservation_id):
         import time
         cache_buster = int(time.time())
         
+        # استخراج معلومات الدفع من الملاحظات إذا كانت متوفرة
+        payment_method = None
+        payment_reference = None
+        
+        if hasattr(reservation, 'payment_method') and reservation.payment_method:
+            payment_method = reservation.payment_method
+        elif reservation.notes and ('طريقة الدفع:' in reservation.notes):
+            notes_lines = reservation.notes.split('\n')
+            for line in notes_lines:
+                if 'طريقة الدفع:' in line:
+                    payment_method = line.split('طريقة الدفع:')[1].strip()
+                    break
+        
+        # استخراج رقم المرجع من الملاحظات
+        if reservation.notes and ('رقم المرجع:' in reservation.notes):
+            notes_lines = reservation.notes.split('\n')
+            for line in notes_lines:
+                if 'رقم المرجع:' in line:
+                    payment_reference = line.split('رقم المرجع:')[1].strip()
+                    break
+        
         # إعداد سياق القالب بجميع المعلومات المطلوبة
         context = {
             'reservation': reservation,
@@ -886,9 +907,14 @@ def print_reservation_contract(request, reservation_id):
             'guarantee_type': reservation.guarantee_type,
             'guarantee_details': reservation.guarantee_details,
             'deposit_amount': reservation.deposit_amount,
+            'payment_method': payment_method,
+            'payment_reference': payment_reference,
         }
         
-        return render(request, 'admin/print_reservation_contract.html', context)
+        # تحديد القالب المناسب
+        template = 'admin/enhanced_reservation_contract.html' if template_type == 'enhanced' else 'admin/print_reservation_contract.html'
+        
+        return render(request, template, context)
     
     except Exception as e:
         # تسجيل أي أخطاء واظهارها للمستخدم

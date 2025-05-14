@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ar" {% if is_rtl %}dir="rtl"{% endif %}>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عقد إيجار سيارة - {{ reservation.reservation_number }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap');
+        
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #f39c12;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --border-color: #dee2e6;
+            --muted-color: #6c757d;
+        }
+        
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 0;
+            margin: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .contract-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 50px 40px;
+            margin: 40px auto;
+            max-width: 1000px;
+        }
+        
+        .contract-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+        
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            max-height: 80px;
+        }
+        
+        .contract-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--secondary-color);
+            text-align: center;
+            margin: 20px 0;
+            width: 100%;
+        }
+        
+        .contract-subtitle {
+            font-size: 18px;
+            color: var(--muted-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+            position: relative;
+        }
+        
+        .section-title::before {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            height: 2px;
+            width: 50px;
+            background-color: var(--accent-color);
+        }
+        
+        .info-table {
+            width: 100%;
+            margin-bottom: 30px;
+            border-collapse: collapse;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .info-table th {
+            text-align: right;
+            padding: 14px;
+            background-color: var(--light-color);
+            width: 40%;
+            border: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        
+        .info-table td {
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        
+        .info-table tr:nth-child(even) {
+            background-color: rgba(0,0,0,0.02);
+        }
+        
+        .terms-section {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        .terms-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--secondary-color);
+        }
+        
+        .terms-list {
+            padding-right: 20px;
+        }
+        
+        .terms-list li {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .signature-box {
+            width: 45%;
+            padding: 25px;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: #fbfbfb;
+        }
+        
+        .signature-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+        }
+        
+        .signature-name {
+            font-size: 14px;
+            color: var(--muted-color);
+            margin-top: 5px;
+        }
+        
+        .signature-date {
+            font-size: 12px;
+            color: var(--muted-color);
+            margin-top: 5px;
+        }
+        
+        .signature-line {
+            margin-top: 70px;
+            border-top: 1px solid #000;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            color: var(--muted-color);
+            font-size: 14px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+            }
+            
+            .contract-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 15px;
+                max-width: 100%;
+            }
+            
+            .print-button {
+                display: none;
+            }
+            
+            .page-break {
+                page-break-after: always;
+            }
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .no-print {
+            display: none;
+        }
+        
+        .stamp {
+            position: relative;
+            padding: 30px;
+            border: 2px dashed var(--primary-color);
+            width: 200px;
+            border-radius: 50%;
+            text-align: center;
+            transform: rotate(-10deg);
+            margin: 20px auto;
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 16px;
+        }
+        
+        .highlight-row {
+            background-color: rgba(52, 152, 219, 0.1) !important;
+            font-weight: 600;
+        }
+        
+        .note {
+            padding: 15px;
+            background-color: #fff8e1;
+            border-right: 4px solid var(--accent-color);
+            margin: 20px 0;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        
+        .contract-metadata {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .contract-id {
+            font-size: 16px;
+            color: var(--muted-color);
+            text-align: left;
+        }
+        
+        .contract-date {
+            font-size: 16px;
+            color: var(--muted-color);
+            text-align: right;
+        }
+        
+        [dir="rtl"] .contract-date {
+            text-align: left;
+        }
+        
+        [dir="rtl"] .contract-id {
+            text-align: right;
+        }
+        
+        .barcode {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .barcode img {
+            max-width: 200px;
+        }
+        
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            opacity: 0.07;
+            font-size: 120px;
+            color: var(--primary-color);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .company-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .company-info p {
+            margin-bottom: 5px;
+            color: var(--muted-color);
+        }
+        
+        .qr-code {
+            text-align: center;
+            margin: 20px auto;
+        }
+        
+        .qr-code img {
+            max-width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="watermark">عقد إيجار</div>
+    
+    <button class="btn btn-primary print-button" onclick="window.print();">
+        <i class="fas fa-print me-2"></i> طباعة العقد
+    </button>
+    
+    <div class="contract-container">
+        <div class="logo-container">
+            <!-- يمكن استبدال هذا برابط شعار الشركة الحقيقي -->
+            <h1 style="color: var(--primary-color); font-weight: 800;">شركة إيجار السيارات</h1>
+        </div>
+        
+        <div class="contract-metadata">
+            <div class="contract-id">رقم العقد: {{ reservation.reservation_number }}</div>
+            <div class="contract-date">تاريخ إصدار العقد: {% now "Y-m-d" %}</div>
+        </div>
+        
+        <h1 class="contract-title">عقد إيجار سيارة</h1>
+        <p class="contract-subtitle">وثيقة رسمية صادرة من شركة إيجار السيارات</p>
+        
+        <div class="qr-code">
+            <!-- هنا يمكن وضع رمز QR لتفاصيل العقد -->
+            <div style="width: 100px; height: 100px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-qrcode fa-3x" style="color: #adb5bd;"></i>
+            </div>
+        </div>
+        
+        <div class="company-info">
+            <p><i class="fas fa-map-marker-alt me-1"></i> العنوان: المملكة العربية السعودية، الرياض، شارع الملك فهد</p>
+            <p><i class="fas fa-phone me-1"></i> هاتف: 920001234</p>
+            <p><i class="fas fa-envelope me-1"></i> البريد الإلكتروني: info@carrentalcompany.com</p>
+        </div>
+        
+        <div class="terms-section">
+            <div class="note">
+                <strong>ملاحظة هامة:</strong> هذا العقد ملزم قانونياً ويخضع لأنظمة وقوانين المملكة العربية السعودية.
+            </div>
+        </div>
+        
+        <h2 class="section-title">معلومات الطرفين</h2>
+        <table class="info-table">
+            <tr>
+                <th>المؤجر (الطرف الأول)</th>
+                <td>شركة إيجار السيارات</td>
+            </tr>
+            <tr>
+                <th>المستأجر (الطرف الثاني)</th>
+                <td>{{ full_name }}</td>
+            </tr>
+            <tr>
+                <th>رقم الهوية</th>
+                <td>{{ national_id }}</td>
+            </tr>
+            <tr>
+                <th>رقم الجوال</th>
+                <td>{{ reservation.phone }}</td>
+            </tr>
+            <tr>
+                <th>البريد الإلكتروني</th>
+                <td>{{ reservation.user.email }}</td>
+            </tr>
+            <tr>
+                <th>العنوان</th>
+                <td>{{ reservation.address|default:"غير محدد" }}</td>
+            </tr>
+        </table>
+        
+        <h2 class="section-title">تفاصيل السيارة</h2>
+        <table class="info-table">
+            <tr>
+                <th>نوع السيارة</th>
+                <td>{{ reservation.car.make }} {{ reservation.car.model }}</td>
+            </tr>
+            <tr>
+                <th>سنة الصنع</th>
+                <td>{{ reservation.car.year }}</td>
+            </tr>
+            <tr>
+                <th>رقم اللوحة</th>
+                <td>{{ reservation.car.license_plate }}</td>
+            </tr>
+            <tr>
+                <th>رقم الشاسي</th>
+                <td>{{ reservation.car.vin_number|default:"غير متوفر" }}</td>
+            </tr>
+            <tr>
+                <th>اللون</th>
+                <td>{{ reservation.car.color }}</td>
+            </tr>
+            <tr>
+                <th>قراءة العداد عند التسليم (كم)</th>
+                <td>{{ reservation.car.odometer|default:"غير متوفر" }}</td>
+            </tr>
+            <tr>
+                <th>سعة الوقود عند التسليم</th>
+                <td>{{ reservation.car.fuel_level|default:"ممتلئ" }}</td>
+            </tr>
+        </table>
+        
+        <h2 class="section-title">تفاصيل الحجز</h2>
+        <table class="info-table">
+            <tr>
+                <th>رقم الحجز</th>
+                <td>{{ reservation.reservation_number }}</td>
+            </tr>
+            <tr>
+                <th>تاريخ بداية الإيجار</th>
+                <td>{{ reservation.start_date }}</td>
+            </tr>
+            <tr>
+                <th>وقت الاستلام</th>
+                <td>{{ reservation.pickup_time|default:"12:00 ظهراً" }}</td>
+            </tr>
+            <tr>
+                <th>تاريخ نهاية الإيجار</th>
+                <td>{{ reservation.end_date }}</td>
+            </tr>
+            <tr>
+                <th>وقت التسليم</th>
+                <td>{{ reservation.return_time|default:"12:00 ظهراً" }}</td>
+            </tr>
+            <tr>
+                <th>مدة الإيجار</th>
+                <td>{{ days }} يوم</td>
+            </tr>
+            <tr>
+                <th>نوع الإيجار</th>
+                <td>{{ rental_type|default:"إيجار قياسي" }}</td>
+            </tr>
+            <tr>
+                <th>سعر اليوم</th>
+                <td>{{ reservation.car.daily_price }} ريال سعودي</td>
+            </tr>
+            {% if reservation.discount_amount %}
+            <tr>
+                <th>قيمة الخصم</th>
+                <td>{{ reservation.discount_amount }} ريال سعودي</td>
+            </tr>
+            {% endif %}
+            <tr class="highlight-row">
+                <th>الإجمالي</th>
+                <td>{{ reservation.total_amount }} ريال سعودي</td>
+            </tr>
+        </table>
+        
+        <h2 class="section-title">تفاصيل الضمان</h2>
+        <table class="info-table">
+            <tr>
+                <th>نوع الضمان</th>
+                <td>{{ guarantee_type|default:"غير محدد" }}</td>
+            </tr>
+            {% if guarantee_details %}
+            <tr>
+                <th>تفاصيل الضمان</th>
+                <td>{{ guarantee_details }}</td>
+            </tr>
+            {% endif %}
+            {% if deposit_amount %}
+            <tr>
+                <th>مبلغ التأمين</th>
+                <td>{{ deposit_amount }} ريال سعودي</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <th>تاريخ استرداد الضمان</th>
+                <td>عند إعادة السيارة بحالة سليمة</td>
+            </tr>
+        </table>
+        
+        {% if payment_method %}
+        <h2 class="section-title">تفاصيل الدفع</h2>
+        <table class="info-table">
+            <tr>
+                <th>طريقة الدفع</th>
+                <td>{{ payment_method }}</td>
+            </tr>
+            {% if payment_reference %}
+            <tr>
+                <th>رقم المرجع</th>
+                <td>{{ payment_reference }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <th>حالة الدفع</th>
+                <td>
+                    {% if reservation.payment_status == 'paid' %}
+                    <span class="text-success"><i class="fas fa-check-circle"></i> تم الدفع</span>
+                    {% else %}
+                    <span class="text-warning"><i class="fas fa-clock"></i> في انتظار الدفع</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+        {% endif %}
+        
+        <div class="terms-section">
+            <h3 class="terms-title">شروط وأحكام الإيجار</h3>
+            <ol class="terms-list">
+                <li>يلتزم المستأجر بالمحافظة على السيارة وإعادتها بنفس الحالة التي استلمها بها.</li>
+                <li>يتحمل المستأجر جميع تكاليف الوقود خلال فترة الإيجار.</li>
+                <li>يلتزم المستأجر بعدم قيادة السيارة خارج حدود المملكة العربية السعودية.</li>
+                <li>يمنع منعاً باتاً التدخين داخل السيارة.</li>
+                <li>يلتزم المستأجر بالإبلاغ فوراً عن أي حادث أو عطل يحدث للسيارة.</li>
+                <li>يلتزم المستأجر بدفع جميع المخالفات المرورية التي تحدث خلال فترة الإيجار.</li>
+                <li>يتم استرداد مبلغ التأمين بعد التأكد من سلامة السيارة عند الإرجاع.</li>
+                <li>في حالة تأخر المستأجر عن موعد إرجاع السيارة، يتم احتساب يوم إضافي كامل.</li>
+                <li>يحق للشركة سحب السيارة في حالة مخالفة الشروط والأحكام دون إرجاع أي مبالغ.</li>
+                <li>ضياع مفتاح السيارة يترتب عليه دفع قيمة المفتاح كاملة.</li>
+                <li>يلتزم المستأجر بعدم السماح لأي شخص غير مذكور في العقد بقيادة السيارة.</li>
+                <li>تتحمل الشركة تكاليف الصيانة الدورية للسيارة، بينما يتحمل المستأجر تكاليف سوء الاستخدام.</li>
+                <li>لا يجوز للمستأجر تغيير أي من أجزاء السيارة أو إجراء أي تعديلات عليها.</li>
+                <li>في حالة وقوع حادث، يجب على المستأجر إبلاغ الشركة والجهات الأمنية المختصة فوراً.</li>
+                <li>يتحمل المستأجر المسؤولية الكاملة عن أي أضرار تلحق بالسيارة نتيجة الإهمال أو سوء الاستخدام.</li>
+            </ol>
+            
+            <div class="note">
+                <strong>ملاحظة هامة:</strong> يتحمل المستأجر كامل المسؤولية القانونية في حالة مخالفة أنظمة المرور أو استخدام السيارة لأغراض غير مشروعة.
+            </div>
+        </div>
+        
+        {% if reservation.status == 'confirmed' %}
+        <div class="stamp">
+            تم التأكيد
+        </div>
+        {% elif reservation.status == 'completed' %}
+        <div class="stamp" style="border-color: #27ae60; color: #27ae60;">
+            مكتمل
+        </div>
+        {% endif %}
+        
+        <div class="signature-section">
+            <div class="signature-box">
+                <p class="signature-title">توقيع المؤجر (الشركة)</p>
+                <div class="signature-line"></div>
+                <p class="signature-name">اسم الممثل: ______________________</p>
+                <p class="signature-date">التاريخ: {% now "Y-m-d" %}</p>
+            </div>
+            
+            <div class="signature-box">
+                <p class="signature-title">توقيع المستأجر</p>
+                <div class="signature-line"></div>
+                <p class="signature-name">{{ full_name }}</p>
+                <p class="signature-date">التاريخ: {% now "Y-m-d" %}</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>تم إصدار هذا العقد بواسطة نظام إدارة حجوزات السيارات | جميع الحقوق محفوظة &copy; {% now "Y" %}</p>
+            <p>هذا العقد وثيقة رسمية ملزمة لجميع الأطراف وفقاً للأنظمة واللوائح المعمول بها في المملكة العربية السعودية</p>
+        </div>
+    </div>
+    
+    <script>
+        window.onload = function() {
+            // تعيين التركيز على زر الطباعة ليكون جاهزًا للضغط
+            document.querySelector('.print-button').focus();
+        };
+    </script>
+</body>
+</html>

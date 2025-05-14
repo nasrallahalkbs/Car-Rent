@@ -112,6 +112,7 @@ urlpatterns = [
     # مسار بديل ومكافئ للسماح باستخدام /view/ أيضًا
     path('dashboard/reservations/<int:reservation_id>/view/', admin_views.admin_reservation_detail, name='admin_reservation_view'),
     path('dashboard/reservations/<int:reservation_id>/print/', admin_views.print_reservation_contract, name='print_reservation_contract'),
+    path('dashboard/reservations/<int:reservation_id>/print/enhanced/', lambda request, reservation_id: admin_views.print_reservation_contract(request, reservation_id, 'enhanced'), name='print_enhanced_reservation_contract'),
     path('dashboard/users/', admin_views.admin_users, name='admin_users'),
     path('dashboard/users/add/', admin_views.add_user, name='add_user'),
     path('dashboard/users/<int:user_id>/', admin_views.user_details, name='user_details'),
