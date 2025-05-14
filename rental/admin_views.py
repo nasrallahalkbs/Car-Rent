@@ -849,6 +849,74 @@ def admin_reservation_detail(request, reservation_id):
         print(f"ERROR in admin_reservation_detail: {error_message}")
         
         
+def print_payment_details(request, payment_id):
+    """عرض نموذج تفاصيل الدفع بتنسيق قابل للطباعة"""
+    # التحقق من الصلاحيات
+    if not check_permission(request, 'payments', 'view_payments'):
+        messages.error(request, "ليس لديك صلاحية لعرض هذه الصفحة")
+        return redirect('login')
+    
+    try:
+        # محاولة العثور على الحجز
+        payment = get_object_or_404(Reservation, id=payment_id)
+        
+        # حساب عدد الأيام بين تاريخ البداية وتاريخ النهاية
+        delta = (payment.end_date - payment.start_date).days + 1
+        
+        # تحديد حالة الدفع
+        payment.status = payment.payment_status
+        payment.amount = payment.total_price
+        payment.date = payment.created_at
+        
+        # تحديد لغة المستخدم
+        from django.utils.translation import get_language
+        current_language = get_language()
+        is_english = current_language == 'en'
+        is_rtl = current_language == 'ar'
+        
+        # استخراج معلومات الدفع من الملاحظات إذا كانت متوفرة
+        payment_method = None
+        payment_reference = None
+        
+        if hasattr(payment, 'payment_method') and payment.payment_method:
+            payment_method = payment.payment_method
+        elif payment.notes and ('طريقة الدفع:' in payment.notes):
+            notes_lines = payment.notes.split('\n')
+            for line in notes_lines:
+                if 'طريقة الدفع:' in line:
+                    payment_method = line.split('طريقة الدفع:')[1].strip()
+                    break
+        
+        # استخراج رقم المرجع من الملاحظات
+        if payment.notes and ('رقم المرجع:' in payment.notes):
+            notes_lines = payment.notes.split('\n')
+            for line in notes_lines:
+                if 'رقم المرجع:' in line:
+                    payment_reference = line.split('رقم المرجع:')[1].strip()
+                    break
+        
+        # تعيين معلومات الدفع إلى كائن الدفع
+        payment.payment_method = payment_method or 'visa'  # قيمة افتراضية
+        payment.reference_number = payment_reference or ''
+        
+        context = {
+            'payment': payment,
+            'days': delta,
+            'now': timezone.now(),
+            'current_user': request.user,
+            'is_english': is_english,
+            'is_rtl': is_rtl,
+        }
+        
+        return render(request, 'admin/payment_details_printable.html', context)
+    
+    except Exception as e:
+        # تسجيل أي أخطاء واظهارها للمستخدم
+        error_message = f"خطأ في عرض تفاصيل الدفع: {str(e)}"
+        messages.error(request, error_message)
+        logger.error(error_message)
+        return redirect('payment_details', payment_id=payment_id)
+
 def print_reservation_contract(request, reservation_id, template_type='standard'):
     """طباعة عقد إيجار السيارة"""
     # التحقق من الصلاحيات

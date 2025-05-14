@@ -121,6 +121,7 @@ urlpatterns = [
     path('dashboard/payments/add-manual/', admin_views.add_manual_payment, name='add_manual_payment'),
     path('dashboard/payments/<str:payment_id>/', admin_views.payment_details, name='payment_details'),
     path('dashboard/payments/<str:payment_id>/print/', admin_views.print_receipt, name='print_receipt'),
+    path('dashboard/payments/<str:payment_id>/print/details/', admin_views.print_payment_details, name='print_payment_details'),
     path('dashboard/payments/<str:payment_id>/receipt/', admin_views.download_receipt, name='download_receipt'),
     path('dashboard/payments/<str:payment_id>/refund/', admin_views.process_refund, name='process_refund'),
     path('dashboard/payments/<str:payment_id>/mark-paid/', admin_views.mark_as_paid, name='mark_as_paid'),

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل المدفوعات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap">
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #0a58ca;
+            --accent-color: #084298;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --muted-color: #6c757d;
+            --border-color: #dee2e6;
+            --shadow-color: rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.5;
+            font-size: 12px;
+        }
+
+        .no-print {
+            margin: 20px;
+            text-align: center;
+        }
+
+        .print-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .payment-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: white;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 8px;
+        }
+
+        .payment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .company-logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-icon {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-left: 10px;
+        }
+
+        .company-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark-color);
+        }
+
+        .document-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 11px;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .status-paid {
+            background-color: rgba(25, 135, 84, 0.1);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .status-pending {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+            border: 1px solid var(--warning-color);
+        }
+
+        .status-cancelled {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .payment-summary {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 15px;
+            background-color: rgba(13, 110, 253, 0.05);
+            border-radius: 6px;
+            border-right: 3px solid var(--primary-color);
+        }
+
+        .summary-group {
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 11px;
+            color: var(--muted-color);
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark-color);
+        }
+
+        .summary-id {
+            font-size: 14px;
+            color: var(--muted-color);
+        }
+
+        .payment-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .detail-section {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background-color: rgba(13, 110, 253, 0.05);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 14px;
+        }
+
+        .section-content {
+            padding: 10px;
+        }
+
+        .detail-group {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--muted-color);
+            font-size: 11px;
+        }
+
+        .detail-value {
+            text-align: left;
+            font-size: 11px;
+        }
+
+        .car-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .car-image {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-left: 15px;
+            background-color: var(--light-color);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .car-icon {
+            font-size: 30px;
+            color: var(--muted-color);
+        }
+
+        .car-details {
+            flex: 1;
+        }
+
+        .car-model {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .car-specs {
+            font-size: 11px;
+            color: var(--muted-color);
+        }
+
+        .price-details {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .price-details th, .price-details td {
+            padding: 8px;
+            text-align: right;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 11px;
+        }
+
+        .price-details th {
+            color: var(--muted-color);
+            font-weight: 600;
+            background-color: rgba(13, 110, 253, 0.03);
+        }
+
+        .price-details tr:last-child td {
+            border-bottom: none;
+        }
+
+        .price-details .price-total td {
+            font-weight: 700;
+            color: var(--primary-color);
+            background-color: rgba(13, 110, 253, 0.03);
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: rgba(13, 110, 253, 0.02);
+        }
+
+        .method-icon {
+            font-size: 20px;
+            margin-left: 10px;
+            color: var(--primary-color);
+        }
+
+        .method-details {
+            flex: 1;
+        }
+
+        .method-name {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .method-info {
+            font-size: 11px;
+            color: var(--muted-color);
+        }
+
+        .notes-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(13, 110, 253, 0.02);
+            border-radius: 6px;
+            border: 1px dashed var(--border-color);
+        }
+
+        .notes-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--muted-color);
+            font-size: 12px;
+        }
+
+        .notes-content {
+            white-space: pre-line;
+            color: var(--dark-color);
+            font-size: 11px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 10px;
+            color: var(--muted-color);
+            font-size: 10px;
+            padding-top: 5px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .qr-code {
+            width: 70px;
+            height: 70px;
+            background-color: var(--light-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+
+        .qr-icon {
+            font-size: 30px;
+            color: var(--muted-color);
+        }
+
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            opacity: 0.03;
+            font-size: 80px;
+            color: var(--primary-color);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                font-size: 11px;
+            }
+            
+            .payment-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 8px;
+                max-width: 100%;
+            }
+            
+            .print-button, .back-button, .no-print {
+                display: none;
+            }
+            
+            .payment-method {
+                break-inside: avoid;
+            }
+            
+            .price-details {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="print-button" onclick="window.print()">
+            <i class="fas fa-print"></i> طباعة التفاصيل
+        </button>
+        <a href="{% url 'payment_details' payment_id=payment.id %}" class="back-button">
+            <i class="fas fa-arrow-right"></i> العودة للتفاصيل
+        </a>
+    </div>
+
+    <div class="payment-container">
+        <div class="watermark">
+            {% if payment.status == 'paid' %}PAID{% elif payment.status == 'cancelled' %}CANCELLED{% else %}PENDING{% endif %}
+        </div>
+        
+        <div class="payment-header">
+            <div class="company-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div class="company-name">تأجير السيارات</div>
+            </div>
+            
+            <div class="document-title">
+                تفاصيل المدفوعات
+                {% if payment.status == 'paid' %}
+                    <span class="status-badge status-paid">مدفوع</span>
+                {% elif payment.status == 'pending' %}
+                    <span class="status-badge status-pending">قيد الانتظار</span>
+                {% elif payment.status == 'cancelled' %}
+                    <span class="status-badge status-cancelled">ملغي</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="payment-summary">
+            <div class="summary-group">
+                <div class="summary-label">رقم الحجز</div>
+                <div class="summary-value">#{{ payment.id }}</div>
+            </div>
+            
+            <div class="summary-group">
+                <div class="summary-label">تاريخ المعاملة</div>
+                <div class="summary-value">{{ payment.date|date:"Y/m/d" }}</div>
+            </div>
+            
+            <div class="summary-group">
+                <div class="summary-label">المبلغ الإجمالي</div>
+                <div class="summary-value">{{ payment.amount }} د.ك</div>
+            </div>
+            
+            <div class="summary-group">
+                <div class="summary-label">عدد أيام الإيجار</div>
+                <div class="summary-value">{{ days }} يوم</div>
+            </div>
+        </div>
+
+        <div class="payment-details">
+            <div class="detail-section">
+                <div class="section-header">
+                    معلومات المستأجر
+                </div>
+                <div class="section-content">
+                    <div class="detail-group">
+                        <div class="detail-label">الاسم</div>
+                        <div class="detail-value">{{ payment.user.get_full_name }}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <div class="detail-label">البريد الإلكتروني</div>
+                        <div class="detail-value">{{ payment.user.email }}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <div class="detail-label">رقم الهاتف</div>
+                        <div class="detail-value">{{ payment.user.phone_number|default:"—" }}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <div class="detail-label">رقم الهوية</div>
+                        <div class="detail-value">{{ payment.user.id_number|default:"—" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="section-header">
+                    تفاصيل الحجز
+                </div>
+                <div class="section-content">
+                    <div class="detail-group">
+                        <div class="detail-label">رقم الحجز</div>
+                        <div class="detail-value">#{{ payment.id }}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <div class="detail-label">تاريخ الاستلام</div>
+                        <div class="detail-value">{{ payment.start_date|date:"Y/m/d" }}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <div class="detail-label">تاريخ التسليم</div>
+                        <div class="detail-value">{{ payment.end_date|date:"Y/m/d" }}</div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <div class="detail-label">المدة</div>
+                        <div class="detail-value">{{ days }} يوم</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <div class="section-header">
+                تفاصيل السيارة
+            </div>
+            <div class="section-content">
+                <div class="car-info">
+                    <div class="car-image">
+                        {% if payment.car.image %}
+                            <img src="{{ payment.car.image.url }}" alt="{{ payment.car.brand }} {{ payment.car.model }}">
+                        {% else %}
+                            <div class="car-icon">
+                                <i class="fas fa-car"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="car-details">
+                        <div class="car-model">{{ payment.car.brand }} {{ payment.car.model }}</div>
+                        <div class="car-specs">{{ payment.car.year }} | {{ payment.car.color }} | {{ payment.car.plates }}</div>
+                    </div>
+                    <div class="qr-code">
+                        <div class="qr-icon">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <div class="section-header">
+                تفاصيل المبالغ
+            </div>
+            <div class="section-content">
+                <table class="price-details">
+                    <thead>
+                        <tr>
+                            <th>البيان</th>
+                            <th>التفاصيل</th>
+                            <th>السعر</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>إيجار السيارة</td>
+                            <td>{{ days }} يوم × {{ payment.car.daily_price }} د.ك</td>
+                            <td>{{ payment.car.daily_price|floatformat:3 }} د.ك</td>
+                        </tr>
+                        
+                        {% if payment.car.insurance_amount > 0 %}
+                        <tr>
+                            <td>التأمين</td>
+                            <td>تأمين السيارة</td>
+                            <td>{{ payment.car.insurance_amount|floatformat:3 }} د.ك</td>
+                        </tr>
+                        {% endif %}
+                        
+                        {% if payment.car.deposit_amount > 0 %}
+                        <tr>
+                            <td>التأمين المسترد</td>
+                            <td>مبلغ قابل للاسترداد عند إعادة السيارة</td>
+                            <td>{{ payment.car.deposit_amount|floatformat:3 }} د.ك</td>
+                        </tr>
+                        {% endif %}
+                        
+                        {% if payment.discount > 0 %}
+                        <tr>
+                            <td>الخصم</td>
+                            <td>خصم خاص</td>
+                            <td>- {{ payment.discount|floatformat:3 }} د.ك</td>
+                        </tr>
+                        {% endif %}
+                        
+                        <tr class="price-total">
+                            <td>المبلغ الإجمالي</td>
+                            <td></td>
+                            <td>{{ payment.amount|floatformat:3 }} د.ك</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <div class="section-header">
+                طريقة الدفع
+            </div>
+            <div class="section-content">
+                <div class="payment-method">
+                    <div class="method-icon">
+                        {% if payment.payment_method == 'visa' %}
+                            <i class="fab fa-cc-visa"></i>
+                        {% elif payment.payment_method == 'mastercard' %}
+                            <i class="fab fa-cc-mastercard"></i>
+                        {% elif payment.payment_method == 'amex' %}
+                            <i class="fab fa-cc-amex"></i>
+                        {% elif payment.payment_method == 'cash' %}
+                            <i class="fas fa-money-bill-wave"></i>
+                        {% elif payment.payment_method == 'bank_transfer' %}
+                            <i class="fas fa-university"></i>
+                        {% else %}
+                            <i class="fas fa-credit-card"></i>
+                        {% endif %}
+                    </div>
+                    <div class="method-details">
+                        <div class="method-name">
+                            {% if payment.payment_method == 'visa' %}فيزا
+                            {% elif payment.payment_method == 'mastercard' %}ماستركارد
+                            {% elif payment.payment_method == 'amex' %}أمريكان إكسبرس
+                            {% elif payment.payment_method == 'cash' %}نقداً
+                            {% elif payment.payment_method == 'bank_transfer' %}حوالة بنكية
+                            {% else %}{{ payment.payment_method }}{% endif %}
+                        </div>
+                        {% if payment.reference_number %}
+                        <div class="method-info">
+                            رقم المرجع: {{ payment.reference_number }}
+                            {% if payment.masked_card_number %}
+                            | رقم البطاقة: {{ payment.masked_card_number }}
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="detail-group">
+                    <div class="detail-label">حالة الدفع</div>
+                    <div class="detail-value">
+                        {% if payment.status == 'paid' %}مدفوع
+                        {% elif payment.status == 'pending' %}قيد الانتظار
+                        {% elif payment.status == 'cancelled' %}ملغي
+                        {% else %}{{ payment.status }}{% endif %}
+                    </div>
+                </div>
+                
+                <div class="detail-group">
+                    <div class="detail-label">تاريخ الدفع</div>
+                    <div class="detail-value">{{ payment.date|date:"Y/m/d H:i" }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% if payment.notes %}
+        <div class="notes-section">
+            <div class="notes-title">ملاحظات</div>
+            <div class="notes-content">{{ payment.notes }}</div>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            <p>تم إصدار هذا المستند بتاريخ {{ now|date:"Y/m/d" }} الساعة {{ now|time:"H:i" }}</p>
+            <p>هذا المستند رسمي ومعتمد من شركة تأجير السيارات</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // يمكن إضافة أي كود جافا سكريبت هنا إذا لزم الأمر
+        });
+    </script>
+</body>
+</html>
