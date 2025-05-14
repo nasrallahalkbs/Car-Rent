@@ -84,8 +84,47 @@
         
         .report-meta {
             text-align: left;
-            font-size: 10px;
             color: #666;
+        }
+        
+        .header-info {
+            margin-top: 5px;
+        }
+        
+        .header-info h3 {
+            margin: 3px 0;
+            font-size: 12px;
+            font-weight: normal;
+            color: #333;
+        }
+        
+        .header-info h3 span {
+            font-weight: bold;
+            color: #0056b3;
+        }
+        
+        .report-details {
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .detail-item {
+            flex: 1;
+            font-size: 12px;
+            padding: 5px;
+        }
+        
+        .detail-item strong {
+            color: #0056b3;
         }
         
         .report-info-grid {
@@ -625,6 +664,25 @@
             print-color-adjust: exact;
         }
         
+        .report-details {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            border: 1px solid #ddd !important;
+        }
+        
+        .detail-item strong {
+            color: #0056b3 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .header-info h3 span {
+            color: #0056b3 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
         /* التأكد من أن ألوان خلفية العناوين تظهر عند الطباعة */
         .detail-section {
             background-color: #004A9F !important;
@@ -685,7 +743,7 @@
 
 {% block content %}
 <div class="print-container">
-    <!-- ترويسة التقرير المطورة -->
+    <!-- ترويسة التقرير المطورة بدون حقول -->
     <div class="header-section">
         <div class="report-header">
             <div class="company-logo">
@@ -694,63 +752,41 @@
             <div class="report-title">
                 <h1>شركة تأجير السيارات</h1>
                 <h2>نموذج تسليم سيارة</h2>
-                <p>تقرير #{{ report.id }} | رقم الحجز: {{ report.reservation.id }}</p>
             </div>
             <div class="report-meta">
-                <p>تاريخ الإصدار: {{ report.date|date:"Y-m-d" }}</p>
-                <p>وقت الإصدار: {{ report.date|date:"H:i" }}</p>
-                <p>{{ report.get_report_type_display }}</p>
+                <div class="header-info">
+                    <h3>تقرير رقم: <span>{{ report.id }}</span></h3>
+                    <h3>تاريخ: <span>{{ report.date|date:"Y-m-d" }}</span></h3>
+                </div>
             </div>
         </div>
-        <p>
-            يحتوي هذا النموذج على معلومات حالة السيارة عند تسليمها للعميل، ويتضمن تفاصيل السيارة والعميل وحالة أجزاء السيارة.
-        </p>
+        
+        <div class="report-details">
+            <div class="detail-row">
+                <div class="detail-item">
+                    <strong>رقم الحجز:</strong> {{ report.reservation.id }}
+                </div>
+                <div class="detail-item">
+                    <strong>اسم العميل:</strong> {{ report.customer.full_name }}
+                </div>
+                <div class="detail-item">
+                    <strong>رقم الهوية:</strong> {{ report.customer.id_number }}
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-item">
+                    <strong>نوع التقرير:</strong> {{ report.get_report_type_display }}
+                </div>
+                <div class="detail-item">
+                    <strong>تاريخ الاستلام:</strong> {{ report.delivery_date|date:"Y-m-d" }}
+                </div>
+                <div class="detail-item">
+                    <strong>تاريخ التسليم:</strong> {{ report.return_date|date:"Y-m-d" }}
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- معلومات العميل والسيارة في جدول منظم -->
-    <div class="section-title">
-        <span>معلومات العميل والسيارة</span>
-    </div>
-    
-    <div class="report-info-grid">
-        <div class="info-box">
-            <span class="label">اسم العميل</span>
-            <span class="value">{{ report.customer.full_name }}</span>
-        </div>
-        <div class="info-box">
-            <span class="label">رقم الهوية</span>
-            <span class="value">{{ report.customer.id_number }}</span>
-        </div>
-        <div class="info-box">
-            <span class="label">رقم عقد الإيجار</span>
-            <span class="value">{{ report.reservation.id }}</span>
-        </div>
-        <div class="info-box">
-            <span class="label">نوع التقرير</span>
-            <span class="value"><strong>{{ report.get_report_type_display }}</strong></span>
-        </div>
-        <div class="info-box">
-            <span class="label">تاريخ التقرير</span>
-            <span class="value">{{ report.date|date:"Y-m-d H:i" }}</span>
-        </div>
-        <div class="info-box">
-            <span class="label">رقم التقرير</span>
-            <span class="value">{{ report.id }}</span>
-        </div>
-        <div class="info-box">
-            <span class="label">تاريخ الاستلام</span>
-            <span class="value">{{ report.delivery_date|date:"Y-m-d" }}</span>
-        </div>
-        <div class="info-box">
-            <span class="label">تاريخ التسليم</span>
-            <span class="value">{{ report.return_date|date:"Y-m-d" }}</span>
-        </div>
-        <div class="info-box">
-            <span class="label">مستوى الوقود</span>
-            <span class="value">{{ report.get_fuel_level_display }}</span>
-        </div>
-    </div>
-    
     <div class="section-divider"></div>
 
     <div class="section-title">
@@ -807,9 +843,9 @@
                 </div>
             </div>
             
-            <!-- شريط أزرق للملاحظات الإضافية -->
-            <div class="detail-section">
-                <i class="fas fa-sticky-note"></i> ملاحظات إضافية
+            <!-- عنوان قسم الملاحظات الإضافية -->
+            <div class="section-title">
+                <span><i class="fas fa-sticky-note"></i> ملاحظات إضافية</span>
             </div>
             
             <div class="additional-notes">
@@ -955,9 +991,9 @@
         </div>
         
         <div class="right-column">
-            <!-- شريط أزرق للضمان البصري -->
-            <div class="detail-section">
-                <i class="fas fa-car"></i> الضمان البصري
+            <!-- عنوان قسم الضمان البصري -->
+            <div class="section-title">
+                <span><i class="fas fa-car"></i> الضمان البصري</span>
             </div>
             
             <!-- صور السيارة -->
