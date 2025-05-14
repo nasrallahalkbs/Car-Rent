@@ -5,7 +5,7 @@ from django.contrib import messages
 # استيراد وظيفة الرفع المباشر
 from .direct_sql_upload import direct_sql_upload
 from django.http import JsonResponse, HttpResponse, FileResponse
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, Avg, F
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.urls import reverse
@@ -13,7 +13,6 @@ from django.db import transaction, connection
 from django.utils.translation import get_language, gettext as _
 from django.conf import settings
 from .models import User, Car, Reservation, CartItem, SiteSettings, Document, ArchiveFolder
-from .forms import CarForm, ManualPaymentForm, RegisterForm, ProfileForm, SiteSettingsForm
 from .security import setup_2fa_for_user, disable_2fa_for_user, generate_qr_code_image
 from .security_models import UserSecurity
 from functools import wraps
@@ -4536,3 +4535,48 @@ def admin_2fa_setup(request):
     }
     
     return render(request, 'admin/admin_2fa_setup.html', context)
+
+
+@login_required
+@admin_required
+def admin_reports(request):
+    """
+    عرض صفحة إدارة التقارير
+    
+    هذه الصفحة تعرض واجهة متقدمة لإدارة التقارير المختلفة في النظام
+    مع إمكانيات فلترة وتصدير وطباعة التقارير
+    """
+    # الحصول على اللغة الحالية
+    current_language = get_language()
+    is_english = current_language == 'en'
+    
+    # إحصائيات للتقارير المختلفة
+    reservations_stats = {
+        'total': Reservation.objects.count(),
+        'confirmed': Reservation.objects.filter(status='confirmed').count(),
+        'pending': Reservation.objects.filter(status='pending').count(),
+        'completed': Reservation.objects.filter(status='completed').count(),
+        'cancelled': Reservation.objects.filter(status='cancelled').count(),
+    }
+    
+    cars_stats = {
+        'total': Car.objects.count(),
+        'available': Car.objects.filter(is_available=True).count(),
+        'unavailable': Car.objects.filter(is_available=False).count(),
+    }
+    
+    # بيانات نموذجية للسيارات (فقط لنموذج العرض الأولي)
+    cars = Car.objects.all()[:10]
+    
+    # الحصول على الحجوزات الأخيرة
+    recent_reservations = Reservation.objects.order_by('-created_at')[:10]
+    
+    context = {
+        'is_english': is_english,
+        'reservations_stats': reservations_stats,
+        'cars_stats': cars_stats,
+        'cars': cars,
+        'recent_reservations': recent_reservations,
+    }
+    
+    return render(request, 'admin/reports/reports_management.html', context)
