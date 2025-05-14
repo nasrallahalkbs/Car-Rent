@@ -7,565 +7,236 @@
 {% block title %}{% trans "إدارة التقارير" %} - كاررنتال{% endblock %}
 
 {% block extra_css %}
-<style>
-    /* تنسيقات خاصة بصفحة إدارة التقارير */
-    .reports-container {
-        background-color: #fff;
-        border-radius: 0.5rem;
-        box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
-    }
-    
-    /* تنسيقات شريط التبويبات (Ribbon Menu) */
-    .ribbon-menu {
-        display: flex;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-        padding: 0 1rem;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-    
-    .ribbon-tab {
-        padding: 1rem 1.25rem;
-        color: #495057;
-        font-weight: 500;
-        position: relative;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .ribbon-tab:hover {
-        color: var(--primary-color);
-        background-color: rgba(0, 0, 0, 0.03);
-    }
-    
-    .ribbon-tab.active {
-        color: var(--primary-color);
-    }
-    
-    .ribbon-tab.active::after {
-        content: '';
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background-color: var(--primary-color);
-    }
-    
-    .ribbon-tab i {
-        margin-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0.5rem;
-    }
-    
-    /* تنسيقات شريط الأدوات (Toolbar) */
-    .reports-toolbar {
-        display: flex;
-        padding: 1rem;
-        border-bottom: 1px solid #e9ecef;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-    
-    .toolbar-group {
-        display: flex;
-        gap: 0.5rem;
-        border-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 1px solid #e9ecef;
-        padding-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0.5rem;
-        margin-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0.5rem;
-    }
-    
-    .toolbar-group:last-child {
-        border-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: none;
-        padding-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0;
-        margin-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0;
-    }
-    
-    .toolbar-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-        font-size: 0.875rem;
-        border-radius: 0.25rem;
-        padding: 0.5rem 0.75rem;
-        transition: all 0.2s ease;
-    }
-    
-    .toolbar-btn i {
-        font-size: 0.9rem;
-    }
-    
-    /* تنسيقات قسم الفلاتر (Filters) */
-    .reports-filters {
-        padding: 1rem;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
-    }
-    
-    .filter-group {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    .filter-group:last-child {
-        margin-bottom: 0;
-    }
-    
-    .filter-label {
-        font-weight: 500;
-        min-width: 100px;
-        display: flex;
-        align-items: center;
-    }
-    
-    .filter-controls {
-        display: flex;
-        gap: 0.5rem;
-        flex: 1;
-        flex-wrap: wrap;
-    }
-    
-    /* تنسيقات جدول البيانات (Data Table) */
-    .reports-data {
-        padding: 1rem;
-    }
-    
-    .reports-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    .reports-table th {
-        background-color: #f8f9fa;
-        padding: 0.75rem 1rem;
-        font-weight: 600;
-        text-align: {% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %};
-        color: #495057;
-        border-bottom: 2px solid #e9ecef;
-    }
-    
-    .reports-table td {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid #e9ecef;
-        vertical-align: middle;
-    }
-    
-    .reports-table tr:hover {
-        background-color: #f9f9f9;
-    }
-    
-    .reports-table tr:nth-child(even) {
-        background-color: #fcfcfc;
-    }
-    
-    /* تنسيقات ملخص التقرير (Report Summary) */
-    .report-summary {
-        padding: 1rem;
-        background-color: #f8f9fa;
-        border-top: 1px solid #e9ecef;
-        border-bottom-left-radius: 0.5rem;
-        border-bottom-right-radius: 0.5rem;
-    }
-    
-    .summary-title {
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-        color: #495057;
-    }
-    
-    .summary-stats {
-        display: flex;
-        gap: 2rem;
-        flex-wrap: wrap;
-    }
-    
-    .stat-item {
-        flex: 1;
-        min-width: 150px;
-    }
-    
-    .stat-label {
-        font-size: 0.875rem;
-        color: #6c757d;
-        margin-bottom: 0.25rem;
-    }
-    
-    .stat-value {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #343a40;
-    }
-    
-    /* تنسيقات أيقونات البيانات (Data Icons) */
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 1rem;
-        font-size: 0.75rem;
-        font-weight: 500;
-    }
-    
-    .status-confirmed {
-        background-color: rgba(25, 135, 84, 0.1);
-        color: #198754;
-    }
-    
-    .status-pending {
-        background-color: rgba(255, 193, 7, 0.1);
-        color: #ffc107;
-    }
-    
-    .status-cancelled {
-        background-color: rgba(220, 53, 69, 0.1);
-        color: #dc3545;
-    }
-    
-    .status-completed {
-        background-color: rgba(13, 110, 253, 0.1);
-        color: #0d6efd;
-    }
-    
-    /* تنسيقات متنوعة */
-    .btn-action {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.825rem;
-        border-radius: 0.25rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 992px) {
-        .ribbon-menu {
-            overflow-x: auto;
-        }
-        
-        .ribbon-tab {
-            padding: 0.75rem 1rem;
-        }
-        
-        .filter-label {
-            min-width: 100%;
-            margin-bottom: 0.5rem;
-        }
-        
-        .filter-controls {
-            min-width: 100%;
-        }
-    }
-</style>
-{% endblock %}
-
-{% block breadcrumb %}
-<li class="breadcrumb-item active">{% trans "إدارة التقارير" %}</li>
+<link rel="stylesheet" href="{% static 'css/reports_management.css' %}?v={{ now.timestamp|floatformat:0 }}">
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="row">
-        <div class="col-12">
-            <!-- عنوان الصفحة والوصف -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 class="h3 mb-1">{% trans "إدارة التقارير" %}</h2>
-                    <p class="text-muted mb-0">{% trans "قم بإنشاء وإدارة وتصدير التقارير المتعلقة بالحجوزات والسيارات والمدفوعات" %}</p>
-                </div>
-                <div>
-                    <button class="btn btn-primary">
-                        <i class="fas fa-save ms-1"></i>
-                        {% trans "حفظ التقرير" %}
-                    </button>
-                </div>
+<div class="container-fluid mt-4">
+    <!-- عنوان الصفحة -->
+    <div class="page-heading">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>{% trans "إدارة التقارير" %}</h1>
+                <p>{% trans "قم بإنشاء وإدارة وتصدير التقارير المتعلقة بالحجوزات والسيارات والعملاء" %}</p>
             </div>
-            
-            <!-- حاوية التقارير -->
-            <div class="reports-container">
-                <!-- شريط التبويبات (Ribbon Menu) -->
-                <div class="ribbon-menu">
-                    <div class="ribbon-tab active" data-report-type="reservations">
-                        <i class="fas fa-calendar-check"></i>
-                        {% trans "الحجوزات" %}
-                    </div>
-                    <div class="ribbon-tab" data-report-type="cars">
-                        <i class="fas fa-car"></i>
-                        {% trans "السيارات" %}
-                    </div>
-                    <div class="ribbon-tab" data-report-type="customers">
-                        <i class="fas fa-users"></i>
-                        {% trans "العملاء" %}
-                    </div>
-                    <div class="ribbon-tab" data-report-type="custody">
-                        <i class="fas fa-file-contract"></i>
-                        {% trans "العهد" %}
-                    </div>
-                    <div class="ribbon-tab" data-report-type="car-conditions">
-                        <i class="fas fa-car-crash"></i>
-                        {% trans "حالة السيارات" %}
-                    </div>
-                    <div class="ribbon-tab" data-report-type="payments">
-                        <i class="fas fa-money-bill-wave"></i>
-                        {% trans "المدفوعات" %}
-                    </div>
-                </div>
-                
-                <!-- شريط الأدوات (Toolbar) -->
-                <div class="reports-toolbar">
-                    <div class="toolbar-group">
-                        <button class="toolbar-btn btn btn-sm btn-success">
-                            <i class="fas fa-plus"></i>
-                            {% trans "إضافة" %}
-                        </button>
-                        <button class="toolbar-btn btn btn-sm btn-primary">
-                            <i class="fas fa-edit"></i>
-                            {% trans "تعديل" %}
-                        </button>
-                        <button class="toolbar-btn btn btn-sm btn-danger">
-                            <i class="fas fa-trash"></i>
-                            {% trans "حذف" %}
-                        </button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button class="toolbar-btn btn btn-sm btn-outline-primary">
-                            <i class="fas fa-file-pdf"></i>
-                            {% trans "تصدير PDF" %}
-                        </button>
-                        <button class="toolbar-btn btn btn-sm btn-outline-success">
-                            <i class="fas fa-file-excel"></i>
-                            {% trans "تصدير Excel" %}
-                        </button>
-                        <button class="toolbar-btn btn btn-sm btn-outline-secondary">
-                            <i class="fas fa-print"></i>
-                            {% trans "طباعة" %}
-                        </button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button class="toolbar-btn btn btn-sm btn-outline-info">
-                            <i class="fas fa-filter"></i>
-                            {% trans "تصفية" %}
-                        </button>
-                        <button class="toolbar-btn btn btn-sm btn-outline-dark">
-                            <i class="fas fa-sort"></i>
-                            {% trans "فرز" %}
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- قسم الفلاتر (Filters) -->
-                <div class="reports-filters">
-                    <div class="filter-group">
-                        <div class="filter-label">{% trans "الفترة الزمنية:" %}</div>
-                        <div class="filter-controls">
-                            <select class="form-select form-select-sm" style="width: auto;">
+            <div>
+                <button class="btn btn-primary">
+                    <i class="fas fa-save"></i> 
+                    {% trans "حفظ التقرير" %}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="reports-container">
+        <!-- شريط التبويبات (Ribbon Menu) -->
+        <div class="ribbon-menu">
+            <div class="ribbon-tab active" data-tab="reservations">
+                <i class="fas fa-calendar-check"></i> {% trans "الحجوزات" %}
+            </div>
+            <div class="ribbon-tab" data-tab="cars">
+                <i class="fas fa-car"></i> {% trans "السيارات" %}
+            </div>
+            <div class="ribbon-tab" data-tab="customers">
+                <i class="fas fa-users"></i> {% trans "العملاء" %}
+            </div>
+            <div class="ribbon-tab" data-tab="custody">
+                <i class="fas fa-key"></i> {% trans "العهدة" %}
+            </div>
+            <div class="ribbon-tab" data-tab="car-conditions">
+                <i class="fas fa-car-crash"></i> {% trans "حالة السيارات" %}
+            </div>
+            <div class="ribbon-tab" data-tab="payments">
+                <i class="fas fa-file-invoice-dollar"></i> {% trans "المدفوعات" %}
+            </div>
+        </div>
+
+        <!-- شريط الأدوات (Toolbar) -->
+        <div class="reports-toolbar">
+            <div class="toolbar-btn btn-delete">
+                <i class="fas fa-trash"></i> {% trans "حذف" %}
+            </div>
+            <div class="toolbar-btn btn-edit">
+                <i class="fas fa-edit"></i> {% trans "تعديل" %}
+            </div>
+            <div class="toolbar-btn btn-add">
+                <i class="fas fa-plus"></i> {% trans "إضافة" %}
+            </div>
+            <div class="toolbar-btn btn-print">
+                <i class="fas fa-print"></i> {% trans "طباعة" %}
+            </div>
+            <div class="toolbar-btn btn-excel">
+                <i class="fas fa-file-excel"></i> {% trans "تصدير Excel" %}
+            </div>
+            <div class="toolbar-btn btn-pdf">
+                <i class="fas fa-file-pdf"></i> {% trans "تصدير PDF" %}
+            </div>
+        </div>
+
+        <!-- منطقة المحتوى -->
+        <div class="tab-content">
+            <!-- تبويب الحجوزات -->
+            <div class="tab-pane active" id="reservations-tab">
+                <!-- قسم الفلاتر -->
+                <div class="filters-section">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label class="filter-label">{% trans "الفترة الزمنية" %}</label>
+                            <select class="form-select">
+                                <option value="all">{% trans "كل الفترات" %}</option>
                                 <option value="today">{% trans "اليوم" %}</option>
-                                <option value="this_week">{% trans "هذا الأسبوع" %}</option>
-                                <option value="this_month" selected>{% trans "هذا الشهر" %}</option>
-                                <option value="last_month">{% trans "الشهر الماضي" %}</option>
-                                <option value="this_year">{% trans "هذه السنة" %}</option>
-                                <option value="custom">{% trans "مخصص" %}</option>
+                                <option value="week">{% trans "هذا الأسبوع" %}</option>
+                                <option value="month">{% trans "هذا الشهر" %}</option>
+                                <option value="custom">{% trans "تاريخ محدد" %}</option>
                             </select>
-                            <input type="date" class="form-control form-control-sm" placeholder="{% trans "من تاريخ" %}">
-                            <input type="date" class="form-control form-control-sm" placeholder="{% trans "إلى تاريخ" %}">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">{% trans "من تاريخ" %}</label>
+                            <input type="date" class="form-control">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">{% trans "إلى تاريخ" %}</label>
+                            <input type="date" class="form-control">
                         </div>
                     </div>
-                    <div class="filter-group">
-                        <div class="filter-label">{% trans "حالة الحجز:" %}</div>
-                        <div class="filter-controls">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="status_all" checked>
-                                <label class="form-check-label" for="status_all">{% trans "الكل" %}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="status_confirmed" checked>
-                                <label class="form-check-label" for="status_confirmed">{% trans "مؤكد" %}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="status_pending" checked>
-                                <label class="form-check-label" for="status_pending">{% trans "قيد الانتظار" %}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="status_completed" checked>
-                                <label class="form-check-label" for="status_completed">{% trans "مكتمل" %}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="status_cancelled">
-                                <label class="form-check-label" for="status_cancelled">{% trans "ملغي" %}</label>
-                            </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label class="filter-label">{% trans "حالة الحجز" %}</label>
+                            <select class="form-select">
+                                <option value="all">{% trans "جميع الحالات" %}</option>
+                                <option value="confirmed">{% trans "مؤكد" %}</option>
+                                <option value="pending">{% trans "قيد الانتظار" %}</option>
+                                <option value="completed">{% trans "مكتمل" %}</option>
+                                <option value="cancelled">{% trans "ملغي" %}</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">{% trans "المسؤول" %}</label>
+                            <select class="form-select">
+                                <option value="all">{% trans "جميع المسؤولين" %}</option>
+                                {% for admin in admins %}
+                                <option value="{{ admin.id }}">{{ admin.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">{% trans "بحث" %}</label>
+                            <input type="text" class="form-control" placeholder="{% trans 'اسم أو رقم الحجز' %}">
                         </div>
                     </div>
-                    <div class="filter-group">
-                        <div class="filter-label">{% trans "بحث:" %}</div>
-                        <div class="filter-controls">
-                            <input type="text" class="form-control form-control-sm" placeholder="{% trans "ابحث في الحجوزات..." %}">
-                            <button class="btn btn-sm btn-primary">{% trans "بحث" %}</button>
-                            <button class="btn btn-sm btn-secondary">{% trans "إعادة ضبط" %}</button>
-                        </div>
+                    <div class="filter-buttons">
+                        <button class="btn btn-outline-secondary">{% trans "إعادة تعيين" %}</button>
+                        <button class="btn btn-primary">{% trans "تطبيق" %}</button>
                     </div>
                 </div>
-                
-                <!-- قسم بيانات التقرير (Report Data) -->
-                <div class="reports-data">
+
+                <!-- جدول البيانات -->
+                <div class="table-responsive">
                     <table class="reports-table">
                         <thead>
                             <tr>
-                                <th width="40px">
-                                    <input type="checkbox" class="form-check-input">
+                                <th width="30px">
+                                    <input type="checkbox" class="form-check-input" id="select-all">
                                 </th>
-                                <th width="80px">{% trans "رقم الحجز" %}</th>
+                                <th>{% trans "رقم الحجز" %}</th>
                                 <th>{% trans "السيارة" %}</th>
-                                <th>{% trans "العميل" %}</th>
                                 <th>{% trans "تاريخ الحجز" %}</th>
-                                <th>{% trans "من تاريخ" %}</th>
-                                <th>{% trans "إلى تاريخ" %}</th>
+                                <th>{% trans "تاريخ الاستلام" %}</th>
+                                <th>{% trans "تاريخ التسليم" %}</th>
                                 <th>{% trans "المبلغ" %}</th>
-                                <th>{% trans "الحالة" %}</th>
-                                <th width="100px">{% trans "إجراءات" %}</th>
+                                <th>{% trans "حالة الحجز" %}</th>
+                                <th>{% trans "المسؤول" %}</th>
+                                <th>{% trans "إجراءات" %}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for reservation in recent_reservations %}
+                            {% for reservation in reservations %}
                             <tr>
                                 <td>
-                                    <input type="checkbox" class="form-check-input">
+                                    <input type="checkbox" class="form-check-input row-checkbox">
                                 </td>
                                 <td>{{ reservation.id }}</td>
-                                <td>{{ reservation.car.manufacturer }} {{ reservation.car.model }}</td>
-                                <td>{{ reservation.user.username }}</td>
+                                <td>{{ reservation.car.make }} {{ reservation.car.model }}</td>
                                 <td>{{ reservation.created_at|date:"Y-m-d" }}</td>
                                 <td>{{ reservation.start_date|date:"Y-m-d" }}</td>
                                 <td>{{ reservation.end_date|date:"Y-m-d" }}</td>
-                                <td>{{ reservation.total_amount }} ريال</td>
+                                <td>{{ reservation.total_amount }} {% trans "ريال" %}</td>
                                 <td>
-                                    <span class="status-badge status-{{ reservation.status }}">
-                                        <i class="fas fa-circle" style="font-size: 8px;"></i>
-                                        {% if reservation.status == 'confirmed' %}
-                                            {% trans "مؤكد" %}
-                                        {% elif reservation.status == 'pending' %}
-                                            {% trans "قيد الانتظار" %}
-                                        {% elif reservation.status == 'completed' %}
-                                            {% trans "مكتمل" %}
-                                        {% elif reservation.status == 'cancelled' %}
-                                            {% trans "ملغي" %}
-                                        {% endif %}
-                                    </span>
+                                    {% if reservation.status == 'confirmed' %}
+                                    <span class="reservation-status confirmed">{% trans "مؤكد" %}</span>
+                                    {% elif reservation.status == 'pending' %}
+                                    <span class="reservation-status pending">{% trans "قيد الانتظار" %}</span>
+                                    {% elif reservation.status == 'completed' %}
+                                    <span class="reservation-status completed">{% trans "مكتمل" %}</span>
+                                    {% elif reservation.status == 'cancelled' %}
+                                    <span class="reservation-status cancelled">{% trans "ملغي" %}</span>
+                                    {% endif %}
                                 </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-action btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn btn-action btn-sm btn-outline-secondary">
-                                            <i class="fas fa-print"></i>
-                                        </button>
-                                    </div>
+                                <td>{{ reservation.admin.username }}</td>
+                                <td class="action-btns">
+                                    <a href="#" title="{% trans 'عرض' %}"><i class="fas fa-eye"></i></a>
+                                    <a href="#" title="{% trans 'تعديل' %}"><i class="fas fa-edit"></i></a>
+                                    <a href="#" title="{% trans 'طباعة' %}"><i class="fas fa-print"></i></a>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="10" class="text-center py-4">
-                                    <div class="text-muted">
-                                        <i class="fas fa-inbox fa-3x mb-3"></i>
-                                        <p>{% trans "لا توجد حجوزات لعرضها" %}</p>
-                                    </div>
-                                </td>
+                                <td colspan="10" class="text-center py-3">{% trans "لا توجد حجوزات" %}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                
-                <!-- ملخص التقرير (Report Summary) -->
-                <div class="report-summary">
-                    <div class="summary-title">{% trans "ملخص التقرير" %}</div>
-                    <div class="summary-stats">
-                        <div class="stat-item">
-                            <div class="stat-label">{% trans "إجمالي الحجوزات" %}</div>
-                            <div class="stat-value">{{ reservations_stats.total }}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">{% trans "مؤكدة" %}</div>
-                            <div class="stat-value">{{ reservations_stats.confirmed }}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">{% trans "قيد الانتظار" %}</div>
-                            <div class="stat-value">{{ reservations_stats.pending }}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">{% trans "مكتملة" %}</div>
-                            <div class="stat-value">{{ reservations_stats.completed }}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">{% trans "ملغية" %}</div>
-                            <div class="stat-value">{{ reservations_stats.cancelled }}</div>
-                        </div>
-                    </div>
-                </div>
+            </div>
+
+            <!-- باقي التبويبات (سيتم تفعيلها لاحقاً) -->
+            <div class="tab-pane" id="cars-tab" style="display: none;">
+                <!-- محتوى تبويب السيارات -->
+            </div>
+            <div class="tab-pane" id="customers-tab" style="display: none;">
+                <!-- محتوى تبويب العملاء -->
+            </div>
+            <div class="tab-pane" id="custody-tab" style="display: none;">
+                <!-- محتوى تبويب العهدة -->
+            </div>
+            <div class="tab-pane" id="car-conditions-tab" style="display: none;">
+                <!-- محتوى تبويب حالة السيارات -->
+            </div>
+            <div class="tab-pane" id="payments-tab" style="display: none;">
+                <!-- محتوى تبويب المدفوعات -->
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- JavaScript للتفاعل مع واجهة التقارير -->
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // تبديل التبويبات
-    const tabs = document.querySelectorAll('.ribbon-tab');
-    tabs.forEach(tab => {
+    // التبديل بين التبويبات
+    const ribbonTabs = document.querySelectorAll('.ribbon-tab');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    ribbonTabs.forEach(tab => {
         tab.addEventListener('click', function() {
-            // إزالة الحالة النشطة من جميع التبويبات
-            tabs.forEach(t => t.classList.remove('active'));
-            // إضافة الحالة النشطة للتبويب المحدد
-            this.classList.add('active');
+            // إزالة الفئة النشطة من جميع التبويبات
+            ribbonTabs.forEach(t => t.classList.remove('active'));
             
-            // هنا يمكن إضافة معالجة لتحميل بيانات التقرير المناسب
-            const reportType = this.getAttribute('data-report-type');
-            console.log(`Loading report type: ${reportType}`);
+            // إضافة الفئة النشطة للتبويب المحدد
+            tab.classList.add('active');
             
-            // تحديث عناصر الواجهة بناء على نوع التقرير
-            updateInterface(reportType);
+            // إخفاء جميع المحتويات
+            tabPanes.forEach(pane => pane.style.display = 'none');
+            
+            // عرض المحتوى المناسب
+            const tabId = tab.getAttribute('data-tab');
+            document.getElementById(tabId + '-tab').style.display = 'block';
         });
     });
     
-    // تحديث واجهة التقارير حسب النوع
-    function updateInterface(reportType) {
-        // تعديل الفلاتر حسب نوع التقرير
-        const filtersContainer = document.querySelector('.reports-filters');
-        
-        // تحديث عنوان البحث
-        const searchInput = filtersContainer.querySelector('input[type="text"]');
-        if (searchInput) {
-            switch(reportType) {
-                case 'reservations':
-                    searchInput.placeholder = '{% trans "ابحث في الحجوزات..." %}';
-                    break;
-                case 'cars':
-                    searchInput.placeholder = '{% trans "ابحث في السيارات..." %}';
-                    break;
-                case 'customers':
-                    searchInput.placeholder = '{% trans "ابحث في العملاء..." %}';
-                    break;
-                case 'custody':
-                    searchInput.placeholder = '{% trans "ابحث في العهد..." %}';
-                    break;
-                case 'car-conditions':
-                    searchInput.placeholder = '{% trans "ابحث في حالة السيارات..." %}';
-                    break;
-                case 'payments':
-                    searchInput.placeholder = '{% trans "ابحث في المدفوعات..." %}';
-                    break;
-            }
-        }
-        
-        // يمكن إضافة المزيد من التخصيصات هنا حسب نوع التقرير
-    }
-    
-    // إعدادات إضافية للواجهة
-    
-    // مربع الاختيار الرئيسي لتحديد الكل
-    const mainCheckbox = document.querySelector('th input[type="checkbox"]');
-    const rowCheckboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+    // التحقق من مربعات الاختيار
+    const mainCheckbox = document.getElementById('select-all');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
     
     if (mainCheckbox) {
         mainCheckbox.addEventListener('change', function() {
