@@ -847,6 +847,55 @@ def admin_reservation_detail(request, reservation_id):
         error_message = f"Error showing reservation details: {str(e)}"
         logger.error(error_message)
         print(f"ERROR in admin_reservation_detail: {error_message}")
+        
+        
+def print_reservation_contract(request, reservation_id):
+    """طباعة عقد إيجار السيارة"""
+    # التحقق من الصلاحيات
+    if not is_admin(request):
+        messages.error(request, "ليس لديك صلاحية لعرض هذه الصفحة")
+        return redirect('login')
+    
+    try:
+        # محاولة العثور على الحجز
+        reservation = get_object_or_404(Reservation, id=reservation_id)
+        
+        # حساب عدد الأيام بين تاريخ البداية وتاريخ النهاية
+        delta = (reservation.end_date - reservation.start_date).days + 1
+        
+        # تحديد لغة المستخدم
+        from django.utils.translation import get_language
+        
+        current_language = get_language()
+        is_rtl = current_language == 'ar'
+        
+        # إضافة timestamp لمنع استخدام الكاش
+        import time
+        cache_buster = int(time.time())
+        
+        # إعداد سياق القالب بجميع المعلومات المطلوبة
+        context = {
+            'reservation': reservation,
+            'days': delta,
+            'is_rtl': is_rtl,
+            'cache_buster': cache_buster,
+            # إضافة البيانات المهمة للتأكد من وصولها للقالب
+            'full_name': reservation.full_name,
+            'national_id': reservation.national_id,
+            'rental_type': reservation.rental_type,
+            'guarantee_type': reservation.guarantee_type,
+            'guarantee_details': reservation.guarantee_details,
+            'deposit_amount': reservation.deposit_amount,
+        }
+        
+        return render(request, 'admin/print_reservation_contract.html', context)
+    
+    except Exception as e:
+        # تسجيل أي أخطاء واظهارها للمستخدم
+        error_message = f"خطأ في عرض عقد الحجز: {str(e)}"
+        messages.error(request, error_message)
+        logger.error(error_message)
+        return redirect('admin_reservation_detail', reservation_id=reservation_id)
         import traceback
         traceback.print_exc()
         messages.error(request, f"حدث خطأ أثناء محاولة عرض تفاصيل الحجز: {str(e)}")
