@@ -478,8 +478,12 @@
                 </div>
                 <div class="section-content">
                     <div class="detail-group">
-                        <div class="detail-label">المدة</div>
-                        <div class="detail-value">{{ days }} يوم</div>
+                        <div class="detail-label">السيارة</div>
+                        <div class="detail-value">{{ payment.car.brand }} {{ payment.car.model }}</div>
+                    </div>
+                    <div class="detail-group">
+                        <div class="detail-label">رقم الحجز</div>
+                        <div class="detail-value">#{{ payment.id }}</div>
                     </div>
                 </div>
             </div>
@@ -487,80 +491,58 @@
 
         <div class="detail-section">
             <div class="section-header">
-                تفاصيل السيارة
+                تفاصيل الدفع
             </div>
             <div class="section-content">
-                <div class="car-info">
-                    <div class="car-image">
-                        {% if payment.car.image %}
-                            <img src="{{ payment.car.image.url }}" alt="{{ payment.car.brand }} {{ payment.car.model }}">
-                        {% else %}
-                            <div class="car-icon">
-                                <i class="fas fa-car"></i>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="car-details">
-                        <div class="car-model">{{ payment.car.brand }} {{ payment.car.model }}</div>
-                        <div class="car-specs">{{ payment.car.year }} | {{ payment.car.color }} | {{ payment.car.plates }}</div>
-                    </div>
-                    <div class="qr-code">
-                        <div class="qr-icon">
-                            <i class="fas fa-qrcode"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="detail-section">
-            <div class="section-header">
-                تفاصيل المبالغ
-            </div>
-            <div class="section-content">
-                <table class="price-details">
+                <table class="price-details" style="width: 100%; border-collapse: collapse;">
                     <thead>
-                        <tr>
-                            <th>البيان</th>
-                            <th>التفاصيل</th>
-                            <th>السعر</th>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">البيان</th>
+                            <th style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">التفاصيل</th>
+                            <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">السعر</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>إيجار السيارة</td>
-                            <td>{{ days }} يوم × {{ payment.car.daily_price }} د.ك</td>
-                            <td>{{ payment.car.daily_price|floatformat:3 }} د.ك</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">مدة الإيجار</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">{{ days }} يوم</td>
+                            <td style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">-</td>
+                        </tr>
+                    
+                        <tr>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">إيجار السيارة</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">{{ days }} يوم × {{ payment.car.daily_price }} د.ك</td>
+                            <td style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">{{ payment.car.daily_price|floatformat:3 }} د.ك</td>
                         </tr>
                         
                         {% if payment.car.insurance_amount > 0 %}
                         <tr>
-                            <td>التأمين</td>
-                            <td>تأمين السيارة</td>
-                            <td>{{ payment.car.insurance_amount|floatformat:3 }} د.ك</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">التأمين</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">تأمين السيارة</td>
+                            <td style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">{{ payment.car.insurance_amount|floatformat:3 }} د.ك</td>
                         </tr>
                         {% endif %}
                         
                         {% if payment.car.deposit_amount > 0 %}
                         <tr>
-                            <td>التأمين المسترد</td>
-                            <td>مبلغ قابل للاسترداد عند إعادة السيارة</td>
-                            <td>{{ payment.car.deposit_amount|floatformat:3 }} د.ك</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">التأمين المسترد</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">مبلغ قابل للاسترداد عند إعادة السيارة</td>
+                            <td style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">{{ payment.car.deposit_amount|floatformat:3 }} د.ك</td>
                         </tr>
                         {% endif %}
                         
                         {% if payment.discount > 0 %}
                         <tr>
-                            <td>الخصم</td>
-                            <td>خصم خاص</td>
-                            <td>- {{ payment.discount|floatformat:3 }} د.ك</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">الخصم</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">خصم خاص</td>
+                            <td style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">- {{ payment.discount|floatformat:3 }} د.ك</td>
                         </tr>
                         {% endif %}
                         
-                        <tr class="price-total">
-                            <td>المبلغ الإجمالي</td>
-                            <td></td>
-                            <td>{{ payment.amount|floatformat:3 }} د.ك</td>
+                        <tr class="price-total" style="background-color: #e9ecef; font-weight: bold;">
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">المبلغ الإجمالي</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;"></td>
+                            <td style="padding: 10px; text-align: left; border: 1px solid #dee2e6;">{{ payment.amount|floatformat:3 }} د.ك</td>
                         </tr>
                     </tbody>
                 </table>
@@ -572,56 +554,70 @@
                 طريقة الدفع
             </div>
             <div class="section-content">
-                <div class="payment-method">
-                    <div class="method-icon">
-                        {% if payment.payment_method == 'visa' %}
-                            <i class="fab fa-cc-visa"></i>
-                        {% elif payment.payment_method == 'mastercard' %}
-                            <i class="fab fa-cc-mastercard"></i>
-                        {% elif payment.payment_method == 'amex' %}
-                            <i class="fab fa-cc-amex"></i>
-                        {% elif payment.payment_method == 'cash' %}
-                            <i class="fas fa-money-bill-wave"></i>
-                        {% elif payment.payment_method == 'bank_transfer' %}
-                            <i class="fas fa-university"></i>
-                        {% else %}
-                            <i class="fas fa-credit-card"></i>
-                        {% endif %}
-                    </div>
-                    <div class="method-details">
-                        <div class="method-name">
-                            {% if payment.payment_method == 'visa' %}فيزا
-                            {% elif payment.payment_method == 'mastercard' %}ماستركارد
-                            {% elif payment.payment_method == 'amex' %}أمريكان إكسبرس
-                            {% elif payment.payment_method == 'cash' %}نقداً
-                            {% elif payment.payment_method == 'bank_transfer' %}حوالة بنكية
-                            {% else %}{{ payment.payment_method }}{% endif %}
-                        </div>
+                <table class="price-details" style="width: 100%; border-collapse: collapse;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6; width: 30%;">طريقة الدفع</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">
+                                <div style="display: flex; align-items: center;">
+                                    <div style="margin-left: 10px; font-size: 18px;">
+                                        {% if payment.payment_method == 'visa' %}
+                                            <i class="fab fa-cc-visa"></i>
+                                        {% elif payment.payment_method == 'mastercard' %}
+                                            <i class="fab fa-cc-mastercard"></i>
+                                        {% elif payment.payment_method == 'amex' %}
+                                            <i class="fab fa-cc-amex"></i>
+                                        {% elif payment.payment_method == 'cash' %}
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        {% elif payment.payment_method == 'bank_transfer' %}
+                                            <i class="fas fa-university"></i>
+                                        {% else %}
+                                            <i class="fas fa-credit-card"></i>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        {% if payment.payment_method == 'visa' %}فيزا
+                                        {% elif payment.payment_method == 'mastercard' %}ماستركارد
+                                        {% elif payment.payment_method == 'amex' %}أمريكان إكسبرس
+                                        {% elif payment.payment_method == 'cash' %}نقداً
+                                        {% elif payment.payment_method == 'bank_transfer' %}حوالة بنكية
+                                        {% else %}{{ payment.payment_method }}{% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        
                         {% if payment.reference_number %}
-                        <div class="method-info">
-                            رقم المرجع: {{ payment.reference_number }}
-                            {% if payment.masked_card_number %}
-                            | رقم البطاقة: {{ payment.masked_card_number }}
-                            {% endif %}
-                        </div>
+                        <tr>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6; width: 30%;">رقم المرجع</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">{{ payment.reference_number }}</td>
+                        </tr>
                         {% endif %}
-                    </div>
-                </div>
-                
-                <div class="detail-group">
-                    <div class="detail-label">حالة الدفع</div>
-                    <div class="detail-value">
-                        {% if payment.status == 'paid' %}مدفوع
-                        {% elif payment.status == 'pending' %}قيد الانتظار
-                        {% elif payment.status == 'cancelled' %}ملغي
-                        {% else %}{{ payment.status }}{% endif %}
-                    </div>
-                </div>
-                
-                <div class="detail-group">
-                    <div class="detail-label">تاريخ الدفع</div>
-                    <div class="detail-value">{{ payment.date|date:"Y/m/d H:i" }}</div>
-                </div>
+                        
+                        {% if payment.masked_card_number %}
+                        <tr>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6; width: 30%;">رقم البطاقة</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">{{ payment.masked_card_number }}</td>
+                        </tr>
+                        {% endif %}
+                        
+                        <tr>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6; width: 30%;">حالة الدفع</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">
+                                {% if payment.status == 'paid' %}مدفوع
+                                {% elif payment.status == 'pending' %}قيد الانتظار
+                                {% elif payment.status == 'cancelled' %}ملغي
+                                {% else %}{{ payment.status }}{% endif %}
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6; width: 30%;">تاريخ الدفع</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">{{ payment.date|date:"Y/m/d H:i" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
