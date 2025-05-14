@@ -1,660 +1,592 @@
-{% extends 'admin/enhanced/admin_layout.html' %}
-{% load static %}
+<!-- CACHE_BUSTER {{ now.timestamp|floatformat:0 }} -->
+{% extends "admin/enhanced/admin_layout.html" %}
 {% load i18n %}
+{% load static %}
+{% load custom_filters %}
 
-{% block title %}{% trans "إدارة التقارير" %}{% endblock %}
+{% block title %}{% trans "إدارة التقارير" %} - كاررنتال{% endblock %}
 
-{% block extra_css %}
+{% block extra_head %}
 <style>
-    /* تنسيقات قسم التبويبات */
-    .nav-tabs {
-        border-bottom: 1px solid #dee2e6;
-        background-color: #f8f9fa;
-        padding: 0.5rem 1rem 0;
-        border-radius: 0.5rem 0.5rem 0 0;
-    }
-    
-    .nav-tabs .nav-link {
-        padding: 0.75rem 1.25rem;
-        font-weight: 600;
-        color: #6c757d;
-        border: 1px solid transparent;
-        margin-bottom: -1px;
-        transition: all 0.2s;
-    }
-    
-    .nav-tabs .nav-link.active {
-        color: #3498db;
+    /* تنسيقات خاصة بصفحة إدارة التقارير */
+    .reports-container {
         background-color: #fff;
-        border-color: #dee2e6 #dee2e6 #fff;
-        border-bottom: 3px solid #3498db;
-    }
-    
-    .nav-tabs .nav-link:hover:not(.active) {
-        border-color: #e9ecef #e9ecef #dee2e6;
-        color: #3498db;
-    }
-    
-    /* تنسيقات شريط الأدوات */
-    .report-toolbar {
-        padding: 1rem;
-        background-color: #fff;
-        border-bottom: 1px solid #e9ecef;
-        margin-bottom: 1rem;
-    }
-    
-    .report-toolbar .btn {
-        margin-left: 0.5rem;
-        display: inline-flex;
-        align-items: center;
-    }
-    
-    .report-toolbar .btn i {
-        margin-left: 0.5rem;
-    }
-    
-    /* تنسيقات الفلاتر */
-    .report-filters {
-        padding: 1rem;
-        background-color: #f8f9fa;
         border-radius: 0.5rem;
-        margin-bottom: 1.5rem;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
     }
     
-    .filter-row {
+    /* تنسيقات شريط التبويبات (Ribbon Menu) */
+    .ribbon-menu {
+        display: flex;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
+        padding: 0 1rem;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .ribbon-tab {
+        padding: 1rem 1.25rem;
+        color: #495057;
+        font-weight: 500;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .ribbon-tab:hover {
+        color: var(--primary-color);
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    
+    .ribbon-tab.active {
+        color: var(--primary-color);
+    }
+    
+    .ribbon-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: var(--primary-color);
+    }
+    
+    .ribbon-tab i {
+        margin-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0.5rem;
+    }
+    
+    /* تنسيقات شريط الأدوات (Toolbar) */
+    .reports-toolbar {
+        display: flex;
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .toolbar-group {
+        display: flex;
+        gap: 0.5rem;
+        border-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 1px solid #e9ecef;
+        padding-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0.5rem;
+        margin-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0.5rem;
+    }
+    
+    .toolbar-group:last-child {
+        border-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: none;
+        padding-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0;
+        margin-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}: 0;
+    }
+    
+    .toolbar-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.875rem;
+        border-radius: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .toolbar-btn i {
+        font-size: 0.9rem;
+    }
+    
+    /* تنسيقات قسم الفلاتر (Filters) */
+    .reports-filters {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .filter-group {
+        display: flex;
+        gap: 1rem;
         margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group:last-child {
+        margin-bottom: 0;
     }
     
     .filter-label {
-        font-weight: 600;
-        margin-bottom: 0.25rem;
+        font-weight: 500;
+        min-width: 100px;
+        display: flex;
+        align-items: center;
     }
     
-    /* تنسيقات الجدول */
-    .report-table-container {
-        overflow-x: auto;
+    .filter-controls {
+        display: flex;
+        gap: 0.5rem;
+        flex: 1;
+        flex-wrap: wrap;
     }
     
-    .report-table {
+    /* تنسيقات جدول البيانات (Data Table) */
+    .reports-data {
+        padding: 1rem;
+    }
+    
+    .reports-table {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
+        border-collapse: collapse;
     }
     
-    .report-table th {
-        background-color: #f0f7ff;
-        font-weight: 600;
-        text-align: right;
+    .reports-table th {
+        background-color: #f8f9fa;
         padding: 0.75rem 1rem;
-        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        text-align: {% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %};
+        color: #495057;
+        border-bottom: 2px solid #e9ecef;
     }
     
-    .report-table td {
+    .reports-table td {
         padding: 0.75rem 1rem;
         border-bottom: 1px solid #e9ecef;
         vertical-align: middle;
     }
     
-    .report-table tr:nth-child(even) {
-        background-color: #f8f9fa;
+    .reports-table tr:hover {
+        background-color: #f9f9f9;
     }
     
-    .report-table tr:hover {
-        background-color: #f0f7ff;
+    .reports-table tr:nth-child(even) {
+        background-color: #fcfcfc;
     }
     
-    .report-table tr.selected {
-        background-color: #e3f2fd;
-    }
-    
-    /* تنسيقات ملخص التقرير */
+    /* تنسيقات ملخص التقرير (Report Summary) */
     .report-summary {
-        background-color: #f8f9fa;
-        border-radius: 0.5rem;
         padding: 1rem;
-        margin-top: 1.5rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        border-bottom-left-radius: 0.5rem;
+        border-bottom-right-radius: 0.5rem;
     }
     
-    .summary-item {
+    .summary-title {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: #495057;
+    }
+    
+    .summary-stats {
         display: flex;
-        align-items: center;
-        margin-bottom: 0.5rem;
+        gap: 2rem;
+        flex-wrap: wrap;
     }
     
-    .summary-label {
-        font-weight: 600;
-        margin-left: 0.5rem;
+    .stat-item {
+        flex: 1;
+        min-width: 150px;
     }
     
-    .summary-value {
-        font-size: 1.25rem;
-        color: #3498db;
-    }
-    
-    /* تنسيقات الأزرار */
-    .btn-export-pdf {
-        background-color: #e74c3c;
-        color: white;
-    }
-    
-    .btn-export-excel {
-        background-color: #27ae60;
-        color: white;
-    }
-    
-    .btn-print {
-        background-color: #34495e;
-        color: white;
-    }
-    
-    /* تنسيقات للبحث المتقدم */
-    .search-box {
-        position: relative;
-    }
-    
-    .search-box .form-control {
-        padding-right: 2.5rem;
-    }
-    
-    .search-box .search-icon {
-        position: absolute;
-        left: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
+    .stat-label {
+        font-size: 0.875rem;
         color: #6c757d;
+        margin-bottom: 0.25rem;
     }
     
-    /* تنسيقات للحالات */
-    .status-badge {
-        padding: 0.35rem 0.65rem;
-        border-radius: 50rem;
+    .stat-value {
+        font-size: 1.25rem;
         font-weight: 600;
+        color: #343a40;
+    }
+    
+    /* تنسيقات أيقونات البيانات (Data Icons) */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 1rem;
         font-size: 0.75rem;
-        white-space: nowrap;
+        font-weight: 500;
     }
     
-    .status-badge.active {
-        background-color: #dff7e5;
-        color: #28a745;
+    .status-confirmed {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
     }
     
-    .status-badge.pending {
-        background-color: #fff3cd;
+    .status-pending {
+        background-color: rgba(255, 193, 7, 0.1);
         color: #ffc107;
     }
     
-    .status-badge.cancelled {
-        background-color: #f8d7da;
+    .status-cancelled {
+        background-color: rgba(220, 53, 69, 0.1);
         color: #dc3545;
     }
     
-    .status-badge.completed {
-        background-color: #cce5ff;
+    .status-completed {
+        background-color: rgba(13, 110, 253, 0.1);
         color: #0d6efd;
     }
     
-    /* تنسيقات التوافق مع الشاشات المختلفة */
-    @media (max-width: 768px) {
-        .report-toolbar .btn-text {
-            display: none;
+    /* تنسيقات متنوعة */
+    .btn-action {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.825rem;
+        border-radius: 0.25rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .ribbon-menu {
+            overflow-x: auto;
         }
         
-        .report-toolbar .btn i {
-            margin-left: 0;
+        .ribbon-tab {
+            padding: 0.75rem 1rem;
         }
         
-        .filter-row {
-            margin-bottom: 1.5rem;
+        .filter-label {
+            min-width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .filter-controls {
+            min-width: 100%;
         }
     }
 </style>
 {% endblock %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item active">{% trans "إدارة التقارير" %}</li>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1">{% trans "إدارة التقارير" %}</h1>
-            <p class="text-muted mb-0">{% trans "عرض وإدارة تقارير النظام المختلفة" %}</p>
-        </div>
-    </div>
-    
-    <!-- شريط التبويبات -->
-    <ul class="nav nav-tabs mb-0" id="reportsTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="reservations-tab" data-bs-toggle="tab" data-bs-target="#reservations-content" type="button" role="tab" aria-controls="reservations-content" aria-selected="true">
-                <i class="fas fa-calendar-check ml-1"></i> {% trans "الحجوزات" %}
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="cars-tab" data-bs-toggle="tab" data-bs-target="#cars-content" type="button" role="tab" aria-controls="cars-content" aria-selected="false">
-                <i class="fas fa-car ml-1"></i> {% trans "السيارات" %}
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customers-content" type="button" role="tab" aria-controls="customers-content" aria-selected="false">
-                <i class="fas fa-users ml-1"></i> {% trans "العملاء" %}
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="custody-tab" data-bs-toggle="tab" data-bs-target="#custody-content" type="button" role="tab" aria-controls="custody-content" aria-selected="false">
-                <i class="fas fa-shield-alt ml-1"></i> {% trans "العهد" %}
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="car-conditions-tab" data-bs-toggle="tab" data-bs-target="#car-conditions-content" type="button" role="tab" aria-controls="car-conditions-content" aria-selected="false">
-                <i class="fas fa-clipboard-check ml-1"></i> {% trans "حالة السيارات" %}
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments-content" type="button" role="tab" aria-controls="payments-content" aria-selected="false">
-                <i class="fas fa-money-bill-wave ml-1"></i> {% trans "المدفوعات" %}
-            </button>
-        </li>
-    </ul>
-    
-    <div class="tab-content" id="reportsTabContent">
-        <!-- تبويب الحجوزات -->
-        <div class="tab-pane fade show active" id="reservations-content" role="tabpanel" aria-labelledby="reservations-tab">
-            <!-- شريط الأدوات -->
-            <div class="report-toolbar d-flex justify-content-between align-items-center">
+    <div class="row">
+        <div class="col-12">
+            <!-- عنوان الصفحة والوصف -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <button class="btn btn-primary" id="addReservationBtn">
-                        <i class="fas fa-plus"></i>
-                        <span class="btn-text">{% trans "إضافة حجز" %}</span>
-                    </button>
-                    <button class="btn btn-secondary" id="editReservationBtn" disabled>
-                        <i class="fas fa-edit"></i>
-                        <span class="btn-text">{% trans "تعديل" %}</span>
-                    </button>
-                    <button class="btn btn-danger" id="deleteReservationBtn" disabled>
-                        <i class="fas fa-trash"></i>
-                        <span class="btn-text">{% trans "حذف" %}</span>
-                    </button>
+                    <h2 class="h3 mb-1">{% trans "إدارة التقارير" %}</h2>
+                    <p class="text-muted mb-0">{% trans "قم بإنشاء وإدارة وتصدير التقارير المتعلقة بالحجوزات والسيارات والمدفوعات" %}</p>
                 </div>
                 <div>
-                    <button class="btn btn-export-pdf" id="exportPdfBtn">
-                        <i class="fas fa-file-pdf"></i>
-                        <span class="btn-text">{% trans "تصدير PDF" %}</span>
-                    </button>
-                    <button class="btn btn-export-excel" id="exportExcelBtn">
-                        <i class="fas fa-file-excel"></i>
-                        <span class="btn-text">{% trans "تصدير Excel" %}</span>
-                    </button>
-                    <button class="btn btn-print" id="printReportBtn">
-                        <i class="fas fa-print"></i>
-                        <span class="btn-text">{% trans "طباعة" %}</span>
+                    <button class="btn btn-primary">
+                        <i class="fas fa-save ms-1"></i>
+                        {% trans "حفظ التقرير" %}
                     </button>
                 </div>
             </div>
             
-            <!-- فلاتر البحث -->
-            <div class="report-filters">
-                <form id="reservationsFilterForm">
-                    <div class="row filter-row">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="filter-label">{% trans "البحث باسم العميل" %}</label>
-                                <div class="search-box">
-                                    <input type="text" class="form-control" id="customerNameFilter" placeholder="{% trans 'أدخل اسم العميل...' %}">
-                                    <i class="fas fa-search search-icon"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="filter-label">{% trans "السيارة" %}</label>
-                                <select class="form-select" id="carFilter">
-                                    <option value="">{% trans "جميع السيارات" %}</option>
-                                    <option value="1">Toyota Camry 2023</option>
-                                    <option value="2">Honda Accord 2022</option>
-                                    <option value="3">Nissan Altima 2023</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="filter-label">{% trans "من تاريخ" %}</label>
-                                <input type="date" class="form-control" id="fromDateFilter">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="filter-label">{% trans "إلى تاريخ" %}</label>
-                                <input type="date" class="form-control" id="toDateFilter">
-                            </div>
-                        </div>
+            <!-- حاوية التقارير -->
+            <div class="reports-container">
+                <!-- شريط التبويبات (Ribbon Menu) -->
+                <div class="ribbon-menu">
+                    <div class="ribbon-tab active" data-report-type="reservations">
+                        <i class="fas fa-calendar-check"></i>
+                        {% trans "الحجوزات" %}
                     </div>
-                    <div class="row filter-row">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="filter-label">{% trans "حالة الحجز" %}</label>
-                                <select class="form-select" id="statusFilter">
-                                    <option value="">{% trans "جميع الحالات" %}</option>
-                                    <option value="confirmed">{% trans "مؤكد" %}</option>
-                                    <option value="pending">{% trans "معلق" %}</option>
-                                    <option value="completed">{% trans "مكتمل" %}</option>
-                                    <option value="cancelled">{% trans "ملغي" %}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="filter-label">{% trans "المدينة" %}</label>
-                                <select class="form-select" id="cityFilter">
-                                    <option value="">{% trans "جميع المدن" %}</option>
-                                    <option value="riyadh">{% trans "الرياض" %}</option>
-                                    <option value="jeddah">{% trans "جدة" %}</option>
-                                    <option value="dammam">{% trans "الدمام" %}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6 d-flex align-items-end">
-                            <div class="mt-4">
-                                <button type="submit" class="btn btn-primary px-4">
-                                    <i class="fas fa-filter ml-1"></i> {% trans "تطبيق الفلترة" %}
-                                </button>
-                                <button type="reset" class="btn btn-outline-secondary px-4 ms-2">
-                                    <i class="fas fa-redo ml-1"></i> {% trans "إعادة ضبط" %}
-                                </button>
-                            </div>
-                        </div>
+                    <div class="ribbon-tab" data-report-type="cars">
+                        <i class="fas fa-car"></i>
+                        {% trans "السيارات" %}
                     </div>
-                </form>
-            </div>
-            
-            <!-- جدول التقرير -->
-            <div class="card">
-                <div class="card-body p-0">
-                    <div class="report-table-container">
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>{% trans "رقم الحجز" %}</th>
-                                    <th>{% trans "السيارة" %}</th>
-                                    <th>{% trans "العميل" %}</th>
-                                    <th>{% trans "من تاريخ" %}</th>
-                                    <th>{% trans "إلى تاريخ" %}</th>
-                                    <th>{% trans "المبلغ" %}</th>
-                                    <th>{% trans "المدفوع" %}</th>
-                                    <th>{% trans "المتبقي" %}</th>
-                                    <th>{% trans "الحالة" %}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>R-10001</td>
-                                    <td>Toyota Camry 2023</td>
-                                    <td>أحمد محمد</td>
-                                    <td>2025-05-01</td>
-                                    <td>2025-05-05</td>
-                                    <td>1,200 ر.س</td>
-                                    <td>1,000 ر.س</td>
-                                    <td>200 ر.س</td>
-                                    <td><span class="status-badge active">مؤكد</span></td>
-                                </tr>
-                                <tr>
-                                    <td>R-10002</td>
-                                    <td>Honda Accord 2022</td>
-                                    <td>محمد علي</td>
-                                    <td>2025-05-02</td>
-                                    <td>2025-05-06</td>
-                                    <td>900 ر.س</td>
-                                    <td>900 ر.س</td>
-                                    <td>0 ر.س</td>
-                                    <td><span class="status-badge completed">مكتمل</span></td>
-                                </tr>
-                                <tr>
-                                    <td>R-10003</td>
-                                    <td>Nissan Altima 2023</td>
-                                    <td>ياسر العزيز</td>
-                                    <td>2025-05-10</td>
-                                    <td>2025-05-15</td>
-                                    <td>1,500 ر.س</td>
-                                    <td>500 ر.س</td>
-                                    <td>1,000 ر.س</td>
-                                    <td><span class="status-badge pending">معلق</span></td>
-                                </tr>
-                                <tr>
-                                    <td>R-10004</td>
-                                    <td>Toyota Camry 2023</td>
-                                    <td>عبدالله سالم</td>
-                                    <td>2025-04-28</td>
-                                    <td>2025-05-03</td>
-                                    <td>1,200 ر.س</td>
-                                    <td>300 ر.س</td>
-                                    <td>900 ر.س</td>
-                                    <td><span class="status-badge cancelled">ملغي</span></td>
-                                </tr>
-                                <tr>
-                                    <td>R-10005</td>
-                                    <td>Honda Accord 2022</td>
-                                    <td>خالد نايف</td>
-                                    <td>2025-05-15</td>
-                                    <td>2025-05-20</td>
-                                    <td>900 ر.س</td>
-                                    <td>450 ر.س</td>
-                                    <td>450 ر.س</td>
-                                    <td><span class="status-badge active">مؤكد</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="ribbon-tab" data-report-type="customers">
+                        <i class="fas fa-users"></i>
+                        {% trans "العملاء" %}
+                    </div>
+                    <div class="ribbon-tab" data-report-type="custody">
+                        <i class="fas fa-file-contract"></i>
+                        {% trans "العهد" %}
+                    </div>
+                    <div class="ribbon-tab" data-report-type="car-conditions">
+                        <i class="fas fa-car-crash"></i>
+                        {% trans "حالة السيارات" %}
+                    </div>
+                    <div class="ribbon-tab" data-report-type="payments">
+                        <i class="fas fa-money-bill-wave"></i>
+                        {% trans "المدفوعات" %}
                     </div>
                 </div>
-            </div>
-            
-            <!-- ملخص التقرير -->
-            <div class="report-summary">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="summary-item">
-                            <span class="summary-label">{% trans "إجمالي عدد الحجوزات:" %}</span>
-                            <span class="summary-value">5</span>
+                
+                <!-- شريط الأدوات (Toolbar) -->
+                <div class="reports-toolbar">
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn btn btn-sm btn-success">
+                            <i class="fas fa-plus"></i>
+                            {% trans "إضافة" %}
+                        </button>
+                        <button class="toolbar-btn btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i>
+                            {% trans "تعديل" %}
+                        </button>
+                        <button class="toolbar-btn btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i>
+                            {% trans "حذف" %}
+                        </button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn btn btn-sm btn-outline-primary">
+                            <i class="fas fa-file-pdf"></i>
+                            {% trans "تصدير PDF" %}
+                        </button>
+                        <button class="toolbar-btn btn btn-sm btn-outline-success">
+                            <i class="fas fa-file-excel"></i>
+                            {% trans "تصدير Excel" %}
+                        </button>
+                        <button class="toolbar-btn btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-print"></i>
+                            {% trans "طباعة" %}
+                        </button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn btn btn-sm btn-outline-info">
+                            <i class="fas fa-filter"></i>
+                            {% trans "تصفية" %}
+                        </button>
+                        <button class="toolbar-btn btn btn-sm btn-outline-dark">
+                            <i class="fas fa-sort"></i>
+                            {% trans "فرز" %}
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- قسم الفلاتر (Filters) -->
+                <div class="reports-filters">
+                    <div class="filter-group">
+                        <div class="filter-label">{% trans "الفترة الزمنية:" %}</div>
+                        <div class="filter-controls">
+                            <select class="form-select form-select-sm" style="width: auto;">
+                                <option value="today">{% trans "اليوم" %}</option>
+                                <option value="this_week">{% trans "هذا الأسبوع" %}</option>
+                                <option value="this_month" selected>{% trans "هذا الشهر" %}</option>
+                                <option value="last_month">{% trans "الشهر الماضي" %}</option>
+                                <option value="this_year">{% trans "هذه السنة" %}</option>
+                                <option value="custom">{% trans "مخصص" %}</option>
+                            </select>
+                            <input type="date" class="form-control form-control-sm" placeholder="{% trans "من تاريخ" %}">
+                            <input type="date" class="form-control form-control-sm" placeholder="{% trans "إلى تاريخ" %}">
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="summary-item">
-                            <span class="summary-label">{% trans "إجمالي المبالغ:" %}</span>
-                            <span class="summary-value">5,700 ر.س</span>
+                    <div class="filter-group">
+                        <div class="filter-label">{% trans "حالة الحجز:" %}</div>
+                        <div class="filter-controls">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="status_all" checked>
+                                <label class="form-check-label" for="status_all">{% trans "الكل" %}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="status_confirmed" checked>
+                                <label class="form-check-label" for="status_confirmed">{% trans "مؤكد" %}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="status_pending" checked>
+                                <label class="form-check-label" for="status_pending">{% trans "قيد الانتظار" %}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="status_completed" checked>
+                                <label class="form-check-label" for="status_completed">{% trans "مكتمل" %}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="status_cancelled">
+                                <label class="form-check-label" for="status_cancelled">{% trans "ملغي" %}</label>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="summary-item">
-                            <span class="summary-label">{% trans "إجمالي المدفوعات:" %}</span>
-                            <span class="summary-value">3,150 ر.س</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="summary-item">
-                            <span class="summary-label">{% trans "إجمالي المتبقي:" %}</span>
-                            <span class="summary-value">2,550 ر.س</span>
+                    <div class="filter-group">
+                        <div class="filter-label">{% trans "بحث:" %}</div>
+                        <div class="filter-controls">
+                            <input type="text" class="form-control form-control-sm" placeholder="{% trans "ابحث في الحجوزات..." %}">
+                            <button class="btn btn-sm btn-primary">{% trans "بحث" %}</button>
+                            <button class="btn btn-sm btn-secondary">{% trans "إعادة ضبط" %}</button>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- تبويب السيارات -->
-        <div class="tab-pane fade" id="cars-content" role="tabpanel" aria-labelledby="cars-tab">
-            <div class="alert alert-info mt-3">
-                <i class="fas fa-info-circle ml-1"></i>
-                {% trans "قم بتحديد تبويب السيارات لعرض تقارير السيارات ومعلوماتها" %}
-            </div>
-        </div>
-        
-        <!-- تبويب العملاء -->
-        <div class="tab-pane fade" id="customers-content" role="tabpanel" aria-labelledby="customers-tab">
-            <div class="alert alert-info mt-3">
-                <i class="fas fa-info-circle ml-1"></i>
-                {% trans "قم بتحديد تبويب العملاء لعرض تقارير العملاء ومعلوماتهم" %}
-            </div>
-        </div>
-        
-        <!-- تبويب العهد -->
-        <div class="tab-pane fade" id="custody-content" role="tabpanel" aria-labelledby="custody-tab">
-            <div class="alert alert-info mt-3">
-                <i class="fas fa-info-circle ml-1"></i>
-                {% trans "قم بتحديد تبويب العهد لعرض تقارير العهد ومعلوماتها" %}
-            </div>
-        </div>
-        
-        <!-- تبويب حالة السيارات -->
-        <div class="tab-pane fade" id="car-conditions-content" role="tabpanel" aria-labelledby="car-conditions-tab">
-            <div class="alert alert-info mt-3">
-                <i class="fas fa-info-circle ml-1"></i>
-                {% trans "قم بتحديد تبويب حالة السيارات لعرض تقارير حالة السيارات ومعلوماتها" %}
-            </div>
-        </div>
-        
-        <!-- تبويب المدفوعات -->
-        <div class="tab-pane fade" id="payments-content" role="tabpanel" aria-labelledby="payments-tab">
-            <div class="alert alert-info mt-3">
-                <i class="fas fa-info-circle ml-1"></i>
-                {% trans "قم بتحديد تبويب المدفوعات لعرض تقارير المدفوعات ومعلوماتها" %}
+                
+                <!-- قسم بيانات التقرير (Report Data) -->
+                <div class="reports-data">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th width="40px">
+                                    <input type="checkbox" class="form-check-input">
+                                </th>
+                                <th width="80px">{% trans "رقم الحجز" %}</th>
+                                <th>{% trans "السيارة" %}</th>
+                                <th>{% trans "العميل" %}</th>
+                                <th>{% trans "تاريخ الحجز" %}</th>
+                                <th>{% trans "من تاريخ" %}</th>
+                                <th>{% trans "إلى تاريخ" %}</th>
+                                <th>{% trans "المبلغ" %}</th>
+                                <th>{% trans "الحالة" %}</th>
+                                <th width="100px">{% trans "إجراءات" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in recent_reservations %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input">
+                                </td>
+                                <td>{{ reservation.id }}</td>
+                                <td>{{ reservation.car.manufacturer }} {{ reservation.car.model }}</td>
+                                <td>{{ reservation.user.username }}</td>
+                                <td>{{ reservation.created_at|date:"Y-m-d" }}</td>
+                                <td>{{ reservation.start_date|date:"Y-m-d" }}</td>
+                                <td>{{ reservation.end_date|date:"Y-m-d" }}</td>
+                                <td>{{ reservation.total_amount }} ريال</td>
+                                <td>
+                                    <span class="status-badge status-{{ reservation.status }}">
+                                        <i class="fas fa-circle" style="font-size: 8px;"></i>
+                                        {% if reservation.status == 'confirmed' %}
+                                            {% trans "مؤكد" %}
+                                        {% elif reservation.status == 'pending' %}
+                                            {% trans "قيد الانتظار" %}
+                                        {% elif reservation.status == 'completed' %}
+                                            {% trans "مكتمل" %}
+                                        {% elif reservation.status == 'cancelled' %}
+                                            {% trans "ملغي" %}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-action btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-action btn-sm btn-outline-secondary">
+                                            <i class="fas fa-print"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                                        <p>{% trans "لا توجد حجوزات لعرضها" %}</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- ملخص التقرير (Report Summary) -->
+                <div class="report-summary">
+                    <div class="summary-title">{% trans "ملخص التقرير" %}</div>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">{% trans "إجمالي الحجوزات" %}</div>
+                            <div class="stat-value">{{ reservations_stats.total }}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">{% trans "مؤكدة" %}</div>
+                            <div class="stat-value">{{ reservations_stats.confirmed }}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">{% trans "قيد الانتظار" %}</div>
+                            <div class="stat-value">{{ reservations_stats.pending }}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">{% trans "مكتملة" %}</div>
+                            <div class="stat-value">{{ reservations_stats.completed }}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">{% trans "ملغية" %}</div>
+                            <div class="stat-value">{{ reservations_stats.cancelled }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_scripts %}
+<!-- JavaScript للتفاعل مع واجهة التقارير -->
 <script>
-    $(document).ready(function() {
-        // تحديد الصف عند النقر
-        $('.report-table tbody tr').click(function() {
-            $(this).toggleClass('selected').siblings().removeClass('selected');
+document.addEventListener('DOMContentLoaded', function() {
+    // تبديل التبويبات
+    const tabs = document.querySelectorAll('.ribbon-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // إزالة الحالة النشطة من جميع التبويبات
+            tabs.forEach(t => t.classList.remove('active'));
+            // إضافة الحالة النشطة للتبويب المحدد
+            this.classList.add('active');
             
-            // تفعيل أو تعطيل أزرار التعديل والحذف
-            if ($('.report-table tbody tr.selected').length > 0) {
-                $('#editReservationBtn, #deleteReservationBtn').prop('disabled', false);
-            } else {
-                $('#editReservationBtn, #deleteReservationBtn').prop('disabled', true);
-            }
-        });
-        
-        // إعادة ضبط الفلاتر
-        $('#reservationsFilterForm button[type="reset"]').click(function() {
-            $('#reservationsFilterForm')[0].reset();
-            // هنا يمكن إضافة كود لإعادة تحميل البيانات الافتراضية
-        });
-        
-        // تطبيق الفلترة
-        $('#reservationsFilterForm').submit(function(e) {
-            e.preventDefault();
-            // هنا يتم إرسال الفلاتر وتحديث الجدول
-            console.log('تطبيق الفلترة');
+            // هنا يمكن إضافة معالجة لتحميل بيانات التقرير المناسب
+            const reportType = this.getAttribute('data-report-type');
+            console.log(`Loading report type: ${reportType}`);
             
-            // على سبيل المثال نقوم بجمع قيم الفلاتر
-            const filters = {
-                customerName: $('#customerNameFilter').val(),
-                carId: $('#carFilter').val(),
-                fromDate: $('#fromDateFilter').val(),
-                toDate: $('#toDateFilter').val(),
-                status: $('#statusFilter').val(),
-                city: $('#cityFilter').val()
-            };
-            
-            console.log('الفلاتر المطبقة:', filters);
-            
-            // هنا يتم إرسال طلب AJAX لتحديث البيانات
-            // على سبيل المثال:
-            /*
-            $.ajax({
-                url: '/api/reservations/filter',
-                type: 'POST',
-                data: filters,
-                success: function(response) {
-                    // تحديث الجدول بالبيانات الجديدة
-                    updateTable(response.data);
-                },
-                error: function(error) {
-                    console.error('حدث خطأ أثناء تحميل البيانات:', error);
-                }
-            });
-            */
+            // تحديث عناصر الواجهة بناء على نوع التقرير
+            updateInterface(reportType);
         });
-        
-        // أزرار التصدير والطباعة
-        $('#exportPdfBtn').click(function() {
-            // تصدير التقرير إلى PDF
-            console.log('تصدير التقرير إلى PDF');
-            // يمكن تنفيذ طلب AJAX أو تحويل المستخدم إلى مسار التصدير
-            // window.location.href = '/admin/reports/export/pdf?type=reservations&filters=' + JSON.stringify(getFilters());
-        });
-        
-        $('#exportExcelBtn').click(function() {
-            // تصدير التقرير إلى Excel
-            console.log('تصدير التقرير إلى Excel');
-            // window.location.href = '/admin/reports/export/excel?type=reservations&filters=' + JSON.stringify(getFilters());
-        });
-        
-        $('#printReportBtn').click(function() {
-            // طباعة التقرير
-            console.log('طباعة التقرير');
-            window.print();
-        });
-        
-        // دالة للحصول على الفلاتر الحالية
-        function getFilters() {
-            return {
-                customerName: $('#customerNameFilter').val(),
-                carId: $('#carFilter').val(),
-                fromDate: $('#fromDateFilter').val(),
-                toDate: $('#toDateFilter').val(),
-                status: $('#statusFilter').val(),
-                city: $('#cityFilter').val()
-            };
-        }
-        
-        // دالة لتحديث الجدول (ستستخدم مع AJAX)
-        function updateTable(data) {
-            // تفريغ جسم الجدول
-            const tbody = $('.report-table tbody');
-            tbody.empty();
-            
-            // إضافة الصفوف الجديدة
-            data.forEach(function(row) {
-                const statusClass = getStatusClass(row.status);
-                
-                const newRow = `
-                    <tr>
-                        <td>${row.id}</td>
-                        <td>${row.car_name}</td>
-                        <td>${row.customer_name}</td>
-                        <td>${row.start_date}</td>
-                        <td>${row.end_date}</td>
-                        <td>${row.total_amount} ر.س</td>
-                        <td>${row.paid_amount} ر.س</td>
-                        <td>${row.remaining_amount} ر.س</td>
-                        <td><span class="status-badge ${statusClass}">${row.status_display}</span></td>
-                    </tr>
-                `;
-                
-                tbody.append(newRow);
-            });
-            
-            // إعادة تطبيق السلوك على الصفوف الجديدة
-            $('.report-table tbody tr').click(function() {
-                $(this).toggleClass('selected').siblings().removeClass('selected');
-                
-                if ($('.report-table tbody tr.selected').length > 0) {
-                    $('#editReservationBtn, #deleteReservationBtn').prop('disabled', false);
-                } else {
-                    $('#editReservationBtn, #deleteReservationBtn').prop('disabled', true);
-                }
-            });
-        }
-        
-        // دالة للحصول على فئة CSS الخاصة بالحالة
-        function getStatusClass(status) {
-            switch(status) {
-                case 'confirmed': return 'active';
-                case 'completed': return 'completed';
-                case 'pending': return 'pending';
-                case 'cancelled': return 'cancelled';
-                default: return '';
-            }
-        }
     });
+    
+    // تحديث واجهة التقارير حسب النوع
+    function updateInterface(reportType) {
+        // تعديل الفلاتر حسب نوع التقرير
+        const filtersContainer = document.querySelector('.reports-filters');
+        
+        // تحديث عنوان البحث
+        const searchInput = filtersContainer.querySelector('input[type="text"]');
+        if (searchInput) {
+            switch(reportType) {
+                case 'reservations':
+                    searchInput.placeholder = '{% trans "ابحث في الحجوزات..." %}';
+                    break;
+                case 'cars':
+                    searchInput.placeholder = '{% trans "ابحث في السيارات..." %}';
+                    break;
+                case 'customers':
+                    searchInput.placeholder = '{% trans "ابحث في العملاء..." %}';
+                    break;
+                case 'custody':
+                    searchInput.placeholder = '{% trans "ابحث في العهد..." %}';
+                    break;
+                case 'car-conditions':
+                    searchInput.placeholder = '{% trans "ابحث في حالة السيارات..." %}';
+                    break;
+                case 'payments':
+                    searchInput.placeholder = '{% trans "ابحث في المدفوعات..." %}';
+                    break;
+            }
+        }
+        
+        // يمكن إضافة المزيد من التخصيصات هنا حسب نوع التقرير
+    }
+    
+    // إعدادات إضافية للواجهة
+    
+    // مربع الاختيار الرئيسي لتحديد الكل
+    const mainCheckbox = document.querySelector('th input[type="checkbox"]');
+    const rowCheckboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+    
+    if (mainCheckbox) {
+        mainCheckbox.addEventListener('change', function() {
+            rowCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+    
+    // تحديث مربع الاختيار الرئيسي عندما تتغير حالة مربعات الاختيار الفردية
+    rowCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = Array.from(rowCheckboxes).every(c => c.checked);
+            const someChecked = Array.from(rowCheckboxes).some(c => c.checked);
+            
+            if (mainCheckbox) {
+                mainCheckbox.checked = allChecked;
+                mainCheckbox.indeterminate = someChecked && !allChecked;
+            }
+        });
+    });
+});
 </script>
 {% endblock %}
