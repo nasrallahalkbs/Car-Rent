@@ -129,19 +129,58 @@
                                     <th class="ps-0">مكان التسليم</th>
                                     <td class="pe-0">{{ reservation.return_location|default:"المكتب الرئيسي" }}</td>
                                 </tr>
+                                <tr>
+                                    <th class="ps-0">نوع الإيجار</th>
+                                    <td class="pe-0">
+                                        {% if rental_type == 'daily' %}
+                                            إيجار يومي
+                                        {% elif rental_type == 'weekly' %}
+                                            إيجار أسبوعي
+                                        {% elif rental_type == 'monthly' %}
+                                            إيجار شهري
+                                        {% elif rental_type == 'corporate' %}
+                                            إيجار شركات
+                                        {% elif rental_type == 'special' %}
+                                            مناسبة خاصة
+                                        {% else %}
+                                            {{ rental_type|default:"غير متوفر" }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="ps-0">نوع الضمان</th>
+                                    <td class="pe-0">
+                                        {% if guarantee_type == 'id_card' %}
+                                            بطاقة الهوية الوطنية
+                                        {% elif guarantee_type == 'passport' %}
+                                            جواز السفر
+                                        {% elif guarantee_type == 'driving_license' %}
+                                            رخصة القيادة
+                                        {% elif guarantee_type == 'deposit' %}
+                                            وديعة تأمين
+                                        {% elif guarantee_type == 'credit_card' %}
+                                            بطاقة ائتمان
+                                        {% elif guarantee_type == 'property_doc' %}
+                                            وثيقة ملكية عقار
+                                        {% else %}
+                                            {{ guarantee_type|default:"غير متوفر" }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="ps-0">تفاصيل الضمان</th>
+                                    <td class="pe-0">{{ guarantee_details|default:"غير متوفر" }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="ps-0">مبلغ التأمين</th>
+                                    <td class="pe-0">{% if deposit_amount %}{{ deposit_amount }} د.ك{% else %}غير متوفر{% endif %}</td>
+                                </tr>
                                 {% if reservation.expiry_date %}
                                 <tr>
                                     <th class="ps-0">تاريخ انتهاء مهلة الدفع</th>
                                     <td class="pe-0">{{ reservation.expiry_date|date:"Y/m/d H:i" }}</td>
                                 </tr>
                                 {% endif %}
-                                {% if reservation.national_id %}
-                                <tr>
-                                    <th class="ps-0">رقم الهوية الوطنية</th>
-                                    <td class="pe-0">{{ reservation.national_id }}</td>
-                                </tr>
-                                {% endif %}
-                                <!-- تم نقل بيانات الضمان إلى قسم بيانات العميل -->
                             </tbody>
                         </table>
                     </div>
@@ -240,52 +279,26 @@
                                     <td class="pe-0">{{ national_id|default:"غير متوفر" }}</td>
                                 </tr>
                                 <tr>
-                                    <th class="ps-0">نوع الإيجار</th>
-                                    <td class="pe-0">
-                                        {% if rental_type == 'daily' %}
-                                            إيجار يومي
-                                        {% elif rental_type == 'weekly' %}
-                                            إيجار أسبوعي
-                                        {% elif rental_type == 'monthly' %}
-                                            إيجار شهري
-                                        {% elif rental_type == 'corporate' %}
-                                            إيجار شركات
-                                        {% elif rental_type == 'special' %}
-                                            مناسبة خاصة
-                                        {% else %}
-                                            {{ rental_type|default:"غير متوفر" }}
-                                        {% endif %}
-                                    </td>
+                                    <th class="ps-0">رقم الهاتف</th>
+                                    <td class="pe-0">{{ reservation.user.phone_number|default:"غير متوفر" }}</td>
                                 </tr>
                                 <tr>
-                                    <th class="ps-0">نوع الضمان</th>
-                                    <td class="pe-0">
-                                        {% if guarantee_type == 'id_card' %}
-                                            بطاقة الهوية الوطنية
-                                        {% elif guarantee_type == 'passport' %}
-                                            جواز السفر
-                                        {% elif guarantee_type == 'driving_license' %}
-                                            رخصة القيادة
-                                        {% elif guarantee_type == 'deposit' %}
-                                            وديعة تأمين
-                                        {% elif guarantee_type == 'credit_card' %}
-                                            بطاقة ائتمان
-                                        {% elif guarantee_type == 'property_doc' %}
-                                            وثيقة ملكية عقار
-                                        {% else %}
-                                            {{ guarantee_type|default:"غير متوفر" }}
-                                        {% endif %}
-                                    </td>
+                                    <th class="ps-0">العنوان</th>
+                                    <td class="pe-0">{{ reservation.user.address|default:"غير متوفر" }}</td>
                                 </tr>
                                 <tr>
-                                    <th class="ps-0">تفاصيل الضمان</th>
-                                    <td class="pe-0">{{ guarantee_details|default:"غير متوفر" }}</td>
+                                    <th class="ps-0">العمر</th>
+                                    <td class="pe-0">{{ reservation.user.age|default:"غير متوفر" }}</td>
                                 </tr>
                                 <tr>
-                                    <th class="ps-0">مبلغ التأمين</th>
-                                    <td class="pe-0">{% if deposit_amount %}{{ deposit_amount }} د.ك{% else %}غير متوفر{% endif %}</td>
+                                    <th class="ps-0">الجنسية</th>
+                                    <td class="pe-0">{{ reservation.user.nationality|default:"غير متوفر" }}</td>
                                 </tr>
-                                {% if not full_name and not national_id and not rental_type and not guarantee_type and not guarantee_details and not deposit_amount %}
+                                <tr>
+                                    <th class="ps-0">النوع</th>
+                                    <td class="pe-0">{% if reservation.user.gender == 'male' %}ذكر{% elif reservation.user.gender == 'female' %}أنثى{% else %}غير متوفر{% endif %}</td>
+                                </tr>
+                                {% if not full_name and not national_id and not reservation.user.phone_number and not reservation.user.address and not reservation.user.age and not reservation.user.nationality and not reservation.user.gender %}
                                 <tr>
                                     <td colspan="2" class="text-center text-muted py-3">
                                         <i class="fas fa-info-circle me-1"></i>
