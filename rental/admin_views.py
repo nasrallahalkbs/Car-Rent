@@ -793,6 +793,8 @@ def admin_reservation_detail(request, reservation_id):
         print(f"DIAGNOSTIC: national_id: {reservation.national_id}")
         print(f"DIAGNOSTIC: rental_type: {reservation.rental_type}")
         print(f"DIAGNOSTIC: guarantee_type: {reservation.guarantee_type}")
+        print(f"DIAGNOSTIC: guarantee_details: {reservation.guarantee_details}")
+        print(f"DIAGNOSTIC: deposit_amount: {reservation.deposit_amount}")
         
         # إضافة timestamp لمنع استخدام الكاش
         import time
@@ -807,6 +809,13 @@ def admin_reservation_detail(request, reservation_id):
             'current_user': request.user,
             'has_customer_details': has_customer_details,
             'cache_buster': cache_buster,
+            # إضافة البيانات المهمة للتأكد من وصولها للقالب
+            'full_name': reservation.full_name,
+            'national_id': reservation.national_id,
+            'rental_type': reservation.rental_type,
+            'guarantee_type': reservation.guarantee_type,
+            'guarantee_details': reservation.guarantee_details,
+            'deposit_amount': reservation.deposit_amount,
         }
         
         # إضافة معلومات الدفع إذا كانت متوفرة
