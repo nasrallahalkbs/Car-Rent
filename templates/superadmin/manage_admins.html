@@ -34,7 +34,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="status" class="form-label">{% trans "الحالة" %}</label>
                 <select class="form-select" id="status" name="status">
                     <option value="">{% trans "جميع الحالات" %}</option>
@@ -47,6 +47,13 @@
                 </select>
             </div>
             <div class="col-md-2">
+                <label for="show_deleted" class="form-label">{% trans "المحذوفين" %}</label>
+                <select class="form-select" id="show_deleted" name="show_deleted">
+                    <option value="false" {% if show_deleted != 'true' %}selected{% endif %}>{% trans "إخفاء" %}</option>
+                    <option value="true" {% if show_deleted == 'true' %}selected{% endif %}>{% trans "إظهار" %}</option>
+                </select>
+            </div>
+            <div class="col-md-1">
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="fas fa-filter me-1"></i> {% trans "تصفية" %}
                 </button>
@@ -81,7 +88,12 @@
                                     {{ admin.user.username|first|upper }}
                                 </div>
                                 <div class="user-cell-info">
-                                    <div class="user-cell-name">{{ admin.user.get_full_name|default:admin.user.username }}</div>
+                                    <div class="user-cell-name">
+                                        {{ admin.user.get_full_name|default:admin.user.username }}
+                                        {% if admin.is_deleted %}
+                                        <span class="badge bg-dark ms-1">{% trans "محذوف" %}</span>
+                                        {% endif %}
+                                    </div>
                                     <div class="text-muted small">{{ admin.user.email }}</div>
                                 </div>
                             </div>

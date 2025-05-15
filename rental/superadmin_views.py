@@ -237,7 +237,13 @@ def superadmin_dashboard(request):
 @superadmin_required
 def manage_admins(request):
     """Manage administrators"""
-    admins = AdminUser.objects.select_related('user', 'role').all()
+    # استبعاد المسؤولين المحذوفين وهمياً إلا إذا طُلب عرضهم
+    show_deleted = request.GET.get('show_deleted', '') == 'true'
+    
+    if not show_deleted:
+        admins = AdminUser.objects.select_related('user', 'role').filter(is_deleted=False)
+    else:
+        admins = AdminUser.objects.select_related('user', 'role').all()
     
     # البحث والتصفية
     search_query = request.GET.get('q', '')
@@ -268,6 +274,7 @@ def manage_admins(request):
         'search_query': search_query,
         'role_filter': role_filter,
         'status_filter': status_filter,
+        'show_deleted': 'true' if show_deleted else 'false',
     }
     
     return render(request, 'superadmin/manage_admins.html', context)
