@@ -650,30 +650,50 @@ def edit_admin(request, admin_id):
 
 @superadmin_required
 def toggle_admin_status(request, admin_id):
-    """Toggle admin active status"""
+    """Toggle admin active status or restore a deleted admin"""
     admin_user = get_object_or_404(AdminUser, id=admin_id)
     user = admin_user.user
+    action = request.GET.get('action', '')
     
-    # تغيير حالة المستخدم
-    user.is_active = not user.is_active
-    user.save()
-    
-    # تسجيل النشاط
-    status_text = _("تفعيل") if user.is_active else _("تعطيل")
-    log_admin_activity(
-        request.admin_profile,
-        _("تغيير حالة مسؤول"),
-        _("تم %(status)s حساب المسؤول: %(username)s") % {'status': status_text, 'username': user.username},
-        request,
-        item_type="AdminUser",
-        item_id=admin_id
-    )
-    
-    # رسالة نجاح (آمنة للمسؤولين فقط)
-    if user.is_active:
-        admin_success(request, _("تم تفعيل حساب المسؤول بنجاح"))
+    if action == 'restore':
+        # استعادة المسؤول المحذوف
+        if admin_user.is_deleted:
+            admin_user.is_deleted = False
+            admin_user.save()
+            
+            # تسجيل نشاط الاستعادة
+            log_admin_activity(
+                request.admin_profile,
+                _("استعادة مسؤول محذوف"),
+                _("تمت استعادة المسؤول المحذوف: %(username)s") % {'username': user.username},
+                request,
+                item_type="AdminUser",
+                item_id=admin_id
+            )
+            
+            # رسالة نجاح
+            admin_success(request, _("تمت استعادة المسؤول بنجاح"))
     else:
-        admin_success(request, _("تم تعطيل حساب المسؤول بنجاح"))
+        # تغيير حالة المستخدم (نشط/غير نشط)
+        user.is_active = not user.is_active
+        user.save()
+        
+        # تسجيل النشاط
+        status_text = _("تفعيل") if user.is_active else _("تعطيل")
+        log_admin_activity(
+            request.admin_profile,
+            _("تغيير حالة مسؤول"),
+            _("تم %(status)s حساب المسؤول: %(username)s") % {'status': status_text, 'username': user.username},
+            request,
+            item_type="AdminUser",
+            item_id=admin_id
+        )
+        
+        # رسالة نجاح (آمنة للمسؤولين فقط)
+        if user.is_active:
+            admin_success(request, _("تم تفعيل حساب المسؤول بنجاح"))
+        else:
+            admin_success(request, _("تم تعطيل حساب المسؤول بنجاح"))
     
     return redirect('superadmin_admin_details', admin_id=admin_user.id)
 
