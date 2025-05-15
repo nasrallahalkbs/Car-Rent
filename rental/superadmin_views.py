@@ -308,6 +308,44 @@ def admin_details(request, admin_id):
 
 @login_required
 @superadmin_required
+def delete_admin(request, admin_id):
+    """حذف المسؤول بشكل وهمي"""
+    admin_user = get_object_or_404(AdminUser, id=admin_id)
+    
+    # لا نسمح بحذف المسؤولين الأعلى
+    if admin_user.is_superadmin and not request.admin_profile.is_superadmin:
+        admin_error(request, _("لا يمكن حذف المسؤول الأعلى"))
+        return redirect('superadmin_admin_details', admin_id=admin_id)
+    
+    # نستخدم الحذف الوهمي بدلاً من حذف البيانات فعلياً
+    admin_user.is_deleted = True
+    admin_user.save()
+    
+    # تعطيل حساب المستخدم المرتبط
+    user = admin_user.user
+    user.is_active = False
+    user.save()
+    
+    # تسجيل العملية بوضع علامة is_hidden على true
+    details = _("تم حذف المسؤول: %(username)s (%(email)s)") % {
+        'username': user.username,
+        'email': user.email
+    }
+    
+    # استخدام وظيفة الحذف الوهمي
+    soft_delete_item(
+        request=request,
+        item_type="AdminUser",
+        item_id=admin_id,
+        details=details
+    )
+    
+    # رسالة نجاح
+    admin_success(request, _("تم حذف المسؤول بنجاح"))
+    
+    # إعادة توجيه إلى صفحة إدارة المسؤولين
+    return redirect('superadmin_manage_admins')
+
 def admin_advanced_permissions(request, admin_id):
     """إدارة الصلاحيات المتقدمة للمسؤول - الإصدار المبسط جداً"""
     # إضافة قيمة عشوائية لمنع التخزين المؤقت للموارد

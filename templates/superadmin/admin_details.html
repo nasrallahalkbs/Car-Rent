@@ -209,6 +209,35 @@
                                 {% endif %}
                             </form>
                             {% endif %}
+                            
+                            {% if not admin_user.is_deleted %}
+                            <button type="button" class="btn btn-danger btn-block mt-2" data-bs-toggle="modal" data-bs-target="#deleteAdminModal">
+                                <i class="fa fa-trash me-1"></i> {% trans "حذف المسؤول" %}
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- نافذة تأكيد الحذف -->
+                <div class="modal fade" id="deleteAdminModal" tabindex="-1" aria-labelledby="deleteAdminModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteAdminModalLabel">{% trans "تأكيد الحذف" %}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'إغلاق' %}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>{% trans "هل أنت متأكد من رغبتك في حذف هذا المسؤول؟" %}</p>
+                                <p class="text-danger">{% trans "سيتم إخفاء المسؤول من النظام، ولكن بياناته ستبقى في قاعدة البيانات. يمكن استعادته لاحقاً." %}</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "إلغاء" %}</button>
+                                <form method="post" action="{% url 'superadmin_delete_admin' admin_user.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">{% trans "تأكيد الحذف" %}</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
