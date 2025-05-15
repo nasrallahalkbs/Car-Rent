@@ -1204,5 +1204,49 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+<!-- ضمان تحميل تنسيقات صفحة إدارة التقارير -->
+<script>
+// التحقق من تحميل CSS لصفحة إدارة التقارير
+document.addEventListener('DOMContentLoaded', function() {
+    // التحقق مما إذا كانت صفحة إدارة التقارير
+    if (window.location.href.includes('/admin/reports/')) {
+        console.log("تأكيد تحميل تنسيقات التقارير");
+        
+        // التحقق من وجود ملف CSS المطلوب
+        var ensureCssLoaded = function() {
+            var styleLoaded = false;
+            
+            // فحص جميع الـ stylesheets المحملة
+            for (var i = 0; i < document.styleSheets.length; i++) {
+                if (document.styleSheets[i].href && 
+                    document.styleSheets[i].href.includes('reports_management.css')) {
+                    styleLoaded = true;
+                    break;
+                }
+            }
+            
+            // إذا لم يتم تحميل الملف، قم بتحميله
+            if (!styleLoaded) {
+                console.log("تحميل تنسيقات التقارير يدوياً...");
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = '{% static "css/reports_management.css" %}?v=' + new Date().getTime();
+                document.head.appendChild(link);
+            }
+        };
+        
+        // تنفيذ الفحص عند التحميل
+        setTimeout(ensureCssLoaded, 300);
+        
+        // الفحص عند العودة من صفحة أخرى
+        window.addEventListener('pageshow', function(e) {
+            if (e.persisted) {
+                setTimeout(ensureCssLoaded, 300);
+            }
+        });
+    }
+});
+</script>
 </body>
 </html>

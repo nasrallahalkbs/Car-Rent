@@ -7,7 +7,27 @@
 {% block title %}{% trans "إدارة التقارير" %} - كاررنتال{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/reports_management.css' %}?v={{ now.timestamp|floatformat:0 }}">
+<link rel="stylesheet" href="{% static 'css/reports_management.css' %}?v=20250515" id="reports-css">
+<!-- إضافة كود JavaScript لضمان تحميل CSS حتى بعد الخروج من الصفحة -->
+<script>
+    // التحقق من تحميل ملف CSS بنجاح
+    document.addEventListener('DOMContentLoaded', function() {
+        const cssLink = document.getElementById('reports-css');
+        if (cssLink) {
+            // إعادة تحميل CSS إذا لم يتم تحميله بشكل صحيح
+            cssLink.onerror = function() {
+                console.log("فشل تحميل ملف CSS، جاري إعادة المحاولة...");
+                const newLink = document.createElement('link');
+                newLink.rel = 'stylesheet';
+                newLink.href = "{% static 'css/reports_management.css' %}?v=20250515&retry=1";
+                document.head.appendChild(newLink);
+            };
+            
+            // تخزين معلومات في localStorage للتأكد من تحميل CSS في المرات القادمة
+            localStorage.setItem('reports_css_loaded', 'true');
+        }
+    });
+</script>
 {% endblock %}
 
 {% block content %}
