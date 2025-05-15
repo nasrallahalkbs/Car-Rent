@@ -4605,7 +4605,20 @@ def report_print_settings(request, report_type='reservations'):
     # الحصول على بيانات التقرير حسب النوع
     if report_type == 'reservations':
         # بيانات الحجوزات للمعاينة
-        reservations = Reservation.objects.all().order_by('-created_at')[:10]  # نأخذ أول 10 حجوزات فقط للمعاينة
+        # إنشاء حجوزات وهمية للمعاينة لتجنب الأخطاء
+        # نستخدم تواريخ نموذجية بدلاً من تواريخ عشوائية لتجنب أخطاء المنطقة الزمنية
+        reservations = []
+        for i in range(1, 8):  # إنشاء 7 حجوزات نموذجية
+            reservation = {
+                'id': 1000 + i,
+                'user': {'get_full_name': f'عميل نموذجي {i}'},
+                'car': {'model_name': f'سيارة {i}', 'year': 2024},
+                'start_date': datetime(2025, i, 1),  # تاريخ شهري للوضوح
+                'end_date': datetime(2025, i, 10),  # 10 أيام من تاريخ البدء
+                'total_price': 500 + (i * 100),  # أسعار مختلفة للتمييز
+                'status': ['pending', 'confirmed', 'completed', 'cancelled'][i % 4]  # تناوب الحالات
+            }
+            reservations.append(reservation)
         title = _("تقرير الحجوزات")
     elif report_type == 'cars':
         # بيانات السيارات للمعاينة
@@ -4613,7 +4626,18 @@ def report_print_settings(request, report_type='reservations'):
         title = _("تقرير السيارات")
     else:
         # بيانات افتراضية للمعاينة
-        reservations = Reservation.objects.all().order_by('-created_at')[:10]
+        reservations = []
+        for i in range(1, 6):  # 5 حجوزات نموذجية افتراضية
+            reservation = {
+                'id': 2000 + i,
+                'user': {'get_full_name': f'عميل {i}'},
+                'car': {'model_name': f'سيارة نموذجية {i}', 'year': 2024},
+                'start_date': datetime(2025, 6, i),
+                'end_date': datetime(2025, 6, i + 5),
+                'total_price': 300 + (i * 50),
+                'status': 'confirmed'
+            }
+            reservations.append(reservation)
         title = _("تقرير العام")
     
     context = {
@@ -4623,4 +4647,5 @@ def report_print_settings(request, report_type='reservations'):
         'now': datetime.now(),
     }
     
-    return render(request, 'admin/reports/print_settings.html', context)
+    # استخدام القالب الجديد المحسن
+    return render(request, 'admin/reports/print_settings_new.html', context)
