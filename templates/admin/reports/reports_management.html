@@ -665,11 +665,122 @@
                     </div>
                 </div>
 
-                <!-- رسالة توضيحية نظراً لعدم وجود بيانات كافية حالياً -->
-                <div class="empty-data-message">
-                    <i class="fas fa-car-crash" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
-                    <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "تقارير حالة السيارات" %}</div>
-                    <div style="color: #64748b; max-width: 600px; text-align: center;">{% trans "سيتم عرض تقارير حالة السيارات هنا في التحديثات القادمة. يمكنك الآن استخدام التبويبات الأخرى المفعلة." %}</div>
+                <div class="reports-content-area">
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-card-icon"><i class="fas fa-car"></i></div>
+                            <div class="stat-card-value">{{ car_condition_stats.total }}</div>
+                            <div class="stat-card-title">{% trans "إجمالي التقارير" %}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="stat-card-value">{{ car_condition_stats.delivery }}</div>
+                            <div class="stat-card-title">{% trans "تقارير التسليم" %}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon"><i class="fas fa-undo"></i></div>
+                            <div class="stat-card-value">{{ car_condition_stats.return }}</div>
+                            <div class="stat-card-title">{% trans "تقارير الاستلام" %}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon"><i class="fas fa-tools"></i></div>
+                            <div class="stat-card-value">{{ car_condition_stats.maintenance }}</div>
+                            <div class="stat-card-title">{% trans "تقارير الصيانة" %}</div>
+                        </div>
+                    </div>
+                    
+                    <table class="reports-table">
+                        <thead>
+                            <tr class="column-headers">
+                                <th width="30px">
+                                    <input type="checkbox" class="form-check-input" id="select-all-car-conditions">
+                                </th>
+                                <th class="filterable" data-column="id">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم التقرير" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="car">
+                                    <div class="column-header">
+                                        <span>{% trans "السيارة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="report_type">
+                                    <div class="column-header">
+                                        <span>{% trans "نوع التقرير" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="reservation">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم الحجز" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="inspector">
+                                    <div class="column-header">
+                                        <span>{% trans "الفاحص" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="inspection_date">
+                                    <div class="column-header">
+                                        <span>{% trans "تاريخ الفحص" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="status">
+                                    <div class="column-header">
+                                        <span>{% trans "الحالة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="created_at">
+                                    <div class="column-header">
+                                        <span>{% trans "تاريخ الإنشاء" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for car_condition in car_conditions %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input row-checkbox">
+                                </td>
+                                <td>{{ car_condition.id }}</td>
+                                <td>{{ car_condition.car.make|default:"" }} {{ car_condition.car.model|default:"-" }}</td>
+                                <td>{{ car_condition.report_type|default:"-" }}</td>
+                                <td>{{ car_condition.reservation.id|default:"-" }}</td>
+                                <td>{{ car_condition.inspector.get_full_name|default:car_condition.inspector.username|default:"-" }}</td>
+                                <td>{{ car_condition.inspection_date|date:"Y-m-d"|default:"-" }}</td>
+                                <td>
+                                    {% if car_condition.status == "completed" %}
+                                    <span class="condition-status completed">{% trans "مكتمل" %}</span>
+                                    {% elif car_condition.status == "pending" %}
+                                    <span class="condition-status pending">{% trans "قيد الإجراء" %}</span>
+                                    {% else %}
+                                    <span class="condition-status">{{ car_condition.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ car_condition.created_at|date:"Y-m-d"|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-table-row">
+                                <td colspan="9" class="text-center">
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 50px 0;">
+                                        <i class="fas fa-car-crash" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
+                                        <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "لا توجد تقارير حالة سيارات" %}</div>
+                                        <div style="color: #64748b; max-width: 400px; text-align: center;">{% trans "لم يتم العثور على تقارير حالة سيارات مطابقة للمعايير الحالية." %}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -682,11 +793,126 @@
                     </div>
                 </div>
 
-                <!-- رسالة توضيحية نظراً لعدم وجود بيانات كافية حالياً -->
-                <div class="empty-data-message">
-                    <i class="fas fa-file-invoice-dollar" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
-                    <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "تقارير المدفوعات" %}</div>
-                    <div style="color: #64748b; max-width: 600px; text-align: center;">{% trans "سيتم عرض تقارير المدفوعات هنا في التحديثات القادمة. يمكنك الآن استخدام التبويبات الأخرى المفعلة." %}</div>
+                <div class="reports-content-area">
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-card-icon"><i class="fas fa-money-check-alt"></i></div>
+                            <div class="stat-card-value">{{ payment_stats.total }}</div>
+                            <div class="stat-card-title">{% trans "إجمالي المدفوعات" %}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon"><i class="fas fa-clock"></i></div>
+                            <div class="stat-card-value">{{ payment_stats.pending }}</div>
+                            <div class="stat-card-title">{% trans "قيد الانتظار" %}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon"><i class="fas fa-undo"></i></div>
+                            <div class="stat-card-value">{{ payment_stats.refunded }}</div>
+                            <div class="stat-card-title">{% trans "مستردة" %}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon"><i class="fas fa-coins"></i></div>
+                            <div class="stat-card-value">{{ payment_stats.total_amount|floatformat:2 }}</div>
+                            <div class="stat-card-title">{% trans "إجمالي المبلغ (ريال)" %}</div>
+                        </div>
+                    </div>
+                    
+                    <table class="reports-table">
+                        <thead>
+                            <tr class="column-headers">
+                                <th width="30px">
+                                    <input type="checkbox" class="form-check-input" id="select-all-payments">
+                                </th>
+                                <th class="filterable" data-column="id">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم العملية" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="reservation">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم الحجز" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="customer">
+                                    <div class="column-header">
+                                        <span>{% trans "العميل" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="amount">
+                                    <div class="column-header">
+                                        <span>{% trans "المبلغ" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="payment_method">
+                                    <div class="column-header">
+                                        <span>{% trans "طريقة الدفع" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="payment_date">
+                                    <div class="column-header">
+                                        <span>{% trans "تاريخ الدفع" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="status">
+                                    <div class="column-header">
+                                        <span>{% trans "الحالة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="car">
+                                    <div class="column-header">
+                                        <span>{% trans "السيارة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input row-checkbox">
+                                </td>
+                                <td>{{ payment.id }}</td>
+                                <td>{{ payment.id }}</td>
+                                <td>{{ payment.user.get_full_name|default:payment.user.username|default:"-" }}</td>
+                                <td>{{ payment.total_price|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ payment.payment_method|default:"-" }}</td>
+                                <td>{{ payment.payment_date|date:"Y-m-d"|default:"-" }}</td>
+                                <td>
+                                    {% if payment.payment_status == "paid" %}
+                                    <span class="payment-status paid">{% trans "مدفوع" %}</span>
+                                    {% elif payment.payment_status == "pending" %}
+                                    <span class="payment-status pending">{% trans "قيد الانتظار" %}</span>
+                                    {% elif payment.payment_status == "refunded" %}
+                                    <span class="payment-status refunded">{% trans "مسترد" %}</span>
+                                    {% elif payment.payment_status == "cancelled" %}
+                                    <span class="payment-status cancelled">{% trans "ملغي" %}</span>
+                                    {% else %}
+                                    <span class="payment-status">{{ payment.payment_status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ payment.car.make|default:"" }} {{ payment.car.model|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-table-row">
+                                <td colspan="9" class="text-center">
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 50px 0;">
+                                        <i class="fas fa-file-invoice-dollar" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
+                                        <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "لا توجد مدفوعات" %}</div>
+                                        <div style="color: #64748b; max-width: 400px; text-align: center;">{% trans "لم يتم العثور على مدفوعات مطابقة للمعايير الحالية." %}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
