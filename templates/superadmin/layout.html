@@ -371,6 +371,42 @@
             color: var(--danger-color);
         }
         
+        /* Submenu styles for dropdown navigation */
+        .sub-menu {
+            list-style: none;
+            padding: 0;
+            padding-left: 20px;
+            margin: 0;
+        }
+        
+        .menu-arrow {
+            font-size: 0.75rem;
+            transition: transform 0.3s ease;
+        }
+        
+        [aria-expanded="true"] .menu-arrow {
+            transform: rotate(90deg);
+        }
+        
+        .sub-menu .menu-item .menu-link {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            padding-left: 3rem;
+            font-size: 0.9rem;
+            background-color: rgba(0, 0, 0, 0.1);
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
+        
+        .sub-menu .menu-item .menu-link:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        
+        .sub-menu .menu-item .menu-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 3px solid white;
+        }
+        
         /* Tables */
         .table-container {
             background-color: white;
@@ -808,16 +844,60 @@
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="{% url 'superadmin_backup' %}" class="menu-link {% if '/superadmin/backup' in request.path %}active{% endif %}">
-                            <span class="menu-icon"><i class="fas fa-save"></i></span>
-                            <span class="menu-text">{% trans "النسخ الاحتياطي" %}</span>
+                        <a href="#backupCollapse" class="menu-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="{% if '/superadmin/backup' in request.path %}true{% else %}false{% endif %}" aria-controls="backupCollapse">
+                            <div>
+                                <span class="menu-icon"><i class="fas fa-save"></i></span>
+                                <span class="menu-text">{% trans "النسخ الاحتياطي" %}</span>
+                            </div>
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %} menu-arrow"></i>
                         </a>
+                        <div class="collapse {% if '/superadmin/backup' in request.path %}show{% endif %}" id="backupCollapse">
+                            <ul class="sub-menu">
+                                <li class="menu-item">
+                                    <a href="{% url 'superadmin_backup' %}" class="menu-link {% if request.path == '/superadmin/backup/' or request.path == '/ar/superadmin/backup/' %}active{% endif %}">
+                                        <span class="menu-icon"><i class="fas fa-list"></i></span>
+                                        <span class="menu-text">{% trans "قائمة النسخ الاحتياطية" %}</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{% url 'superadmin_create_backup' %}" class="menu-link {% if '/superadmin/backup/create' in request.path %}active{% endif %}">
+                                        <span class="menu-icon"><i class="fas fa-database"></i></span>
+                                        <span class="menu-text">{% trans "نسخة احتياطية لقاعدة البيانات" %}</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{% url 'superadmin_settings' %}" class="menu-link {% if '/superadmin/settings' in request.path %}active{% endif %}">
+                                        <span class="menu-icon"><i class="fas fa-cogs"></i></span>
+                                        <span class="menu-text">{% trans "نسخة احتياطية للإعدادات" %}</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
                     <li class="menu-item">
-                        <a href="{% url 'superadmin_scheduler' %}" class="menu-link {% if '/superadmin/scheduler' in request.path %}active{% endif %}">
-                            <span class="menu-icon"><i class="fas fa-clock"></i></span>
-                            <span class="menu-text">{% trans "جدولة المهام" %}</span>
+                        <a href="#scheduleCollapse" class="menu-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" role="button" aria-expanded="{% if '/superadmin/scheduler' in request.path %}true{% else %}false{% endif %}" aria-controls="scheduleCollapse">
+                            <div>
+                                <span class="menu-icon"><i class="fas fa-clock"></i></span>
+                                <span class="menu-text">{% trans "جدولة المهام" %}</span>
+                            </div>
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %} menu-arrow"></i>
                         </a>
+                        <div class="collapse {% if '/superadmin/scheduler' in request.path %}show{% endif %}" id="scheduleCollapse">
+                            <ul class="sub-menu">
+                                <li class="menu-item">
+                                    <a href="{% url 'superadmin_scheduler' %}" class="menu-link {% if request.path == '/superadmin/scheduler/' or request.path == '/ar/superadmin/scheduler/' %}active{% endif %}">
+                                        <span class="menu-icon"><i class="fas fa-list"></i></span>
+                                        <span class="menu-text">{% trans "قائمة المهام المجدولة" %}</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{% url 'superadmin_add_scheduled_job' %}" class="menu-link {% if '/superadmin/scheduler/add/' in request.path %}active{% endif %}">
+                                        <span class="menu-icon"><i class="fas fa-plus"></i></span>
+                                        <span class="menu-text">{% trans "إضافة مهمة جديدة" %}</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
                     <li class="menu-item">
                         <a href="{% url 'superadmin_settings' %}" class="menu-link {% if '/superadmin/settings' in request.path %}active{% endif %}">

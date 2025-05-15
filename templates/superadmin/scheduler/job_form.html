@@ -178,6 +178,19 @@
             if (taskId) {
                 $('#id_name').val(selectedOption.text());
                 $('#id_function_name').val(taskId);
+                
+                // تعيين قيم افتراضية للفواصل الزمنية
+                if (!$('#id_interval_type').val()) {
+                    $('#id_interval_type').val('daily');
+                    $('#id_interval_type').trigger('change');
+                }
+                
+                if (!$('#id_interval_value').val()) {
+                    $('#id_interval_value').val('1');
+                }
+                
+                // تفعيل المهمة افتراضياً
+                $('#id_is_active').prop('checked', true);
             }
             
             // تعيين معاملات المهمة
@@ -188,6 +201,13 @@
                 try {
                     var args = JSON.parse(argsJson);
                     updateParametersUI(args);
+                    
+                    // تخطي جزء إدخال المعاملات اليدوية
+                    $('#show-json-editor').prop('checked', false);
+                    $('#advanced-json-editor').hide();
+                    
+                    // تطبيق المعاملات تلقائياً
+                    updateArgsJson();
                 } catch (e) {
                     console.error('خطأ في تحليل المعاملات:', e);
                 }
@@ -211,6 +231,12 @@
             
             // تحديث محرر JSON المتقدم أيضًا
             $('#json-editor').val(JSON.stringify(args, null, 2));
+            
+            // تحديث الحقل المخفي للتأكد من إرساله مع النموذج
+            $('#args_json').val(JSON.stringify(args));
+            
+            // تطبيق المعلمات على النموذج تلقائياً
+            updateArgsJson();
         }
         
         // دالة لإضافة معامل إلى واجهة المستخدم
