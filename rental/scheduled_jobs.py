@@ -34,29 +34,30 @@ def create_database_backup(**kwargs):
     
     المعاملات:
         include_media: تضمين ملفات الوسائط (True/False)
+        include_settings: تضمين إعدادات النظام (True/False)
         backup_name: اسم النسخة الاحتياطية (اختياري)
         notify_admin: إرسال إشعار للمسؤول (True/False)
     """
     include_media = kwargs.get('include_media', True)
+    include_settings = kwargs.get('include_settings', True)
     backup_name = kwargs.get('backup_name', f"backup_{timezone.now().strftime('%Y%m%d_%H%M%S')}")
     notify_admin = kwargs.get('notify_admin', True)
     
     logger.info(f"بدء إنشاء نسخة احتياطية من قاعدة البيانات: {backup_name}")
     logger.info(f"تضمين ملفات الوسائط: {include_media}")
+    logger.info(f"تضمين إعدادات النظام: {include_settings}")
     
     try:
         # إنشاء مجلد مؤقت
         temp_dir = tempfile.mkdtemp()
         backup_path = os.path.join(temp_dir, f"{backup_name}.zip")
         
-        # إنشاء ملف SQL من قاعدة البيانات
-        sql_path = os.path.join(temp_dir, "database.sql")
+        # إنشاء ملف قاعدة البيانات
+        db_file = os.path.join(temp_dir, "database.json")
         
-        with connection.cursor() as cursor:
-            with open(sql_path, 'w') as f:
-                # استخراج جداول قاعدة البيانات
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-                tables = cursor.fetchall()
+        # استخدام Django dumpdata لإنشاء نسخة احتياطية لقاعدة البيانات
+        from django.core.management import call_command
+        call_command('dumpdata', exclude=['contenttypes', 'auth.permission'], output=db_file, indent=4)
                 
                 # كتابة نسخة لكل جدول
                 for table in tables:
