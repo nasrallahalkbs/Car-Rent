@@ -4627,8 +4627,8 @@ def admin_reports(request):
     # بيانات العهدة (استخدام وثائق العهدة مؤقتًا)
     custody_items = Document.objects.filter(document_type='custody').order_by('-created_at')
     
-    # بيانات حالة السيارات (استخدام مجموعة فارغة مؤقتًا)
-    car_conditions = []
+    # بيانات حالة السيارات (استخدام تقارير حالة السيارة الفعلية)
+    car_conditions = Document.objects.filter(document_type__in=['car_report', 'maintenance_report', 'condition_report']).select_related('car', 'user').order_by('-created_at')
     
     # بيانات المدفوعات (استخدام بيانات الحجوزات المدفوعة مؤقتًا)
     payments = Reservation.objects.filter(payment_status='paid').select_related('car', 'user').order_by('-created_at')
