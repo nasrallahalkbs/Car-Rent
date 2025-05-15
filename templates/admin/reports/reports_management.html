@@ -502,29 +502,29 @@
                     </div>
                 </div>
 
-                <!-- جدول بيانات المستندات والعهدة -->
+                <!-- جدول بيانات عهدات العملاء -->
                 <div class="table-responsive">
-                    <!-- إحصائيات المستندات -->
+                    <!-- إحصائيات العهدات -->
                     <div class="reports-stats-row">
                         <div class="stats-card">
-                            <div class="stats-title">{% trans "إجمالي المستندات" %}</div>
-                            <div class="stats-value">{{ documents_stats.total }}</div>
+                            <div class="stats-title">{% trans "إجمالي العهدات" %}</div>
+                            <div class="stats-value">{{ custody_stats.total|default:"0" }}</div>
                         </div>
                         <div class="stats-card">
-                            <div class="stats-title">{% trans "العقود" %}</div>
-                            <div class="stats-value">{{ documents_stats.contracts }}</div>
+                            <div class="stats-title">{% trans "العهدات النشطة" %}</div>
+                            <div class="stats-value">{{ custody_stats.active|default:"0" }}</div>
                         </div>
                         <div class="stats-card">
-                            <div class="stats-title">{% trans "الإيصالات" %}</div>
-                            <div class="stats-value">{{ documents_stats.receipts }}</div>
+                            <div class="stats-title">{% trans "العهدات المستردة" %}</div>
+                            <div class="stats-value">{{ custody_stats.returned|default:"0" }}</div>
                         </div>
                         <div class="stats-card">
-                            <div class="stats-title">{% trans "العهد" %}</div>
-                            <div class="stats-value">{{ documents_stats.custody }}</div>
+                            <div class="stats-title">{% trans "العهدات المحتجزة" %}</div>
+                            <div class="stats-value">{{ custody_stats.withheld|default:"0" }}</div>
                         </div>
                         <div class="stats-card">
-                            <div class="stats-title">{% trans "المستندات الأخرى" %}</div>
-                            <div class="stats-value">{{ documents_stats.other }}</div>
+                            <div class="stats-title">{% trans "إجمالي القيمة" %}</div>
+                            <div class="stats-value">{{ custody_stats.total_value|default:"0" }} {% trans "ريال" %}</div>
                         </div>
                     </div>
                     
@@ -532,126 +532,121 @@
                         <thead>
                             <tr class="column-headers">
                                 <th width="30px">
-                                    <input type="checkbox" class="form-check-input" id="select-all-documents">
+                                    <input type="checkbox" class="form-check-input" id="select-all-custody">
                                 </th>
-                                <th class="filterable" data-column="document_id">
+                                <th class="filterable" data-column="guarantee_id">
                                     <div class="column-header">
-                                        <span>{% trans "رقم المستند" %}</span>
+                                        <span>{% trans "رقم العهدة" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="reference_number">
+                                <th class="filterable" data-column="name">
                                     <div class="column-header">
-                                        <span>{% trans "الرقم المرجعي" %}</span>
+                                        <span>{% trans "اسم العهدة" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="document_title">
+                                <th class="filterable" data-column="guarantee_type">
                                     <div class="column-header">
-                                        <span>{% trans "عنوان المستند" %}</span>
+                                        <span>{% trans "نوع العهدة" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="document_type">
+                                <th class="filterable" data-column="customer">
                                     <div class="column-header">
-                                        <span>{% trans "نوع المستند" %}</span>
+                                        <span>{% trans "العميل" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="document_date">
+                                <th class="filterable" data-column="value">
                                     <div class="column-header">
-                                        <span>{% trans "تاريخ المستند" %}</span>
+                                        <span>{% trans "القيمة" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="folder">
+                                <th class="filterable" data-column="handover_date">
                                     <div class="column-header">
-                                        <span>{% trans "المجلد" %}</span>
+                                        <span>{% trans "تاريخ التسليم" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="expiry_date">
+                                <th class="filterable" data-column="return_date">
                                     <div class="column-header">
-                                        <span>{% trans "تاريخ الانتهاء" %}</span>
+                                        <span>{% trans "تاريخ الاسترداد" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="file_type">
+                                <th class="filterable" data-column="status">
                                     <div class="column-header">
-                                        <span>{% trans "نوع الملف" %}</span>
+                                        <span>{% trans "الحالة" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="file_size">
+                                <th class="filterable" data-column="reservation">
                                     <div class="column-header">
-                                        <span>{% trans "حجم الملف" %}</span>
+                                        <span>{% trans "رقم الحجز" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="related_to">
+                                <th class="filterable" data-column="car">
                                     <div class="column-header">
-                                        <span>{% trans "متعلق بـ" %}</span>
+                                        <span>{% trans "السيارة" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="related_car">
+                                <th class="filterable" data-column="deductions">
                                     <div class="column-header">
-                                        <span>{% trans "السيارة المرتبطة" %}</span>
+                                        <span>{% trans "الخصومات" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
-                                <th class="filterable" data-column="related_reservation">
+                                <th class="filterable" data-column="returned_amount">
                                     <div class="column-header">
-                                        <span>{% trans "الحجز المرتبط" %}</span>
-                                        <i class="fas fa-filter filter-icon"></i>
-                                    </div>
-                                </th>
-                                <th class="filterable" data-column="related_customer">
-                                    <div class="column-header">
-                                        <span>{% trans "العميل المرتبط" %}</span>
-                                        <i class="fas fa-filter filter-icon"></i>
-                                    </div>
-                                </th>
-                                <th class="filterable" data-column="added_by">
-                                    <div class="column-header">
-                                        <span>{% trans "أضيف بواسطة" %}</span>
+                                        <span>{% trans "المبلغ المسترد" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
                                 <th class="filterable" data-column="created_at">
                                     <div class="column-header">
-                                        <span>{% trans "تاريخ الإضافة" %}</span>
+                                        <span>{% trans "تاريخ الإنشاء" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for document in documents %}
+                            {% for guarantee in guarantees %}
                             <tr>
                                 <td>
                                     <input type="checkbox" class="form-check-input row-checkbox">
                                 </td>
-                                <td>{{ document.id }}</td>
-                                <td>{{ document.reference_number|default:"-" }}</td>
-                                <td>{{ document.title }}</td>
+                                <td>{{ guarantee.id }}</td>
+                                <td>{{ guarantee.name }}</td>
+                                <td>{{ guarantee.get_guarantee_type_display }}</td>
+                                <td>{{ guarantee.customer.get_full_name }}</td>
+                                <td>{{ guarantee.value }} {% trans "ريال" %}</td>
+                                <td>{{ guarantee.handover_date|date:"Y-m-d" }}</td>
+                                <td>{{ guarantee.return_date|date:"Y-m-d"|default:"-" }}</td>
                                 <td>
-                                    {% if document.document_type == 'contract' %}
-                                    <span class="document-tag contract">{% trans "عقد" %}</span>
-                                    {% elif document.document_type == 'receipt' %}
-                                    <span class="document-tag receipt">{% trans "إيصال" %}</span>
-                                    {% elif document.document_type == 'custody' %}
-                                    <span class="document-tag custody">{% trans "عهدة" %}</span>
-                                    {% elif document.document_type == 'custody_release' %}
-                                    <span class="document-tag custody-release">{% trans "إخلاء عهدة" %}</span>
-                                    {% elif document.document_type == 'official_document' %}
-                                    <span class="document-tag official">{% trans "وثيقة رسمية" %}</span>
+                                    {% if guarantee.status == "active" %}
+                                    <span class="guarantee-status active">{% trans "نشطة" %}</span>
+                                    {% elif guarantee.status == "returned" %}
+                                    <span class="guarantee-status returned">{% trans "مستردة" %}</span>
+                                    {% elif guarantee.status == "partially_returned" %}
+                                    <span class="guarantee-status partially-returned">{% trans "مستردة جزئياً" %}</span>
+                                    {% elif guarantee.status == "withheld" %}
+                                    <span class="guarantee-status withheld">{% trans "محتجزة" %}</span>
+                                    {% elif guarantee.status == "claimed" %}
+                                    <span class="guarantee-status claimed">{% trans "مطالب بها" %}</span>
                                     {% else %}
-                                    <span class="document-tag other">{% trans "أخرى" %}</span>
+                                    <span class="guarantee-status">{{ guarantee.status }}</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ document.document_date|date:"Y-m-d" }}</td>
-                                <td>{{ document.folder.name|default:"-" }}</td>
+                                <td>{{ guarantee.reservation.reservation_number }}</td>
+                                <td>{{ guarantee.car.make }} {{ guarantee.car.model|default:"-" }}</td>
+                                <td>{{ guarantee.deductions }} {% trans "ريال" %}</td>
+                                <td>{{ guarantee.returned_amount|default:"-" }}</td>
+                                <td>{{ guarantee.created_at|date:"Y-m-d" }}</td>
                                 <td>
                                     {% if document.expiry_date %}
                                     {{ document.expiry_date|date:"Y-m-d" }}
