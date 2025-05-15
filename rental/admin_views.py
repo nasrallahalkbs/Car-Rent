@@ -4744,5 +4744,5 @@ def report_print_settings(request, report_type='reservations'):
     if report_type == 'cars':
         context['cars'] = cars
     
-    # استخدام القالب البسيط الجديد بدون أخطاء JavaScript
-    return render(request, 'admin/reports/simple_print_settings.html', context)
+    # استخدام القالب المطابق للتصميم الأصلي مع إصلاح الأخطاء البرمجية
+    return render(request, 'admin/reports/exact_print_settings.html', context)
