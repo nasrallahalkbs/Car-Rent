@@ -838,9 +838,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // زر الطباعة
     printButton.addEventListener('click', function() {
-        // إنشاء محتوى الطباعة
-        const tableRowsData = [];
-        const previewTable = document.getElementById('previewTable');
+        // جمع البيانات من الجدول
+        const rows = Array.from(document.querySelectorAll('#previewTable tbody tr'));
+        const headerRow = document.querySelector('#previewTable thead tr');
+        const headers = Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent.trim());
+        
+        const tableRowsData = rows.map(row => {
+            return Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
+        });
+
         const reportTitle = document.getElementById('previewTitle').textContent;
 
         // استخراج معلومات الرأس 
@@ -948,7 +954,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // إنشاء مستند الطباعة
-        const printWindow = window.open('', '', 'height=500,width=800');
+        const printWindow = window.open('', '_blank', 'height=600,width=800,scrollbars=yes');
         printWindow.document.write(`
             <!DOCTYPE html>
             <html dir="rtl">
@@ -957,8 +963,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 <title>${reportTitle}</title>
                 <style>
                     @page {
-                        size: ${paperSizeSelect.value};
+                        size: ${paperSizeSelect.value} portrait;
                         margin: ${marginTop.value}mm ${marginRight.value}mm ${marginBottom.value}mm ${marginLeft.value}mm;
+                    }
+                    @media print {
+                        body {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        .no-print {
+                            display: none !important;
+                        }
                     }
 
                     body {
