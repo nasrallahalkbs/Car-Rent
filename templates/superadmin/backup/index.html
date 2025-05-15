@@ -87,6 +87,17 @@
 <div class="card mb-4">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0">{% trans "النسخ الاحتياطية المتوفرة" %}</h5>
+        <div class="btn-group">
+            <a href="{% url 'superadmin_create_backup' %}?type=db_only" class="btn btn-primary btn-sm">
+                <i class="fas fa-database"></i> {% trans "نسخ قاعدة البيانات فقط" %}
+            </a>
+            <a href="{% url 'superadmin_create_backup' %}?type=settings_only" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-cog"></i> {% trans "نسخ إعدادات النظام" %}
+            </a>
+            <a href="{% url 'superadmin_create_backup' %}" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-save"></i> {% trans "نسخ احتياطي كامل" %}
+            </a>
+        </div>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -94,6 +105,7 @@
                 <thead>
                     <tr>
                         <th>{% trans "الاسم" %}</th>
+                        <th>{% trans "النوع" %}</th>
                         <th>{% trans "تاريخ الإنشاء" %}</th>
                         <th>{% trans "الحجم" %}</th>
                         <th>{% trans "الحالة" %}</th>
@@ -105,6 +117,15 @@
                     {% for backup in backups %}
                     <tr>
                         <td>{{ backup.name }}</td>
+                        <td>
+                            {% if 'db_backup_' in backup.name %}
+                            <span class="badge bg-primary">{% trans "قاعدة بيانات فقط" %}</span>
+                            {% elif 'settings_backup_' in backup.name %}
+                            <span class="badge bg-info">{% trans "إعدادات النظام" %}</span>
+                            {% else %}
+                            <span class="badge bg-success">{% trans "نسخة كاملة" %}</span>
+                            {% endif %}
+                        </td>
                         <td>{{ backup.created_at|date:"Y-m-d H:i" }}</td>
                         <td>{{ backup.file_size|filesizeformat }}</td>
                         <td>

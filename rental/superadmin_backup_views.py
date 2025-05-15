@@ -73,9 +73,19 @@ def create_backup(request):
         messages.error(request, gettext('ليس لديك صلاحية لإنشاء نسخة احتياطية'))
         return redirect('superadmin_backup')
     
+    # التحقق من نوع النسخة الاحتياطية
+    backup_type = request.GET.get('type', 'full')
+    if backup_type not in ['full', 'db_only', 'settings_only']:
+        backup_type = 'full'
+    
     # إنشاء اسم للنسخة الاحتياطية
     timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-    backup_name = f"backup_{timestamp}"
+    if backup_type == 'db_only':
+        backup_name = f"db_backup_{timestamp}"
+    elif backup_type == 'settings_only':
+        backup_name = f"settings_backup_{timestamp}"
+    else:
+        backup_name = f"backup_{timestamp}"
     
     # التأكد من وجود مجلد النسخ الاحتياطية
     backup_dir = os.path.join(settings.MEDIA_ROOT, 'backups')
@@ -110,109 +120,146 @@ def create_backup(request):
                 "created_by": request.user.username,
                 "django_version": django.__version__,
                 "database_engine": settings.DATABASES['default']['ENGINE'],
-                "backup_type": "full",
+                "backup_type": backup_type,
                 "timestamp": int(timezone.now().timestamp()),
             }
             backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))
             
-            # إضافة نسخة احتياطية لقاعدة البيانات
-            try:
-                temp_db_file = os.path.join(temp_dir, 'db_backup.json')
-                
-                # استعلام للحصول على قائمة الجداول الموجودة في قاعدة البيانات
-                cursor = connection.cursor()
-                if connection.vendor == 'sqlite':
-                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'django_%';")
-                elif connection.vendor == 'postgresql':
-                    cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")
-                else:
-                    cursor.execute("SHOW TABLES;")
-                
-                tables = [table[0] for table in cursor.fetchall()]
-                
-                # تحديد الجداول التي سيتم استبعادها دائمًا
-                always_exclude = ['contenttypes', 'auth.permission', 'django_migrations', 'django_content_type', 'django_admin_log']
-                
-                # استخدام dumpdata فقط للجداول الموجودة
-                successful_tables = []
-                failed_tables = []
-                all_data = []
-                
-                for table in tables:
-                    if table not in always_exclude and not table.startswith('django_'):
-                        try:
-                            # حفظ البيانات لكل جدول في ملف منفصل مؤقتًا
-                            table_file = os.path.join(temp_dir, f'{table}_data.json')
-                            management.call_command('dumpdata', table, output=table_file, indent=4)
-                            
-                            if os.path.exists(table_file) and os.path.getsize(table_file) > 2:  # تحقق من أن الملف ليس فارغًا
-                                with open(table_file, 'r') as f:
-                                    table_data = f.read()
-                                    # إضافة البيانات إلى قائمة البيانات الكلية
-                                    if table_data.strip() != '[]':
-                                        all_data.append(table_data.strip('[\n]'))
+            # نسخ قاعدة البيانات للأنواع المناسبة
+            if backup_type in ['full', 'db_only']:
+                try:
+                    temp_db_file = os.path.join(temp_dir, 'db_backup.json')
+                    
+                    # استعلام للحصول على قائمة الجداول الموجودة في قاعدة البيانات
+                    cursor = connection.cursor()
+                    if connection.vendor == 'sqlite':
+                        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'django_%';")
+                    elif connection.vendor == 'postgresql':
+                        cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")
+                    else:
+                        cursor.execute("SHOW TABLES;")
+                    
+                    tables = [table[0] for table in cursor.fetchall()]
+                    
+                    # تحديد الجداول التي سيتم استبعادها دائمًا
+                    always_exclude = ['contenttypes', 'auth.permission', 'django_migrations', 'django_content_type', 'django_admin_log']
+                    
+                    # استخدام dumpdata فقط للجداول الموجودة
+                    successful_tables = []
+                    failed_tables = []
+                    all_data = []
+                    
+                    for table in tables:
+                        if table not in always_exclude and not table.startswith('django_'):
+                            try:
+                                # حفظ البيانات لكل جدول في ملف منفصل مؤقتًا
+                                table_file = os.path.join(temp_dir, f'{table}_data.json')
+                                management.call_command('dumpdata', table, output=table_file, indent=4)
                                 
-                                os.unlink(table_file)
-                                successful_tables.append(table)
-                            else:
-                                if os.path.exists(table_file):
+                                if os.path.exists(table_file) and os.path.getsize(table_file) > 2:  # تحقق من أن الملف ليس فارغًا
+                                    with open(table_file, 'r') as f:
+                                        table_data = f.read()
+                                        # إضافة البيانات إلى قائمة البيانات الكلية
+                                        if table_data.strip() != '[]':
+                                            all_data.append(table_data.strip('[\n]'))
+                                    
                                     os.unlink(table_file)
+                                    successful_tables.append(table)
+                                else:
+                                    if os.path.exists(table_file):
+                                        os.unlink(table_file)
+                                    failed_tables.append(table)
+                            except Exception as e:
                                 failed_tables.append(table)
-                        except Exception as e:
-                            failed_tables.append(table)
-                
-                # كتابة جميع البيانات في ملف واحد
-                with open(temp_db_file, 'w') as f:
-                    f.write('[\n')
-                    f.write(',\n'.join(all_data))
-                    f.write('\n]')
-                
-                # التحقق من إنشاء الملف بنجاح
-                if os.path.exists(temp_db_file):
-                    backup_zip.write(temp_db_file, 'db_backup.json')
                     
-                    # إضافة معلومات عن الجداول التي تم نسخها والتي فشلت
-                    backup_info = {
-                        "successful_tables": successful_tables,
-                        "failed_tables": failed_tables,
-                        "backup_date": timezone.now().isoformat()
-                    }
-                    backup_zip.writestr('db_backup_info.json', json.dumps(backup_info, indent=4))
+                    # كتابة جميع البيانات في ملف واحد
+                    with open(temp_db_file, 'w') as f:
+                        f.write('[\n')
+                        f.write(',\n'.join(all_data))
+                        f.write('\n]')
                     
-                    os.unlink(temp_db_file)
-                else:
-                    raise Exception(gettext("فشل في إنشاء ملف قاعدة البيانات المؤقت"))
-            except Exception as db_error:
-                # تسجيل الخطأ ولكن لا نفشل العملية بالكامل
-                backup.notes = gettext("حدث خطأ أثناء نسخ قاعدة البيانات: {}").format(str(db_error))
-                backup.save()
-            
-            # إضافة الملفات المهمة
-            try:
-                media_files_count = 0
-                for root, _, files in os.walk(settings.MEDIA_ROOT):
-                    if 'backups' in root.split(os.sep):
-                        continue  # تخطي مجلد النسخ الاحتياطية نفسه
-                    
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        # تخطي الملفات التي لا يمكن قراءتها
-                        if not os.path.exists(file_path) or not os.access(file_path, os.R_OK):
-                            continue
+                    # التحقق من إنشاء الملف بنجاح
+                    if os.path.exists(temp_db_file):
+                        backup_zip.write(temp_db_file, 'db_backup.json')
                         
-                        try:
-                            archive_path = os.path.relpath(file_path, settings.BASE_DIR)
-                            backup_zip.write(file_path, archive_path)
-                            media_files_count += 1
-                        except Exception:
-                            # تخطي الملفات التي تسبب أخطاء
-                            continue
-                
-                backup_info["media_files_count"] = media_files_count
-                backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))
-            except Exception as media_error:
-                # تسجيل الخطأ ولكن لا نفشل العملية بالكامل
-                backup.notes = gettext("تم إنشاء النسخة الاحتياطية لقاعدة البيانات ولكن بعض ملفات الوسائط قد لا تكون مكتملة.")
+                        # إضافة معلومات عن الجداول التي تم نسخها والتي فشلت
+                        db_backup_info = {
+                            "successful_tables": successful_tables,
+                            "failed_tables": failed_tables,
+                            "backup_date": timezone.now().isoformat()
+                        }
+                        backup_zip.writestr('db_backup_info.json', json.dumps(db_backup_info, indent=4))
+                        
+                        os.unlink(temp_db_file)
+                        backup_info["db_tables_count"] = len(successful_tables)
+                    else:
+                        raise Exception(gettext("فشل في إنشاء ملف قاعدة البيانات المؤقت"))
+                except Exception as db_error:
+                    # تسجيل الخطأ ولكن لا نفشل العملية بالكامل
+                    backup.notes = gettext("حدث خطأ أثناء نسخ قاعدة البيانات: {}").format(str(db_error))
+                    backup.save()
+            
+            # نسخ ملفات الإعدادات والوسائط للأنواع المناسبة
+            if backup_type in ['full', 'settings_only']:
+                try:
+                    media_files_count = 0
+                    
+                    # قائمة بأنواع الملفات المهمة للإعدادات
+                    settings_extensions = ['.json', '.ini', '.yml', '.yaml', '.conf', '.cfg', '.config', '.xml']
+                    
+                    # نسخ ملفات الإعدادات الرئيسية
+                    settings_files = []
+                    config_dirs = [
+                        settings.BASE_DIR,  # المجلد الرئيسي
+                        os.path.join(settings.BASE_DIR, 'rental'),  # مجلد التطبيق
+                        os.path.join(settings.BASE_DIR, 'car_rental_project'),  # مجلد المشروع
+                    ]
+                    
+                    for config_dir in config_dirs:
+                        if os.path.exists(config_dir):
+                            for file in os.listdir(config_dir):
+                                if any(file.endswith(ext) for ext in settings_extensions):
+                                    file_path = os.path.join(config_dir, file)
+                                    if os.path.isfile(file_path):
+                                        try:
+                                            archive_path = os.path.relpath(file_path, settings.BASE_DIR)
+                                            backup_zip.write(file_path, archive_path)
+                                            settings_files.append(archive_path)
+                                        except Exception:
+                                            continue
+                    
+                    # إذا كان النوع هو النسخة الكاملة، نقوم بنسخ ملفات الوسائط أيضًا
+                    if backup_type == 'full':
+                        for root, _, files in os.walk(settings.MEDIA_ROOT):
+                            if 'backups' in root.split(os.sep):
+                                continue  # تخطي مجلد النسخ الاحتياطية نفسه
+                            
+                            for file in files:
+                                file_path = os.path.join(root, file)
+                                # تخطي الملفات التي لا يمكن قراءتها
+                                if not os.path.exists(file_path) or not os.access(file_path, os.R_OK):
+                                    continue
+                                
+                                try:
+                                    archive_path = os.path.relpath(file_path, settings.BASE_DIR)
+                                    backup_zip.write(file_path, archive_path)
+                                    media_files_count += 1
+                                except Exception:
+                                    # تخطي الملفات التي تسبب أخطاء
+                                    continue
+                    
+                    backup_info["settings_files_count"] = len(settings_files)
+                    backup_info["media_files_count"] = media_files_count
+                    backup_info["settings_files"] = settings_files
+                    backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))
+                except Exception as settings_error:
+                    # تسجيل الخطأ ولكن لا نفشل العملية بالكامل
+                    error_msg = gettext("حدث خطأ أثناء نسخ ملفات الإعدادات: {}").format(str(settings_error))
+                    if backup.notes:
+                        backup.notes += " " + error_msg
+                    else:
+                        backup.notes = error_msg
+                    backup.save()
         
         # تحديث حجم الملف وحالة النسخة الاحتياطية
         if os.path.exists(backup_file_path):
@@ -310,9 +357,20 @@ def restore_backup(request, backup_id):
                     if zip_info.filename.startswith('media/') and not zip_info.filename.endswith('/'):
                         backup_zip.extract(zip_info, path=settings.BASE_DIR)
             
-            # تحديث حالة النسخة الاحتياطية
+            # تحديث حالة النسخة الاحتياطية مع معلومات عن نوع النسخة المستعادة
             backup.status = 'restored'
-            backup.notes = gettext('تمت الاستعادة بواسطة %(user)s في %(date)s') % {
+            
+            # تحديد نوع النسخة الاحتياطية
+            backup_type = "full"
+            if 'db_backup_' in backup.name:
+                backup_type = "db_only"
+            elif 'settings_backup_' in backup.name:
+                backup_type = "settings_only"
+            
+            backup.notes = gettext('تمت استعادة النسخة الاحتياطية (%(type)s) بواسطة %(user)s في %(date)s') % {
+                'type': gettext('قاعدة البيانات فقط') if backup_type == 'db_only' 
+                        else gettext('إعدادات النظام') if backup_type == 'settings_only' 
+                        else gettext('نسخة كاملة'),
                 'user': request.user.username,
                 'date': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
             }
