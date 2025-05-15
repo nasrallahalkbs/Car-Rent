@@ -564,6 +564,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // تحديث لون الجدول
+    // تعريف الألوان للجدول
+    const tableColorMap = {
+        'blue': '#2c3e50',
+        'green': '#27ae60',
+        'orange': '#e67e22',
+        'red': '#c0392b',
+        'purple': '#8e44ad'
+    };
+
     function updateTableColor() {
         // إزالة كل الألوان القديمة
         previewTable.classList.remove('table-blue', 'table-green', 'table-orange', 'table-red', 'table-purple');
@@ -836,18 +845,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
     preTableText.addEventListener('input', updatePreTableText);
 
-    // زر الطباعة
+    // زر الطباعة 
     printButton.addEventListener('click', function() {
-        // جمع البيانات من الجدول
-        const rows = Array.from(document.querySelectorAll('#previewTable tbody tr'));
-        const headerRow = document.querySelector('#previewTable thead tr');
-        const headers = Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent.trim());
+        // إنشاء نافذة الطباعة
+        const printWindow = window.open('', '_blank', 'height=600,width=800');
         
-        const tableRowsData = rows.map(row => {
-            return Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-        });
+        // محتوى الطباعة
+        const content = document.getElementById('previewContent').cloneNode(true);
+        
+        // إعداد صفحة الطباعة
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <title>${reportTitle.value}</title>
+                <style>
+                    @page {
+                        size: ${paperSizeSelect.value};
+                        margin: ${marginTop.value}mm ${marginRight.value}mm ${marginBottom.value}mm ${marginLeft.value}mm;
+                    }
+                    body {
+                        font-family: 'Arial', sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    .preview-title {
+                        text-align: center;
+                        font-size: ${titleFontSize.value};
+                        margin-bottom: 20px;
+                    }
+                    table {
+                        width: ${tableWidth.value}%;
+                        border-collapse: collapse;
+                        margin: 0 auto;
+                        font-size: ${tableFontSize.value};
+                    }
+                    th, td {
+                        border: 1px solid #000;
+                        padding: 8px;
+                        text-align: right;
+                    }
+                    th {
+                        background-color: ${tableColor.value === 'default' ? '#f2f2f2' : tableColorMap[tableColor.value]};
+                        color: ${tableColor.value === 'default' ? '#000' : '#fff'};
+                    }
+                    @media print {
+                        body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${content.outerHTML}
+            </body>
+            </html>
+        `);
 
-        const reportTitle = document.getElementById('previewTitle').textContent;
+        // طباعة وإغلاق
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+    });
 
         // استخراج معلومات الرأس 
         const headerRow = previewTable.querySelector('thead tr');
