@@ -1,0 +1,194 @@
+{% extends 'superadmin/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "سجلات المسؤولين" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">{% trans "سجلات نشاط المسؤولين" %}</h1>
+        <p class="text-muted">{% trans "عرض ومراقبة جميع أنشطة المسؤولين في النظام" %}</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{% url 'superadmin_admins_logs' %}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="admin" class="form-label">{% trans "المسؤول" %}</label>
+                <select class="form-select" id="admin" name="admin">
+                    <option value="">{% trans "جميع المسؤولين" %}</option>
+                    {% for admin in admins %}
+                    <option value="{{ admin.id }}" {% if admin_filter == admin.id|stringformat:"i" %}selected{% endif %}>
+                        {{ admin.user.get_full_name|default:admin.user.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="action" class="form-label">{% trans "نوع الإجراء" %}</label>
+                <select class="form-select" id="action" name="action">
+                    <option value="">{% trans "جميع الإجراءات" %}</option>
+                    {% for action in actions %}
+                    <option value="{{ action }}" {% if action_filter == action %}selected{% endif %}>
+                        {{ action }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="date_range" class="form-label">{% trans "نطاق التاريخ" %}</label>
+                <input type="text" class="form-control" id="date_range" name="date_range" value="{{ date_range }}" placeholder="{% trans 'من تاريخ - إلى تاريخ' %}">
+            </div>
+            <div class="col-md-2">
+                <label for="search" class="form-label">{% trans "بحث" %}</label>
+                <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}" placeholder="{% trans 'بحث...' %}">
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> {% trans "تصفية" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Logs List -->
+<div class="card shadow">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">{% trans "سجلات أنشطة المسؤولين" %}</h5>
+        <div>
+            <button class="btn btn-sm btn-outline-secondary" id="exportBtn">
+                <i class="fas fa-download me-1"></i> {% trans "تصدير" %}
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 admin-logs-table">
+                <thead class="bg-light">
+                    <tr>
+                        <th>{% trans "الوقت" %}</th>
+                        <th>{% trans "المسؤول" %}</th>
+                        <th>{% trans "الإجراء" %}</th>
+                        <th>{% trans "التفاصيل" %}</th>
+                        <th>{% trans "عنوان IP" %}</th>
+                        <th>{% trans "العنصر المتأثر" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            <div>{{ log.created_at|date:"Y/m/d" }}</div>
+                            <small class="text-muted">{{ log.created_at|time:"H:i:s" }}</small>
+                        </td>
+                        <td>
+                            <div class="user-cell small">
+                                <div class="avatar avatar-sm">
+                                    {{ log.admin.user.username|first|upper }}
+                                </div>
+                                <div class="user-cell-info">
+                                    <div class="user-cell-name">{{ log.admin.user.get_full_name|default:log.admin.user.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if 'إضافة' in log.action or 'إنشاء' in log.action %}bg-success{% endif %}
+                                {% if 'تحرير' in log.action or 'تعديل' in log.action or 'تحديث' in log.action %}bg-info{% endif %}
+                                {% if 'تسجيل دخول' in log.action %}bg-primary{% endif %}
+                                {% if 'حذف' in log.action %}bg-danger{% endif %}
+                                {% if 'تسجيل خروج' in log.action %}bg-secondary{% endif %}
+                                {% if 'موافقة' in log.action or 'تفعيل' in log.action %}bg-success{% endif %}
+                                {% if 'رفض' in log.action or 'إلغاء' in log.action or 'تعطيل' in log.action %}bg-danger{% endif %}
+                            ">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td class="text-wrap" style="max-width: 400px;">
+                            {{ log.details|linebreaksbr }}
+                        </td>
+                        <td>
+                            <code>{{ log.ip_address }}</code>
+                        </td>
+                        <td>
+                            {% if log.affected_item_type %}
+                            <span class="badge bg-dark">{{ log.affected_item_type }}</span>
+                            {% if log.affected_item_id %}
+                            <span class="badge bg-secondary">{{ log.affected_item_id }}</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-history fa-2x mb-3"></i>
+                                <p>{% trans "لا توجد سجلات نشاط للعرض" %}</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+<script>
+    $(document).ready(function() {
+        // تهيئة جدول البيانات
+        $('.admin-logs-table').DataTable({
+            paging: true,
+            ordering: true,
+            info: true,
+            searching: false, // تم تعطيله لأننا نستخدم بحث مخصص
+            responsive: true,
+            language: {
+                {% if LANGUAGE_CODE == 'ar' %}
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ar.json',
+                {% endif %}
+            },
+            dom: 'Bfrtip',
+            buttons: [
+                'copy', 'excel', 'pdf', 'print'
+            ]
+        });
+        
+        // تهيئة منتقي نطاق التاريخ
+        $('#date_range').daterangepicker({
+            autoUpdateInput: false,
+            locale: {
+                cancelLabel: 'مسح',
+                applyLabel: 'تطبيق',
+                format: 'YYYY/MM/DD'
+            }
+        });
+        
+        $('#date_range').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+        });
+        
+        $('#date_range').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+        
+        // زر التصدير
+        $('#exportBtn').click(function() {
+            var table = $('.admin-logs-table').DataTable();
+            table.button('excel:name').trigger();
+        });
+    });
+</script>
+{% endblock %}

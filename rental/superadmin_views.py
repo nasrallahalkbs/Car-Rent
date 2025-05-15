@@ -1139,6 +1139,86 @@ def system_logs(request):
         # إرجاع صفحة خطأ بسيطة
         return render(request, 'superadmin/error.html', context)
 
+@superadmin_required
+def admin_activity_logs(request):
+    """عرض سجلات نشاط المسؤولين العاديين فقط (بدون المشرف الأعلى)"""
+    print("--- بدء عرض سجلات نشاط المسؤولين العاديين ---")
+    
+    try:
+        # استرجاع المسؤولين العاديين فقط (بدون المشرف الأعلى)
+        regular_admins = AdminUser.objects.filter(is_superadmin=False).select_related('user')
+        regular_admin_ids = [admin.id for admin in regular_admins]
+        
+        print(f"عدد المسؤولين العاديين: {len(regular_admin_ids)}")
+        
+        # استرجاع سجلات نشاط المسؤولين العاديين فقط
+        logs = AdminActivity.objects.filter(admin_id__in=regular_admin_ids).select_related('admin', 'admin__user').order_by('-created_at')
+        print(f"تم استرجاع {logs.count()} سجل نشاط للمسؤولين العاديين")
+        
+        # التصفية والبحث
+        admin_filter = request.GET.get('admin', '')
+        action_filter = request.GET.get('action', '')
+        date_filter = request.GET.get('date', '')
+        search_query = request.GET.get('q', '')
+        date_range = request.GET.get('date_range', '')
+        
+        if admin_filter and admin_filter.isdigit():
+            logs = logs.filter(admin_id=admin_filter)
+        
+        if action_filter:
+            logs = logs.filter(action=action_filter)
+        
+        if date_filter:
+            try:
+                date = timezone.datetime.strptime(date_filter, '%Y-%m-%d').date()
+                logs = logs.filter(created_at__date=date)
+            except ValueError:
+                pass
+                
+        if date_range:
+            try:
+                date_range_parts = date_range.split(' - ')
+                if len(date_range_parts) == 2:
+                    start_date = timezone.datetime.strptime(date_range_parts[0], '%Y-%m-%d').date()
+                    end_date = timezone.datetime.strptime(date_range_parts[1], '%Y-%m-%d').date()
+                    logs = logs.filter(created_at__date__range=[start_date, end_date])
+            except ValueError:
+                pass
+        
+        if search_query:
+            logs = logs.filter(
+                Q(details__icontains=search_query) |
+                Q(admin__user__username__icontains=search_query) |
+                Q(action__icontains=search_query)
+            )
+        
+        # الإجراءات الفريدة للتصفية
+        actions = logs.values_list('action', flat=True).distinct()
+        
+        context = {
+            'logs': logs,
+            'admins': regular_admins,
+            'actions': actions,
+            'admin_filter': admin_filter,
+            'action_filter': action_filter,
+            'date_filter': date_filter,
+            'date_range': date_range,
+            'search_query': search_query,
+            'is_admin_logs': True,  # علامة لتمييز صفحة سجلات المسؤولين
+        }
+        
+        print("--- نهاية عرض سجلات نشاط المسؤولين العاديين ---")
+        return render(request, 'superadmin/admin_logs.html', context)
+        
+    except Exception as e:
+        # إذا حدث خطأ، نعرض صفحة مع رسالة الخطأ
+        print(f"حدث خطأ أثناء عرض سجلات نشاط المسؤولين العاديين: {e}")
+        context = {
+            'error_message': str(e),
+        }
+        # إرجاع صفحة خطأ بسيطة
+        return render(request, 'superadmin/error.html', context)
+
 
 # إدارة المصادقة الثنائية للمستخدمين
 @superadmin_required

@@ -55,6 +55,9 @@ urlpatterns = [
     # path('logs/user-activity/', superadmin_views.user_activity_logs, name='superadmin_user_activity_logs'),
     # path('logs/error-logs/', superadmin_views.error_logs, name='superadmin_error_logs'),
     
+    # سجلات نشاط المسؤولين العاديين
+    path('admins/logs/', superadmin_views.admin_activity_logs, name='superadmin_admins_logs'),
+    
     # إدارة التقييمات
     path('reviews/', superadmin_views.manage_reviews, name='superadmin_manage_reviews'),
     path('reviews/<int:review_id>/', superadmin_views.review_details, name='superadmin_review_details'),
