@@ -806,18 +806,50 @@ document.addEventListener('DOMContentLoaded', function() {
         previewPreText.textContent = preTableText.value;
     }
 
+    function updatePreview() {
+        updatePaperSize();
+        updateMargins();
+        updateTitle();
+        updateTableWidth();
+        updateFontSizes();
+        updateTableColor();
+        updateTableOrientation();
+        addExtraRows();
+        updatePreTableText();
+    }
+
     // ========================
     // مستمعي الأحداث
     // ========================
-
     // تحديث حجم الورق
-    paperSizeSelect.addEventListener('change', updatePaperSize);
+    paperSizeSelect.addEventListener('change', () => {
+        updatePaperSize();
+        updatePreview();
+    });
 
     // تحديث الهوامش
-    marginTop.addEventListener('input', updateMargins);
-    marginBottom.addEventListener('input', updateMargins);
-    marginRight.addEventListener('input', updateMargins);
-    marginLeft.addEventListener('input', updateMargins);
+    marginTop.addEventListener('input', () => {
+        updateMargins();
+        updatePreview();
+    });
+    marginBottom.addEventListener('input', () => {
+        updateMargins();
+        updatePreview();
+    });
+    marginRight.addEventListener('input', () => {
+        updateMargins();
+        updatePreview();
+    });
+    marginLeft.addEventListener('input', () => {
+        updateMargins();
+        updatePreview();
+    });
+
+    // تحديث عند تغيير أي إعداد
+    [titleFontSize, tableWidth, tableFontSize, tableColor].forEach(element => {
+        element.addEventListener('change', updatePreview);
+        element.addEventListener('input', updatePreview);
+    });
 
     // تحديث خيارات الطابعة
     printerSearch.addEventListener('change', function() {
@@ -849,10 +881,10 @@ document.addEventListener('DOMContentLoaded', function() {
     printButton.addEventListener('click', function() {
         // إنشاء نافذة الطباعة
         const printWindow = window.open('', '_blank', 'height=600,width=800');
-        
+
         // محتوى الطباعة
         const content = document.getElementById('previewContent').cloneNode(true);
-        
+
         // إعداد صفحة الطباعة
         printWindow.document.write(`
             <!DOCTYPE html>
