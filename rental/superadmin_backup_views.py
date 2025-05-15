@@ -113,7 +113,7 @@ def create_backup(request):
         
         # إنشاء ملف النسخة الاحتياطية
         with zipfile.ZipFile(backup_file_path, 'w', zipfile.ZIP_DEFLATED) as backup_zip:
-            # إضافة معلومات النسخة الاحتياطية
+            # إضافة معلومات النسخة الاحتياطية (نخزنها في متغير ونكتبها مرة واحدة في النهاية)
             backup_info = {
                 "name": backup_name,
                 "created_at": timezone.now().isoformat(),
@@ -123,7 +123,6 @@ def create_backup(request):
                 "backup_type": backup_type,
                 "timestamp": int(timezone.now().timestamp()),
             }
-            backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))
             
             # نسخ قاعدة البيانات للأنواع المناسبة
             if backup_type in ['full', 'db_only']:
@@ -142,7 +141,13 @@ def create_backup(request):
                     tables = [table[0] for table in cursor.fetchall()]
                     
                     # تحديد الجداول التي سيتم استبعادها دائمًا
-                    always_exclude = ['contenttypes', 'auth.permission', 'django_migrations', 'django_content_type', 'django_admin_log']
+                    always_exclude = [
+                        'contenttypes', 'auth.permission', 'django_migrations', 
+                        'django_content_type', 'django_admin_log', 'django_session', 
+                        'rental_document', 'rental_documentmeta',  # تخطي ملفات المستندات الكبيرة
+                        'rental_documentmetavalue', 'rental_documentattachment', 
+                        'rental_documenttemplatefield'
+                    ]
                     
                     # استخدام dumpdata فقط للجداول الموجودة
                     successful_tables = []
@@ -186,12 +191,17 @@ def create_backup(request):
                         db_backup_info = {
                             "successful_tables": successful_tables,
                             "failed_tables": failed_tables,
+                            "excluded_tables": always_exclude,
                             "backup_date": timezone.now().isoformat()
                         }
                         backup_zip.writestr('db_backup_info.json', json.dumps(db_backup_info, indent=4))
                         
                         os.unlink(temp_db_file)
+                        
+                        # إضافة معلومات لملف المعلومات الرئيسي
                         backup_info["db_tables_count"] = len(successful_tables)
+                        backup_info["excluded_tables_count"] = len(always_exclude)
+                        backup_info["failed_tables_count"] = len(failed_tables)
                     else:
                         raise Exception(gettext("فشل في إنشاء ملف قاعدة البيانات المؤقت"))
                 except Exception as db_error:
@@ -205,7 +215,7 @@ def create_backup(request):
                     media_files_count = 0
                     
                     # قائمة بأنواع الملفات المهمة للإعدادات
-                    settings_extensions = ['.json', '.ini', '.yml', '.yaml', '.conf', '.cfg', '.config', '.xml']
+                    settings_extensions = ['.json', '.ini', '.yml', '.yaml', '.conf', '.cfg', '.config', '.xml', '.py']
                     
                     # نسخ ملفات الإعدادات الرئيسية
                     settings_files = []
@@ -213,20 +223,32 @@ def create_backup(request):
                         settings.BASE_DIR,  # المجلد الرئيسي
                         os.path.join(settings.BASE_DIR, 'rental'),  # مجلد التطبيق
                         os.path.join(settings.BASE_DIR, 'car_rental_project'),  # مجلد المشروع
+                        os.path.join(settings.BASE_DIR, 'templates'),  # مجلد القوالب
+                        os.path.join(settings.BASE_DIR, 'locale'),  # مجلد الترجمات
                     ]
                     
+                    # ملفات مهمة إضافية يجب نسخها
+                    important_files = ['settings.py', 'urls.py', 'views.py', 'models.py', 'admin.py']
+                    
+                    # نسخ ملفات الإعدادات المهمة
                     for config_dir in config_dirs:
                         if os.path.exists(config_dir):
-                            for file in os.listdir(config_dir):
-                                if any(file.endswith(ext) for ext in settings_extensions):
-                                    file_path = os.path.join(config_dir, file)
-                                    if os.path.isfile(file_path):
-                                        try:
-                                            archive_path = os.path.relpath(file_path, settings.BASE_DIR)
-                                            backup_zip.write(file_path, archive_path)
-                                            settings_files.append(archive_path)
-                                        except Exception:
-                                            continue
+                            for root, dirs, files in os.walk(config_dir):
+                                for file in files:
+                                    # تخطي ملفات الكاش ومجلدات pycache
+                                    if '__pycache__' in root or '.git' in root:
+                                        continue
+                                    
+                                    # إضافة الملفات المهمة أو ملفات الإعدادات
+                                    if file in important_files or any(file.endswith(ext) for ext in settings_extensions):
+                                        file_path = os.path.join(root, file)
+                                        if os.path.isfile(file_path):
+                                            try:
+                                                archive_path = os.path.relpath(file_path, settings.BASE_DIR)
+                                                backup_zip.write(file_path, archive_path)
+                                                settings_files.append(archive_path)
+                                            except Exception:
+                                                continue
                     
                     # إذا كان النوع هو النسخة الكاملة، نقوم بنسخ ملفات الوسائط أيضًا
                     if backup_type == 'full':
@@ -248,10 +270,10 @@ def create_backup(request):
                                     # تخطي الملفات التي تسبب أخطاء
                                     continue
                     
+                    # إضافة المعلومات للملف الرئيسي - لكن سيتم كتابته لاحقاً مرة واحدة
                     backup_info["settings_files_count"] = len(settings_files)
                     backup_info["media_files_count"] = media_files_count
                     backup_info["settings_files"] = settings_files
-                    backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))
                 except Exception as settings_error:
                     # تسجيل الخطأ ولكن لا نفشل العملية بالكامل
                     error_msg = gettext("حدث خطأ أثناء نسخ ملفات الإعدادات: {}").format(str(settings_error))
@@ -260,6 +282,12 @@ def create_backup(request):
                     else:
                         backup.notes = error_msg
                     backup.save()
+                
+                # كتابة ملف المعلومات النهائي بعد اكتمال جميع العمليات
+                try:
+                    backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))
+                except Exception as e:
+                    print(f"خطأ في كتابة ملف المعلومات: {str(e)}")
         
         # تحديث حجم الملف وحالة النسخة الاحتياطية
         if os.path.exists(backup_file_path):
@@ -329,6 +357,14 @@ def restore_backup(request, backup_id):
                     # استخدام النوع من معلومات النسخة الاحتياطية إذا كان متوفرًا
                     if 'backup_type' in backup_info:
                         backup_type = backup_info['backup_type']
+                
+                # تحديث ملاحظات عن نوع النسخة المستعادة
+                if backup_type == 'db_only':
+                    backup.notes = gettext("استعادة نسخة قاعدة بيانات فقط")
+                elif backup_type == 'settings_only':
+                    backup.notes = gettext("استعادة نسخة إعدادات النظام فقط")
+                else:
+                    backup.notes = gettext("استعادة نسخة كاملة")
                 
                 # استعادة قاعدة البيانات (فقط للنسخ الكاملة أو نسخ قاعدة البيانات)
                 if backup_type in ['full', 'db_only'] and 'db_backup.json' in backup_zip.namelist():
