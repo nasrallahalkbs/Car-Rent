@@ -13,7 +13,7 @@ from django.http import HttpResponse, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext
 from django.conf import settings
 from django.utils import timezone
 from django.core import management
@@ -45,7 +45,7 @@ def is_superadmin(user):
 def backup_system(request):
     """صفحة مدير النسخ الاحتياطي"""
     if not is_superadmin(request.user):
-        messages.error(request, _('ليس لديك صلاحية الوصول إلى هذه الصفحة'))
+        messages.error(request, gettext('ليس لديك صلاحية الوصول إلى هذه الصفحة'))
         return redirect('superadmin_dashboard')
     
     # الحصول على قائمة النسخ الاحتياطية
@@ -61,7 +61,7 @@ def backup_system(request):
         'backup_count': backups.count(),
         'total_backup_size': sum(backup.file_size for backup in backups),
         'last_backup': backups.first(),
-        'title': _('إدارة النسخ الاحتياطي'),
+        'title': gettext('إدارة النسخ الاحتياطي'),
     }
     
     return render(request, 'superadmin/backup/index.html', context)
@@ -70,7 +70,7 @@ def backup_system(request):
 def create_backup(request):
     """إنشاء نسخة احتياطية جديدة"""
     if not is_superadmin(request.user):
-        messages.error(request, _('ليس لديك صلاحية لإنشاء نسخة احتياطية'))
+        messages.error(request, gettext('ليس لديك صلاحية لإنشاء نسخة احتياطية'))
         return redirect('superadmin_backup')
     
     # إنشاء اسم للنسخة الاحتياطية
@@ -125,9 +125,9 @@ def create_backup(request):
                     backup_zip.write(temp_db_file, 'db_backup.json')
                     os.unlink(temp_db_file)
                 else:
-                    raise Exception(_("فشل في إنشاء ملف قاعدة البيانات المؤقت"))
+                    raise Exception(gettext("فشل في إنشاء ملف قاعدة البيانات المؤقت"))
             except Exception as db_error:
-                raise Exception(_("خطأ في نسخ قاعدة البيانات: {}").format(str(db_error)))
+                raise Exception(gettext("خطأ في نسخ قاعدة البيانات: {}").format(str(db_error)))
             
             # إضافة الملفات المهمة
             try:
@@ -154,7 +154,7 @@ def create_backup(request):
                 backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))
             except Exception as media_error:
                 # تسجيل الخطأ ولكن لا نفشل العملية بالكامل
-                backup.notes = _("تم إنشاء النسخة الاحتياطية لقاعدة البيانات ولكن بعض ملفات الوسائط قد لا تكون مكتملة.")
+                backup.notes = gettext("تم إنشاء النسخة الاحتياطية لقاعدة البيانات ولكن بعض ملفات الوسائط قد لا تكون مكتملة.")
         
         # تحديث حجم الملف وحالة النسخة الاحتياطية
         if os.path.exists(backup_file_path):
@@ -162,15 +162,15 @@ def create_backup(request):
             backup.status = 'completed'
             backup.save()
             
-            messages.success(request, _('تم إنشاء نسخة احتياطية بنجاح'))
+            messages.success(request, gettext('تم إنشاء نسخة احتياطية بنجاح'))
         else:
-            raise Exception(_("لم يتم إنشاء ملف النسخة الاحتياطية"))
+            raise Exception(gettext("لم يتم إنشاء ملف النسخة الاحتياطية"))
     except Exception as e:
         # في حالة حدوث خطأ
         backup.status = 'failed'
         backup.notes = str(e)
         backup.save()
-        messages.error(request, _('حدث خطأ أثناء إنشاء النسخة الاحتياطية: {}').format(str(e)))
+        messages.error(request, gettext('حدث خطأ أثناء إنشاء النسخة الاحتياطية: {}').format(str(e)))
     
     return redirect('superadmin_backup')
 
@@ -178,7 +178,7 @@ def create_backup(request):
 def restore_backup(request, backup_id):
     """استعادة نسخة احتياطية"""
     if not is_superadmin(request.user):
-        messages.error(request, _('ليس لديك صلاحية لاستعادة النسخ الاحتياطية'))
+        messages.error(request, gettext('ليس لديك صلاحية لاستعادة النسخ الاحتياطية'))
         return redirect('superadmin_backup')
     
     # الحصول على النسخة الاحتياطية
@@ -186,12 +186,12 @@ def restore_backup(request, backup_id):
     
     # التحقق من حالة النسخة الاحتياطية
     if backup.status != 'completed':
-        messages.error(request, _('لا يمكن استعادة نسخة احتياطية غير مكتملة'))
+        messages.error(request, gettext('لا يمكن استعادة نسخة احتياطية غير مكتملة'))
         return redirect('superadmin_backup')
     
     # التحقق من وجود ملف النسخة الاحتياطية
     if not os.path.exists(backup.file_path):
-        messages.error(request, _('ملف النسخة الاحتياطية غير موجود'))
+        messages.error(request, gettext('ملف النسخة الاحتياطية غير موجود'))
         return redirect('superadmin_backup')
     
     if request.method == 'POST':
@@ -218,15 +218,15 @@ def restore_backup(request, backup_id):
             
             # تحديث حالة النسخة الاحتياطية
             backup.status = 'restored'
-            backup.notes = _('تمت الاستعادة بواسطة %(user)s في %(date)s') % {
+            backup.notes = gettext('تمت الاستعادة بواسطة %(user)s في %(date)s') % {
                 'user': request.user.username,
                 'date': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
             }
             backup.save()
             
-            messages.success(request, _('تمت استعادة النسخة الاحتياطية بنجاح'))
+            messages.success(request, gettext('تمت استعادة النسخة الاحتياطية بنجاح'))
         except Exception as e:
-            messages.error(request, _('حدث خطأ أثناء استعادة النسخة الاحتياطية: %(error)s') % {'error': str(e)})
+            messages.error(request, gettext('حدث خطأ أثناء استعادة النسخة الاحتياطية: %(error)s') % {'error': str(e)})
         
         return redirect('superadmin_backup')
     
@@ -237,7 +237,7 @@ def restore_backup(request, backup_id):
 def download_backup(request, backup_id):
     """تنزيل ملف النسخة الاحتياطية"""
     if not is_superadmin(request.user):
-        messages.error(request, _('ليس لديك صلاحية لتنزيل النسخ الاحتياطية'))
+        messages.error(request, gettext('ليس لديك صلاحية لتنزيل النسخ الاحتياطية'))
         return redirect('superadmin_backup')
     
     # الحصول على النسخة الاحتياطية
@@ -245,7 +245,7 @@ def download_backup(request, backup_id):
     
     # التحقق من وجود ملف النسخة الاحتياطية
     if not os.path.exists(backup.file_path):
-        messages.error(request, _('ملف النسخة الاحتياطية غير موجود'))
+        messages.error(request, gettext('ملف النسخة الاحتياطية غير موجود'))
         return redirect('superadmin_backup')
     
     # استخراج اسم الملف من المسار
@@ -258,7 +258,7 @@ def download_backup(request, backup_id):
 def delete_backup(request, backup_id):
     """حذف نسخة احتياطية"""
     if not is_superadmin(request.user):
-        messages.error(request, _('ليس لديك صلاحية لحذف النسخ الاحتياطية'))
+        messages.error(request, gettext('ليس لديك صلاحية لحذف النسخ الاحتياطية'))
         return redirect('superadmin_backup')
     
     # الحصول على النسخة الاحتياطية
@@ -272,7 +272,7 @@ def delete_backup(request, backup_id):
         # حذف سجل النسخة الاحتياطية من قاعدة البيانات
         backup.delete()
         
-        messages.success(request, _('تم حذف النسخة الاحتياطية بنجاح'))
+        messages.success(request, gettext('تم حذف النسخة الاحتياطية بنجاح'))
         return redirect('superadmin_backup')
     
     # عرض صفحة تأكيد الحذف
