@@ -110,18 +110,23 @@
                         <td>
                             {% if backup.status == 'completed' %}
                             <span class="badge bg-success">{% trans "مكتمل" %}</span>
+                            {% elif backup.status == 'partial' %}
+                            <span class="badge bg-warning text-dark" title="{{ backup.notes }}">{% trans "مكتمل جزئياً" %}</span>
                             {% elif backup.status == 'pending' %}
-                            <span class="badge bg-warning">{% trans "قيد الإنشاء" %}</span>
+                            <span class="badge bg-warning text-dark">{% trans "قيد الإنشاء" %}</span>
                             {% elif backup.status == 'failed' %}
                             <span class="badge bg-danger">{% trans "فشل" %}</span>
                             {% elif backup.status == 'restored' %}
                             <span class="badge bg-info">{% trans "تمت الاستعادة" %}</span>
                             {% endif %}
+                            {% if backup.notes and backup.status != 'partial' %}
+                            <i class="fas fa-info-circle text-muted ml-1" title="{{ backup.notes }}"></i>
+                            {% endif %}
                         </td>
                         <td>{{ backup.created_by.username }}</td>
                         <td>
                             <div class="btn-group">
-                                {% if backup.status == 'completed' %}
+                                {% if backup.status == 'completed' or backup.status == 'partial' %}
                                 <a href="{% url 'superadmin_download_backup' backup.id %}" class="btn btn-sm btn-outline-primary" title="{% trans 'تنزيل' %}">
                                     <i class="fas fa-download"></i>
                                 </a>

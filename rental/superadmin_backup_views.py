@@ -118,16 +118,74 @@ def create_backup(request):
             # إضافة نسخة احتياطية لقاعدة البيانات
             try:
                 temp_db_file = os.path.join(temp_dir, 'db_backup.json')
-                management.call_command('dumpdata', output=temp_db_file, exclude=['contenttypes', 'auth.permission'])
+                
+                # استعلام للحصول على قائمة الجداول الموجودة في قاعدة البيانات
+                cursor = connection.cursor()
+                if connection.vendor == 'sqlite':
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'django_%';")
+                elif connection.vendor == 'postgresql':
+                    cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")
+                else:
+                    cursor.execute("SHOW TABLES;")
+                
+                tables = [table[0] for table in cursor.fetchall()]
+                
+                # تحديد الجداول التي سيتم استبعادها دائمًا
+                always_exclude = ['contenttypes', 'auth.permission', 'django_migrations', 'django_content_type', 'django_admin_log']
+                
+                # استخدام dumpdata فقط للجداول الموجودة
+                successful_tables = []
+                failed_tables = []
+                all_data = []
+                
+                for table in tables:
+                    if table not in always_exclude and not table.startswith('django_'):
+                        try:
+                            # حفظ البيانات لكل جدول في ملف منفصل مؤقتًا
+                            table_file = os.path.join(temp_dir, f'{table}_data.json')
+                            management.call_command('dumpdata', table, output=table_file, indent=4)
+                            
+                            if os.path.exists(table_file) and os.path.getsize(table_file) > 2:  # تحقق من أن الملف ليس فارغًا
+                                with open(table_file, 'r') as f:
+                                    table_data = f.read()
+                                    # إضافة البيانات إلى قائمة البيانات الكلية
+                                    if table_data.strip() != '[]':
+                                        all_data.append(table_data.strip('[\n]'))
+                                
+                                os.unlink(table_file)
+                                successful_tables.append(table)
+                            else:
+                                if os.path.exists(table_file):
+                                    os.unlink(table_file)
+                                failed_tables.append(table)
+                        except Exception as e:
+                            failed_tables.append(table)
+                
+                # كتابة جميع البيانات في ملف واحد
+                with open(temp_db_file, 'w') as f:
+                    f.write('[\n')
+                    f.write(',\n'.join(all_data))
+                    f.write('\n]')
                 
                 # التحقق من إنشاء الملف بنجاح
                 if os.path.exists(temp_db_file):
                     backup_zip.write(temp_db_file, 'db_backup.json')
+                    
+                    # إضافة معلومات عن الجداول التي تم نسخها والتي فشلت
+                    backup_info = {
+                        "successful_tables": successful_tables,
+                        "failed_tables": failed_tables,
+                        "backup_date": timezone.now().isoformat()
+                    }
+                    backup_zip.writestr('db_backup_info.json', json.dumps(backup_info, indent=4))
+                    
                     os.unlink(temp_db_file)
                 else:
                     raise Exception(gettext("فشل في إنشاء ملف قاعدة البيانات المؤقت"))
             except Exception as db_error:
-                raise Exception(gettext("خطأ في نسخ قاعدة البيانات: {}").format(str(db_error)))
+                # تسجيل الخطأ ولكن لا نفشل العملية بالكامل
+                backup.notes = gettext("حدث خطأ أثناء نسخ قاعدة البيانات: {}").format(str(db_error))
+                backup.save()
             
             # إضافة الملفات المهمة
             try:
@@ -159,12 +217,21 @@ def create_backup(request):
         # تحديث حجم الملف وحالة النسخة الاحتياطية
         if os.path.exists(backup_file_path):
             backup.file_size = os.path.getsize(backup_file_path)
-            backup.status = 'completed'
-            backup.save()
             
-            messages.success(request, gettext('تم إنشاء نسخة احتياطية بنجاح'))
+            # إذا كان هناك ملاحظة (خطأ) تم تسجيله، فنغير الحالة إلى "مكتمل جزئياً"
+            if backup.notes:
+                backup.status = 'partial'
+                messages.success(request, gettext('تم إنشاء نسخة احتياطية بشكل جزئي'))
+            else:
+                backup.status = 'completed'
+                messages.success(request, gettext('تم إنشاء نسخة احتياطية بنجاح'))
+            
+            backup.save()
         else:
-            raise Exception(gettext("لم يتم إنشاء ملف النسخة الاحتياطية"))
+            backup.status = 'failed'
+            backup.notes = gettext("لم يتم إنشاء ملف النسخة الاحتياطية")
+            backup.save()
+            messages.error(request, gettext("لم يتم إنشاء ملف النسخة الاحتياطية"))
     except Exception as e:
         # في حالة حدوث خطأ
         backup.status = 'failed'
@@ -185,9 +252,13 @@ def restore_backup(request, backup_id):
     backup = get_object_or_404(SystemBackup, id=backup_id)
     
     # التحقق من حالة النسخة الاحتياطية
-    if backup.status != 'completed':
+    if backup.status not in ['completed', 'partial']:
         messages.error(request, gettext('لا يمكن استعادة نسخة احتياطية غير مكتملة'))
         return redirect('superadmin_backup')
+    
+    # إذا كانت النسخة مكتملة جزئياً، نضيف تنبيهاً
+    if backup.status == 'partial':
+        messages.warning(request, gettext('هذه النسخة الاحتياطية مكتملة جزئياً، قد لا تحتوي على جميع البيانات'))
     
     # التحقق من وجود ملف النسخة الاحتياطية
     if not os.path.exists(backup.file_path):
@@ -203,13 +274,36 @@ def restore_backup(request, backup_id):
                 
                 # استعادة قاعدة البيانات
                 temp_db_file = os.path.join(tempfile.gettempdir(), 'db_restore.json')
+                
+                # استخراج ملفات النسخة الاحتياطية
                 backup_zip.extract('db_backup.json', path=tempfile.gettempdir())
                 os.rename(os.path.join(tempfile.gettempdir(), 'db_backup.json'), temp_db_file)
+                
+                # استخراج معلومات النسخ الاحتياطي للقاعدة إذا كانت موجودة
+                try:
+                    backup_zip.extract('db_backup_info.json', path=tempfile.gettempdir())
+                    with open(os.path.join(tempfile.gettempdir(), 'db_backup_info.json'), 'r') as f:
+                        db_backup_info = json.load(f)
+                        successful_tables = db_backup_info.get('successful_tables', [])
+                        failed_tables = db_backup_info.get('failed_tables', [])
+                        
+                        # إضافة معلومات إلى ملاحظات النسخة الاحتياطية
+                        notes = gettext("تمت استعادة {} جدول بنجاح.").format(len(successful_tables))
+                        if failed_tables:
+                            notes += " " + gettext("{} جدول لم يتم نسخه في النسخة الاحتياطية.").format(len(failed_tables))
+                        backup.notes = notes
+                except Exception:
+                    # قد لا تحتوي النسخ الاحتياطية القديمة على هذا الملف
+                    pass
                 
                 # إعادة تعيين قاعدة البيانات
                 management.call_command('flush', interactive=False)
                 management.call_command('loaddata', temp_db_file)
+                
+                # تنظيف الملفات المؤقتة
                 os.unlink(temp_db_file)
+                if os.path.exists(os.path.join(tempfile.gettempdir(), 'db_backup_info.json')):
+                    os.unlink(os.path.join(tempfile.gettempdir(), 'db_backup_info.json'))
                 
                 # استعادة الملفات
                 for zip_info in backup_zip.infolist():
