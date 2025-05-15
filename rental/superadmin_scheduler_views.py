@@ -195,15 +195,23 @@ def add_scheduled_job(request):
         messages.error(request, _('ليس لديك صلاحية لإضافة مهام مجدولة'))
         return redirect('superadmin_scheduler')
     
-    # إنشاء قائمة الوظائف المتاحة
+    # إنشاء قائمة الوظائف المتاحة وبياناتها
     available_tasks = []
+    task_types = {}
+    task_descriptions = {}
+    task_args = {}
+    
     for function_name, task_info in PREDEFINED_TASKS.items():
         available_tasks.append((function_name, task_info['name']))
+        task_types[function_name] = task_info['job_type']
+        task_descriptions[function_name] = task_info['description']
+        # تحويل المعاملات الافتراضية إلى صيغة JSON
+        task_args[function_name] = json.dumps(task_info['default_args'])
     
     # إنشاء نموذج المهمة المجدولة
     JobForm = modelform_factory(
         ScheduledJob,
-        fields=['job_type', 'interval_type', 'interval_value', 'cron_expression', 'is_active'],
+        fields=['name', 'job_type', 'function_name', 'description', 'interval_type', 'interval_value', 'cron_expression', 'is_active'],
     )
     
     if request.method == 'POST':
@@ -268,9 +276,9 @@ def add_scheduled_job(request):
         'job_types': dict(ScheduledJob.JOB_TYPE_CHOICES),
         'interval_types': dict(ScheduledJob.INTERVAL_CHOICES),
         'predefined_tasks': available_tasks,
-        'task_descriptions': {func: info['description'] for func, info in PREDEFINED_TASKS.items()},
-        'task_types': {func: info['job_type'] for func, info in PREDEFINED_TASKS.items()},
-        'task_args': {func: json.dumps(info['default_args'], indent=2) for func, info in PREDEFINED_TASKS.items()},
+        'task_descriptions': task_descriptions,
+        'task_types': task_types,
+        'task_args': task_args,
     }
     
     return render(request, 'superadmin/scheduler/job_form.html', context)
@@ -318,6 +326,19 @@ def edit_scheduled_job(request, job_id):
     else:
         form = JobForm(instance=job)
     
+    # إنشاء قائمة الوظائف المتاحة وبياناتها
+    available_tasks = []
+    task_types = {}
+    task_descriptions = {}
+    task_args = {}
+    
+    for function_name, task_info in PREDEFINED_TASKS.items():
+        available_tasks.append((function_name, task_info['name']))
+        task_types[function_name] = task_info['job_type']
+        task_descriptions[function_name] = task_info['description']
+        # تحويل المعاملات الافتراضية إلى صيغة JSON
+        task_args[function_name] = json.dumps(task_info['default_args'])
+    
     # إعداد السياق
     context = {
         'form': form,
@@ -326,6 +347,10 @@ def edit_scheduled_job(request, job_id):
         'title': _('تعديل مهمة مجدولة'),
         'job_types': dict(ScheduledJob.JOB_TYPE_CHOICES),
         'interval_types': dict(ScheduledJob.INTERVAL_CHOICES),
+        'predefined_tasks': available_tasks,
+        'task_descriptions': task_descriptions,
+        'task_types': task_types,
+        'task_args': task_args,
     }
     
     return render(request, 'superadmin/scheduler/job_form.html', context)
