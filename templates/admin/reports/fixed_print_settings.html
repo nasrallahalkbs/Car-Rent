@@ -436,8 +436,51 @@
                             <div class="settings-title">{% trans "معاينة الطباعة" %}</div>
                             <div id="previewPaper" class="preview-paper paper-a4 paper-border">
                                 <div id="previewContent" class="preview-content">
-                                    <h2 id="previewTitle" class="preview-title">{% trans "تقرير الحجوزات" %}</h2>
+                                    <h2 id="previewTitle" class="preview-title">{{ title }}</h2>
                                     <div id="previewPreTableText" class="pre-table-text"></div>
+                                    
+                                    {% if report_type == 'cars' %}
+                                    <!-- جدول السيارات -->
+                                    <table id="previewTable" class="preview-table">
+                                        <thead>
+                                            <tr>
+                                                <th>{% trans "رقم السيارة" %}</th>
+                                                <th>{% trans "الماركة" %}</th>
+                                                <th>{% trans "الموديل" %}</th>
+                                                <th>{% trans "سنة الصنع" %}</th>
+                                                <th>{% trans "رقم اللوحة" %}</th>
+                                                <th>{% trans "اللون" %}</th>
+                                                <th>{% trans "الحالة" %}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if cars %}
+                                                {% for car in cars %}
+                                                <tr>
+                                                    <td>#{{ car.id }}</td>
+                                                    <td>{{ car.make }}</td>
+                                                    <td>{{ car.model }}</td>
+                                                    <td>{{ car.year }}</td>
+                                                    <td>{{ car.license_plate }}</td>
+                                                    <td>{{ car.color }}</td>
+                                                    <td>
+                                                        {% if car.is_available %}
+                                                        <span>{% trans "متاح" %}</span>
+                                                        {% else %}
+                                                        <span>{% trans "غير متاح" %}</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="7" class="text-center">{% trans "لا توجد بيانات متاحة" %}</td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                    {% else %}
+                                    <!-- جدول الحجوزات (افتراضي) -->
                                     <table id="previewTable" class="preview-table">
                                         <thead>
                                             <tr>
@@ -474,6 +517,7 @@
                                             {% endfor %}
                                         </tbody>
                                     </table>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

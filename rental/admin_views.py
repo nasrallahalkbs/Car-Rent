@@ -4712,6 +4712,9 @@ def report_print_settings(request, report_type='reservations'):
         title = _("تقرير الحجوزات")
     elif report_type == 'cars':
         # بيانات السيارات للمعاينة
+        from rental.models import Car
+        # الحصول على السيارات الحقيقية
+        cars = Car.objects.all()[:10]  # الحصول على أول 10 سيارات فقط للمعاينة
         reservations = []  # نستخدم قائمة فارغة للحجوزات إذا كان التقرير ليس للحجوزات
         title = _("تقرير السيارات")
     else:
@@ -4736,6 +4739,10 @@ def report_print_settings(request, report_type='reservations'):
         'reservations': reservations,
         'now': datetime.now(),
     }
+    
+    # إضافة السيارات إلى السياق إذا كان نوع التقرير "cars"
+    if report_type == 'cars':
+        context['cars'] = cars
     
     # استخدام القالب المصلح المعتمد على DOMContentLoaded
     return render(request, 'admin/reports/fixed_print_settings.html', context)
