@@ -4647,5 +4647,5 @@ def report_print_settings(request, report_type='reservations'):
         'now': datetime.now(),
     }
     
-    # استخدام القالب الجديد المحسن
-    return render(request, 'admin/reports/print_settings_new.html', context)
+    # استخدام القالب الأصلي بعد إصلاحه
+    return render(request, 'admin/reports/print_settings.html', context)
