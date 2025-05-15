@@ -38,6 +38,7 @@ class AdminUser(models.Model):
     last_login_ip = models.GenericIPAddressField(null=True, blank=True, verbose_name=_('آخر IP للدخول'))
     notes = models.TextField(blank=True, null=True, verbose_name=_('ملاحظات'))
     access_token = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('رمز الوصول'))
+    is_deleted = models.BooleanField(default=False, verbose_name=_('محذوف (مخفي)'))
     
     # الحقول الجديدة
     full_name = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('الاسم الكامل'))
@@ -62,6 +63,9 @@ class AdminActivity(models.Model):
     details = models.TextField(blank=True, null=True, verbose_name=_('التفاصيل'))
     ip_address = models.GenericIPAddressField(verbose_name=_('عنوان IP'))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإجراء'))
+    is_hidden = models.BooleanField(default=False, verbose_name=_('مخفي'))
+    affected_item_type = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('نوع العنصر المتأثر'))
+    affected_item_id = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('معرّف العنصر المتأثر'))
     
     def __str__(self):
         return f"{self.admin} - {self.action}"

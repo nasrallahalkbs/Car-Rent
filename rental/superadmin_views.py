@@ -58,14 +58,17 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
-def log_admin_activity(admin_user, action, details, request):
+def log_admin_activity(admin_user, action, details, request, item_type=None, item_id=None, is_hidden=False):
     """Log admin activity"""
     ip_address = get_client_ip(request)
     AdminActivity.objects.create(
         admin=admin_user,
         action=action,
         details=details,
-        ip_address=ip_address
+        ip_address=ip_address,
+        affected_item_type=item_type,
+        affected_item_id=item_id,
+        is_hidden=is_hidden
     )
 
 def superadmin_required(function):
@@ -616,7 +619,9 @@ def toggle_admin_status(request, admin_id):
         request.admin_profile,
         _("تغيير حالة مسؤول"),
         _("تم %(status)s حساب المسؤول: %(username)s") % {'status': status_text, 'username': user.username},
-        request
+        request,
+        item_type="AdminUser",
+        item_id=admin_id
     )
     
     # رسالة نجاح (آمنة للمسؤولين فقط)
@@ -1026,6 +1031,40 @@ def system_logs(request):
 
 # إدارة المصادقة الثنائية للمستخدمين
 @superadmin_required
+def soft_delete_item(request, item_type, item_id, details):
+    """
+    وظيفة لحذف العناصر بشكل وهمي (إخفاء) وتسجيل ذلك في سجل الأنشطة
+    
+    المعلمات:
+    - request: كائن الطلب
+    - item_type: نوع العنصر المراد حذفه (مثل "Document", "Folder", إلخ)
+    - item_id: معرف العنصر
+    - details: تفاصيل الحذف
+    
+    العائد:
+    - True إذا تم الحذف بنجاح
+    - False إذا فشلت العملية
+    """
+    try:
+        # تسجيل النشاط مع وضع علامة أنه مخفي
+        log_admin_activity(
+            request.admin_profile,
+            _("حذف %(item_type)s") % {'item_type': item_type},
+            details,
+            request,
+            item_type=item_type,
+            item_id=item_id,
+            is_hidden=True
+        )
+        
+        # رسالة نجاح العملية
+        admin_success(request, _("تم إخفاء العنصر بنجاح"))
+        return True
+    except Exception as e:
+        # تسجيل خطأ
+        admin_error(request, _("حدث خطأ أثناء محاولة الإخفاء: %s") % str(e))
+        return False
+
 def user_2fa(request, user_id):
     """إدارة المصادقة الثنائية للمستخدم"""
     User = get_user_model()
