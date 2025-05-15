@@ -194,6 +194,7 @@
                                 </td>
                                 <td>{{ reservation.id }}</td>
                                 <td>{{ reservation.car.make }} {{ reservation.car.model }}</td>
+                                <td>{{ reservation.user.get_full_name|default:reservation.user.username }}</td>
                                 <td>{{ reservation.created_at|date:"Y-m-d" }}</td>
                                 <td>{{ reservation.start_date|date:"Y-m-d" }}</td>
                                 <td>{{ reservation.end_date|date:"Y-m-d" }}</td>
@@ -209,7 +210,20 @@
                                     <span class="reservation-status cancelled">{% trans "ملغي" %}</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ reservation.user.username }}</td>
+                                <td>
+                                    {% if reservation.payment_status == 'paid' %}
+                                    <span class="reservation-status confirmed">{% trans "مدفوع" %}</span>
+                                    {% elif reservation.payment_status == 'pending' %}
+                                    <span class="reservation-status pending">{% trans "قيد الانتظار" %}</span>
+                                    {% elif reservation.payment_status == 'cancelled' %}
+                                    <span class="reservation-status cancelled">{% trans "ملغي" %}</span>
+                                    {% else %}
+                                    <span class="reservation-status">{{ reservation.payment_status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ reservation.payment_method|default:"-" }}</td>
+                                <td>{{ reservation.transaction_id|default:"-" }}</td>
+                                <td>{{ reservation.admin_notes|default:"-" }}</td>
                             </tr>
                             {% empty %}
                             <tr class="empty-table-row">
@@ -268,6 +282,24 @@
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
+                                <th class="filterable" data-column="license_plate">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم اللوحة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="color">
+                                    <div class="column-header">
+                                        <span>{% trans "اللون" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="category">
+                                    <div class="column-header">
+                                        <span>{% trans "الفئة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
                                 <th class="filterable" data-column="price">
                                     <div class="column-header">
                                         <span>{% trans "السعر اليومي" %}</span>
@@ -277,6 +309,12 @@
                                 <th class="filterable" data-column="status">
                                     <div class="column-header">
                                         <span>{% trans "الحالة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="mileage">
+                                    <div class="column-header">
+                                        <span>{% trans "المسافة المقطوعة" %}</span>
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
@@ -292,6 +330,9 @@
                                 <td>{{ car.make }}</td>
                                 <td>{{ car.model }}</td>
                                 <td>{{ car.year }}</td>
+                                <td>{{ car.license_plate|default:"-" }}</td>
+                                <td>{{ car.color|default:"-" }}</td>
+                                <td>{{ car.category|default:"-" }}</td>
                                 <td>{{ car.daily_rate }} {% trans "ريال" %}</td>
                                 <td>
                                     {% if car.status == 'available' %}
@@ -300,10 +341,11 @@
                                     <span class="reservation-status cancelled">{% trans "غير متاحة" %}</span>
                                     {% endif %}
                                 </td>
+                                <td>{{ car.mileage|default:"0" }} {% trans "كم" %}</td>
                             </tr>
                             {% empty %}
                             <tr class="empty-table-row">
-                                <td colspan="7" class="text-center">
+                                <td colspan="11" class="text-center">
                                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 50px 0;">
                                         <i class="fas fa-car-alt" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
                                         <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "لا توجد سيارات" %}</div>
