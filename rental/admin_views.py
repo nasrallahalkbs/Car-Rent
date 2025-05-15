@@ -4692,6 +4692,9 @@ def report_print_settings(request, report_type='reservations'):
     
     :param report_type: نوع التقرير (reservations، cars، customers، إلخ)
     """
+    # التحقق من وجود معلمة اتجاه الجدول
+    orientation = request.GET.get('orientation', 'horizontal')
+    
     # الحصول على بيانات التقرير حسب النوع
     if report_type == 'reservations':
         # بيانات الحجوزات للمعاينة
@@ -4738,6 +4741,7 @@ def report_print_settings(request, report_type='reservations'):
         'title': title,
         'reservations': reservations,
         'now': datetime.now(),
+        'orientation': orientation,
     }
     
     # إضافة السيارات إلى السياق إذا كان نوع التقرير "cars"

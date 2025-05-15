@@ -376,11 +376,11 @@
                         <div class="form-group">
                             <label class="form-label">{% trans "اتجاه الجدول" %}</label>
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="orientationHorizontal" name="tableOrientation" class="custom-control-input" value="horizontal" checked>
+                                <input type="radio" id="orientationHorizontal" name="tableOrientation" class="custom-control-input" value="horizontal" {% if orientation == 'horizontal' %}checked{% endif %}>
                                 <label class="custom-control-label" for="orientationHorizontal">{% trans "أفقي (الصفوف والأعمدة كما هي)" %}</label>
                             </div>
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="orientationVertical" name="tableOrientation" class="custom-control-input" value="vertical">
+                                <input type="radio" id="orientationVertical" name="tableOrientation" class="custom-control-input" value="vertical" {% if orientation == 'vertical' %}checked{% endif %}>
                                 <label class="custom-control-label" for="orientationVertical">{% trans "عمودي (تبديل الصفوف والأعمدة)" %}</label>
                             </div>
                         </div>
@@ -421,80 +421,242 @@
                             {% if report_type == 'cars' %}
                             <!-- جدول السيارات -->
                             <table id="previewTable" class="preview-table">
-                                <thead>
-                                    <tr>
-                                        <th>{% trans "رقم السيارة" %}</th>
-                                        <th>{% trans "الماركة" %}</th>
-                                        <th>{% trans "الموديل" %}</th>
-                                        <th>{% trans "سنة الصنع" %}</th>
-                                        <th>{% trans "رقم اللوحة" %}</th>
-                                        <th>{% trans "اللون" %}</th>
-                                        <th>{% trans "الحالة" %}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% if cars %}
-                                        {% for car in cars %}
+                                {% if orientation == 'vertical' %}
+                                    <!-- عرض جدول السيارات بشكل عمودي (صفوف وأعمدة متبادلة) -->
+                                    <thead>
                                         <tr>
-                                            <td>#{{ car.id }}</td>
-                                            <td>{{ car.make }}</td>
-                                            <td>{{ car.model }}</td>
-                                            <td>{{ car.year }}</td>
-                                            <td>{{ car.license_plate }}</td>
-                                            <td>{{ car.color }}</td>
-                                            <td>
-                                                {% if car.is_available %}
-                                                <span>{% trans "متاح" %}</span>
-                                                {% else %}
-                                                <span>{% trans "غير متاح" %}</span>
-                                                {% endif %}
-                                            </td>
+                                            <th>{% trans "البيانات" %}</th>
+                                            {% for car in cars %}
+                                                <th>#{{ car.id }}</th>
+                                            {% empty %}
+                                                <th>{% trans "لا توجد سيارات" %}</th>
+                                            {% endfor %}
                                         </tr>
-                                        {% endfor %}
-                                    {% else %}
+                                    </thead>
+                                    <tbody>
                                         <tr>
-                                            <td colspan="7" class="text-center">{% trans "لا توجد بيانات متاحة" %}</td>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "رقم السيارة" %}</td>
+                                            {% for car in cars %}
+                                                <td>#{{ car.id }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
                                         </tr>
-                                    {% endif %}
-                                </tbody>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "الماركة" %}</td>
+                                            {% for car in cars %}
+                                                <td>{{ car.make }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "الموديل" %}</td>
+                                            {% for car in cars %}
+                                                <td>{{ car.model }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "سنة الصنع" %}</td>
+                                            {% for car in cars %}
+                                                <td>{{ car.year }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "رقم اللوحة" %}</td>
+                                            {% for car in cars %}
+                                                <td>{{ car.license_plate }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "اللون" %}</td>
+                                            {% for car in cars %}
+                                                <td>{{ car.color }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "الحالة" %}</td>
+                                            {% for car in cars %}
+                                                <td>
+                                                    {% if car.is_available %}
+                                                    <span>{% trans "متاح" %}</span>
+                                                    {% else %}
+                                                    <span>{% trans "غير متاح" %}</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                    </tbody>
+                                {% else %}
+                                    <!-- عرض جدول السيارات بشكل أفقي (عادي) -->
+                                    <thead>
+                                        <tr>
+                                            <th>{% trans "رقم السيارة" %}</th>
+                                            <th>{% trans "الماركة" %}</th>
+                                            <th>{% trans "الموديل" %}</th>
+                                            <th>{% trans "سنة الصنع" %}</th>
+                                            <th>{% trans "رقم اللوحة" %}</th>
+                                            <th>{% trans "اللون" %}</th>
+                                            <th>{% trans "الحالة" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if cars %}
+                                            {% for car in cars %}
+                                            <tr>
+                                                <td>#{{ car.id }}</td>
+                                                <td>{{ car.make }}</td>
+                                                <td>{{ car.model }}</td>
+                                                <td>{{ car.year }}</td>
+                                                <td>{{ car.license_plate }}</td>
+                                                <td>{{ car.color }}</td>
+                                                <td>
+                                                    {% if car.is_available %}
+                                                    <span>{% trans "متاح" %}</span>
+                                                    {% else %}
+                                                    <span>{% trans "غير متاح" %}</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="7" class="text-center">{% trans "لا توجد بيانات متاحة" %}</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                {% endif %}
                             </table>
                             {% else %}
                             <!-- جدول الحجوزات (افتراضي) -->
                             <table id="previewTable" class="preview-table">
-                                <thead>
-                                    <tr>
-                                        <th>{% trans "رقم الحجز" %}</th>
-                                        <th>{% trans "العميل" %}</th>
-                                        <th>{% trans "السيارة" %}</th>
-                                        <th>{% trans "تاريخ البداية" %}</th>
-                                        <th>{% trans "تاريخ النهاية" %}</th>
-                                        <th>{% trans "السعر الإجمالي" %}</th>
-                                        <th>{% trans "الحالة" %}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for reservation in reservations %}
-                                    <tr>
-                                        <td>#{{ reservation.id }}</td>
-                                        <td>{{ reservation.user.get_full_name }}</td>
-                                        <td>{{ reservation.car.model_name }} {{ reservation.car.year }}</td>
-                                        <td>{{ reservation.start_date|date:"Y-m-d" }}</td>
-                                        <td>{{ reservation.end_date|date:"Y-m-d" }}</td>
-                                        <td>{{ reservation.total_price }} {% trans "ريال" %}</td>
-                                        <td>
-                                            {% if reservation.status == 'pending' %}
-                                            <span>{% trans "قيد الانتظار" %}</span>
-                                            {% elif reservation.status == 'confirmed' %}
-                                            <span>{% trans "مؤكد" %}</span>
-                                            {% elif reservation.status == 'completed' %}
-                                            <span>{% trans "مكتمل" %}</span>
-                                            {% elif reservation.status == 'cancelled' %}
-                                            <span>{% trans "ملغي" %}</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
+                                {% if orientation == 'vertical' %}
+                                    <!-- عرض جدول الحجوزات بشكل عمودي (صفوف وأعمدة متبادلة) -->
+                                    <thead>
+                                        <tr>
+                                            <th>{% trans "البيانات" %}</th>
+                                            {% for reservation in reservations %}
+                                                <th>#{{ reservation.id }}</th>
+                                            {% empty %}
+                                                <th>{% trans "لا توجد حجوزات" %}</th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "رقم الحجز" %}</td>
+                                            {% for reservation in reservations %}
+                                                <td>#{{ reservation.id }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "العميل" %}</td>
+                                            {% for reservation in reservations %}
+                                                <td>{{ reservation.user.get_full_name }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "السيارة" %}</td>
+                                            {% for reservation in reservations %}
+                                                <td>{{ reservation.car.model_name }} {{ reservation.car.year }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "تاريخ البداية" %}</td>
+                                            {% for reservation in reservations %}
+                                                <td>{{ reservation.start_date|date:"Y-m-d" }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "تاريخ النهاية" %}</td>
+                                            {% for reservation in reservations %}
+                                                <td>{{ reservation.end_date|date:"Y-m-d" }}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "السعر الإجمالي" %}</td>
+                                            {% for reservation in reservations %}
+                                                <td>{{ reservation.total_price }} {% trans "ريال" %}</td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; background-color: #f2f2f2;">{% trans "الحالة" %}</td>
+                                            {% for reservation in reservations %}
+                                                <td>
+                                                    {% if reservation.status == 'pending' %}
+                                                    <span>{% trans "قيد الانتظار" %}</span>
+                                                    {% elif reservation.status == 'confirmed' %}
+                                                    <span>{% trans "مؤكد" %}</span>
+                                                    {% elif reservation.status == 'completed' %}
+                                                    <span>{% trans "مكتمل" %}</span>
+                                                    {% elif reservation.status == 'cancelled' %}
+                                                    <span>{% trans "ملغي" %}</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% empty %}
+                                                <td>-</td>
+                                            {% endfor %}
+                                        </tr>
+                                    </tbody>
+                                {% else %}
+                                    <!-- عرض جدول الحجوزات بشكل أفقي (عادي) -->
+                                    <thead>
+                                        <tr>
+                                            <th>{% trans "رقم الحجز" %}</th>
+                                            <th>{% trans "العميل" %}</th>
+                                            <th>{% trans "السيارة" %}</th>
+                                            <th>{% trans "تاريخ البداية" %}</th>
+                                            <th>{% trans "تاريخ النهاية" %}</th>
+                                            <th>{% trans "السعر الإجمالي" %}</th>
+                                            <th>{% trans "الحالة" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for reservation in reservations %}
+                                        <tr>
+                                            <td>#{{ reservation.id }}</td>
+                                            <td>{{ reservation.user.get_full_name }}</td>
+                                            <td>{{ reservation.car.model_name }} {{ reservation.car.year }}</td>
+                                            <td>{{ reservation.start_date|date:"Y-m-d" }}</td>
+                                            <td>{{ reservation.end_date|date:"Y-m-d" }}</td>
+                                            <td>{{ reservation.total_price }} {% trans "ريال" %}</td>
+                                            <td>
+                                                {% if reservation.status == 'pending' %}
+                                                <span>{% trans "قيد الانتظار" %}</span>
+                                                {% elif reservation.status == 'confirmed' %}
+                                                <span>{% trans "مؤكد" %}</span>
+                                                {% elif reservation.status == 'completed' %}
+                                                <span>{% trans "مكتمل" %}</span>
+                                                {% elif reservation.status == 'cancelled' %}
+                                                <span>{% trans "ملغي" %}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                {% endif %}
                             </table>
                             {% endif %}
                         </div>
@@ -623,99 +785,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateTableOrientation() {
-        // إعادة بناء الجدول بناءً على الاتجاه المحدد
         var isVertical = orientationVertical.checked;
         
-        // الحصول على رؤوس الأعمدة الحالية
-        var thead = previewTable.querySelector('thead tr');
-        var headers = [];
-        thead.querySelectorAll('th').forEach(function(th) {
-            headers.push(th.textContent.trim());
-        });
-        
-        // الحصول على بيانات الصفوف الحالية
-        var tbody = previewTable.querySelector('tbody');
-        var rows = tbody.querySelectorAll('tr');
-        var tableData = [];
-        
-        rows.forEach(function(row) {
-            var rowData = [];
-            row.querySelectorAll('td').forEach(function(td) {
-                rowData.push(td.textContent.trim());
-            });
-            tableData.push(rowData);
-        });
-        
         if (isVertical) {
-            // بناء جدول عمودي (العناوين في العمود الأول)
-            // تفريغ الجدول الحالي
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
-            
-            // إنشاء رأس الجدول العمودي
-            var headerRow = document.createElement('tr');
-            headerRow.innerHTML = '<th>البيانات</th>';
-            
-            // إضافة عناوين الصفوف (كانت أسماء الأعمدة سابقاً)
-            for (var i = 0; i < tableData.length; i++) {
-                var th = document.createElement('th');
-                th.textContent = 'صف ' + (i + 1);
-                headerRow.appendChild(th);
-            }
-            
-            thead.appendChild(headerRow);
-            
-            // إنشاء صفوف للبيانات
-            for (var i = 0; i < headers.length; i++) {
-                var newRow = document.createElement('tr');
-                
-                // إضافة اسم العمود كعنوان الصف
-                var headerCell = document.createElement('td');
-                headerCell.textContent = headers[i];
-                headerCell.style.fontWeight = 'bold';
-                headerCell.style.backgroundColor = '#f2f2f2';
-                newRow.appendChild(headerCell);
-                
-                // إضافة بيانات الصف
-                for (var j = 0; j < tableData.length; j++) {
-                    var cell = document.createElement('td');
-                    if (tableData[j] && tableData[j][i]) {
-                        cell.textContent = tableData[j][i];
-                    }
-                    newRow.appendChild(cell);
-                }
-                
-                tbody.appendChild(newRow);
-            }
+            // عند اختيار العرض العمودي، إعادة تحميل الصفحة مع معلمة الاتجاه
+            location.href = location.pathname + '?orientation=vertical';
         } else {
-            // بناء جدول أفقي عادي
-            // تفريغ الجدول الحالي
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
-            
-            // إنشاء رأس الجدول
-            var headerRow = document.createElement('tr');
-            headers.forEach(function(header) {
-                var th = document.createElement('th');
-                th.textContent = header;
-                headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-            
-            // إنشاء صفوف البيانات
-            tableData.forEach(function(rowData) {
-                var row = document.createElement('tr');
-                rowData.forEach(function(cellData) {
-                    var cell = document.createElement('td');
-                    cell.textContent = cellData;
-                    row.appendChild(cell);
-                });
-                tbody.appendChild(row);
-            });
+            // عند اختيار العرض الأفقي، إعادة تحميل الصفحة بدون معلمات
+            location.href = location.pathname;
         }
-        
-        // تحديث عدد الصفوف بعد تغيير الاتجاه
-        updateTableRows();
     }
 
     function updatePreTableText() {
