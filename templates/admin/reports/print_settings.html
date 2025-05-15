@@ -1,0 +1,596 @@
+{% extends "admin/enhanced/admin_layout.html" %}
+<!-- CACHE_BUSTER {{ now.timestamp|floatformat:0 }} -->
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "إعدادات طباعة التقرير" %} - كاررنتال{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/print_settings.css' %}?v={{ now.timestamp|floatformat:0 }}">
+<style>
+    /* تنسيقات أساسية لصفحة إعدادات الطباعة */
+    .print-settings-container {
+        display: flex;
+        flex-direction: row-reverse; /* للدعم العربي RTL */
+        gap: 20px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        min-height: 80vh;
+    }
+
+    /* لوحة الإعدادات */
+    .settings-panel {
+        flex: 1;
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* لوحة المعاينة */
+    .preview-panel {
+        flex: 2;
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        overflow: auto;
+    }
+
+    .preview-paper {
+        background-color: white;
+        border: 1px solid #ddd;
+        margin: 0 auto;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    /* A4 بالافتراض */
+    .paper-a4 {
+        width: 210mm;
+        height: 297mm;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .paper-a5 {
+        width: 148mm;
+        height: 210mm;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .paper-letter {
+        width: 216mm;
+        height: 279mm;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .settings-section {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .settings-title {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+        color: #333;
+        font-weight: bold;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .margins-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .margin-input {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+
+    .btn-print {
+        background-color: #ffc107;
+        color: #000;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s;
+    }
+
+    .btn-print:hover {
+        background-color: #e0a800;
+    }
+
+    .btn-cancel {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-cancel:hover {
+        background-color: #5a6268;
+    }
+
+    .preview-content {
+        padding: 20px;
+    }
+
+    /* تنسيق الجدول في المعاينة */
+    .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .preview-table th, .preview-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: right;
+    }
+
+    .preview-table th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+
+    .preview-title {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 18pt;
+        font-weight: bold;
+    }
+
+    /* تحكم الطابعة */
+    .printer-control {
+        display: none; /* يظهر فقط عند تفعيل خيار البحث */
+        margin-top: 10px;
+    }
+
+    /* تنسيق حقل النص قبل الجدول */
+    .pre-table-text {
+        display: none; /* يظهر فقط عند تفعيل الخيار */
+        margin-top: 10px;
+    }
+
+    /* نمط لإظهار حدود الصفحة في المعاينة */
+    .paper-border {
+        border: 1px dashed #aaa;
+    }
+
+    /* للطباعة فقط */
+    @media print {
+        .settings-panel, .navbar, footer {
+            display: none !important;
+        }
+        .preview-panel {
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+        .preview-paper {
+            box-shadow: none;
+            border: none;
+            width: 100% !important;
+            height: auto !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{% trans "إعدادات طباعة التقرير" %}</h5>
+                <a href="{% url 'admin_reports' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right ml-1"></i> {% trans "العودة للتقارير" %}
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="print-settings-container">
+                <!-- لوحة إعدادات الطباعة -->
+                <div class="settings-panel">
+                    <h4 class="settings-title mb-4">{% trans "إعدادات الطباعة" %}</h4>
+                    
+                    <!-- قسم إعدادات الورق -->
+                    <div class="settings-section">
+                        <div class="settings-title">{% trans "إعدادات ورق الطباعة" %}</div>
+                        
+                        <div class="form-group">
+                            <label for="paperSize">{% trans "حجم الورق" %}</label>
+                            <select id="paperSize" class="form-control">
+                                <option value="a4">A4</option>
+                                <option value="a5">A5</option>
+                                <option value="letter">Letter</option>
+                                <option value="legal">Legal</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>{% trans "الهوامش (ملم)" %}</label>
+                            <div class="margins-group">
+                                <div class="margin-input">
+                                    <label for="marginTop">{% trans "أعلى" %}</label>
+                                    <input type="number" id="marginTop" class="form-control" value="20" min="0" max="100">
+                                </div>
+                                <div class="margin-input">
+                                    <label for="marginBottom">{% trans "أسفل" %}</label>
+                                    <input type="number" id="marginBottom" class="form-control" value="20" min="0" max="100">
+                                </div>
+                                <div class="margin-input">
+                                    <label for="marginRight">{% trans "يمين" %}</label>
+                                    <input type="number" id="marginRight" class="form-control" value="20" min="0" max="100">
+                                </div>
+                                <div class="margin-input">
+                                    <label for="marginLeft">{% trans "يسار" %}</label>
+                                    <input type="number" id="marginLeft" class="form-control" value="20" min="0" max="100">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- قسم خيارات الطابعة -->
+                    <div class="settings-section">
+                        <div class="settings-title">{% trans "خيارات الطابعة" %}</div>
+                        
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="printerSearch">
+                                <label class="custom-control-label" for="printerSearch">{% trans "البحث عن طابعة في هذا الكمبيوتر" %}</label>
+                            </div>
+                            
+                            <div id="printerControl" class="printer-control">
+                                <label for="printerName">{% trans "اسم الطابعة" %}</label>
+                                <input type="text" id="printerName" class="form-control" placeholder="{% trans 'اسم الطابعة' %}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- قسم عنوان التقرير -->
+                    <div class="settings-section">
+                        <div class="settings-title">{% trans "عنوان التقرير" %}</div>
+                        
+                        <div class="form-group">
+                            <label for="reportTitle">{% trans "العنوان الرئيسي" %}</label>
+                            <input type="text" id="reportTitle" class="form-control" value="{% trans 'تقرير الحجوزات' %}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="titleFontSize">{% trans "حجم خط العنوان" %}</label>
+                            <select id="titleFontSize" class="form-control">
+                                <option value="14pt">{% trans "صغير" %} (14pt)</option>
+                                <option value="18pt" selected>{% trans "متوسط" %} (18pt)</option>
+                                <option value="24pt">{% trans "كبير" %} (24pt)</option>
+                                <option value="32pt">{% trans "كبير جداً" %} (32pt)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- قسم إعدادات الجدول -->
+                    <div class="settings-section">
+                        <div class="settings-title">{% trans "إعدادات الجدول" %}</div>
+                        
+                        <div class="form-group">
+                            <label for="tableRows">{% trans "عدد الصفوف الإضافية" %}</label>
+                            <input type="number" id="tableRows" class="form-control" value="5" min="0" max="100">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tableWidth">{% trans "عرض الجدول (%)" %}</label>
+                            <input type="number" id="tableWidth" class="form-control" value="100" min="50" max="100">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tableFontSize">{% trans "حجم الخط داخل الجدول" %}</label>
+                            <select id="tableFontSize" class="form-control">
+                                <option value="8pt">{% trans "صغير جداً" %} (8pt)</option>
+                                <option value="10pt">{% trans "صغير" %} (10pt)</option>
+                                <option value="12pt" selected>{% trans "متوسط" %} (12pt)</option>
+                                <option value="14pt">{% trans "كبير" %} (14pt)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="addTextBeforeTable">
+                                <label class="custom-control-label" for="addTextBeforeTable">{% trans "إدراج نص قبل الجدول" %}</label>
+                            </div>
+                            
+                            <div id="preTableTextControl" class="pre-table-text">
+                                <textarea id="preTableText" class="form-control" rows="3" placeholder="{% trans 'ادخل النص هنا...' %}"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- أزرار التحكم -->
+                    <div class="action-buttons">
+                        <button id="printButton" class="btn-print">
+                            <i class="fas fa-print ml-1"></i> {% trans "طباعة" %}
+                        </button>
+                        <div>
+                            <button id="resetButton" class="btn-cancel mx-2">
+                                <i class="fas fa-sync-alt ml-1"></i> {% trans "إعادة تعيين" %}
+                            </button>
+                            <a href="{% url 'admin_reports' %}" class="btn-cancel">
+                                <i class="fas fa-times ml-1"></i> {% trans "إلغاء" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- لوحة معاينة التقرير -->
+                <div class="preview-panel">
+                    <div id="previewPaper" class="preview-paper paper-a4 paper-border">
+                        <div id="previewContent" class="preview-content">
+                            <div id="previewTitle" class="preview-title">{% trans "تقرير الحجوزات" %}</div>
+                            
+                            <div id="previewPreText" style="display: none; margin-bottom: 20px;"></div>
+                            
+                            <table id="previewTable" class="preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "رقم الحجز" %}</th>
+                                        <th>{% trans "السيارة" %}</th>
+                                        <th>{% trans "تاريخ الحجز" %}</th>
+                                        <th>{% trans "تاريخ الاستلام" %}</th>
+                                        <th>{% trans "تاريخ التسليم" %}</th>
+                                        <th>{% trans "المبلغ" %}</th>
+                                        <th>{% trans "حالة الحجز" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reservation in reservations %}
+                                    <tr>
+                                        <td>{{ reservation.id }}</td>
+                                        <td>{{ reservation.car.make }} {{ reservation.car.model }}</td>
+                                        <td>{{ reservation.created_at|date:"Y-m-d" }}</td>
+                                        <td>{{ reservation.start_date|date:"Y-m-d" }}</td>
+                                        <td>{{ reservation.end_date|date:"Y-m-d" }}</td>
+                                        <td>{{ reservation.total_price }} {% trans "ريال" %}</td>
+                                        <td>
+                                            {% if reservation.status == 'confirmed' %}
+                                            <span>{% trans "مؤكد" %}</span>
+                                            {% elif reservation.status == 'pending' %}
+                                            <span>{% trans "قيد الانتظار" %}</span>
+                                            {% elif reservation.status == 'completed' %}
+                                            <span>{% trans "مكتمل" %}</span>
+                                            {% elif reservation.status == 'cancelled' %}
+                                            <span>{% trans "ملغي" %}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    <!-- الصفوف الإضافية ستضاف ديناميكياً بواسطة JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ========================
+    // متغيرات عناصر واجهة المستخدم
+    // ========================
+    const paperSizeSelect = document.getElementById('paperSize');
+    const marginTop = document.getElementById('marginTop');
+    const marginBottom = document.getElementById('marginBottom');
+    const marginRight = document.getElementById('marginRight');
+    const marginLeft = document.getElementById('marginLeft');
+    const printerSearch = document.getElementById('printerSearch');
+    const printerControl = document.getElementById('printerControl');
+    const reportTitle = document.getElementById('reportTitle');
+    const titleFontSize = document.getElementById('titleFontSize');
+    const tableRows = document.getElementById('tableRows');
+    const tableWidth = document.getElementById('tableWidth');
+    const tableFontSize = document.getElementById('tableFontSize');
+    const addTextBeforeTable = document.getElementById('addTextBeforeTable');
+    const preTableTextControl = document.getElementById('preTableTextControl');
+    const preTableText = document.getElementById('preTableText');
+    const printButton = document.getElementById('printButton');
+    const resetButton = document.getElementById('resetButton');
+    
+    // عناصر المعاينة
+    const previewPaper = document.getElementById('previewPaper');
+    const previewContent = document.getElementById('previewContent');
+    const previewTitle = document.getElementById('previewTitle');
+    const previewPreText = document.getElementById('previewPreText');
+    const previewTable = document.getElementById('previewTable');
+    
+    // ========================
+    // تطبيق الإعدادات الأولية
+    // ========================
+    updatePaperSize();
+    updateMargins();
+    updateTitle();
+    updateTableWidth();
+    updateFontSizes();
+    addExtraRows();
+    
+    // ========================
+    // معالجات الأحداث
+    // ========================
+    
+    // تحديث حجم الورق
+    paperSizeSelect.addEventListener('change', updatePaperSize);
+    
+    // تحديث الهوامش
+    marginTop.addEventListener('input', updateMargins);
+    marginBottom.addEventListener('input', updateMargins);
+    marginRight.addEventListener('input', updateMargins);
+    marginLeft.addEventListener('input', updateMargins);
+    
+    // تحديث خيارات الطابعة
+    printerSearch.addEventListener('change', function() {
+        printerControl.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // تحديث عنوان التقرير
+    reportTitle.addEventListener('input', updateTitle);
+    titleFontSize.addEventListener('change', updateTitle);
+    
+    // تحديث إعدادات الجدول
+    tableRows.addEventListener('input', addExtraRows);
+    tableWidth.addEventListener('input', updateTableWidth);
+    tableFontSize.addEventListener('change', updateFontSizes);
+    
+    // تحديث النص قبل الجدول
+    addTextBeforeTable.addEventListener('change', function() {
+        preTableTextControl.style.display = this.checked ? 'block' : 'none';
+        previewPreText.style.display = this.checked ? 'block' : 'none';
+        updatePreTableText();
+    });
+    
+    preTableText.addEventListener('input', updatePreTableText);
+    
+    // زر الطباعة
+    printButton.addEventListener('click', function() {
+        window.print();
+    });
+    
+    // زر إعادة التعيين
+    resetButton.addEventListener('click', resetSettings);
+    
+    // ========================
+    // الوظائف المساعدة
+    // ========================
+    
+    // تحديث حجم الورق
+    function updatePaperSize() {
+        // إزالة جميع فئات الورق السابقة
+        previewPaper.classList.remove('paper-a4', 'paper-a5', 'paper-letter', 'paper-legal');
+        
+        // إضافة فئة الورق المحدد
+        previewPaper.classList.add('paper-' + paperSizeSelect.value);
+    }
+    
+    // تحديث الهوامش
+    function updateMargins() {
+        previewContent.style.paddingTop = marginTop.value + 'mm';
+        previewContent.style.paddingBottom = marginBottom.value + 'mm';
+        previewContent.style.paddingRight = marginRight.value + 'mm';
+        previewContent.style.paddingLeft = marginLeft.value + 'mm';
+    }
+    
+    // تحديث العنوان
+    function updateTitle() {
+        previewTitle.textContent = reportTitle.value;
+        previewTitle.style.fontSize = titleFontSize.value;
+    }
+    
+    // تحديث عرض الجدول
+    function updateTableWidth() {
+        previewTable.style.width = tableWidth.value + '%';
+    }
+    
+    // تحديث أحجام الخطوط
+    function updateFontSizes() {
+        previewTable.style.fontSize = tableFontSize.value;
+    }
+    
+    // إضافة صفوف إضافية للجدول
+    function addExtraRows() {
+        const currentRows = previewTable.tBodies[0].querySelectorAll('tr:not(.extra-row)').length;
+        const extraRowsNeeded = parseInt(tableRows.value);
+        
+        // إزالة جميع الصفوف الإضافية الحالية
+        previewTable.tBodies[0].querySelectorAll('tr.extra-row').forEach(row => row.remove());
+        
+        // إضافة الصفوف الإضافية الجديدة
+        for (let i = 0; i < extraRowsNeeded; i++) {
+            const newRow = document.createElement('tr');
+            newRow.className = 'extra-row';
+            
+            // إضافة خلايا فارغة بعدد أعمدة الجدول
+            const columnCount = previewTable.tHead.rows[0].cells.length;
+            for (let j = 0; j < columnCount; j++) {
+                const cell = document.createElement('td');
+                cell.innerHTML = '&nbsp;';
+                newRow.appendChild(cell);
+            }
+            
+            previewTable.tBodies[0].appendChild(newRow);
+        }
+    }
+    
+    // تحديث النص قبل الجدول
+    function updatePreTableText() {
+        if (addTextBeforeTable.checked) {
+            previewPreText.textContent = preTableText.value;
+            previewPreText.style.display = 'block';
+        } else {
+            previewPreText.style.display = 'none';
+        }
+    }
+    
+    // إعادة تعيين الإعدادات إلى القيم الافتراضية
+    function resetSettings() {
+        paperSizeSelect.value = 'a4';
+        marginTop.value = 20;
+        marginBottom.value = 20;
+        marginRight.value = 20;
+        marginLeft.value = 20;
+        printerSearch.checked = false;
+        printerControl.style.display = 'none';
+        reportTitle.value = '{% trans "تقرير الحجوزات" %}';
+        titleFontSize.value = '18pt';
+        tableRows.value = 5;
+        tableWidth.value = 100;
+        tableFontSize.value = '12pt';
+        addTextBeforeTable.checked = false;
+        preTableTextControl.style.display = 'none';
+        preTableText.value = '';
+        
+        // تطبيق الإعدادات الافتراضية
+        updatePaperSize();
+        updateMargins();
+        updateTitle();
+        updateTableWidth();
+        updateFontSizes();
+        addExtraRows();
+        updatePreTableText();
+    }
+});
+</script>
+{% endblock %}
