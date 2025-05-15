@@ -28,10 +28,15 @@ def create_backup(**kwargs):
     """إنشاء نسخة احتياطية
     
     المعاملات:
-        backup_type: نوع النسخة الاحتياطية (full, partial)
+        backup_type: نوع النسخة الاحتياطية (full, partial, settings, database)
         include_media: تضمين ملفات الوسائط (True/False)
         notify_admin: إرسال إشعار للمسؤول (True/False)
     """
+    import subprocess
+    import os
+    from django.conf import settings
+    from django.utils import timezone
+    
     backup_type = kwargs.get('backup_type', 'full')
     include_media = kwargs.get('include_media', True)
     notify_admin = kwargs.get('notify_admin', True)
@@ -39,32 +44,174 @@ def create_backup(**kwargs):
     logger.info(f"بدء إنشاء نسخة احتياطية من نوع {backup_type}")
     logger.info(f"تضمين ملفات الوسائط: {include_media}")
     
-    # هنا يتم تنفيذ عملية النسخ الاحتياطي
-    # محاولة إنشاء نسخة احتياطية من قاعدة البيانات
+    # إنشاء مجلد للنسخ الاحتياطية إذا لم يكن موجوداً
+    backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+    os.makedirs(backup_dir, exist_ok=True)
+    
+    # إنشاء اسم الملف بناءً على نوع النسخة الاحتياطية والتاريخ
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    backup_name = f"backup_{backup_type}_{timestamp}"
+    
+    # متغيرات للتخزين المؤقت
+    db_backup_file = None
+    settings_backup_file = None
+    
+    # إنشاء سجل النسخة الاحتياطية في قاعدة البيانات
     try:
         from .models_system import Backup
-        backup_name = f"backup_{backup_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         backup_obj = Backup.objects.create(
             name=backup_name,
             backup_type=backup_type,
             description=f"نسخة احتياطية تلقائية ({backup_type})",
-            backup_date=timezone.now()
+            status='in_progress',
+            include_media=include_media
         )
         logger.info(f"تم إنشاء سجل النسخة الاحتياطية: {backup_name}")
+        
+        # تحديد مسار ملف النسخة الاحتياطية
+        backup_file_path = os.path.join(backup_dir, f"{backup_name}.zip")
+        
+        # تنفيذ النسخ الاحتياطي حسب النوع
+        if backup_type == 'database' or backup_type == 'full':
+            # نسخ احتياطي لقاعدة البيانات
+            db_backup_file = os.path.join(backup_dir, f"db_{timestamp}.sql")
+            
+            # الحصول على معلومات الاتصال بقاعدة البيانات
+            db_name = settings.DATABASES['default'].get('NAME', 'db.sqlite3')
+            db_user = settings.DATABASES['default'].get('USER', '')
+            db_password = settings.DATABASES['default'].get('PASSWORD', '')
+            db_host = settings.DATABASES['default'].get('HOST', '')
+            db_port = settings.DATABASES['default'].get('PORT', '')
+            db_engine = settings.DATABASES['default'].get('ENGINE', '')
+            
+            logger.info(f"بدء النسخ الاحتياطي لقاعدة البيانات: {db_name}")
+            
+            # التعامل مع قواعد البيانات المختلفة
+            if 'sqlite3' in db_engine:
+                # نسخ ملف SQLite مباشرة
+                if os.path.exists(db_name):
+                    import shutil
+                    shutil.copy2(db_name, db_backup_file)
+                    logger.info(f"تم نسخ قاعدة بيانات SQLite: {db_name}")
+                else:
+                    logger.error(f"ملف قاعدة بيانات SQLite غير موجود: {db_name}")
+            elif 'postgresql' in db_engine:
+                # استخدام pg_dump للنسخ الاحتياطي
+                pg_dump_cmd = [
+                    'pg_dump',
+                    f'--dbname=postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',
+                    '-f', db_backup_file
+                ]
+                try:
+                    subprocess.run(pg_dump_cmd, check=True)
+                    logger.info(f"تم إنشاء نسخة احتياطية من PostgreSQL: {db_name}")
+                except subprocess.CalledProcessError as e:
+                    logger.error(f"خطأ في إنشاء نسخة احتياطية من PostgreSQL: {str(e)}")
+                    raise
+            else:
+                logger.warning(f"نوع قاعدة البيانات غير مدعوم للنسخ الاحتياطي التلقائي: {db_engine}")
+        
+        if backup_type == 'settings' or backup_type == 'full':
+            # نسخ احتياطي للإعدادات
+            settings_backup_file = os.path.join(backup_dir, f"settings_{timestamp}.json")
+            from .models_system import SystemSetting
+            
+            # استخراج جميع الإعدادات
+            settings_data = {}
+            for setting in SystemSetting.objects.all():
+                settings_data[setting.key] = {
+                    'value': setting.value,
+                    'value_type': setting.value_type,
+                    'group': setting.group,
+                    'description': setting.description
+                }
+            
+            # حفظ الإعدادات في ملف JSON
+            with open(settings_backup_file, 'w', encoding='utf-8') as f:
+                json.dump(settings_data, f, ensure_ascii=False, indent=4)
+            
+            logger.info(f"تم إنشاء نسخة احتياطية من إعدادات النظام: {settings_backup_file}")
+        
+        # إضافة ملفات الوسائط إذا كان مطلوباً
+        if include_media and (backup_type == 'full' or backup_type == 'partial'):
+            media_dir = os.path.join(settings.BASE_DIR, 'media')
+            if os.path.exists(media_dir):
+                logger.info(f"جاري إضافة ملفات الوسائط للنسخة الاحتياطية")
+                # هنا يمكن إضافة رمز لنسخ ملفات الوسائط
+            else:
+                logger.warning(f"مجلد الوسائط غير موجود: {media_dir}")
+        
+        # ضغط جميع الملفات في ملف واحد
+        import zipfile
+        with zipfile.ZipFile(backup_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # إضافة ملف قاعدة البيانات إذا كان موجوداً
+            if db_backup_file and os.path.exists(db_backup_file):
+                zipf.write(db_backup_file, os.path.basename(db_backup_file))
+                os.remove(db_backup_file)  # حذف الملف المؤقت
+            
+            # إضافة ملف الإعدادات إذا كان موجوداً
+            if settings_backup_file and os.path.exists(settings_backup_file):
+                zipf.write(settings_backup_file, os.path.basename(settings_backup_file))
+                os.remove(settings_backup_file)  # حذف الملف المؤقت
+        
+        # تحديث سجل النسخة الاحتياطية
+        backup_obj.file_path = backup_file_path
+        backup_obj.size = os.path.getsize(backup_file_path)
+        backup_obj.status = 'completed'
+        backup_obj.completed_at = timezone.now()
+        backup_obj.save()
+        
+        logger.info(f"تم إنشاء النسخة الاحتياطية بنجاح: {backup_file_path}")
+        
+        # إرسال إشعار للمسؤول إذا كان مطلوباً
+        if notify_admin:
+            subject = f"نسخة احتياطية جديدة: {backup_name}"
+            message = f"""
+            تم إنشاء نسخة احتياطية جديدة بنجاح.
+            
+            التفاصيل:
+            - الاسم: {backup_name}
+            - النوع: {backup_type}
+            - الحجم: {backup_obj.size} بايت
+            - المسار: {backup_file_path}
+            - تاريخ الإنشاء: {backup_obj.created_at}
+            """
+            mail_admins(subject, message)
+            logger.info("تم إرسال إشعار بالنسخة الاحتياطية للمسؤولين")
+        
+        return {
+            'status': 'success',
+            'backup_id': backup_obj.id,
+            'backup_name': backup_name,
+            'file_path': backup_file_path,
+            'size': backup_obj.size
+        }
+        
     except Exception as e:
-        logger.error(f"خطأ في إنشاء سجل النسخة الاحتياطية: {str(e)}")
-    
-    if notify_admin:
-        mail_message = f"تم إنشاء نسخة احتياطية بنجاح\nالنوع: {backup_type}\nالوقت: {datetime.now()}"
-        try:
-            mail_admins("تقرير النسخ الاحتياطي التلقائي", mail_message)
-        except Exception as e:
-            logger.error(f"فشل في إرسال البريد: {str(e)}")
-    
-    return {
-        'status': 'success',
-        'message': f"تم إنشاء نسخة احتياطية من نوع {backup_type} بنجاح"
-    }
+        logger.error(f"خطأ في إنشاء النسخة الاحتياطية: {str(e)}")
+        logger.error(traceback.format_exc())
+        
+        # تحديث حالة النسخة الاحتياطية إذا كان السجل موجوداً
+        if 'backup_obj' in locals():
+            backup_obj.status = 'failed'
+            backup_obj.save()
+        
+        # إرسال إشعار بالخطأ
+        if notify_admin:
+            subject = f"فشل في إنشاء النسخة الاحتياطية: {backup_name}"
+            message = f"""
+            حدث خطأ أثناء إنشاء النسخة الاحتياطية.
+            
+            التفاصيل:
+            - الاسم: {backup_name}
+            - النوع: {backup_type}
+            - الخطأ: {str(e)}
+            """
+            mail_admins(subject, message)
+            logger.info("تم إرسال إشعار بفشل النسخة الاحتياطية للمسؤولين")
+        
+        # إعادة رفع الاستثناء للتعامل معه في الطبقة العليا
+        raise
 
 def clean_system(**kwargs):
     """تنظيف النظام

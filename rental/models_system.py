@@ -179,3 +179,40 @@ class SystemNotification(models.Model):
         if self.expires_at:
             return timezone.now() > self.expires_at
         return False
+        
+        
+class Backup(models.Model):
+    """نموذج النسخ الاحتياطي"""
+    
+    BACKUP_TYPE_CHOICES = [
+        ('full', _('كامل')),
+        ('partial', _('جزئي')),
+        ('settings', _('الإعدادات فقط')),
+        ('database', _('قاعدة البيانات فقط')),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', _('قيد الانتظار')),
+        ('in_progress', _('قيد التنفيذ')),
+        ('completed', _('مكتمل')),
+        ('failed', _('فشل')),
+    ]
+    
+    name = models.CharField(max_length=100, verbose_name=_('الاسم'))
+    description = models.TextField(blank=True, null=True, verbose_name=_('الوصف'))
+    backup_type = models.CharField(max_length=20, choices=BACKUP_TYPE_CHOICES, default='full', verbose_name=_('نوع النسخة الاحتياطية'))
+    file_path = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('مسار الملف'))
+    size = models.BigIntegerField(default=0, verbose_name=_('الحجم (بايت)'))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name=_('الحالة'))
+    include_media = models.BooleanField(default=True, verbose_name=_('تضمين الوسائط'))
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_backups', verbose_name=_('بواسطة'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name=_('تاريخ الاكتمال'))
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = _('نسخة احتياطية')
+        verbose_name_plural = _('النسخ الاحتياطية')
+        ordering = ['-created_at']
