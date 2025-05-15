@@ -406,6 +406,30 @@
                                         <i class="fas fa-filter filter-icon"></i>
                                     </div>
                                 </th>
+                                <th class="filterable" data-column="address">
+                                    <div class="column-header">
+                                        <span>{% trans "العنوان" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="id_number">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم الهوية" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="driver_license">
+                                    <div class="column-header">
+                                        <span>{% trans "رخصة القيادة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="total_rentals">
+                                    <div class="column-header">
+                                        <span>{% trans "إجمالي الحجوزات" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -419,11 +443,14 @@
                                 <td>{{ customer.email }}</td>
                                 <td>{{ customer.phone }}</td>
                                 <td>{{ customer.date_joined|date:"Y-m-d" }}</td>
-
+                                <td>{{ customer.address|default:"-" }}</td>
+                                <td>{{ customer.id_number|default:"-" }}</td>
+                                <td>{{ customer.driver_license|default:"-" }}</td>
+                                <td>{{ customer.reservations.count }}</td>
                             </tr>
                             {% empty %}
                             <tr class="empty-table-row">
-                                <td colspan="7" class="text-center">
+                                <td colspan="10" class="text-center">
                                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 50px 0;">
                                         <i class="fas fa-users" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
                                         <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "لا يوجد عملاء" %}</div>
@@ -446,11 +473,99 @@
                     </div>
                 </div>
 
-                <!-- رسالة توضيحية نظراً لعدم وجود بيانات كافية حالياً -->
-                <div class="empty-data-message">
-                    <i class="fas fa-key" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
-                    <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "تقارير العهدة" %}</div>
-                    <div style="color: #64748b; max-width: 600px; text-align: center;">{% trans "سيتم عرض تقارير العهدة والمستندات هنا في التحديثات القادمة. يمكنك الآن استخدام التبويبات الأخرى المفعلة." %}</div>
+                <!-- جدول بيانات المستندات والعهدة -->
+                <div class="table-responsive">
+                    <table class="reports-table">
+                        <thead>
+                            <tr class="column-headers">
+                                <th width="30px">
+                                    <input type="checkbox" class="form-check-input" id="select-all-documents">
+                                </th>
+                                <th class="filterable" data-column="document_id">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم المستند" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="document_title">
+                                    <div class="column-header">
+                                        <span>{% trans "عنوان المستند" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="document_type">
+                                    <div class="column-header">
+                                        <span>{% trans "نوع المستند" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="document_date">
+                                    <div class="column-header">
+                                        <span>{% trans "تاريخ المستند" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="folder">
+                                    <div class="column-header">
+                                        <span>{% trans "المجلد" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="expiry_date">
+                                    <div class="column-header">
+                                        <span>{% trans "تاريخ الانتهاء" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="related_car">
+                                    <div class="column-header">
+                                        <span>{% trans "السيارة المرتبطة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="related_reservation">
+                                    <div class="column-header">
+                                        <span>{% trans "الحجز المرتبط" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="related_customer">
+                                    <div class="column-header">
+                                        <span>{% trans "العميل المرتبط" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for document in documents %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input row-checkbox">
+                                </td>
+                                <td>{{ document.id }}</td>
+                                <td>{{ document.title }}</td>
+                                <td>{{ document.document_type }}</td>
+                                <td>{{ document.document_date|date:"Y-m-d" }}</td>
+                                <td>{{ document.folder.name|default:"-" }}</td>
+                                <td>{{ document.expiry_date|date:"Y-m-d"|default:"-" }}</td>
+                                <td>{{ document.car.make }} {{ document.car.model|default:"-" }}</td>
+                                <td>{{ document.reservation.id|default:"-" }}</td>
+                                <td>{{ document.user.get_full_name|default:document.user.username|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-table-row">
+                                <td colspan="10" class="text-center">
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 50px 0;">
+                                        <i class="fas fa-file-alt" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
+                                        <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "لا توجد مستندات" %}</div>
+                                        <div style="color: #64748b; max-width: 400px; text-align: center;">{% trans "لم يتم العثور على مستندات مطابقة للمعايير الحالية." %}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
