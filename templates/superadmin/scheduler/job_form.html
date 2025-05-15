@@ -102,26 +102,34 @@
                     </div>
                 </div>
                 
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="form-check form-switch">
-                            {{ form.is_active }}
-                            <label class="form-check-label" for="id_is_active">{% trans "تفعيل المهمة" %}</label>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="id_name">{% trans "اسم المهمة" %} <span class="text-danger">*</span></label>
+                            {{ form.name|as_crispy_field }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="id_description">{% trans "وصف المهمة" %}</label>
+                            {{ form.description|as_crispy_field }}
                         </div>
                     </div>
                 </div>
                 
                 <div class="row">
-                    <div class="col-12 text-center">
-                        <button type="submit" class="btn btn-primary-custom">
-                            <i class="fas fa-save {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
-                            {% trans "حفظ المهمة" %}
-                        </button>
-                        <a href="{% url 'superadmin_scheduler' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times {% if LANGUAGE_CODE == 'ar' %}ms-2{% else %}me-2{% endif %}"></i>
-                            {% trans "إلغاء" %}
-                        </a>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="id_function_name">{% trans "اسم الوظيفة" %} <span class="text-danger">*</span></label>
+                            {{ form.function_name|as_crispy_field }}
+                            <small class="form-text text-muted">{% trans "سيتم تعبئة هذا الحقل تلقائياً عند اختيار المهمة" %}</small>
+                        </div>
                     </div>
+                </div>
+                
+                <div class="form-group mt-3 text-center">
+                    <button type="submit" class="btn btn-primary">{% trans "حفظ" %}</button>
+                    <a href="{% url 'admin_scheduler_dashboard' %}" class="btn btn-secondary">{% trans "إلغاء" %}</a>
                 </div>
             </form>
         </div>
@@ -151,6 +159,7 @@
         // التعامل مع اختيار المهمة المحددة مسبقًا
         $('#predefined_task').on('change', function() {
             var selectedOption = $(this).find(':selected');
+            var taskId = $(this).val();
             var jobType = selectedOption.data('job-type');
             var description = selectedOption.data('description');
             var argsJson = selectedOption.data('args');
@@ -161,6 +170,12 @@
             // تعيين نوع المهمة
             if (jobType) {
                 $('#id_job_type').val(jobType);
+            }
+            
+            // تعيين اسم المهمة ووظيفتها
+            if (taskId) {
+                $('#id_name').val(selectedOption.text());
+                $('#id_function_name').val(taskId);
             }
             
             // تعيين معاملات المهمة
@@ -279,6 +294,7 @@
             
             return jsonObj;
         }
+        
         // تحميل المعاملات الحالية من الحقل المخفي
         var currentParams = {};
         
@@ -334,221 +350,6 @@
             $('#args_json').val(jsonString);
             $('#json-editor').val(JSON.stringify(jsonObj, null, 2));
         }
-                        <div class="col-md-4">
-                            <div class="form-group mb-2">
-                                <label for="${paramId}-key">{% trans "اسم المعامل" %}</label>
-                                <input type="text" id="${paramId}-key" class="form-control param-key" value="${key}" placeholder="{% trans "اسم المعامل" %}">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group mb-2">
-                                <label for="${paramId}-type">{% trans "نوع القيمة" %}</label>
-                                <select id="${paramId}-type" class="form-control param-type">
-                                    <option value="string" ${valueType === 'string' ? 'selected' : ''}>{% trans "نص" %}</option>
-                                    <option value="number" ${valueType === 'number' ? 'selected' : ''}>{% trans "رقم" %}</option>
-                                    <option value="boolean" ${valueType === 'boolean' ? 'selected' : ''}>{% trans "منطقي" %}</option>
-                                    <option value="object" ${isObject ? 'selected' : ''}>{% trans "كائن (JSON)" %}</option>
-                                    <option value="array" ${isArray ? 'selected' : ''}>{% trans "مصفوفة" %}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group mb-2 param-value-container">`;
-                            
-            // تحديد نوع حقل الإدخال بناءً على نوع القيمة
-            if (valueType === 'boolean') {
-                fieldHtml += `
-                    <label for="${paramId}-value">{% trans "القيمة" %}</label>
-                    <select id="${paramId}-value" class="form-control param-value">
-                        <option value="true" ${value === true ? 'selected' : ''}>{% trans "نعم" %}</option>
-                        <option value="false" ${value === false ? 'selected' : ''}>{% trans "لا" %}</option>
-                    </select>`;
-            } else if (isObject || isArray) {
-                fieldHtml += `
-                    <label for="${paramId}-value">{% trans "القيمة (JSON)" %}</label>
-                    <textarea id="${paramId}-value" class="form-control param-value" rows="1">${JSON.stringify(value)}</textarea>`;
-            } else {
-                fieldHtml += `
-                    <label for="${paramId}-value">{% trans "القيمة" %}</label>
-                    <input type="${valueType === 'number' ? 'number' : 'text'}" id="${paramId}-value" class="form-control param-value" value="${value}">`;
-            }
-            
-            fieldHtml += `
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="mt-4 pt-1 text-end">
-                                <button type="button" class="btn btn-sm btn-outline-danger remove-param" data-param-id="${paramId}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            paramsList.append(fieldHtml);
-            
-            // تعيين معالج الأحداث لتغيير نوع القيمة
-            $(`#${paramId}-type`).on('change', function() {
-                var newType = $(this).val();
-                var valueContainer = $(`#${paramId}-container .param-value-container`);
-                var currentVal = $(`#${paramId}-value`).val();
-                
-                // تحويل القيمة الحالية إلى النوع الجديد
-                var convertedValue = '';
-                try {
-                    if (newType === 'string') {
-                        convertedValue = String(currentVal);
-                    } else if (newType === 'number') {
-                        convertedValue = isNaN(Number(currentVal)) ? 0 : Number(currentVal);
-                    } else if (newType === 'boolean') {
-                        convertedValue = Boolean(currentVal);
-                    } else if (newType === 'object') {
-                        convertedValue = '{}';
-                    } else if (newType === 'array') {
-                        convertedValue = '[]';
-                    }
-                } catch (e) {
-                    console.error('خطأ في تحويل القيمة:', e);
-                }
-                
-                // إعادة رسم حقل القيمة وفقاً للنوع
-                var newValueHtml = '';
-                if (newType === 'boolean') {
-                    newValueHtml = `
-                        <label for="${paramId}-value">{% trans "القيمة" %}</label>
-                        <select id="${paramId}-value" class="form-control param-value">
-                            <option value="true">{% trans "نعم" %}</option>
-                            <option value="false" selected>{% trans "لا" %}</option>
-                        </select>`;
-                } else if (newType === 'object' || newType === 'array') {
-                    newValueHtml = `
-                        <label for="${paramId}-value">{% trans "القيمة (JSON)" %}</label>
-                        <textarea id="${paramId}-value" class="form-control param-value" rows="1">${convertedValue}</textarea>`;
-                } else {
-                    newValueHtml = `
-                        <label for="${paramId}-value">{% trans "القيمة" %}</label>
-                        <input type="${newType === 'number' ? 'number' : 'text'}" id="${paramId}-value" class="form-control param-value" value="${convertedValue}">`;
-                }
-                
-                valueContainer.html(newValueHtml);
-                updateJsonFromFields();
-            });
-            
-            paramCount++;
-        }
-        
-        // عرض المعاملات الموجودة عند تحميل الصفحة
-        showExistingParams();
-        
-        // إضافة معامل جديد عند النقر على الزر
-        $('#add-parameter').on('click', function() {
-            addParameterField();
-            updateJsonFromFields();
-        });
-        
-        // حذف معامل
-        $(document).on('click', '.remove-param', function() {
-            var paramId = $(this).data('param-id');
-            $(`#${paramId}-container`).remove();
-            updateJsonFromFields();
-        });
-        
-        // تحديث حقل JSON من الحقول المرئية
-        function updateJsonFromFields() {
-            var jsonObj = {};
-            
-            $('.parameter-row').each(function() {
-                var keyInput = $(this).find('.param-key');
-                var typeSelect = $(this).find('.param-type');
-                var valueInput = $(this).find('.param-value');
-                
-                var key = keyInput.val().trim();
-                var type = typeSelect.val();
-                var rawValue = valueInput.val();
-                
-                if (key) {
-                    var value;
-                    switch (type) {
-                        case 'string':
-                            value = String(rawValue);
-                            break;
-                        case 'number':
-                            value = isNaN(Number(rawValue)) ? 0 : Number(rawValue);
-                            break;
-                        case 'boolean':
-                            value = rawValue === 'true';
-                            break;
-                        case 'object':
-                        case 'array':
-                            try {
-                                value = JSON.parse(rawValue);
-                            } catch (e) {
-                                value = type === 'object' ? {} : [];
-                                console.error('خطأ في تحليل JSON:', e);
-                            }
-                            break;
-                        default:
-                            value = rawValue;
-                    }
-                    
-                    jsonObj[key] = value;
-                }
-            });
-            
-            // تحديث حقل JSON المخفي ومحرر JSON المتقدم
-            var jsonStr = JSON.stringify(jsonObj, null, 2);
-            $('#args_json').val(jsonStr);
-            $('#json-editor').val(jsonStr);
-        }
-        
-        // تحديث JSON عند تغيير أي من حقول المعاملات
-        $(document).on('change', '.param-key, .param-type, .param-value', function() {
-            updateJsonFromFields();
-        });
-        
-        // التبديل بين عرض محرر JSON المتقدم وإخفائه
-        $('#show-json-editor').on('change', function() {
-            if ($(this).is(':checked')) {
-                $('#advanced-json-editor').show();
-            } else {
-                $('#advanced-json-editor').hide();
-            }
-        });
-        
-        // تحديث حقول المعاملات عند تغيير JSON في المحرر المتقدم
-        $('#json-editor').on('change', function() {
-            var jsonStr = $(this).val();
-            
-            try {
-                var jsonObj = JSON.parse(jsonStr);
-                $('#args_json').val(jsonStr);
-                
-                // إعادة رسم حقول المعاملات
-                $('#parameters-list').empty();
-                paramCount = 0;
-                currentParams = jsonObj;
-                showExistingParams();
-            } catch (e) {
-                console.error('خطأ في تحليل JSON:', e);
-                // عدم تحديث الحقول إذا كان JSON غير صحيح
-            }
-        });
-        
-        // التحقق من صحة JSON عند إرسال النموذج
-        $('#scheduledJobForm').on('submit', function(e) {
-            var argsJson = $('#args_json').val();
-            
-            try {
-                if (argsJson) {
-                    JSON.parse(argsJson);
-                }
-            } catch (error) {
-                e.preventDefault();
-                alert('{% trans "خطأ في تنسيق JSON. يرجى التحقق من المعاملات." %}');
-            }
-        });
     });
 </script>
 {% endblock %}
