@@ -52,12 +52,14 @@ def create_database_backup(**kwargs):
         temp_dir = tempfile.mkdtemp()
         backup_path = os.path.join(temp_dir, f"{backup_name}.zip")
         
-        # إنشاء ملف قاعدة البيانات
-        db_file = os.path.join(temp_dir, "database.json")
+        # إنشاء ملف SQL من قاعدة البيانات
+        sql_path = os.path.join(temp_dir, "database.sql")
         
-        # استخدام Django dumpdata لإنشاء نسخة احتياطية لقاعدة البيانات
-        from django.core.management import call_command
-        call_command('dumpdata', exclude=['contenttypes', 'auth.permission'], output=db_file, indent=4)
+        with connection.cursor() as cursor:
+            with open(sql_path, 'w') as f:
+                # استخراج جداول قاعدة البيانات
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                tables = cursor.fetchall()
                 
                 # كتابة نسخة لكل جدول
                 for table in tables:
@@ -76,17 +78,86 @@ def create_database_backup(**kwargs):
                                 values = ', '.join([f"'{str(v).replace(\"'\", \"''\")}'" if v is not None else 'NULL' for v in row])
                                 f.write(f"INSERT INTO {table_name} VALUES ({values});\n")
         
+        # إنشاء ملف JSON من قاعدة البيانات باستخدام Django dumpdata
+        db_file = os.path.join(temp_dir, "database.json")
+        
+        # استخدام Django dumpdata لإنشاء نسخة احتياطية لقاعدة البيانات
+        from django.core.management import call_command
+        call_command('dumpdata', exclude=['contenttypes', 'auth.permission'], output=db_file, indent=4)
+        
+        # إنشاء ملف إعدادات النظام
+        settings_file = os.path.join(temp_dir, "system_settings.json")
+        
+        # استخراج إعدادات النظام من قاعدة البيانات
+        if include_settings:
+            try:
+                from .models_system import SystemSetting
+                system_settings = list(SystemSetting.objects.all().values('group', 'key', 'value', 'value_type'))
+                with open(settings_file, 'w', encoding='utf-8') as f:
+                    json.dump(system_settings, f, ensure_ascii=False, indent=4)
+                logger.info(f"تم استخراج {len(system_settings)} إعداد من النظام")
+            except Exception as e:
+                logger.error(f"خطأ أثناء استخراج إعدادات النظام: {str(e)}")
+                # إنشاء ملف فارغ للإعدادات في حالة الخطأ
+                with open(settings_file, 'w', encoding='utf-8') as f:
+                    json.dump([], f)
+        
+        # إنشاء ملف معلومات النسخة الاحتياطية
+        info_file = os.path.join(temp_dir, "backup_info.json")
+        backup_info = {
+            "name": backup_name,
+            "created_at": timezone.now().isoformat(),
+            "django_version": django.__version__,
+            "database_engine": settings.DATABASES['default']['ENGINE'],
+            "include_media": include_media,
+            "include_settings": include_settings,
+            "system_version": getattr(settings, 'SYSTEM_VERSION', '1.0.0'),
+        }
+        with open(info_file, 'w', encoding='utf-8') as f:
+            json.dump(backup_info, f, ensure_ascii=False, indent=4)
+
+        # إنشاء ملف JSON من قاعدة البيانات باستخدام Django dumpdata
+        db_json_path = os.path.join(temp_dir, "database.json")
+        try:
+            from django.core.management import call_command
+            call_command('dumpdata', exclude=['contenttypes', 'auth.permission'], output=db_json_path, indent=4)
+            logger.info(f"تم إنشاء نسخة احتياطية من قاعدة البيانات بتنسيق JSON")
+        except Exception as e:
+            logger.error(f"خطأ أثناء استخراج قاعدة البيانات بتنسيق JSON: {str(e)}")
+            # في حالة فشل dumpdata، نستخدم الطريقة اليدوية لـ SQLite
+            with open(db_json_path, 'w', encoding='utf-8') as f:
+                json.dump({"error": "فشل استخراج البيانات"}, f)
+                
         # إنشاء ملف ZIP
-        with zipfile.ZipFile(backup_path, 'w') as zipf:
-            # إضافة ملف SQL
-            zipf.write(sql_path, "database.sql")
+        with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # إضافة ملف SQL الأصلي
+            if os.path.exists(sql_path):
+                zipf.write(sql_path, "database.sql")
+                
+            # إضافة نسخة قاعدة البيانات JSON
+            zipf.write(db_json_path, "database.json")
+            
+            # إضافة ملف معلومات النسخة الاحتياطية
+            zipf.write(info_file, "backup_info.json")
+            
+            # إضافة ملف إعدادات النظام إذا كان مطلوباً
+            if include_settings:
+                zipf.write(settings_file, "system_settings.json")
+                
+            # إضافة ملف إعدادات Django
+            if os.path.exists(os.path.join(settings.BASE_DIR, "rental/settings.py")):
+                zipf.write(os.path.join(settings.BASE_DIR, "rental/settings.py"), "django_settings.py")
             
             # إضافة ملفات الوسائط إذا تم طلب ذلك
             if include_media and os.path.exists(settings.MEDIA_ROOT):
                 for root, dirs, files in os.walk(settings.MEDIA_ROOT):
+                    # تخطي مجلد النسخ الاحتياطية نفسه
+                    if 'backups' in root.split(os.sep):
+                        continue
+                        
                     for file in files:
                         file_path = os.path.join(root, file)
-                        arcname = os.path.relpath(file_path, start=settings.BASE_DIR)
+                        arcname = os.path.join('media', os.path.relpath(file_path, start=settings.MEDIA_ROOT))
                         zipf.write(file_path, arcname)
         
         # حفظ النسخة الاحتياطية في قاعدة البيانات
@@ -120,6 +191,7 @@ def create_database_backup(**kwargs):
             الحجم: {file_size} بايت
             التاريخ: {timezone.now()}
             تضمين ملفات الوسائط: {'نعم' if include_media else 'لا'}
+            تضمين إعدادات النظام: {'نعم' if include_settings else 'لا'}
             """
             try:
                 mail_admins("تقرير النسخ الاحتياطي التلقائي", mail_message)
