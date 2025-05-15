@@ -68,34 +68,60 @@
                                 <h6 class="mb-0">{% trans "معاملات الوظيفة" %}</h6>
                             </div>
                             <div class="card-body">
-                                <!-- واجهة المستخدم المحسنة للمعاملات -->
-                                <div id="parameters-container">
-                                    <div class="d-flex justify-content-between mb-3">
-                                        <h6>{% trans "المعاملات" %}</h6>
-                                        <button type="button" id="add-parameter" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-plus"></i> {% trans "إضافة معامل" %}
-                                        </button>
+                                <!-- عرض المعاملات كقراءة فقط -->
+                                <div id="parameters-view" class="mb-3">
+                                    <h6>{% trans "المعاملات الافتراضية للمهمة" %}:</h6>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> {% trans "المعاملات مضبوطة مسبقًا لكل مهمة بشكل مثالي. سيتم تطبيقها تلقائيًا عند اختيار المهمة." %}
                                     </div>
-                                    <div id="parameters-list">
-                                        <!-- سيتم إضافة المعاملات هنا بواسطة JavaScript -->
+                                    <div id="parameters-display" class="mt-3 mb-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <pre id="params-preview" class="mb-0" style="white-space: pre-wrap;">{% trans "سيتم عرض المعاملات هنا بعد اختيار المهمة..." %}</pre>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 <!-- حقل مخفي لتخزين معاملات JSON -->
                                 <input type="hidden" id="args_json" name="args_json" value="{{ args_json|default:'{}' }}">
                                 
+                                <!-- خيار فتح المحرر المتقدم للمستخدمين المتقدمين فقط -->
                                 <div class="mt-3">
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="show-json-editor">
-                                        <label class="form-check-label" for="show-json-editor">{% trans "عرض محرر JSON المتقدم" %}</label>
+                                        <input class="form-check-input" type="checkbox" id="show-advanced-options">
+                                        <label class="form-check-label" for="show-advanced-options">{% trans "عرض خيارات متقدمة (للمسؤولين فقط)" %}</label>
                                     </div>
                                 </div>
                                 
-                                <!-- محرر JSON المتقدم (مخفي بشكل افتراضي) -->
-                                <div id="advanced-json-editor" class="mt-3" style="display: none;">
-                                    <label for="json-editor">{% trans "محرر JSON المتقدم" %}</label>
-                                    <textarea id="json-editor" class="form-control" rows="5">{{ args_json|default:'{}' }}</textarea>
-                                    <small class="form-text text-muted">{% trans "تحرير المعاملات مباشرة بتنسيق JSON (للمستخدمين المتقدمين)" %}</small>
+                                <!-- خيارات متقدمة (مخفية بشكل افتراضي) -->
+                                <div id="advanced-options" class="mt-3" style="display: none;">
+                                    <!-- واجهة المستخدم المحسنة للمعاملات -->
+                                    <div id="parameters-container">
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <h6>{% trans "تعديل المعاملات" %}</h6>
+                                            <button type="button" id="add-parameter" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-plus"></i> {% trans "إضافة معامل" %}
+                                            </button>
+                                        </div>
+                                        <div id="parameters-list">
+                                            <!-- سيتم إضافة المعاملات هنا بواسطة JavaScript -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="show-json-editor">
+                                            <label class="form-check-label" for="show-json-editor">{% trans "عرض محرر JSON المتقدم" %}</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- محرر JSON المتقدم (مخفي بشكل افتراضي) -->
+                                    <div id="advanced-json-editor" class="mt-3" style="display: none;">
+                                        <label for="json-editor">{% trans "محرر JSON المتقدم" %}</label>
+                                        <textarea id="json-editor" class="form-control" rows="5">{{ args_json|default:'{}' }}</textarea>
+                                        <small class="form-text text-muted">{% trans "تحرير المعاملات مباشرة بتنسيق JSON (للمستخدمين المتقدمين)" %}</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -156,6 +182,21 @@
         
         // تطبيق الإعدادات الأولية
         $('#id_interval_type').trigger('change');
+
+        // التعامل مع عرض الخيارات المتقدمة
+        $('#show-advanced-options').on('change', function() {
+            if ($(this).is(':checked')) {
+                $('#advanced-options').slideDown();
+            } else {
+                $('#advanced-options').slideUp();
+                // إعادة تعيين القيم الافتراضية عند إخفاء الخيارات المتقدمة
+                var selectedOption = $('#predefined_task').find(':selected');
+                if (selectedOption.val()) {
+                    var argsJson = selectedOption.data('args');
+                    $('#args_json').val(argsJson);
+                }
+            }
+        });
         
         // التعامل مع اختيار المهمة المحددة مسبقًا
         $('#predefined_task').on('change', function() {
@@ -197,12 +238,20 @@
             if (argsJson) {
                 $('#args_json').val(argsJson);
                 
-                // تحديث واجهة المعاملات
+                // عرض المعاملات بشكل مبسط في واجهة المستخدم
                 try {
                     var args = JSON.parse(argsJson);
-                    updateParametersUI(args);
                     
-                    // تخطي جزء إدخال المعاملات اليدوية
+                    // عرض المعاملات في قسم العرض
+                    var prettyParams = formatParametersForDisplay(args);
+                    $('#params-preview').html(prettyParams);
+                    
+                    // تحديث واجهة المعاملات المتقدمة إذا كانت ظاهرة
+                    if ($('#show-advanced-options').is(':checked')) {
+                        updateParametersUI(args);
+                    }
+                    
+                    // إعادة تعيين المحرر المتقدم
                     $('#show-json-editor').prop('checked', false);
                     $('#advanced-json-editor').hide();
                     
@@ -210,9 +259,37 @@
                     updateArgsJson();
                 } catch (e) {
                     console.error('خطأ في تحليل المعاملات:', e);
+                    $('#params-preview').html('{% trans "خطأ في تحليل المعاملات" %}');
                 }
+            } else {
+                $('#params-preview').html('{% trans "لا توجد معاملات لهذه المهمة" %}');
             }
         });
+        
+        // دالة لتنسيق المعاملات للعرض
+        function formatParametersForDisplay(params) {
+            if (!params || Object.keys(params).length === 0) {
+                return '{% trans "لا توجد معاملات لهذه المهمة" %}';
+            }
+            
+            var result = '';
+            
+            $.each(params, function(key, value) {
+                var displayValue = value;
+                
+                if (typeof value === 'boolean') {
+                    displayValue = value ? '<span class="badge bg-success">نعم</span>' : '<span class="badge bg-danger">لا</span>';
+                } else if (value === null) {
+                    displayValue = '<span class="badge bg-secondary">فارغ</span>';
+                } else if (Array.isArray(value) || typeof value === 'object') {
+                    displayValue = '<code>' + JSON.stringify(value) + '</code>';
+                }
+                
+                result += '<div class="mb-2"><strong>' + key + ':</strong> ' + displayValue + '</div>';
+            });
+            
+            return result;
+        }
         
         // تهيئة قائمة المعاملات والمحرر المتقدم
         var paramsList = $('#parameters-list');

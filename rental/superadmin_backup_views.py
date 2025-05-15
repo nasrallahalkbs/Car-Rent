@@ -407,8 +407,11 @@ def restore_backup(request, backup_id):
                 # استعادة ملفات الإعدادات (للنسخ الكاملة أو نسخ الإعدادات فقط)
                 if backup_type in ['full', 'settings_only']:
                     # استعادة ملفات الإعدادات
-                    settings_extensions = ['.json', '.ini', '.yml', '.yaml', '.conf', '.cfg', '.config', '.xml']
+                    settings_extensions = ['.json', '.ini', '.yml', '.yaml', '.conf', '.cfg', '.config', '.xml', '.py']
                     settings_files_count = 0
+                    
+                    # ملفات مهمة إضافية يجب استعادتها
+                    important_files = ['settings.py', 'urls.py', 'views.py', 'models.py', 'admin.py']
                     
                     for zip_info in backup_zip.infolist():
                         # تجاهل المجلدات
@@ -418,10 +421,16 @@ def restore_backup(request, backup_id):
                         # تخطي المسارات التي تبدأ بـ 'media/' للنسخ الاحتياطية لإعدادات النظام فقط
                         if backup_type == 'settings_only' and zip_info.filename.startswith('media/'):
                             continue
-                            
-                        # استعادة ملفات الإعدادات والملفات المهمة
+                        
+                        # استخراج اسم الملف من المسار
+                        file_name = os.path.basename(zip_info.filename)
                         file_base, file_ext = os.path.splitext(zip_info.filename)
-                        if not zip_info.is_dir() and file_ext in settings_extensions:
+                        
+                        # استعادة ملفات الإعدادات والملفات المهمة
+                        if not zip_info.is_dir() and (file_ext in settings_extensions or file_name in important_files):
+                            target_path = os.path.join(settings.BASE_DIR, zip_info.filename)
+                            # التأكد من وجود المجلد الهدف
+                            os.makedirs(os.path.dirname(target_path), exist_ok=True)
                             backup_zip.extract(zip_info, path=settings.BASE_DIR)
                             settings_files_count += 1
                 
