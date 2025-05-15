@@ -4571,8 +4571,8 @@ def admin_reports(request):
     # بيانات السيارات للتبويب الخاص بها
     cars = Car.objects.all()[:20]
     
-    # بيانات العملاء للتبويب الخاص بهم
-    customers = User.objects.filter(is_staff=False, is_admin=False, is_superadmin=False)[:20]
+    # بيانات العملاء للتبويب الخاص بهم (فقط المستخدمين العاديين)
+    customers = User.objects.filter(is_staff=False, is_admin=False, is_superuser=False)[:20]
     
     # تحميل معلومات الوقت الحالي لكسر كاش المتصفح
     timestamp = int(datetime.now().timestamp())
