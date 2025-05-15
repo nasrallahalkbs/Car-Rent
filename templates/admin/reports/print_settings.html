@@ -1,4 +1,3 @@
-
 {% extends "admin/enhanced/admin_layout.html" %}
 <!-- CACHE_BUSTER {{ now.timestamp|floatformat:0 }} -->
 {% load i18n %}
@@ -7,7 +6,6 @@
 {% block title %}{% trans "إعدادات طباعة التقرير" %} - كاررنتال{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/print_settings.css' %}?v={{ now.timestamp|floatformat:0 }}">
 <style>
     /* تنسيقات أساسية لصفحة إعدادات الطباعة */
     .print-settings-container {
@@ -495,11 +493,10 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // تسجيل رسالة تأكيد تحميل الصفحة للتحقق من تشغيل الكود
-    console.log("تم تحميل صفحة إعدادات الطباعة");
+    console.log("صفحة إعدادات الطباعة محدثة - تم التحميل");
 
     // ========================
-    // متغيرات عناصر واجهة المستخدم
+    // تعريف متغيرات عناصر واجهة المستخدم
     // ========================
     const paperSizeSelect = document.getElementById('paperSize');
     const marginTop = document.getElementById('marginTop');
@@ -524,30 +521,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const resetButton = document.getElementById('resetButton');
 
     // ========================
-    // عناصر المعاينة
+    // تعريف متغيرات عناصر المعاينة
     // ========================
     const previewPaper = document.getElementById('previewPaper');
     const previewContent = document.getElementById('previewContent');
     const previewTitle = document.getElementById('previewTitle');
     const previewPreText = document.getElementById('previewPreText');
     const previewTable = document.getElementById('previewTable');
-    
-    // التحقق من وجود جميع العناصر المطلوبة
-    if (!previewPaper || !previewContent || !previewTitle || !previewTable) {
-        console.error("خطأ: لم يتم العثور على عناصر المعاينة");
-    }
 
     // ========================
-    // دوال التحديث
+    // وظائف تحديث المعاينة
     // ========================
 
     // تحديث حجم الورق
     function updatePaperSize() {
-        // إزالة جميع فئات الورق السابقة
+        // إزالة جميع أنواع الورق السابقة
         previewPaper.classList.remove('paper-a4', 'paper-a5', 'paper-letter', 'paper-legal');
-        // إضافة فئة الورق المحدد
+        // إضافة نوع الورق المحدد
         previewPaper.classList.add('paper-' + paperSizeSelect.value);
-        console.log("تم تحديث حجم الورق إلى: " + paperSizeSelect.value);
+        console.log("تم تحديث حجم الورق: " + paperSizeSelect.value);
     }
 
     // تحديث الهوامش
@@ -557,241 +549,146 @@ document.addEventListener('DOMContentLoaded', function() {
         const bottomVal = marginBottom.value;
         const leftVal = marginLeft.value;
         previewContent.style.padding = `${topVal}mm ${rightVal}mm ${bottomVal}mm ${leftVal}mm`;
-        console.log(`تم تحديث الهوامش: أعلى=${topVal}mm، يمين=${rightVal}mm، أسفل=${bottomVal}mm، يسار=${leftVal}mm`);
+        console.log("تم تحديث الهوامش");
     }
 
     // تحديث عنوان التقرير
     function updateTitle() {
         previewTitle.textContent = reportTitle.value;
         previewTitle.style.fontSize = titleFontSize.value;
-        console.log("تم تحديث العنوان إلى: " + reportTitle.value + " بحجم خط: " + titleFontSize.value);
+        console.log("تم تحديث العنوان: " + reportTitle.value);
     }
 
     // تحديث عرض الجدول
     function updateTableWidth() {
         previewTable.style.width = tableWidth.value + '%';
-        console.log("تم تحديث عرض الجدول إلى: " + tableWidth.value + "%");
+        console.log("تم تحديث عرض الجدول: " + tableWidth.value + '%');
     }
 
-    // تحديث أحجام الخطوط
+    // تحديث حجم خط الجدول
     function updateFontSizes() {
         previewTable.style.fontSize = tableFontSize.value;
-        console.log("تم تحديث حجم خط الجدول إلى: " + tableFontSize.value);
+        console.log("تم تحديث حجم الخط: " + tableFontSize.value);
     }
 
     // تحديث لون الجدول
     function updateTableColor() {
-        // إزالة كل الألوان القديمة
+        // إزالة جميع ألوان الجدول السابقة
         previewTable.classList.remove('table-blue', 'table-green', 'table-orange', 'table-red', 'table-purple');
 
-        // تطبيق اللون الجديد
+        // إضافة اللون الجديد إذا كان غير افتراضي
         if (tableColor.value !== 'default') {
             previewTable.classList.add('table-' + tableColor.value);
-            console.log("تم تطبيق لون الجدول: " + tableColor.value);
-
-            // تطبيق أنماط CSS حسب اللون المختار
-            const headerCells = previewTable.querySelectorAll('th');
-            const dataCells = previewTable.querySelectorAll('td');
-            const evenRows = previewTable.querySelectorAll('tr:nth-child(even)');
-
-            // إعادة تعيين الأنماط
-            headerCells.forEach(cell => {
-                cell.style.backgroundColor = '';
-                cell.style.color = '';
-                cell.style.borderColor = '';
-            });
-
-            dataCells.forEach(cell => {
-                cell.style.backgroundColor = '';
-                cell.style.color = '';
-                cell.style.borderColor = '';
-            });
-
-            // تطبيق الأنماط الجديدة حسب اللون المختار
-            switch(tableColor.value) {
-                case 'blue':
-                    applyTableColorStyles('#2c3e50', 'white', '#34495e', '#ecf0f1');
-                    break;
-                case 'green':
-                    applyTableColorStyles('#27ae60', 'white', '#2ecc71', '#e8f5e9');
-                    break;
-                case 'orange':
-                    applyTableColorStyles('#e67e22', 'white', '#d35400', '#fff3e0');
-                    break;
-                case 'red':
-                    applyTableColorStyles('#c0392b', 'white', '#e74c3c', '#ffebee');
-                    break;
-                case 'purple':
-                    applyTableColorStyles('#8e44ad', 'white', '#9b59b6', '#f3e5f5');
-                    break;
-            }
-        } else {
-            // إعادة تعيين لألوان الافتراضية
-            applyTableColorStyles('#f2f2f2', 'black', '#ddd', '#f9f9f9');
-            console.log("تم إعادة تعيين لون الجدول إلى الافتراضي");
         }
+
+        console.log("تم تحديث لون الجدول: " + tableColor.value);
     }
 
-    // وظيفة مساعدة لتطبيق تنسيقات الألوان على الجدول
-    function applyTableColorStyles(headerBg, headerColor, borderColor, evenRowBg) {
-        const headerCells = previewTable.querySelectorAll('th');
-        headerCells.forEach(cell => {
-            cell.style.backgroundColor = headerBg;
-            cell.style.color = headerColor;
-            cell.style.borderColor = borderColor;
-        });
-
-        // تطبيق لون الصفوف المتناوبة
-        previewTable.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
-            cell.style.backgroundColor = evenRowBg;
-        });
-    }
-
-    // تخزين نسخة من بنية الجدول الأفقي الأصلية
+    // تحديث اتجاه الجدول
     let originalTableHTML = '';
 
-    // تحديث اتجاه الجدول (أفقي / عمودي)
     function updateTableOrientation() {
         if (orientationVertical.checked) {
-            // تحويل الجدول إلى الاتجاه العمودي (تبديل الصفوف والأعمدة)
+            // حفظ الجدول الأصلي إذا لم يكن محفوظاً بعد
+            if (originalTableHTML === '') {
+                originalTableHTML = previewTable.innerHTML;
+            }
+
+            // تحويل الجدول إلى الاتجاه العمودي
             transposeTable();
-            console.log("تم تغيير اتجاه الجدول إلى عمودي");
+            console.log("تم تحويل الجدول إلى الاتجاه العمودي");
         } else {
-            // إعادة الجدول إلى الاتجاه الأفقي (الافتراضي)
-            restoreHorizontalTable();
-            console.log("تم تغيير اتجاه الجدول إلى أفقي");
+            // إعادة الجدول إلى الاتجاه الأفقي
+            if (originalTableHTML !== '') {
+                previewTable.innerHTML = originalTableHTML;
+                // تطبيق الإعدادات الأخرى مرة أخرى
+                updateTableColor();
+                addExtraRows();
+            }
+            console.log("تم تحويل الجدول إلى الاتجاه الأفقي");
         }
     }
 
-    // تحويل الجدول من أفقي إلى عمودي (تبديل الصفوف والأعمدة)
+    // تحويل الجدول من أفقي إلى عمودي
     function transposeTable() {
-        // حفظ نسخة من الجدول الأصلي إذا لم يتم ذلك بعد
-        if (originalTableHTML === '') {
-            originalTableHTML = previewTable.innerHTML;
-        }
-
-        // استخراج البيانات من الجدول الحالي
+        // استخراج بيانات الجدول
         const rows = Array.from(previewTable.querySelectorAll('tr'));
-        const columnCount = rows[0].querySelectorAll('th, td').length;
-        const rowCount = rows.length;
-
-        // مصفوفة لتخزين البيانات
+        const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent);
         const data = [];
 
-        // استخراج البيانات من الجدول
-        rows.forEach((row, rowIndex) => {
-            const cells = Array.from(row.querySelectorAll('th, td'));
-            cells.forEach((cell, colIndex) => {
-                if (!data[colIndex]) {
-                    data[colIndex] = [];
-                }
-                data[colIndex][rowIndex] = {
-                    content: cell.innerHTML,
-                    isHeader: cell.tagName.toLowerCase() === 'th'
-                };
-            });
-        });
+        // استخراج بيانات الصفوف
+        for (let i = 1; i < rows.length; i++) {
+            const cells = Array.from(rows[i].querySelectorAll('td')).map(td => td.textContent);
+            data.push(cells);
+        }
 
         // إنشاء الجدول العمودي
         let newTable = '<thead><tr>';
-
-        // إضافة صف الرأس (العناوين تصبح في العمود الأول)
-        data.forEach((row, rowIndex) => {
-            if (rowIndex === 0) {
-                newTable += `<th>${row[0].content}</th>`;
-            } else {
-                newTable += `<th>${row[0].content}</th>`;
-            }
-        });
-
+        // إضافة عمود الرأس الأول (أسماء الحقول)
+        for (let i = 0; i < headers.length; i++) {
+            newTable += `<th>${headers[i]}</th>`;
+        }
         newTable += '</tr></thead><tbody>';
 
         // إضافة باقي البيانات
-        for (let colIndex = 1; colIndex < rowCount; colIndex++) {
+        for (let col = 0; col < data[0].length; col++) {
             newTable += '<tr>';
-
-            for (let rowIndex = 0; rowIndex < columnCount; rowIndex++) {
-                if (data[rowIndex] && data[rowIndex][colIndex]) {
-                    newTable += `<td>${data[rowIndex][colIndex].content}</td>`;
+            for (let row = 0; row < data.length; row++) {
+                if (data[row][col]) {
+                    newTable += `<td>${data[row][col]}</td>`;
                 } else {
                     newTable += '<td></td>';
                 }
             }
-
             newTable += '</tr>';
         }
 
         newTable += '</tbody>';
-
-        // تطبيق الجدول العمودي
         previewTable.innerHTML = newTable;
-
-        // إعادة تطبيق لون الجدول بعد التحويل
-        updateTableColor();
-    }
-
-    // إعادة الجدول إلى الاتجاه الأفقي
-    function restoreHorizontalTable() {
-        if (originalTableHTML !== '') {
-            previewTable.innerHTML = originalTableHTML;
-
-            // إعادة تطبيق لون الجدول بعد العودة للوضع الأفقي
-            updateTableColor();
-        }
     }
 
     // إضافة صفوف إضافية للجدول
     function addExtraRows() {
-        try {
-            const tbody = previewTable.querySelector('tbody');
-            if (!tbody) {
-                console.error("لا يمكن العثور على جسم الجدول (tbody)");
-                return;
-            }
-            
-            const currentRows = tbody.querySelectorAll('tr:not(.extra-row)').length;
-            const targetRows = parseInt(tableRows.value);
+        const tbody = previewTable.querySelector('tbody');
+        if (!tbody) return;
 
-            // حذف الصفوف الإضافية الموجودة
-            tbody.querySelectorAll('tr.extra-row').forEach(row => {
-                row.remove();
-            });
+        // عدد الصفوف الحالية (غير الإضافية)
+        const currentRows = tbody.querySelectorAll('tr:not(.extra-row)').length;
+        // عدد الصفوف المطلوبة
+        const targetRows = parseInt(tableRows.value);
 
-            // إضافة صفوف جديدة إذا كان العدد المطلوب أكبر
-            if (targetRows > currentRows) {
-                const columnsCount = previewTable.querySelector('thead tr').cells.length;
+        // حذف الصفوف الإضافية السابقة
+        tbody.querySelectorAll('tr.extra-row').forEach(row => row.remove());
 
-                for (let i = 0; i < targetRows - currentRows; i++) {
-                    const newRow = document.createElement('tr');
-                    newRow.className = 'extra-row';
+        // إضافة صفوف جديدة إذا لزم الأمر
+        if (targetRows > currentRows) {
+            const columnsCount = previewTable.querySelector('thead tr').cells.length;
 
-                    for (let j = 0; j < columnsCount; j++) {
-                        const cell = document.createElement('td');
+            for (let i = 0; i < targetRows - currentRows; i++) {
+                const newRow = document.createElement('tr');
+                newRow.className = 'extra-row';
 
-                        if (j === 0) {
-                            cell.textContent = `#${currentRows + i + 1}`;
-                        } else if (j === 1) {
-                            cell.textContent = 'سيارة نموذجية';
-                        } else if (j === columnsCount - 1) {
-                            cell.textContent = 'قيد الانتظار';
-                        } else {
-                            cell.textContent = '2025-05-15';
-                        }
+                for (let j = 0; j < columnsCount; j++) {
+                    const cell = document.createElement('td');
 
-                        newRow.appendChild(cell);
+                    // إضافة بيانات افتراضية حسب العمود
+                    if (j === 0) {
+                        cell.textContent = `#${currentRows + i + 1}`;
+                    } else if (j === 1) {
+                        cell.textContent = 'سيارة نموذجية';
+                    } else if (j === columnsCount - 1) {
+                        cell.textContent = 'قيد الانتظار';
+                    } else {
+                        cell.textContent = '2025-05-15';
                     }
 
-                    tbody.appendChild(newRow);
+                    newRow.appendChild(cell);
                 }
-                console.log(`تم إضافة ${targetRows - currentRows} صفوف جديدة للجدول`);
-            } else {
-                console.log(`لم تتم إضافة صفوف جديدة، العدد المطلوب (${targetRows}) أقل من أو يساوي العدد الحالي (${currentRows})`);
+
+                tbody.appendChild(newRow);
             }
 
-            // إعادة تطبيق اللون بعد إضافة صفوف
-            updateTableColor();
-        } catch (error) {
-            console.error("خطأ أثناء إضافة صفوف إضافية:", error);
+            console.log(`تم إضافة ${targetRows - currentRows} صفوف إضافية`);
         }
     }
 
@@ -799,67 +696,63 @@ document.addEventListener('DOMContentLoaded', function() {
     function updatePreTableText() {
         previewPreText.textContent = preTableText.value;
         previewPreText.style.display = addTextBeforeTable.checked ? 'block' : 'none';
-        console.log("تم تحديث النص قبل الجدول: " + (addTextBeforeTable.checked ? "ظاهر" : "مخفي"));
+        console.log("تم تحديث النص قبل الجدول");
     }
 
-    // دالة تهيئة المعاينة الأولية
-    function initializePreview() {
-        console.log("بدء تهيئة المعاينة الأولية...");
-        
-        try {
-            // 1. تهيئة قيم العناصر حسب القيم الافتراضية في النموذج
-            updatePaperSize();
-            updateMargins();
-            updateTitle();
-            updateTableWidth();
-            updateFontSizes();
-            updateTableColor();
-            updateTableOrientation();
-            addExtraRows();
-            updatePreTableText();
-            
-            // 2. تطبيق الأنماط الإضافية
-            previewTable.classList.add('preview-initialized');
-            
-            console.log("تمت تهيئة المعاينة الأولية بنجاح");
-        } catch (error) {
-            console.error("خطأ أثناء تهيئة المعاينة:", error);
-        }
+    // تحديث المعاينة بالكامل
+    function updateFullPreview() {
+        updatePaperSize();
+        updateMargins();
+        updateTitle();
+        updateTableWidth();
+        updateFontSizes();
+        updateTableColor();
+        updateTableOrientation();
+        addExtraRows();
+        updatePreTableText();
+        console.log("تم تحديث المعاينة بالكامل");
     }
 
+    // ================= نظامی الأحداث
     // ========================
-    // مستمعي الأحداث
-    // ========================
-    
-    // تغيير حجم الورق
-    paperSizeSelect.addEventListener('change', updatePaperSize);
 
-    // تغيير الهوامش
-    [marginTop, marginRight, marginBottom, marginLeft].forEach(input => {
-        input.addEventListener('input', updateMargins);
+    // تحديث عند تغيير حجم الورق
+    paperSizeSelect.addEventListener('change', updateFullPreview);
+
+    // تحديث عند تغيير الهوامش
+    marginTop.addEventListener('input', updateFullPreview);
+    marginRight.addEventListener('input', updateFullPreview);
+    marginBottom.addEventListener('input', updateFullPreview);
+    marginLeft.addEventListener('input', updateFullPreview);
+
+    // تحديث عند تغيير العنوان
+    reportTitle.addEventListener('input', updateFullPreview);
+    titleFontSize.addEventListener('change', updateFullPreview);
+
+    // تحديث عند تغيير إعدادات الجدول
+    tableRows.addEventListener('input', updateFullPreview);
+    tableWidth.addEventListener('input', updateFullPreview);
+    tableFontSize.addEventListener('change', updateFullPreview);
+    tableColor.addEventListener('change', updateFullPreview);
+
+    // تحديث عند تغيير اتجاه الجدول
+    orientationHorizontal.addEventListener('change', updateFullPreview);
+    orientationVertical.addEventListener('change', updateFullPreview);
+
+    // إظهار/إخفاء النص قبل الجدول
+    addTextBeforeTable.addEventListener('change', function() {
+        preTableTextControl.style.display = this.checked ? 'block' : 'none';
+        updatePreTableText();
     });
 
-    // تغيير عنوان التقرير
-    reportTitle.addEventListener('input', updateTitle);
-    titleFontSize.addEventListener('change', updateTitle);
+    // تحديث النص قبل الجدول
+    preTableText.addEventListener('input', updatePreTableText);
 
-    // تغيير إعدادات الجدول
-    tableRows.addEventListener('input', addExtraRows);
-    tableWidth.addEventListener('input', updateTableWidth);
-    tableFontSize.addEventListener('change', updateFontSizes);
-    tableColor.addEventListener('change', updateTableColor);
-    
-    // تغيير اتجاه الجدول
-    [orientationHorizontal, orientationVertical].forEach(radio => {
-        radio.addEventListener('change', updateTableOrientation);
-    });
-
-    // تغيير إظهار/إخفاء الطابعات
+    // إظهار/إخفاء قائمة الطابعات
     printerSearch.addEventListener('change', function() {
         printerControl.style.display = this.checked ? 'block' : 'none';
-        console.log("البحث عن الطابعات: " + (this.checked ? "مفعل" : "معطل"));
-        
-        // عند التفعيل، محاولة البحث عن الطابعات المتوفرة
+
+        // محاولة البحث عن الطابعات إذا كان متاحاً
         if (this.checked && 'Printer' in window) {
             try {
                 Printer.getPrinterList().then(printers => {
@@ -871,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         printerSelect.appendChild(option);
                     });
                 }).catch(error => {
-                    console.error("خطأ في استرجاع قائمة الطابعات:", error);
+                    console.error("خطأ في الوصول للطابعات:", error);
                 });
             } catch (error) {
                 console.error("الوصول للطابعات غير متاح:", error);
@@ -879,20 +772,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // تغيير إظهار/إخفاء النص قبل الجدول
-    addTextBeforeTable.addEventListener('change', function() {
-        preTableTextControl.style.display = this.checked ? 'block' : 'none';
-        updatePreTableText();
-    });
-
-    // تغيير محتوى النص قبل الجدول
-    preTableText.addEventListener('input', updatePreTableText);
-
     // إعادة تعيين الإعدادات
     resetButton.addEventListener('click', function() {
-        console.log("تم النقر على زر إعادة الضبط");
-        
-        // إعادة تعيين جميع عناصر التحكم إلى قيمها الافتراضية
+        // إعادة عناصر التحكم إلى القيم الافتراضية
         paperSizeSelect.value = 'a4';
         marginTop.value = 20;
         marginRight.value = 20;
@@ -910,30 +792,30 @@ document.addEventListener('DOMContentLoaded', function() {
         addTextBeforeTable.checked = false;
         preTableTextControl.style.display = 'none';
         preTableText.value = '';
-        
-        // إعادة تهيئة المعاينة
-        setTimeout(initializePreview, 50);
+
+        // تحديث المعاينة
+        setTimeout(updateFullPreview, 50);
     });
 
     // الطباعة
     printButton.addEventListener('click', function() {
         console.log("تم النقر على زر الطباعة");
-        
+
         // جمع البيانات من الجدول
-        const tableHeaders = Array.from(previewTable.querySelectorAll('thead th')).map(th => th.textContent.trim());
-        const tableRows = Array.from(previewTable.querySelectorAll('tbody tr')).map(row => {
+        const rows = Array.from(document.querySelectorAll('#previewTable tbody tr'));
+        const headerRow = document.querySelector('#previewTable thead tr');
+        const headers = Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent.trim());
+
+        const tableRowsData = rows.map(row => {
             return Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
         });
-        
-        // تحديد محتوى النص قبل الجدول
-        const preText = addTextBeforeTable.checked ? preTableText.value : '';
-        
-        // تعيين ألوان الجدول استناداً إلى الاختيار
+
+        // تحديد ألوان الجدول
         let headerBgColor = '#f2f2f2';
         let headerTextColor = 'black';
         let headerBorderColor = '#ddd';
         let evenRowBgColor = '#f9f9f9';
-        
+
         switch(tableColor.value) {
             case 'blue':
                 headerBgColor = '#2c3e50';
@@ -966,68 +848,73 @@ document.addEventListener('DOMContentLoaded', function() {
                 evenRowBgColor = '#f3e5f5';
                 break;
         }
-        
+
         // إنشاء نافذة الطباعة
         const printWindow = window.open('', '_blank', 'height=600,width=800,scrollbars=yes');
-        
+
         if (!printWindow) {
             alert('يرجى السماح بفتح النوافذ المنبثقة للطباعة.');
             return;
         }
-        
-        // بناء محتوى HTML للطباعة
-        let tableHTML;
-        
+
+        // بناء HTML الطباعة
+        let tableHTML = '';
+
         if (orientationVertical.checked) {
-            // بناء جدول بالاتجاه العمودي
-            tableHTML = `<table class="print-table" style="width:${tableWidth.value}%; border-collapse:collapse; font-size:${tableFontSize.value};">`;
-            
+            // بناء جدول عمودي
+            tableHTML = `<table style="width:${tableWidth.value}%; border-collapse:collapse; font-size:${tableFontSize.value};">`;
+
             // صفوف الجدول العمودي
-            for (let i = 0; i < tableHeaders.length; i++) {
+            for (let i = 0; i < headers.length; i++) {
                 tableHTML += '<tr>';
-                tableHTML += `<th style="background-color:${headerBgColor}; color:${headerTextColor}; border:1px solid ${headerBorderColor}; padding:8px; text-align:right; font-weight:bold;">${tableHeaders[i]}</th>`;
-                
-                for (let j = 0; j < tableRows.length; j++) {
-                    const cellStyle = j % 2 === 1 
-                        ? `background-color:${evenRowBgColor};` 
-                        : '';
-                    
-                    if (tableRows[j] && tableRows[j][i] !== undefined) {
-                        tableHTML += `<td style="border:1px solid #ddd; padding:8px; text-align:right; ${cellStyle}">${tableRows[j][i]}</td>`;
+                tableHTML += `<th style="background-color:${headerBgColor}; color:${headerTextColor}; border:1px solid ${headerBorderColor}; padding:8px; text-align:right; font-weight:bold;">${headers[i]}</th>`;
+
+                for (let j = 0; j < tableRowsData.length; j++) {
+                    const cellStyle = j % 2 === 1 ? `background-color:${evenRowBgColor};` : '';
+
+                    if (tableRowsData[j] && tableRowsData[j][i] !== undefined) {
+                        tableHTML += `<td style="border:1px solid #ddd; padding:8px; text-align:right; ${cellStyle}">${tableRowsData[j][i]}</td>`;
                     } else {
                         tableHTML += `<td style="border:1px solid #ddd; padding:8px; text-align:right; ${cellStyle}"></td>`;
                     }
                 }
-                
+
                 tableHTML += '</tr>';
             }
-            
-            tableHTML += '</table>';
         } else {
-            // بناء جدول بالاتجاه الأفقي
-            tableHTML = `
-                <table class="print-table" style="width:${tableWidth.value}%; border-collapse:collapse; font-size:${tableFontSize.value};">
-                    <thead>
-                        <tr>
-                            ${tableHeaders.map(header => 
-                                `<th style="background-color:${headerBgColor}; color:${headerTextColor}; border:1px solid ${headerBorderColor}; padding:8px; text-align:right; font-weight:bold;">${header}</th>`
-                            ).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows.map((row, rowIndex) => 
-                            `<tr style="${rowIndex % 2 === 1 ? 'background-color:' + evenRowBgColor + ';' : ''}">
-                                ${row.map(cell => 
-                                    `<td style="border:1px solid #ddd; padding:8px; text-align:right;">${cell}</td>`
-                                ).join('')}
-                            </tr>`
-                        ).join('')}
-                    </tbody>
-                </table>
-            `;
+            // بناء جدول أفقي (عادي)
+            tableHTML = `<table style="width:${tableWidth.value}%; border-collapse:collapse; font-size:${tableFontSize.value};">`;
+
+            // رأس الجدول
+            tableHTML += '<thead><tr>';
+
+            for (const header of headers) {
+                tableHTML += `<th style="background-color:${headerBgColor}; color:${headerTextColor}; border:1px solid ${headerBorderColor}; padding:8px; text-align:right; font-weight:bold;">${header}</th>`;
+            }
+
+            tableHTML += '</tr></thead><tbody>';
+
+            // صفوف البيانات
+            tableRowsData.forEach((row, rowIndex) => {
+                const rowStyle = rowIndex % 2 === 1 ? `background-color:${evenRowBgColor};` : '';
+                tableHTML += `<tr style="${rowStyle}">`;
+
+                row.forEach(cell => {
+                    tableHTML += `<td style="border:1px solid #ddd; padding:8px; text-align:right;">${cell}</td>`;
+                });
+
+                tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody>';
         }
-        
-        // كتابة المحتوى إلى نافذة الطباعة
+
+        tableHTML += '</table>';
+
+        // النص قبل الجدول
+        const preText = addTextBeforeTable.checked ? preTableText.value : '';
+
+        // كتابة HTML الطباعة
         printWindow.document.write(`
             <!DOCTYPE html>
             <html dir="rtl">
@@ -1086,18 +973,17 @@ document.addEventListener('DOMContentLoaded', function() {
             <body>
                 <div class="print-container">
                     <h2 class="report-title">${reportTitle.value}</h2>
-                    
+
                     ${preText ? `<div class="pre-table-text">${preText}</div>` : ''}
-                    
+
                     ${tableHTML}
-                    
+
                     <button class="print-button no-print" onclick="window.print(); return false;">طباعة التقرير</button>
                 </div>
 
                 <script>
-                    // طباعة تلقائية بمجرد تحميل الصفحة
+                    // طباعة تلقائية بعد تحميل الصفحة
                     window.onload = function() {
-                        // إضافة تأخير قصير لضمان تحميل التنسيقات
                         setTimeout(function() {
                             window.print();
                         }, 500);
@@ -1106,12 +992,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </body>
             </html>
         `);
-        
+
         printWindow.document.close();
     });
 
     // تهيئة المعاينة عند تحميل الصفحة
-    setTimeout(initializePreview, 300);
+    setTimeout(updateFullPreview, 100);
 });
 </script>
 {% endblock %}
