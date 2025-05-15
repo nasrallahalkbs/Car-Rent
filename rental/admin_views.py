@@ -4567,19 +4567,45 @@ def admin_reports(request):
         'unavailable': Car.objects.filter(is_available=False).count(),
     }
     
-    # بيانات جميع الحجوزات للجدول مع جميع الحقول ذات الصلة
-    reservations = Reservation.objects.select_related('car', 'user').all().order_by('-created_at')
+    # إحصائيات وثائق الأرشيف
+    documents_stats = {
+        'total': Document.objects.count(),
+        'contracts': Document.objects.filter(document_type='contract').count(),
+        'receipts': Document.objects.filter(document_type='receipt').count(),
+        'custody': Document.objects.filter(document_type='custody').count(),
+        'other': Document.objects.filter(document_type='other').count(),
+    }
     
-    # استخراج جميع حقول السيارات
-    cars = Car.objects.all()
+    # إحصائيات العملاء
+    customers_stats = {
+        'total': User.objects.filter(is_staff=False, is_admin=False, is_superuser=False).count(),
+        'active': User.objects.filter(is_staff=False, is_admin=False, is_superuser=False, is_active=True).count(),
+        'inactive': User.objects.filter(is_staff=False, is_admin=False, is_superuser=False, is_active=False).count(),
+    }
+    
+    # بيانات جميع الحجوزات للجدول مع جميع الحقول ذات الصلة (مع prefetch للعلاقات)
+    reservations = Reservation.objects.select_related('car', 'user').prefetch_related('documents').all().order_by('-created_at')
+    
+    # استخراج جميع السيارات مع معلوماتها الكاملة
+    cars = Car.objects.all().order_by('-id')
     
     # بيانات العملاء مع جميع الحقول ذات الصلة
-    customers = User.objects.filter(is_staff=False, is_admin=False, is_superuser=False)
+    customers = User.objects.filter(is_staff=False, is_admin=False, is_superuser=False).order_by('-date_joined')
+    
+    # بيانات المستندات مع جميع المعلومات
+    documents = Document.objects.select_related('folder', 'user', 'car', 'reservation').order_by('-created_at')
     
     # استخراج أسماء جميع الحقول من النماذج لعرضها في الجداول
     reservation_fields = [field.name for field in Reservation._meta.fields]
     car_fields = [field.name for field in Car._meta.fields]
     user_fields = [field.name for field in User._meta.fields if not field.name.startswith('password')]
+    document_fields = [field.name for field in Document._meta.fields]
+    
+    # إنشاء قواميس تعيين للحقول باستخدام verbose_name لعرض أسماء محسنة للحقول
+    reservation_field_names = {field.name: field.verbose_name for field in Reservation._meta.fields}
+    car_field_names = {field.name: field.verbose_name for field in Car._meta.fields}
+    user_field_names = {field.name: field.verbose_name for field in User._meta.fields if not field.name.startswith('password')}
+    document_field_names = {field.name: field.verbose_name for field in Document._meta.fields}
     
     # تحميل معلومات الوقت الحالي لكسر كاش المتصفح
     timestamp = int(datetime.now().timestamp())
@@ -4588,21 +4614,31 @@ def admin_reports(request):
     print("حقول الحجز المتاحة:", reservation_fields)
     print("حقول السيارة المتاحة:", car_fields)
     print("حقول المستخدم المتاحة:", user_fields)
+    print("حقول المستند المتاحة:", document_fields)
     
     context = {
         'is_english': is_english,
         'reservations_stats': reservations_stats,
         'cars_stats': cars_stats,
+        'documents_stats': documents_stats,
+        'customers_stats': customers_stats,
         'cars': cars,
         'reservations': reservations,
         'recent_reservations': reservations[:10],
         'customers': customers,
+        'documents': documents,
         'timestamp': timestamp,
         'now': datetime.now(),
         # إضافة حقول النماذج للقالب
         'reservation_fields': reservation_fields,
         'car_fields': car_fields,
         'user_fields': user_fields,
+        'document_fields': document_fields,
+        # إضافة أسماء الحقول المحسنة
+        'reservation_field_names': reservation_field_names,
+        'car_field_names': car_field_names,
+        'user_field_names': user_field_names,
+        'document_field_names': document_field_names,
     }
     
     return render(request, 'admin/reports/reports_management.html', context)
