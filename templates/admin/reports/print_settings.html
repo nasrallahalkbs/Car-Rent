@@ -495,6 +495,9 @@ html
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // تسجيل رسالة تأكيد تحميل الصفحة للتحقق من تشغيل الكود
+    console.log("تم تحميل صفحة إعدادات الطباعة");
+
     // ========================
     // متغيرات عناصر واجهة المستخدم
     // ========================
@@ -528,6 +531,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewTitle = document.getElementById('previewTitle');
     const previewPreText = document.getElementById('previewPreText');
     const previewTable = document.getElementById('previewTable');
+    
+    // التحقق من وجود جميع العناصر المطلوبة
+    if (!previewPaper || !previewContent || !previewTitle || !previewTable) {
+        console.error("خطأ: لم يتم العثور على عناصر المعاينة");
+    }
 
     // ========================
     // دوال التحديث
@@ -807,15 +815,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updatePreview() {
-        updatePaperSize();
-        updateMargins();
-        updateTitle();
-        updateTableWidth();
-        updateFontSizes();
-        updateTableColor();
-        updateTableOrientation();
-        addExtraRows();
-        updatePreTableText();
+        console.log("تحديث المعاينة...");
+        try {
+            // التحقق من وجود العناصر قبل تحديثها
+            if (previewPaper && previewContent && previewTitle && previewTable) {
+                updatePaperSize();
+                updateMargins();
+                updateTitle();
+                updateTableWidth();
+                updateFontSizes();
+                updateTableColor();
+                updateTableOrientation();
+                addExtraRows();
+                updatePreTableText();
+                console.log("تم تحديث المعاينة بنجاح");
+            } else {
+                console.error("لا يمكن تحديث المعاينة: بعض العناصر غير موجودة");
+            }
+        } catch (e) {
+            console.error("خطأ أثناء تحديث المعاينة:", e);
+        }
     }
 
     // ========================
