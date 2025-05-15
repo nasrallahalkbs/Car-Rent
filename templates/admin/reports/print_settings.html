@@ -472,19 +472,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // زر الطباعة
     printButton.addEventListener('click', function() {
-        // إنشاء نافذة طباعة جديدة تحتوي فقط على معاينة التقرير
-        const printContent = document.getElementById('previewContent').cloneNode(true);
-        const originalTitle = document.title;
+        // إنشاء نافذة طباعة جديدة تحتوي فقط على جدول التقرير
+        const previewTable = document.getElementById('previewTable').cloneNode(true);
+        const reportTitle = document.getElementById('previewTitle').textContent;
         const printWindow = window.open('', '_blank', 'width=800,height=600');
         
-        // إنشاء محتوى نافذة الطباعة
+        // إنشاء محتوى نافذة الطباعة مع الجدول فقط
         printWindow.document.open();
         printWindow.document.write(`
             <!DOCTYPE html>
             <html dir="rtl">
             <head>
                 <meta charset="UTF-8">
-                <title>${previewTitle.textContent}</title>
+                <title>${reportTitle}</title>
                 <style>
                     @media print {
                         @page {
@@ -496,29 +496,42 @@ document.addEventListener('DOMContentLoaded', function() {
                             font-family: 'Tajawal', 'Cairo', sans-serif;
                         }
                         
-                        .preview-title {
+                        .print-button {
+                            display: none;
+                        }
+                        
+                        h2.report-title {
                             text-align: center;
                             margin-bottom: 20px;
                             font-size: ${titleFontSize.value};
                             font-weight: bold;
                         }
                         
-                        .preview-table {
+                        .report-table {
                             width: ${tableWidth.value}%;
                             border-collapse: collapse;
-                            margin-top: 20px;
+                            margin: 0 auto;
                             font-size: ${tableFontSize.value};
                         }
                         
-                        .preview-table th, .preview-table td {
-                            border: 1px solid #ddd;
+                        .report-table th, .report-table td {
+                            border: 1px solid #000;
                             padding: 8px;
                             text-align: right;
                         }
                         
-                        .preview-table th {
+                        .report-table th {
                             background-color: #f2f2f2;
                             font-weight: bold;
+                        }
+                        
+                        .report-table tr:nth-child(even) {
+                            background-color: #f9f9f9;
+                        }
+                        
+                        .pre-table-text {
+                            margin-bottom: 20px;
+                            font-size: 12pt;
                         }
                     }
                     
@@ -526,6 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         body {
                             font-family: 'Tajawal', 'Cairo', sans-serif;
                             padding: 20px;
+                            direction: rtl;
                         }
                         
                         .print-button {
@@ -544,38 +558,52 @@ document.addEventListener('DOMContentLoaded', function() {
                             background-color: #e0a800;
                         }
                         
-                        .preview-title {
+                        h2.report-title {
                             text-align: center;
                             margin-bottom: 20px;
                             font-size: ${titleFontSize.value};
                             font-weight: bold;
                         }
                         
-                        .preview-table {
+                        .report-table {
                             width: ${tableWidth.value}%;
                             border-collapse: collapse;
-                            margin-top: 20px;
+                            margin: 0 auto;
                             font-size: ${tableFontSize.value};
                         }
                         
-                        .preview-table th, .preview-table td {
-                            border: 1px solid #ddd;
+                        .report-table th, .report-table td {
+                            border: 1px solid #000;
                             padding: 8px;
                             text-align: right;
                         }
                         
-                        .preview-table th {
+                        .report-table th {
                             background-color: #f2f2f2;
                             font-weight: bold;
+                        }
+                        
+                        .report-table tr:nth-child(even) {
+                            background-color: #f9f9f9;
+                        }
+                        
+                        .pre-table-text {
+                            margin-bottom: 20px;
+                            font-size: 12pt;
                         }
                     }
                 </style>
             </head>
             <body>
-                <div id="print-content">
-                    ${printContent.innerHTML}
-                </div>
-                <button class="print-button" onclick="window.print(); return false;">طباعة التقرير</button>
+                <h2 class="report-title">${reportTitle}</h2>
+                
+                ${addTextBeforeTable.checked ? '<div class="pre-table-text">' + preTableText.value + '</div>' : ''}
+                
+                <table class="report-table">
+                    ${previewTable.innerHTML}
+                </table>
+                
+                <button class="print-button" onclick="window.print(); return false;">طباعة الجدول</button>
             </body>
             </html>
         `);
