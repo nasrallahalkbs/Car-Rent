@@ -17,7 +17,13 @@
                 <div class="card-body">
                     <div class="alert alert-warning">
                         <h5><i class="fas fa-exclamation-circle"></i> {% trans "تحذير!" %}</h5>
-                        <p>{% trans "ستؤدي استعادة هذه النسخة الاحتياطية إلى إعادة تعيين قاعدة البيانات وستفقد جميع التغييرات التي تمت منذ إنشاء هذه النسخة الاحتياطية. هذه العملية لا يمكن التراجع عنها." %}</p>
+                        {% if 'db_backup_' in backup.name %}
+                        <p>{% trans "ستؤدي استعادة هذه النسخة الاحتياطية إلى إعادة تعيين قاعدة البيانات وستفقد جميع التغييرات التي تمت منذ إنشاء هذه النسخة الاحتياطية. لن يتم لمس ملفات النظام. هذه العملية لا يمكن التراجع عنها." %}</p>
+                        {% elif 'settings_backup_' in backup.name %}
+                        <p>{% trans "ستؤدي استعادة هذه النسخة الاحتياطية إلى استعادة ملفات إعدادات النظام فقط. لن يتم تغيير قاعدة البيانات. هذه العملية لا يمكن التراجع عنها." %}</p>
+                        {% else %}
+                        <p>{% trans "ستؤدي استعادة هذه النسخة الاحتياطية إلى إعادة تعيين قاعدة البيانات وملفات النظام وستفقد جميع التغييرات التي تمت منذ إنشاء هذه النسخة الاحتياطية. هذه العملية لا يمكن التراجع عنها." %}</p>
+                        {% endif %}
                     </div>
                     
                     <h5 class="mt-4">{% trans "معلومات النسخة الاحتياطية" %}:</h5>
@@ -25,6 +31,18 @@
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span><strong>{% trans "الاسم" %}:</strong></span>
                             <span>{{ backup.name }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><strong>{% trans "نوع النسخة" %}:</strong></span>
+                            <span>
+                                {% if 'db_backup_' in backup.name %}
+                                <span class="badge bg-primary">{% trans "قاعدة بيانات فقط" %}</span>
+                                {% elif 'settings_backup_' in backup.name %}
+                                <span class="badge bg-info">{% trans "إعدادات النظام" %}</span>
+                                {% else %}
+                                <span class="badge bg-success">{% trans "نسخة كاملة" %}</span>
+                                {% endif %}
+                            </span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span><strong>{% trans "تاريخ الإنشاء" %}:</strong></span>

@@ -316,46 +316,84 @@ def restore_backup(request, backup_id):
         try:
             # فتح ملف النسخة الاحتياطية
             with zipfile.ZipFile(backup.file_path, 'r') as backup_zip:
-                # استخراج معلومات النسخة الاحتياطية
-                backup_info = json.loads(backup_zip.read('backup_info.json'))
+                # تحديد نوع النسخة الاحتياطية أولاً
+                backup_type = "full"
+                if 'db_backup_' in backup.name:
+                    backup_type = "db_only"
+                elif 'settings_backup_' in backup.name:
+                    backup_type = "settings_only"
                 
-                # استعادة قاعدة البيانات
-                temp_db_file = os.path.join(tempfile.gettempdir(), 'db_restore.json')
+                # استخراج معلومات النسخة الاحتياطية إذا كانت موجودة
+                if 'backup_info.json' in backup_zip.namelist():
+                    backup_info = json.loads(backup_zip.read('backup_info.json'))
+                    # استخدام النوع من معلومات النسخة الاحتياطية إذا كان متوفرًا
+                    if 'backup_type' in backup_info:
+                        backup_type = backup_info['backup_type']
                 
-                # استخراج ملفات النسخة الاحتياطية
-                backup_zip.extract('db_backup.json', path=tempfile.gettempdir())
-                os.rename(os.path.join(tempfile.gettempdir(), 'db_backup.json'), temp_db_file)
+                # استعادة قاعدة البيانات (فقط للنسخ الكاملة أو نسخ قاعدة البيانات)
+                if backup_type in ['full', 'db_only'] and 'db_backup.json' in backup_zip.namelist():
+                    temp_db_file = os.path.join(tempfile.gettempdir(), 'db_restore.json')
+                    
+                    # استخراج ملفات النسخة الاحتياطية
+                    backup_zip.extract('db_backup.json', path=tempfile.gettempdir())
+                    os.rename(os.path.join(tempfile.gettempdir(), 'db_backup.json'), temp_db_file)
+                    
+                    # استخراج معلومات النسخ الاحتياطي للقاعدة إذا كانت موجودة
+                    db_notes = ""
+                    try:
+                        backup_zip.extract('db_backup_info.json', path=tempfile.gettempdir())
+                        with open(os.path.join(tempfile.gettempdir(), 'db_backup_info.json'), 'r') as f:
+                            db_backup_info = json.load(f)
+                            successful_tables = db_backup_info.get('successful_tables', [])
+                            failed_tables = db_backup_info.get('failed_tables', [])
+                            
+                            # إضافة معلومات إلى ملاحظات النسخة الاحتياطية
+                            db_notes = gettext("تمت استعادة {} جدول بنجاح.").format(len(successful_tables))
+                            if failed_tables:
+                                db_notes += " " + gettext("{} جدول لم يتم نسخه في النسخة الاحتياطية.").format(len(failed_tables))
+                    except Exception:
+                        # قد لا تحتوي النسخ الاحتياطية القديمة على هذا الملف
+                        pass
+                    
+                    # إعادة تعيين قاعدة البيانات
+                    management.call_command('flush', interactive=False)
+                    management.call_command('loaddata', temp_db_file)
+                    
+                    # تنظيف الملفات المؤقتة
+                    os.unlink(temp_db_file)
+                    if os.path.exists(os.path.join(tempfile.gettempdir(), 'db_backup_info.json')):
+                        os.unlink(os.path.join(tempfile.gettempdir(), 'db_backup_info.json'))
+                    
+                    # حفظ الملاحظات حول استعادة قاعدة البيانات
+                    if db_notes:
+                        backup.notes = db_notes
                 
-                # استخراج معلومات النسخ الاحتياطي للقاعدة إذا كانت موجودة
-                try:
-                    backup_zip.extract('db_backup_info.json', path=tempfile.gettempdir())
-                    with open(os.path.join(tempfile.gettempdir(), 'db_backup_info.json'), 'r') as f:
-                        db_backup_info = json.load(f)
-                        successful_tables = db_backup_info.get('successful_tables', [])
-                        failed_tables = db_backup_info.get('failed_tables', [])
-                        
-                        # إضافة معلومات إلى ملاحظات النسخة الاحتياطية
-                        notes = gettext("تمت استعادة {} جدول بنجاح.").format(len(successful_tables))
-                        if failed_tables:
-                            notes += " " + gettext("{} جدول لم يتم نسخه في النسخة الاحتياطية.").format(len(failed_tables))
-                        backup.notes = notes
-                except Exception:
-                    # قد لا تحتوي النسخ الاحتياطية القديمة على هذا الملف
-                    pass
+                # استعادة ملفات الإعدادات (للنسخ الكاملة أو نسخ الإعدادات فقط)
+                if backup_type in ['full', 'settings_only']:
+                    # استعادة ملفات الإعدادات
+                    settings_extensions = ['.json', '.ini', '.yml', '.yaml', '.conf', '.cfg', '.config', '.xml']
+                    settings_files_count = 0
+                    
+                    for zip_info in backup_zip.infolist():
+                        # تجاهل المجلدات
+                        if zip_info.is_dir():
+                            continue
+                            
+                        # تخطي المسارات التي تبدأ بـ 'media/' للنسخ الاحتياطية لإعدادات النظام فقط
+                        if backup_type == 'settings_only' and zip_info.filename.startswith('media/'):
+                            continue
+                            
+                        # استعادة ملفات الإعدادات والملفات المهمة
+                        file_base, file_ext = os.path.splitext(zip_info.filename)
+                        if not zip_info.is_dir() and file_ext in settings_extensions:
+                            backup_zip.extract(zip_info, path=settings.BASE_DIR)
+                            settings_files_count += 1
                 
-                # إعادة تعيين قاعدة البيانات
-                management.call_command('flush', interactive=False)
-                management.call_command('loaddata', temp_db_file)
-                
-                # تنظيف الملفات المؤقتة
-                os.unlink(temp_db_file)
-                if os.path.exists(os.path.join(tempfile.gettempdir(), 'db_backup_info.json')):
-                    os.unlink(os.path.join(tempfile.gettempdir(), 'db_backup_info.json'))
-                
-                # استعادة الملفات
-                for zip_info in backup_zip.infolist():
-                    if zip_info.filename.startswith('media/') and not zip_info.filename.endswith('/'):
-                        backup_zip.extract(zip_info, path=settings.BASE_DIR)
+                # استعادة ملفات الوسائط (للنسخ الكاملة فقط)
+                if backup_type == 'full':
+                    for zip_info in backup_zip.infolist():
+                        if zip_info.filename.startswith('media/') and not zip_info.filename.endswith('/'):
+                            backup_zip.extract(zip_info, path=settings.BASE_DIR)
             
             # تحديث حالة النسخة الاحتياطية مع معلومات عن نوع النسخة المستعادة
             backup.status = 'restored'
