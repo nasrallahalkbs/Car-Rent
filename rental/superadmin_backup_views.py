@@ -93,6 +93,14 @@ def create_backup(request):
     )
     
     try:
+        # التأكد من أن مجلد temp موجود وقابل للكتابة
+        temp_dir = tempfile.gettempdir()
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # التحقق من وجود مجلد النسخ الاحتياطية
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir, exist_ok=True)
+        
         # إنشاء ملف النسخة الاحتياطية
         with zipfile.ZipFile(backup_file_path, 'w', zipfile.ZIP_DEFLATED) as backup_zip:
             # إضافة معلومات النسخة الاحتياطية
@@ -102,37 +110,67 @@ def create_backup(request):
                 "created_by": request.user.username,
                 "django_version": django.__version__,
                 "database_engine": settings.DATABASES['default']['ENGINE'],
+                "backup_type": "full",
+                "timestamp": int(timezone.now().timestamp()),
             }
             backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))
             
             # إضافة نسخة احتياطية لقاعدة البيانات
-            temp_db_file = os.path.join(tempfile.gettempdir(), 'db_backup.json')
-            management.call_command('dumpdata', output=temp_db_file, exclude=['contenttypes', 'auth.permission'])
-            backup_zip.write(temp_db_file, 'db_backup.json')
-            os.unlink(temp_db_file)
+            try:
+                temp_db_file = os.path.join(temp_dir, 'db_backup.json')
+                management.call_command('dumpdata', output=temp_db_file, exclude=['contenttypes', 'auth.permission'])
+                
+                # التحقق من إنشاء الملف بنجاح
+                if os.path.exists(temp_db_file):
+                    backup_zip.write(temp_db_file, 'db_backup.json')
+                    os.unlink(temp_db_file)
+                else:
+                    raise Exception(_("فشل في إنشاء ملف قاعدة البيانات المؤقت"))
+            except Exception as db_error:
+                raise Exception(_("خطأ في نسخ قاعدة البيانات: {}").format(str(db_error)))
             
             # إضافة الملفات المهمة
-            for root, _, files in os.walk(settings.MEDIA_ROOT):
-                if 'backups' in root.split(os.sep):
-                    continue  # تخطي مجلد النسخ الاحتياطية نفسه
+            try:
+                media_files_count = 0
+                for root, _, files in os.walk(settings.MEDIA_ROOT):
+                    if 'backups' in root.split(os.sep):
+                        continue  # تخطي مجلد النسخ الاحتياطية نفسه
+                    
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        # تخطي الملفات التي لا يمكن قراءتها
+                        if not os.path.exists(file_path) or not os.access(file_path, os.R_OK):
+                            continue
+                        
+                        try:
+                            archive_path = os.path.relpath(file_path, settings.BASE_DIR)
+                            backup_zip.write(file_path, archive_path)
+                            media_files_count += 1
+                        except Exception:
+                            # تخطي الملفات التي تسبب أخطاء
+                            continue
                 
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    archive_path = os.path.relpath(file_path, settings.BASE_DIR)
-                    backup_zip.write(file_path, archive_path)
+                backup_info["media_files_count"] = media_files_count
+                backup_zip.writestr('backup_info.json', json.dumps(backup_info, indent=4))
+            except Exception as media_error:
+                # تسجيل الخطأ ولكن لا نفشل العملية بالكامل
+                backup.notes = _("تم إنشاء النسخة الاحتياطية لقاعدة البيانات ولكن بعض ملفات الوسائط قد لا تكون مكتملة.")
         
         # تحديث حجم الملف وحالة النسخة الاحتياطية
-        backup.file_size = os.path.getsize(backup_file_path)
-        backup.status = 'completed'
-        backup.save()
-        
-        messages.success(request, 'تم إنشاء نسخة احتياطية بنجاح')
+        if os.path.exists(backup_file_path):
+            backup.file_size = os.path.getsize(backup_file_path)
+            backup.status = 'completed'
+            backup.save()
+            
+            messages.success(request, _('تم إنشاء نسخة احتياطية بنجاح'))
+        else:
+            raise Exception(_("لم يتم إنشاء ملف النسخة الاحتياطية"))
     except Exception as e:
         # في حالة حدوث خطأ
         backup.status = 'failed'
         backup.notes = str(e)
         backup.save()
-        messages.error(request, f'حدث خطأ أثناء إنشاء النسخة الاحتياطية: {str(e)}')
+        messages.error(request, _('حدث خطأ أثناء إنشاء النسخة الاحتياطية: {}').format(str(e)))
     
     return redirect('superadmin_backup')
 
