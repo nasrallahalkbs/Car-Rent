@@ -472,13 +472,43 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // زر الطباعة
     printButton.addEventListener('click', function() {
-        // إنشاء نافذة طباعة جديدة تحتوي فقط على جدول التقرير
-        const previewTable = document.getElementById('previewTable').cloneNode(true);
+        // إنشاء محتوى الطباعة
+        const tableRowsData = [];
+        const previewTable = document.getElementById('previewTable');
         const reportTitle = document.getElementById('previewTitle').textContent;
-        const printWindow = window.open('', '_blank', 'width=800,height=600');
         
-        // إنشاء محتوى نافذة الطباعة مع الجدول فقط
-        printWindow.document.open();
+        // استخراج معلومات الرأس 
+        const headerRow = previewTable.querySelector('thead tr');
+        const headers = [];
+        headerRow.querySelectorAll('th').forEach((th, index) => {
+            if (index > 0) { // تجاهل خانة الاختيار
+                headers.push(th.textContent.trim());
+            }
+        });
+        
+        // استخراج بيانات الصفوف
+        previewTable.querySelectorAll('tbody tr').forEach(tr => {
+            const rowData = [];
+            tr.querySelectorAll('td').forEach((td, index) => {
+                if (index > 0) { // تجاهل خانة الاختيار
+                    rowData.push(td.textContent.trim());
+                }
+            });
+            if (rowData.length > 0) {
+                tableRowsData.push(rowData);
+            }
+        });
+
+        // إنشاء حدود الخلايا وفقًا للإعدادات
+        const cellPadding = '8px';
+        const borderColor = '#000';
+        const borderStyle = '1px solid ' + borderColor;
+        const headerBgColor = '#f2f2f2';
+        const evenRowBgColor = '#f9f9f9';
+        const fontSize = tableFontSize.value;
+        
+        // إنشاء مستند الطباعة
+        const printWindow = window.open('', '', 'height=500,width=800');
         printWindow.document.write(`
             <!DOCTYPE html>
             <html dir="rtl">
@@ -486,124 +516,118 @@ document.addEventListener('DOMContentLoaded', function() {
                 <meta charset="UTF-8">
                 <title>${reportTitle}</title>
                 <style>
+                    @page {
+                        size: ${paperSizeSelect.value};
+                        margin: ${marginTop.value}mm ${marginRight.value}mm ${marginBottom.value}mm ${marginLeft.value}mm;
+                    }
+                    
+                    body {
+                        font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background-color: white;
+                        color: black;
+                    }
+                    
+                    .print-container {
+                        width: 100%;
+                        padding: 0;
+                    }
+                    
+                    .report-title {
+                        text-align: center;
+                        font-size: ${titleFontSize.value};
+                        font-weight: bold;
+                        margin-bottom: 20px;
+                        padding: 0;
+                    }
+                    
+                    .print-table {
+                        width: ${tableWidth.value}%;
+                        margin: 0 auto;
+                        border-collapse: collapse;
+                        font-size: ${fontSize};
+                    }
+                    
+                    .print-table th {
+                        background-color: ${headerBgColor};
+                        color: black;
+                        font-weight: bold;
+                        text-align: right;
+                        padding: ${cellPadding};
+                        border: ${borderStyle};
+                    }
+                    
+                    .print-table td {
+                        padding: ${cellPadding};
+                        border: ${borderStyle};
+                        text-align: right;
+                    }
+                    
+                    .print-table tr:nth-child(even) {
+                        background-color: ${evenRowBgColor};
+                    }
+                    
+                    .pre-table-text {
+                        margin-bottom: 15px;
+                        font-size: 12pt;
+                    }
+                    
                     @media print {
-                        @page {
-                            size: ${paperSizeSelect.value};
-                            margin: ${marginTop.value}mm ${marginRight.value}mm ${marginBottom.value}mm ${marginLeft.value}mm;
-                        }
-                        
-                        body {
-                            font-family: 'Tajawal', 'Cairo', sans-serif;
-                        }
-                        
-                        .print-button {
+                        .no-print {
                             display: none;
                         }
                         
-                        h2.report-title {
-                            text-align: center;
-                            margin-bottom: 20px;
-                            font-size: ${titleFontSize.value};
-                            font-weight: bold;
-                        }
-                        
-                        .report-table {
-                            width: ${tableWidth.value}%;
-                            border-collapse: collapse;
-                            margin: 0 auto;
-                            font-size: ${tableFontSize.value};
-                        }
-                        
-                        .report-table th, .report-table td {
-                            border: 1px solid #000;
-                            padding: 8px;
-                            text-align: right;
-                        }
-                        
-                        .report-table th {
-                            background-color: #f2f2f2;
-                            font-weight: bold;
-                        }
-                        
-                        .report-table tr:nth-child(even) {
-                            background-color: #f9f9f9;
-                        }
-                        
-                        .pre-table-text {
-                            margin-bottom: 20px;
-                            font-size: 12pt;
+                        body {
+                            margin: 0;
+                            padding: 0;
                         }
                     }
                     
-                    @media screen {
-                        body {
-                            font-family: 'Tajawal', 'Cairo', sans-serif;
-                            padding: 20px;
-                            direction: rtl;
-                        }
-                        
-                        .print-button {
-                            display: block;
-                            margin: 20px auto;
-                            padding: 10px 20px;
-                            background-color: #ffc107;
-                            color: #000;
-                            border: none;
-                            border-radius: 5px;
-                            cursor: pointer;
-                            font-weight: bold;
-                        }
-                        
-                        .print-button:hover {
-                            background-color: #e0a800;
-                        }
-                        
-                        h2.report-title {
-                            text-align: center;
-                            margin-bottom: 20px;
-                            font-size: ${titleFontSize.value};
-                            font-weight: bold;
-                        }
-                        
-                        .report-table {
-                            width: ${tableWidth.value}%;
-                            border-collapse: collapse;
-                            margin: 0 auto;
-                            font-size: ${tableFontSize.value};
-                        }
-                        
-                        .report-table th, .report-table td {
-                            border: 1px solid #000;
-                            padding: 8px;
-                            text-align: right;
-                        }
-                        
-                        .report-table th {
-                            background-color: #f2f2f2;
-                            font-weight: bold;
-                        }
-                        
-                        .report-table tr:nth-child(even) {
-                            background-color: #f9f9f9;
-                        }
-                        
-                        .pre-table-text {
-                            margin-bottom: 20px;
-                            font-size: 12pt;
-                        }
+                    .print-button {
+                        margin: 20px auto;
+                        padding: 10px 20px;
+                        background-color: #ffc107;
+                        color: black;
+                        border: none;
+                        border-radius: 5px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        display: block;
                     }
                 </style>
             </head>
             <body>
-                <h2 class="report-title">${reportTitle}</h2>
+                <div class="print-container">
+                    <h2 class="report-title">${reportTitle}</h2>
+                    
+                    ${addTextBeforeTable.checked ? '<div class="pre-table-text">' + preTableText.value + '</div>' : ''}
+                    
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                ${headers.map(header => `<th>${header}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsData.map(row => 
+                                `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+                            ).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <button class="print-button no-print" onclick="window.print(); return false;">طباعة الجدول</button>
+                </div>
                 
-                ${addTextBeforeTable.checked ? '<div class="pre-table-text">' + preTableText.value + '</div>' : ''}
-                
-                <table class="report-table">
-                    ${previewTable.innerHTML}
-                </table>
-                
-                <button class="print-button" onclick="window.print(); return false;">طباعة الجدول</button>
+                <script>
+                    // طباعة تلقائية بمجرد تحميل الصفحة
+                    window.onload = function() {
+                        // إضافة تأخير قصير لضمان تحميل التنسيقات
+                        setTimeout(function() {
+                            window.print();
+                        }, 500);
+                    };
+                </script>
             </body>
             </html>
         `);
