@@ -528,4 +528,66 @@
 
 {% block extra_js %}
 <script src="{% static 'js/simple_filters.js' %}?v={{ now.timestamp|floatformat:0 }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ربط الأزرار بالوظائف المناسبة
+        setupReportButtons();
+        
+        // الوظيفة المسؤولة عن إعداد أزرار التقارير
+        function setupReportButtons() {
+            // زر الطباعة
+            const printBtn = document.querySelector('.btn-print');
+            if (printBtn) {
+                printBtn.addEventListener('click', handlePrintClick);
+            }
+            
+            // أزرار التبويبات
+            const tabButtons = document.querySelectorAll('.ribbon-tab');
+            if (tabButtons) {
+                tabButtons.forEach(tab => {
+                    tab.addEventListener('click', handleTabClick);
+                });
+            }
+        }
+        
+        // معالجة النقر على زر الطباعة
+        function handlePrintClick() {
+            // تحديد نوع التقرير الحالي (بافتراض أن التبويب النشط هو نوع التقرير)
+            const activeTab = document.querySelector('.ribbon-tab.active');
+            let reportType = 'reservations'; // القيمة الافتراضية
+            
+            if (activeTab) {
+                reportType = activeTab.getAttribute('data-tab');
+            }
+            
+            // الانتقال إلى صفحة إعدادات الطباعة مع تحديد نوع التقرير
+            window.location.href = "{% url 'report_print_settings' 'placeholder' %}".replace('placeholder', reportType);
+        }
+        
+        // معالجة النقر على التبويبات
+        function handleTabClick(event) {
+            // إزالة الحالة النشطة من جميع التبويبات
+            document.querySelectorAll('.ribbon-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // إضافة الحالة النشطة للتبويب الحالي
+            this.classList.add('active');
+            
+            // إخفاء جميع أقسام المحتوى
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.style.display = 'none';
+                pane.classList.remove('active');
+            });
+            
+            // عرض قسم المحتوى المرتبط بالتبويب الحالي
+            const tabId = this.getAttribute('data-tab') + '-tab';
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.style.display = 'block';
+                tabContent.classList.add('active');
+            }
+        }
+    });
+</script>
 {% endblock %}

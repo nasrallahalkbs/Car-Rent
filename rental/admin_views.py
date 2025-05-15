@@ -4590,3 +4590,37 @@ def admin_reports(request):
     }
     
     return render(request, 'admin/reports/reports_management.html', context)
+
+@login_required
+@admin_required
+def report_print_settings(request, report_type='reservations'):
+    """
+    عرض صفحة إعدادات طباعة التقرير
+    
+    تعرض هذه الصفحة إعدادات الطباعة المتقدمة للتقرير المحدد
+    مع إمكانية ضبط حجم الورق والهوامش وخيارات أخرى
+    
+    :param report_type: نوع التقرير (reservations، cars، customers، إلخ)
+    """
+    # الحصول على بيانات التقرير حسب النوع
+    if report_type == 'reservations':
+        # بيانات الحجوزات للمعاينة
+        reservations = Reservation.objects.all().order_by('-created_at')[:10]  # نأخذ أول 10 حجوزات فقط للمعاينة
+        title = _("تقرير الحجوزات")
+    elif report_type == 'cars':
+        # بيانات السيارات للمعاينة
+        reservations = []  # نستخدم قائمة فارغة للحجوزات إذا كان التقرير ليس للحجوزات
+        title = _("تقرير السيارات")
+    else:
+        # بيانات افتراضية للمعاينة
+        reservations = Reservation.objects.all().order_by('-created_at')[:10]
+        title = _("تقرير العام")
+    
+    context = {
+        'report_type': report_type,
+        'title': title,
+        'reservations': reservations,
+        'now': datetime.now(),
+    }
+    
+    return render(request, 'admin/reports/print_settings.html', context)
