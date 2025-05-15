@@ -24,6 +24,7 @@ from .windows_explorer_view import admin_archive_windows
 # from .csrf_debug import csrf_debug_view, csrf_debug_page
 from . import car_condition_views
 from . import views_custody
+from . import car_report_views
 
 urlpatterns = [
     path('ar/dashboard/archive/direct_upload/', direct_sql_upload_document, name='direct_sql_upload_document'),
