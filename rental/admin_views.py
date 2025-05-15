@@ -4546,7 +4546,8 @@ def admin_reports(request):
     هذه الصفحة تعرض واجهة متقدمة لإدارة التقارير المختلفة في النظام
     مع إمكانيات فلترة وتصدير وطباعة التقارير
     
-    الوظيفة معدلة لتوفير جميع الحقول المتاحة في قاعدة البيانات
+    الوظيفة معدلة لتوفير جميع الحقول المتاحة في قاعدة البيانات،
+    وتضمين بيانات العهدة وحالة السيارات والمدفوعات
     """
     # الحصول على اللغة الحالية
     current_language = get_language()
@@ -4583,6 +4584,34 @@ def admin_reports(request):
         'inactive': User.objects.filter(is_staff=False, is_admin=False, is_superuser=False, is_active=False).count(),
     }
     
+    # إحصائيات العهدة
+    # استخدام قيم تقديرية حيث أن جدول العهدة ليس موجود بعد
+    custody_stats = {
+        'total': Document.objects.filter(document_type='custody').count(),
+        'active': Document.objects.filter(document_type='custody', is_archived=False).count(),
+        'returned': Document.objects.filter(document_type='custody', is_archived=True).count(),
+        'withheld': 0,  # سيتم تحديثه عندما يتم تنفيذ نموذج العهدة
+        'total_value': 0,  # سيتم تحديثه عندما يتم تنفيذ نموذج العهدة
+    }
+    
+    # إحصائيات حالة السيارات
+    # الحصول على بيانات حالة السيارات من نموذج CarConditionReport إذا كان موجودًا
+    car_condition_stats = {
+        'total': 0,
+        'delivery': 0,
+        'return': 0,
+        'maintenance': 0,
+        'inspection': 0,
+    }
+    
+    # إحصائيات المدفوعات
+    payment_stats = {
+        'total': Reservation.objects.filter(payment_status='paid').count(),
+        'pending': Reservation.objects.filter(payment_status='pending').count(),
+        'refunded': 0,  # سيتم تحديثه عندما يتم تنفيذ نموذج المدفوعات
+        'total_amount': Reservation.objects.filter(payment_status='paid').aggregate(Sum('total_price'))['total_price__sum'] or 0,
+    }
+    
     # بيانات جميع الحجوزات للجدول مع جميع الحقول ذات الصلة (مع prefetch للعلاقات)
     reservations = Reservation.objects.select_related('car', 'user').prefetch_related('documents').all().order_by('-created_at')
     
@@ -4594,6 +4623,15 @@ def admin_reports(request):
     
     # بيانات المستندات مع جميع المعلومات
     documents = Document.objects.select_related('folder', 'user', 'car', 'reservation').order_by('-created_at')
+    
+    # بيانات العهدة (استخدام وثائق العهدة مؤقتًا)
+    custody_items = Document.objects.filter(document_type='custody').order_by('-created_at')
+    
+    # بيانات حالة السيارات (استخدام مجموعة فارغة مؤقتًا)
+    car_conditions = []
+    
+    # بيانات المدفوعات (استخدام بيانات الحجوزات المدفوعة مؤقتًا)
+    payments = Reservation.objects.filter(payment_status='paid').select_related('car', 'user').order_by('-created_at')
     
     # استخراج أسماء جميع الحقول من النماذج لعرضها في الجداول
     reservation_fields = [field.name for field in Reservation._meta.fields]
@@ -4610,23 +4648,23 @@ def admin_reports(request):
     # تحميل معلومات الوقت الحالي لكسر كاش المتصفح
     timestamp = int(datetime.now().timestamp())
     
-    # طباعة قائمة الحقول المتاحة في السجل (للتشخيص)
-    print("حقول الحجز المتاحة:", reservation_fields)
-    print("حقول السيارة المتاحة:", car_fields)
-    print("حقول المستخدم المتاحة:", user_fields)
-    print("حقول المستند المتاحة:", document_fields)
-    
     context = {
         'is_english': is_english,
         'reservations_stats': reservations_stats,
         'cars_stats': cars_stats,
         'documents_stats': documents_stats,
         'customers_stats': customers_stats,
+        'custody_stats': custody_stats,
+        'car_condition_stats': car_condition_stats,
+        'payment_stats': payment_stats,
         'cars': cars,
         'reservations': reservations,
         'recent_reservations': reservations[:10],
         'customers': customers,
         'documents': documents,
+        'custody_items': custody_items,
+        'car_conditions': car_conditions,
+        'payments': payments,
         'timestamp': timestamp,
         'now': datetime.now(),
         # إضافة حقول النماذج للقالب

@@ -615,97 +615,30 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for guarantee in guarantees %}
+                            {% for custody in custody_items %}
                             <tr>
                                 <td>
                                     <input type="checkbox" class="form-check-input row-checkbox">
                                 </td>
-                                <td>{{ guarantee.id }}</td>
-                                <td>{{ guarantee.name }}</td>
-                                <td>{{ guarantee.get_guarantee_type_display }}</td>
-                                <td>{{ guarantee.customer.get_full_name }}</td>
-                                <td>{{ guarantee.value }} {% trans "ريال" %}</td>
-                                <td>{{ guarantee.handover_date|date:"Y-m-d" }}</td>
-                                <td>{{ guarantee.return_date|date:"Y-m-d"|default:"-" }}</td>
+                                <td>{{ custody.id }}</td>
+                                <td>{{ custody.title }}</td>
+                                <td>{{ custody.document_type }}</td>
+                                <td>{{ custody.user.get_full_name|default:custody.user.username|default:"-" }}</td>
+                                <td>{{ custody.file_size|default:"0" }} {% trans "بايت" %}</td>
+                                <td>{{ custody.document_date|date:"Y-m-d"|default:"-" }}</td>
+                                <td>{{ custody.expiry_date|date:"Y-m-d"|default:"-" }}</td>
                                 <td>
-                                    {% if guarantee.status == "active" %}
-                                    <span class="guarantee-status active">{% trans "نشطة" %}</span>
-                                    {% elif guarantee.status == "returned" %}
-                                    <span class="guarantee-status returned">{% trans "مستردة" %}</span>
-                                    {% elif guarantee.status == "partially_returned" %}
-                                    <span class="guarantee-status partially-returned">{% trans "مستردة جزئياً" %}</span>
-                                    {% elif guarantee.status == "withheld" %}
-                                    <span class="guarantee-status withheld">{% trans "محتجزة" %}</span>
-                                    {% elif guarantee.status == "claimed" %}
-                                    <span class="guarantee-status claimed">{% trans "مطالب بها" %}</span>
+                                    {% if custody.is_archived %}
+                                    <span class="guarantee-status returned">{% trans "مؤرشف" %}</span>
                                     {% else %}
-                                    <span class="guarantee-status">{{ guarantee.status }}</span>
+                                    <span class="guarantee-status active">{% trans "نشط" %}</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ guarantee.reservation.reservation_number }}</td>
-                                <td>{{ guarantee.car.make }} {{ guarantee.car.model|default:"-" }}</td>
-                                <td>{{ guarantee.deductions }} {% trans "ريال" %}</td>
-                                <td>{{ guarantee.returned_amount|default:"-" }}</td>
-                                <td>{{ guarantee.created_at|date:"Y-m-d" }}</td>
-                                <td>
-                                    {% if document.expiry_date %}
-                                    {{ document.expiry_date|date:"Y-m-d" }}
-                                    {% else %}
-                                    <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if document.file_type %}
-                                    <span class="file-type-badge">{{ document.file_type|cut:"application/"|default:document.file_extension|default:"" }}</span>
-                                    {% else %}
-                                    <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ document.file_size_display|default:"-" }}</td>
-                                <td>
-                                    {% if document.related_to == 'reservation' %}
-                                    <span class="related-tag reservation">{% trans "حجز" %}</span>
-                                    {% elif document.related_to == 'car' %}
-                                    <span class="related-tag car">{% trans "سيارة" %}</span>
-                                    {% elif document.related_to == 'user' %}
-                                    <span class="related-tag user">{% trans "مستخدم" %}</span>
-                                    {% elif document.related_to == 'employee' %}
-                                    <span class="related-tag employee">{% trans "موظف" %}</span>
-                                    {% else %}
-                                    <span class="related-tag other">{% trans "أخرى" %}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if document.car %}
-                                    {{ document.car.make }} {{ document.car.model }}
-                                    {% else %}
-                                    <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if document.reservation %}
-                                    <a href="{% url 'admin_reservation_detail' document.reservation.id %}" class="reservation-link">
-                                        {{ document.reservation.reservation_number|default:document.reservation.id }}
-                                    </a>
-                                    {% else %}
-                                    <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if document.user %}
-                                    {{ document.user.get_full_name|default:document.user.username }}
-                                    {% else %}
-                                    <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if document.added_by %}
-                                    {{ document.added_by.get_full_name|default:document.added_by.username }}
-                                    {% else %}
-                                    <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ document.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>{{ custody.reservation.id|default:"-" }}</td>
+                                <td>{{ custody.car.make|default:"" }} {{ custody.car.model|default:"-" }}</td>
+                                <td>0 {% trans "ريال" %}</td>
+                                <td>0 {% trans "ريال" %}</td>
+                                <td>{{ custody.created_at|date:"Y-m-d"|default:"-" }}</td>
                             </tr>
                             {% empty %}
                             <tr class="empty-table-row">
