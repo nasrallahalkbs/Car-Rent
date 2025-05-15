@@ -1,4 +1,4 @@
-html
+
 {% extends "admin/enhanced/admin_layout.html" %}
 <!-- CACHE_BUSTER {{ now.timestamp|floatformat:0 }} -->
 {% load i18n %}
@@ -545,42 +545,41 @@ document.addEventListener('DOMContentLoaded', function() {
     function updatePaperSize() {
         // إزالة جميع فئات الورق السابقة
         previewPaper.classList.remove('paper-a4', 'paper-a5', 'paper-letter', 'paper-legal');
-
         // إضافة فئة الورق المحدد
         previewPaper.classList.add('paper-' + paperSizeSelect.value);
+        console.log("تم تحديث حجم الورق إلى: " + paperSizeSelect.value);
     }
 
     // تحديث الهوامش
     function updateMargins() {
-        previewContent.style.padding = `${marginTop.value}mm ${marginRight.value}mm ${marginBottom.value}mm ${marginLeft.value}mm`;
+        const topVal = marginTop.value;
+        const rightVal = marginRight.value;
+        const bottomVal = marginBottom.value;
+        const leftVal = marginLeft.value;
+        previewContent.style.padding = `${topVal}mm ${rightVal}mm ${bottomVal}mm ${leftVal}mm`;
+        console.log(`تم تحديث الهوامش: أعلى=${topVal}mm، يمين=${rightVal}mm، أسفل=${bottomVal}mm، يسار=${leftVal}mm`);
     }
 
     // تحديث عنوان التقرير
     function updateTitle() {
         previewTitle.textContent = reportTitle.value;
         previewTitle.style.fontSize = titleFontSize.value;
+        console.log("تم تحديث العنوان إلى: " + reportTitle.value + " بحجم خط: " + titleFontSize.value);
     }
 
     // تحديث عرض الجدول
     function updateTableWidth() {
         previewTable.style.width = tableWidth.value + '%';
+        console.log("تم تحديث عرض الجدول إلى: " + tableWidth.value + "%");
     }
 
     // تحديث أحجام الخطوط
     function updateFontSizes() {
         previewTable.style.fontSize = tableFontSize.value;
+        console.log("تم تحديث حجم خط الجدول إلى: " + tableFontSize.value);
     }
 
     // تحديث لون الجدول
-    // تعريف الألوان للجدول
-    const tableColorMap = {
-        'blue': '#2c3e50',
-        'green': '#27ae60',
-        'orange': '#e67e22',
-        'red': '#c0392b',
-        'purple': '#8e44ad'
-    };
-
     function updateTableColor() {
         // إزالة كل الألوان القديمة
         previewTable.classList.remove('table-blue', 'table-green', 'table-orange', 'table-red', 'table-purple');
@@ -588,10 +587,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // تطبيق اللون الجديد
         if (tableColor.value !== 'default') {
             previewTable.classList.add('table-' + tableColor.value);
+            console.log("تم تطبيق لون الجدول: " + tableColor.value);
 
             // تطبيق أنماط CSS حسب اللون المختار
             const headerCells = previewTable.querySelectorAll('th');
             const dataCells = previewTable.querySelectorAll('td');
+            const evenRows = previewTable.querySelectorAll('tr:nth-child(even)');
 
             // إعادة تعيين الأنماط
             headerCells.forEach(cell => {
@@ -606,74 +607,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 cell.style.borderColor = '';
             });
 
-            // تطبيق الأنماط الجديدة
-            if (tableColor.value === 'blue') {
-                headerCells.forEach(cell => {
-                    cell.style.backgroundColor = '#2c3e50';
-                    cell.style.color = 'white';
-                    cell.style.borderColor = '#34495e';
-                });
-                previewTable.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
-                    cell.style.backgroundColor = '#ecf0f1';
-                });
-            } else if (tableColor.value === 'green') {
-                headerCells.forEach(cell => {
-                    cell.style.backgroundColor = '#27ae60';
-                    cell.style.color = 'white';
-                    cell.style.borderColor = '#2ecc71';
-                });
-                previewTable.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
-                    cell.style.backgroundColor = '#e8f5e9';
-                });
-            } else if (tableColor.value === 'orange') {
-                headerCells.forEach(cell => {
-                    cell.style.backgroundColor = '#e67e22';
-                    cell.style.color = 'white';
-                    cell.style.borderColor = '#d35400';
-                });
-                previewTable.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
-                    cell.style.backgroundColor = '#fff3e0';
-                });
-            } else if (tableColor.value === 'red') {
-                headerCells.forEach(cell => {
-                    cell.style.backgroundColor = '#c0392b';
-                    cell.style.color = 'white';
-                    cell.style.borderColor = '#e74c3c';
-                });
-                previewTable.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
-                    cell.style.backgroundColor = '#ffebee';
-                });
-            } else if (tableColor.value === 'purple') {
-                headerCells.forEach(cell => {
-                    cell.style.backgroundColor = '#8e44ad';
-                    cell.style.color = 'white';
-                    cell.style.borderColor = '#9b59b6';
-                });
-                previewTable.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
-                    cell.style.backgroundColor = '#f3e5f5';
-                });
+            // تطبيق الأنماط الجديدة حسب اللون المختار
+            switch(tableColor.value) {
+                case 'blue':
+                    applyTableColorStyles('#2c3e50', 'white', '#34495e', '#ecf0f1');
+                    break;
+                case 'green':
+                    applyTableColorStyles('#27ae60', 'white', '#2ecc71', '#e8f5e9');
+                    break;
+                case 'orange':
+                    applyTableColorStyles('#e67e22', 'white', '#d35400', '#fff3e0');
+                    break;
+                case 'red':
+                    applyTableColorStyles('#c0392b', 'white', '#e74c3c', '#ffebee');
+                    break;
+                case 'purple':
+                    applyTableColorStyles('#8e44ad', 'white', '#9b59b6', '#f3e5f5');
+                    break;
             }
         } else {
             // إعادة تعيين لألوان الافتراضية
-            const headerCells = previewTable.querySelectorAll('th');
-            const dataCells = previewTable.querySelectorAll('td');
-
-            headerCells.forEach(cell => {
-                cell.style.backgroundColor = '#f2f2f2';
-                cell.style.color = 'black';
-                cell.style.borderColor = '#ddd';
-            });
-
-            dataCells.forEach(cell => {
-                cell.style.backgroundColor = '';
-                cell.style.color = 'black';
-                cell.style.borderColor = '#ddd';
-            });
-
-            previewTable.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
-                cell.style.backgroundColor = '#f9f9f9';
-            });
+            applyTableColorStyles('#f2f2f2', 'black', '#ddd', '#f9f9f9');
+            console.log("تم إعادة تعيين لون الجدول إلى الافتراضي");
         }
+    }
+
+    // وظيفة مساعدة لتطبيق تنسيقات الألوان على الجدول
+    function applyTableColorStyles(headerBg, headerColor, borderColor, evenRowBg) {
+        const headerCells = previewTable.querySelectorAll('th');
+        headerCells.forEach(cell => {
+            cell.style.backgroundColor = headerBg;
+            cell.style.color = headerColor;
+            cell.style.borderColor = borderColor;
+        });
+
+        // تطبيق لون الصفوف المتناوبة
+        previewTable.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
+            cell.style.backgroundColor = evenRowBg;
+        });
     }
 
     // تخزين نسخة من بنية الجدول الأفقي الأصلية
@@ -684,9 +655,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (orientationVertical.checked) {
             // تحويل الجدول إلى الاتجاه العمودي (تبديل الصفوف والأعمدة)
             transposeTable();
+            console.log("تم تغيير اتجاه الجدول إلى عمودي");
         } else {
             // إعادة الجدول إلى الاتجاه الأفقي (الافتراضي)
             restoreHorizontalTable();
+            console.log("تم تغيير اتجاه الجدول إلى أفقي");
         }
     }
 
@@ -769,174 +742,292 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // إضافة صفوف إضافية للجدول
     function addExtraRows() {
-        const currentRows = previewTable.tBodies[0].querySelectorAll('tr:not(.extra-row)').length;
-        const targetRows = parseInt(tableRows.value);
+        try {
+            const tbody = previewTable.querySelector('tbody');
+            if (!tbody) {
+                console.error("لا يمكن العثور على جسم الجدول (tbody)");
+                return;
+            }
+            
+            const currentRows = tbody.querySelectorAll('tr:not(.extra-row)').length;
+            const targetRows = parseInt(tableRows.value);
 
-        // حذف الصفوف الإضافية الموجودة
-        previewTable.tBodies[0].querySelectorAll('tr.extra-row').forEach(row => {
-            row.remove();
-        });
+            // حذف الصفوف الإضافية الموجودة
+            tbody.querySelectorAll('tr.extra-row').forEach(row => {
+                row.remove();
+            });
 
-        // إضافة صفوف جديدة إذا كان العدد المطلوب أكبر
-        if (targetRows > currentRows) {
-            const columnsCount = previewTable.tHead.rows[0].cells.length;
+            // إضافة صفوف جديدة إذا كان العدد المطلوب أكبر
+            if (targetRows > currentRows) {
+                const columnsCount = previewTable.querySelector('thead tr').cells.length;
 
-            for (let i = 0; i < targetRows - currentRows; i++) {
-                const newRow = document.createElement('tr');
-                newRow.className = 'extra-row';
+                for (let i = 0; i < targetRows - currentRows; i++) {
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'extra-row';
 
-                for (let j = 0; j < columnsCount; j++) {
-                    const cell = document.createElement('td');
+                    for (let j = 0; j < columnsCount; j++) {
+                        const cell = document.createElement('td');
 
-                    if (j === 0) {
-                        cell.textContent = ` - `;
-                    } else if (j === 1) {
-                        cell.textContent = '---';
-                    } else if (j === columnsCount - 1) {
-                        cell.textContent = '---';
-                    } else {
-                        cell.textContent = '---';
+                        if (j === 0) {
+                            cell.textContent = `#${currentRows + i + 1}`;
+                        } else if (j === 1) {
+                            cell.textContent = 'سيارة نموذجية';
+                        } else if (j === columnsCount - 1) {
+                            cell.textContent = 'قيد الانتظار';
+                        } else {
+                            cell.textContent = '2025-05-15';
+                        }
+
+                        newRow.appendChild(cell);
                     }
 
-                    newRow.appendChild(cell);
+                    tbody.appendChild(newRow);
                 }
-
-                previewTable.tBodies[0].appendChild(newRow);
+                console.log(`تم إضافة ${targetRows - currentRows} صفوف جديدة للجدول`);
+            } else {
+                console.log(`لم تتم إضافة صفوف جديدة، العدد المطلوب (${targetRows}) أقل من أو يساوي العدد الحالي (${currentRows})`);
             }
-        }
 
-        // إعادة تطبيق اللون بعد إضافة صفوف
-        updateTableColor();
+            // إعادة تطبيق اللون بعد إضافة صفوف
+            updateTableColor();
+        } catch (error) {
+            console.error("خطأ أثناء إضافة صفوف إضافية:", error);
+        }
     }
 
     // تحديث النص قبل الجدول
     function updatePreTableText() {
         previewPreText.textContent = preTableText.value;
+        previewPreText.style.display = addTextBeforeTable.checked ? 'block' : 'none';
+        console.log("تم تحديث النص قبل الجدول: " + (addTextBeforeTable.checked ? "ظاهر" : "مخفي"));
     }
 
     // دالة تهيئة المعاينة الأولية
     function initializePreview() {
-        console.log("تهيئة المعاينة الأولية...");
+        console.log("بدء تهيئة المعاينة الأولية...");
         
-        // 1. تهيئة قيم العناصر حسب القيم الافتراضية في النموذج
-        updatePaperSize();
-        updateMargins();
-        updateTitle();
-        updateTableWidth();
-        updateFontSizes();
-        updateTableColor();
-        updateTableOrientation();
-        addExtraRows();
-        updatePreTableText();
-        
-        // 2. تطبيق الأنماط الإضافية
-        previewTable.classList.add('preview-initialized');
-        
-        console.log("تمت تهيئة المعاينة الأولية بنجاح");
-    }
-
-    // دالة تحديث المعاينة المتكاملة
-    function updatePreview() {
-        console.log("تحديث المعاينة...");
         try {
-            // التحقق من وجود العناصر قبل تحديثها
-            if (previewPaper && previewContent && previewTitle && previewTable) {
-                updatePaperSize();
-                updateMargins();
-                updateTitle();
-                updateTableWidth();
-                updateFontSizes();
-                updateTableColor();
-                updateTableOrientation();
-                addExtraRows();
-                updatePreTableText();
-                console.log("تم تحديث المعاينة بنجاح");
-            } else {
-                console.error("لا يمكن تحديث المعاينة: بعض العناصر غير موجودة");
-            }
-        } catch (e) {
-            console.error("خطأ أثناء تحديث المعاينة:", e);
+            // 1. تهيئة قيم العناصر حسب القيم الافتراضية في النموذج
+            updatePaperSize();
+            updateMargins();
+            updateTitle();
+            updateTableWidth();
+            updateFontSizes();
+            updateTableColor();
+            updateTableOrientation();
+            addExtraRows();
+            updatePreTableText();
+            
+            // 2. تطبيق الأنماط الإضافية
+            previewTable.classList.add('preview-initialized');
+            
+            console.log("تمت تهيئة المعاينة الأولية بنجاح");
+        } catch (error) {
+            console.error("خطأ أثناء تهيئة المعاينة:", error);
         }
     }
 
     // ========================
     // مستمعي الأحداث
     // ========================
-    // تحديث حجم الورق
-    paperSizeSelect.addEventListener('change', () => {
-        updatePaperSize();
-        updatePreview();
+    
+    // تغيير حجم الورق
+    paperSizeSelect.addEventListener('change', updatePaperSize);
+
+    // تغيير الهوامش
+    [marginTop, marginRight, marginBottom, marginLeft].forEach(input => {
+        input.addEventListener('input', updateMargins);
     });
 
-    // تحديث الهوامش
-    marginTop.addEventListener('input', () => {
-        updateMargins();
-        updatePreview();
-    });
-    marginBottom.addEventListener('input', () => {
-        updateMargins();
-        updatePreview();
-    });
-    marginRight.addEventListener('input', () => {
-        updateMargins();
-        updatePreview();
-    });
-    marginLeft.addEventListener('input', () => {
-        updateMargins();
-        updatePreview();
-    });
-
-    // تحديث عند تغيير أي إعداد
-    [titleFontSize, tableWidth, tableFontSize, tableColor].forEach(element => {
-        element.addEventListener('change', updatePreview);
-        element.addEventListener('input', updatePreview);
-    });
-
-    // تحديث خيارات الطابعة
-    printerSearch.addEventListener('change', function() {
-        printerControl.style.display = this.checked ? 'block' : 'none';
-    });
-
-    // تحديث عنوان التقرير
+    // تغيير عنوان التقرير
     reportTitle.addEventListener('input', updateTitle);
     titleFontSize.addEventListener('change', updateTitle);
 
-    // تحديث إعدادات الجدول
+    // تغيير إعدادات الجدول
     tableRows.addEventListener('input', addExtraRows);
     tableWidth.addEventListener('input', updateTableWidth);
     tableFontSize.addEventListener('change', updateFontSizes);
     tableColor.addEventListener('change', updateTableColor);
-    orientationHorizontal.addEventListener('change', updateTableOrientation);
-    orientationVertical.addEventListener('change', updateTableOrientation);
+    
+    // تغيير اتجاه الجدول
+    [orientationHorizontal, orientationVertical].forEach(radio => {
+        radio.addEventListener('change', updateTableOrientation);
+    });
 
-    // تحديث النص قبل الجدول
+    // تغيير إظهار/إخفاء الطابعات
+    printerSearch.addEventListener('change', function() {
+        printerControl.style.display = this.checked ? 'block' : 'none';
+        console.log("البحث عن الطابعات: " + (this.checked ? "مفعل" : "معطل"));
+        
+        // عند التفعيل، محاولة البحث عن الطابعات المتوفرة
+        if (this.checked && 'Printer' in window) {
+            try {
+                Printer.getPrinterList().then(printers => {
+                    printerSelect.innerHTML = '<option value="" selected>اختر الطابعة...</option>';
+                    printers.forEach(printer => {
+                        const option = document.createElement('option');
+                        option.value = printer.name;
+                        option.textContent = printer.name;
+                        printerSelect.appendChild(option);
+                    });
+                }).catch(error => {
+                    console.error("خطأ في استرجاع قائمة الطابعات:", error);
+                });
+            } catch (error) {
+                console.error("الوصول للطابعات غير متاح:", error);
+            }
+        }
+    });
+
+    // تغيير إظهار/إخفاء النص قبل الجدول
     addTextBeforeTable.addEventListener('change', function() {
         preTableTextControl.style.display = this.checked ? 'block' : 'none';
-        previewPreText.style.display = this.checked ? 'block' : 'none';
         updatePreTableText();
     });
 
+    // تغيير محتوى النص قبل الجدول
     preTableText.addEventListener('input', updatePreTableText);
-    
-    // زر إعادة الضبط
+
+    // إعادة تعيين الإعدادات
     resetButton.addEventListener('click', function() {
         console.log("تم النقر على زر إعادة الضبط");
-        // إعادة تهيئة المعاينة بعد إعادة ضبط الحقول
-        setTimeout(initializePreview, 100);
+        
+        // إعادة تعيين جميع عناصر التحكم إلى قيمها الافتراضية
+        paperSizeSelect.value = 'a4';
+        marginTop.value = 20;
+        marginRight.value = 20;
+        marginBottom.value = 20;
+        marginLeft.value = 20;
+        reportTitle.value = 'تقرير الحجوزات';
+        titleFontSize.value = '18pt';
+        tableRows.value = 5;
+        tableWidth.value = 100;
+        tableFontSize.value = '12pt';
+        tableColor.value = 'default';
+        orientationHorizontal.checked = true;
+        printerSearch.checked = false;
+        printerControl.style.display = 'none';
+        addTextBeforeTable.checked = false;
+        preTableTextControl.style.display = 'none';
+        preTableText.value = '';
+        
+        // إعادة تهيئة المعاينة
+        setTimeout(initializePreview, 50);
     });
 
-    // تهيئة المعاينة عند تحميل الصفحة
-    setTimeout(initializePreview, 300);
-
-    // زر الطباعة 
+    // الطباعة
     printButton.addEventListener('click', function() {
+        console.log("تم النقر على زر الطباعة");
+        
+        // جمع البيانات من الجدول
+        const tableHeaders = Array.from(previewTable.querySelectorAll('thead th')).map(th => th.textContent.trim());
+        const tableRows = Array.from(previewTable.querySelectorAll('tbody tr')).map(row => {
+            return Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
+        });
+        
+        // تحديد محتوى النص قبل الجدول
+        const preText = addTextBeforeTable.checked ? preTableText.value : '';
+        
+        // تعيين ألوان الجدول استناداً إلى الاختيار
+        let headerBgColor = '#f2f2f2';
+        let headerTextColor = 'black';
+        let headerBorderColor = '#ddd';
+        let evenRowBgColor = '#f9f9f9';
+        
+        switch(tableColor.value) {
+            case 'blue':
+                headerBgColor = '#2c3e50';
+                headerTextColor = 'white';
+                headerBorderColor = '#34495e';
+                evenRowBgColor = '#ecf0f1';
+                break;
+            case 'green':
+                headerBgColor = '#27ae60';
+                headerTextColor = 'white';
+                headerBorderColor = '#2ecc71';
+                evenRowBgColor = '#e8f5e9';
+                break;
+            case 'orange':
+                headerBgColor = '#e67e22';
+                headerTextColor = 'white';
+                headerBorderColor = '#d35400';
+                evenRowBgColor = '#fff3e0';
+                break;
+            case 'red':
+                headerBgColor = '#c0392b';
+                headerTextColor = 'white';
+                headerBorderColor = '#e74c3c';
+                evenRowBgColor = '#ffebee';
+                break;
+            case 'purple':
+                headerBgColor = '#8e44ad';
+                headerTextColor = 'white';
+                headerBorderColor = '#9b59b6';
+                evenRowBgColor = '#f3e5f5';
+                break;
+        }
+        
         // إنشاء نافذة الطباعة
-        const printWindow = window.open('', '_blank', 'height=600,width=800');
-
-        // محتوى الطباعة
-        const content = document.getElementById('previewContent').cloneNode(true);
-
-        // إعداد صفحة الطباعة
+        const printWindow = window.open('', '_blank', 'height=600,width=800,scrollbars=yes');
+        
+        if (!printWindow) {
+            alert('يرجى السماح بفتح النوافذ المنبثقة للطباعة.');
+            return;
+        }
+        
+        // بناء محتوى HTML للطباعة
+        let tableHTML;
+        
+        if (orientationVertical.checked) {
+            // بناء جدول بالاتجاه العمودي
+            tableHTML = `<table class="print-table" style="width:${tableWidth.value}%; border-collapse:collapse; font-size:${tableFontSize.value};">`;
+            
+            // صفوف الجدول العمودي
+            for (let i = 0; i < tableHeaders.length; i++) {
+                tableHTML += '<tr>';
+                tableHTML += `<th style="background-color:${headerBgColor}; color:${headerTextColor}; border:1px solid ${headerBorderColor}; padding:8px; text-align:right; font-weight:bold;">${tableHeaders[i]}</th>`;
+                
+                for (let j = 0; j < tableRows.length; j++) {
+                    const cellStyle = j % 2 === 1 
+                        ? `background-color:${evenRowBgColor};` 
+                        : '';
+                    
+                    if (tableRows[j] && tableRows[j][i] !== undefined) {
+                        tableHTML += `<td style="border:1px solid #ddd; padding:8px; text-align:right; ${cellStyle}">${tableRows[j][i]}</td>`;
+                    } else {
+                        tableHTML += `<td style="border:1px solid #ddd; padding:8px; text-align:right; ${cellStyle}"></td>`;
+                    }
+                }
+                
+                tableHTML += '</tr>';
+            }
+            
+            tableHTML += '</table>';
+        } else {
+            // بناء جدول بالاتجاه الأفقي
+            tableHTML = `
+                <table class="print-table" style="width:${tableWidth.value}%; border-collapse:collapse; font-size:${tableFontSize.value};">
+                    <thead>
+                        <tr>
+                            ${tableHeaders.map(header => 
+                                `<th style="background-color:${headerBgColor}; color:${headerTextColor}; border:1px solid ${headerBorderColor}; padding:8px; text-align:right; font-weight:bold;">${header}</th>`
+                            ).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows.map((row, rowIndex) => 
+                            `<tr style="${rowIndex % 2 === 1 ? 'background-color:' + evenRowBgColor + ';' : ''}">
+                                ${row.map(cell => 
+                                    `<td style="border:1px solid #ddd; padding:8px; text-align:right;">${cell}</td>`
+                                ).join('')}
+                            </tr>`
+                        ).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        // كتابة المحتوى إلى نافذة الطباعة
         printWindow.document.write(`
             <!DOCTYPE html>
             <html dir="rtl">
@@ -948,167 +1039,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         size: ${paperSizeSelect.value};
                         margin: ${marginTop.value}mm ${marginRight.value}mm ${marginBottom.value}mm ${marginLeft.value}mm;
                     }
-                    body {
-                        font-family: 'Arial', sans-serif;
-                        margin: 0;
-                        padding: 20px;
-                    }
-                    .preview-title {
-                        text-align: center;
-                        font-size: ${titleFontSize.value};
-                        margin-bottom: 20px;
-                    }
-                    table {
-                        width: ${tableWidth.value}%;
-                        border-collapse: collapse;
-                        margin: 0 auto;
-                        font-size: ${tableFontSize.value};
-                    }
-                    th, td {
-                        border: 1px solid #000;
-                        padding: 8px;
-                        text-align: right;
-                    }
-                    th {
-                        background-color: ${tableColor.value === 'default' ? '#f2f2f2' : tableColorMap[tableColor.value]};
-                        color: ${tableColor.value === 'default' ? '#000' : '#fff'};
-                    }
-                    @media print {
-                        body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-                    }
-                </style>
-            </head>
-            <body>
-                ${content.outerHTML}
-            </body>
-            </html>
-        `);
-
-        // طباعة وإغلاق
-        printWindow.document.close();
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 250);
-    });
-
-        // استخراج معلومات الرأس 
-        const headerRow = previewTable.querySelector('thead tr');
-        const headers = [];
-        headerRow.querySelectorAll('th').forEach((th, index) => {
-            if (index > 0 || orientationVertical.checked) { // تجاهل خانة الاختيار في الوضع الأفقي فقط
-                headers.push(th.textContent.trim());
-            }
-        });
-
-        // استخراج بيانات الصفوف
-        previewTable.querySelectorAll('tbody tr').forEach(tr => {
-            const rowData = [];
-            tr.querySelectorAll('td').forEach((td, index) => {
-                if (index > 0 || orientationVertical.checked) { // تجاهل خانة الاختيار في الوضع الأفقي فقط
-                    rowData.push(td.textContent.trim());
-                }
-            });
-            if (rowData.length > 0) {
-                tableRowsData.push(rowData);
-            }
-        });
-
-        // تحديد ألوان الجدول حسب الاختيار
-        let headerBgColor = '#f2f2f2';
-        let headerTextColor = 'black';
-        let headerBorderColor = '#ddd';
-        let evenRowBgColor = '#f9f9f9';
-
-        // تطبيق ألوان الجدول المختارة
-        if (tableColor.value === 'blue') {
-            headerBgColor = '#2c3e50';
-            headerTextColor = 'white';
-            headerBorderColor = '#34495e';
-            evenRowBgColor = '#ecf0f1';
-        } else if (tableColor.value === 'green') {
-            headerBgColor = '#27ae60';
-            headerTextColor = 'white';
-            headerBorderColor = '#2ecc71';
-            evenRowBgColor = '#e8f5e9';
-        } else if (tableColor.value === 'orange') {
-            headerBgColor = '#e67e22';
-            headerTextColor = 'white';
-            headerBorderColor = '#d35400';
-            evenRowBgColor = '#fff3e0';
-        } else if (tableColor.value === 'red') {
-            headerBgColor = '#c0392b';
-            headerTextColor = 'white';
-            headerBorderColor = '#e74c3c';
-            evenRowBgColor = '#ffebee';
-        } else if (tableColor.value === 'purple') {
-            headerBgColor = '#8e44ad';
-            headerTextColor = 'white';
-            headerBorderColor = '#9b59b6';
-            evenRowBgColor = '#f3e5f5';
-        }
-
-        // إنشاء حدود الخلايا وفقًا للإعدادات
-        const cellPadding = '8px';
-        const borderColor = '#000';
-        const borderStyle = '1px solid ' + borderColor;
-        const fontSize = tableFontSize.value;
-
-        // تحديد ما إذا كان سيتم طباعة الجدول في الاتجاه العمودي أو الأفقي
-        let tableHTML = '';
-        if (orientationVertical.checked) {
-            // جمع كل العناوين والبيانات
-            const allHeaders = headers.slice();
-            const allData = [];
-
-            // بناء صفوف الجدول العمودي
-            tableHTML = '<table class="print-table">';
-            for (let i = 0; i < allHeaders.length; i++) {
-                tableHTML += '<tr>';
-                tableHTML += `<th>${allHeaders[i]}</th>`;
-
-                for (let j = 0; j < tableRowsData.length; j++) {
-                    if (tableRowsData[j] && tableRowsData[j][i] !== undefined) {
-                        tableHTML += `<td>${tableRowsData[j][i]}</td>`;
-                    } else {
-                        tableHTML += '<td></td>`;
-                    }
-                }
-
-                tableHTML += '</tr>';
-            }
-            tableHTML += '</table>';
-        } else {
-            // الجدول الأفقي العادي
-            tableHTML = `
-                <table class="print-table">
-                    <thead>
-                        <tr>
-                            ${headers.map(header => `<th>${header}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRowsData.map(row => 
-                            `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
-                        ).join('')}
-                    </tbody>
-                </table>
-            `;
-        }
-
-        // إنشاء مستند الطباعة
-        const printWindow = window.open('', '_blank', 'height=600,width=800,scrollbars=yes');
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html dir="rtl">
-            <head>
-                <meta charset="UTF-8">
-                <title>${reportTitle}</title>
-                <style>
-                    @page {
-                        size: ${paperSizeSelect.value} portrait;
-                        margin: ${marginTop.value}mm ${marginRight.value}mm ${marginBottom.value}mm ${marginLeft.value}mm;
-                    }
                     @media print {
                         body {
                             -webkit-print-color-adjust: exact !important;
@@ -1118,7 +1048,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: none !important;
                         }
                     }
-
                     body {
                         font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
                         margin: 0;
@@ -1126,12 +1055,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         background-color: white;
                         color: black;
                     }
-
                     .print-container {
                         width: 100%;
                         padding: 0;
                     }
-
                     .report-title {
                         text-align: center;
                         font-size: ${titleFontSize.value};
@@ -1139,49 +1066,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         margin-bottom: 20px;
                         padding: 0;
                     }
-
-                    .print-table {
-                        width: ${tableWidth.value}%;
-                        margin: 0 auto;
-                        border-collapse: collapse;
-                        font-size: ${fontSize};
-                    }
-
-                    .print-table th {
-                        background-color: ${headerBgColor};
-                        color: ${headerTextColor};
-                        font-weight: bold;
-                        text-align: right;
-                        padding: ${cellPadding};
-                        border: 1px solid ${headerBorderColor};
-                    }
-
-                    .print-table td {
-                        padding: ${cellPadding};
-                        border: 1px solid ${borderColor};
-                        text-align: right;
-                    }
-
-                    .print-table tr:nth-child(even) {
-                        background-color: ${evenRowBgColor};
-                    }
-
                     .pre-table-text {
                         margin-bottom: 15px;
                         font-size: 12pt;
                     }
-
-                    @media print {
-                        .no-print {
-                            display: none;
-                        }
-
-                        body {
-                            margin: 0;
-                            padding: 0;
-                        }
-                    }
-
                     .print-button {
                         margin: 20px auto;
                         padding: 10px 20px;
@@ -1197,13 +1085,13 @@ document.addEventListener('DOMContentLoaded', function() {
             </head>
             <body>
                 <div class="print-container">
-                    <h2 class="report-title">${reportTitle}</h2>
-
-                    ${addTextBeforeTable.checked ? '<div class="pre-table-text">' + preTableText.value + '</div>' : ''}
-
+                    <h2 class="report-title">${reportTitle.value}</h2>
+                    
+                    ${preText ? `<div class="pre-table-text">${preText}</div>` : ''}
+                    
                     ${tableHTML}
-
-                    <button class="print-button no-print" onclick="window.print(); return false;">طباعة الجدول</button>
+                    
+                    <button class="print-button no-print" onclick="window.print(); return false;">طباعة التقرير</button>
                 </div>
 
                 <script>
@@ -1218,9 +1106,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </body>
             </html>
         `);
-
+        
         printWindow.document.close();
     });
+
+    // تهيئة المعاينة عند تحميل الصفحة
+    setTimeout(initializePreview, 300);
 });
 </script>
 {% endblock %}
