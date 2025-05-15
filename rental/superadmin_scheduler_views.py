@@ -9,10 +9,16 @@ from django.contrib.auth.decorators import login_required
 from django.utils.translation import gettext as _
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from django.forms import modelform_factory
+from django.forms import modelform_factory, ChoiceField, SelectMultiple, CharField
 
 from .models import User
 from .models_superadmin import AdminUser
+
+# استيراد دالة المهام المتاحة من وحدة تنفيذ المهام المجدولة
+try:
+    from .scheduler_executor import AVAILABLE_FUNCTIONS
+except ImportError:
+    AVAILABLE_FUNCTIONS = {}
 
 # Import system models, with fallback for testing
 try:
@@ -35,6 +41,86 @@ except ImportError:
             ('monthly', 'Monthly'),
             ('custom', 'Custom'),
         ]
+        
+# قائمة المهام المتاحة مع الوصف والمعاملات الافتراضية
+PREDEFINED_TASKS = {
+    'create_backup': {
+        'name': _('إنشاء نسخة احتياطية'),
+        'job_type': 'backup',
+        'description': _('إنشاء نسخة احتياطية لقاعدة البيانات وملفات النظام'),
+        'default_args': {
+            'backup_type': 'full',
+            'include_media': True,
+            'notify_admin': True
+        }
+    },
+    'clean_system': {
+        'name': _('تنظيف النظام'),
+        'job_type': 'cleanup',
+        'description': _('تنظيف الملفات المؤقتة وملفات السجلات القديمة'),
+        'default_args': {
+            'clean_temp': True,
+            'clean_logs': True,
+            'days_old': 30
+        }
+    },
+    'clean_empty_documents': {
+        'name': _('تنظيف المستندات الفارغة'),
+        'job_type': 'cleanup',
+        'description': _('حذف المستندات الفارغة والمستندات التلقائية'),
+        'default_args': {
+            'delete_empty': True,
+            'days_old': 7
+        }
+    },
+    'clean_cache_files': {
+        'name': _('تنظيف ملفات الكاش'),
+        'job_type': 'cleanup',
+        'description': _('تنظيف ملفات الكاش وملفات __pycache__'),
+        'default_args': {
+            'clean_pycache': True,
+            'clean_django_cache': True
+        }
+    },
+    'generate_report': {
+        'name': _('إنشاء تقرير'),
+        'job_type': 'report',
+        'description': _('إنشاء تقارير دورية للمبيعات والمستخدمين والحجوزات'),
+        'default_args': {
+            'report_type': 'sales',
+            'format': 'pdf',
+            'period': 'monthly'
+        }
+    },
+    'send_reminder_emails': {
+        'name': _('إرسال رسائل تذكير'),
+        'job_type': 'custom',
+        'description': _('إرسال رسائل تذكير للحجوزات والمدفوعات والمراجعات'),
+        'default_args': {
+            'reminder_type': 'reservation',
+            'days_before': 1,
+            'template_id': 'default_reminder'
+        }
+    },
+    'archive_old_reservations': {
+        'name': _('أرشفة الحجوزات القديمة'),
+        'job_type': 'custom',
+        'description': _('أرشفة الحجوزات القديمة المكتملة والملغاة'),
+        'default_args': {
+            'days_old': 90,
+            'status_list': ['completed', 'cancelled']
+        }
+    },
+    'update_exchange_rates': {
+        'name': _('تحديث أسعار العملات'),
+        'job_type': 'custom',
+        'description': _('تحديث أسعار العملات من مصادر API خارجية'),
+        'default_args': {
+            'currency_list': ['USD', 'EUR', 'GBP'],
+            'api_source': 'default'
+        }
+    }
+}
 
 # الدالة المساعدة للتحقق من صلاحيات المسؤول الأعلى
 def is_superadmin(user):
@@ -109,26 +195,47 @@ def add_scheduled_job(request):
         messages.error(request, _('ليس لديك صلاحية لإضافة مهام مجدولة'))
         return redirect('superadmin_scheduler')
     
+    # إنشاء قائمة الوظائف المتاحة
+    available_tasks = []
+    for function_name, task_info in PREDEFINED_TASKS.items():
+        available_tasks.append((function_name, task_info['name']))
+    
     # إنشاء نموذج المهمة المجدولة
     JobForm = modelform_factory(
         ScheduledJob,
-        fields=['name', 'job_type', 'function_name', 'interval_type', 'interval_value', 'cron_expression', 'is_active'],
+        fields=['job_type', 'interval_type', 'interval_value', 'cron_expression', 'is_active'],
     )
     
     if request.method == 'POST':
+        # الحصول على الوظيفة المحددة
+        selected_function = request.POST.get('predefined_task', '')
+        
+        # تعبئة النموذج
         form = JobForm(request.POST)
-        if form.is_valid():
+        
+        if form.is_valid() and selected_function in PREDEFINED_TASKS:
             job = form.save(commit=False)
+            
+            # تعيين اسم الوظيفة والاسم من المهام المحددة مسبقًا
+            task_info = PREDEFINED_TASKS[selected_function]
+            job.function_name = selected_function
+            job.name = task_info['name']
             
             # إضافة معلومات إضافية
             job.created_by = request.user
             
-            # تعيين المعاملات من النموذج
+            # تعيين المعاملات من النموذج أو استخدام المعاملات الافتراضية
             args_json = request.POST.get('args_json', '{}')
             try:
-                job.args = json.loads(args_json)
+                custom_args = json.loads(args_json)
+                # إذا لم يتم تخصيص معاملات، استخدم المعاملات الافتراضية
+                if not custom_args:
+                    job.args = task_info['default_args']
+                else:
+                    job.args = custom_args
             except json.JSONDecodeError:
-                job.args = {}
+                # استخدام المعاملات الافتراضية في حالة الخطأ
+                job.args = task_info['default_args']
             
             # حساب وقت التشغيل التالي
             try:
@@ -142,6 +249,9 @@ def add_scheduled_job(request):
                 return redirect('superadmin_scheduler')
             except Exception as e:
                 form.add_error(None, str(e))
+        else:
+            if not selected_function:
+                messages.error(request, _('يجب اختيار وظيفة محددة'))
     else:
         # تعيين القيم الافتراضية
         initial_data = {
@@ -157,6 +267,10 @@ def add_scheduled_job(request):
         'title': _('إضافة مهمة مجدولة'),
         'job_types': dict(ScheduledJob.JOB_TYPE_CHOICES),
         'interval_types': dict(ScheduledJob.INTERVAL_CHOICES),
+        'predefined_tasks': available_tasks,
+        'task_descriptions': {func: info['description'] for func, info in PREDEFINED_TASKS.items()},
+        'task_types': {func: info['job_type'] for func, info in PREDEFINED_TASKS.items()},
+        'task_args': {func: json.dumps(info['default_args'], indent=2) for func, info in PREDEFINED_TASKS.items()},
     }
     
     return render(request, 'superadmin/scheduler/job_form.html', context)

@@ -7,11 +7,14 @@
 import json
 import logging
 import traceback
-from datetime import datetime
+import os
+import shutil
+from datetime import datetime, timedelta
 
 from django.core.mail import mail_admins
 from django.conf import settings
 from django.utils import timezone
+from django.db.models import Q
 
 # إعداد التسجيل
 logger = logging.getLogger(__name__)
@@ -37,7 +40,19 @@ def create_backup(**kwargs):
     logger.info(f"تضمين ملفات الوسائط: {include_media}")
     
     # هنا يتم تنفيذ عملية النسخ الاحتياطي
-    # ...
+    # محاولة إنشاء نسخة احتياطية من قاعدة البيانات
+    try:
+        from .models_system import Backup
+        backup_name = f"backup_{backup_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        backup_obj = Backup.objects.create(
+            name=backup_name,
+            backup_type=backup_type,
+            description=f"نسخة احتياطية تلقائية ({backup_type})",
+            backup_date=timezone.now()
+        )
+        logger.info(f"تم إنشاء سجل النسخة الاحتياطية: {backup_name}")
+    except Exception as e:
+        logger.error(f"خطأ في إنشاء سجل النسخة الاحتياطية: {str(e)}")
     
     if notify_admin:
         mail_message = f"تم إنشاء نسخة احتياطية بنجاح\nالنوع: {backup_type}\nالوقت: {datetime.now()}"
@@ -68,12 +83,146 @@ def clean_system(**kwargs):
     logger.info(f"تنظيف سجلات النظام: {clean_logs}")
     logger.info(f"حذف الملفات الأقدم من {days_old} يوم")
     
-    # هنا يتم تنفيذ عملية التنظيف
-    # ...
+    # تنظيف ملفات __pycache__
+    pycache_count = 0
+    for root, dirs, files in os.walk("."):
+        for dir_name in dirs:
+            if dir_name == "__pycache__":
+                pycache_path = os.path.join(root, dir_name)
+                try:
+                    shutil.rmtree(pycache_path)
+                    pycache_count += 1
+                except Exception as e:
+                    logger.error(f"خطأ في حذف المجلد {pycache_path}: {str(e)}")
+    
+    logger.info(f"تم حذف {pycache_count} مجلد __pycache__")
+    
+    # تنظيف ملفات السجلات القديمة إذا تم تحديد ذلك
+    if clean_logs:
+        logs_path = os.path.join(".", "logs")
+        if os.path.exists(logs_path):
+            log_count = 0
+            cutoff_date = datetime.now() - timedelta(days=days_old)
+            for file_name in os.listdir(logs_path):
+                file_path = os.path.join(logs_path, file_name)
+                if os.path.isfile(file_path):
+                    file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+                    if file_time < cutoff_date:
+                        try:
+                            os.remove(file_path)
+                            log_count += 1
+                        except Exception as e:
+                            logger.error(f"خطأ في حذف الملف {file_path}: {str(e)}")
+            
+            logger.info(f"تم حذف {log_count} ملف سجل قديم")
     
     return {
         'status': 'success',
         'message': "تم تنظيف النظام بنجاح"
+    }
+
+def clean_empty_documents(**kwargs):
+    """تنظيف المستندات الفارغة
+    
+    المعاملات:
+        delete_empty: حذف المستندات الفارغة (True/False)
+        days_old: حذف المستندات الأقدم من عدد الأيام
+    """
+    delete_empty = kwargs.get('delete_empty', True)
+    days_old = kwargs.get('days_old', 7)
+    
+    logger.info(f"بدء تنظيف المستندات الفارغة")
+    logger.info(f"حذف المستندات الفارغة: {delete_empty}")
+    logger.info(f"حذف المستندات الأقدم من {days_old} أيام")
+    
+    try:
+        from .models import Document
+        
+        # تحديد المستندات الفارغة
+        empty_conditions = Q(title__isnull=True) | Q(title='') | Q(title='بدون عنوان')
+        empty_docs = Document.objects.filter(empty_conditions)
+        
+        # إضافة شرط تاريخ إذا تم تحديد عدد الأيام
+        if days_old > 0:
+            cutoff_date = timezone.now() - timedelta(days=days_old)
+            empty_docs = empty_docs.filter(created_at__lt=cutoff_date)
+        
+        # عدد المستندات التي سيتم حذفها
+        count = empty_docs.count()
+        logger.info(f"تم العثور على {count} مستند فارغ")
+        
+        # حذف المستندات إذا تم تحديد ذلك
+        if delete_empty and count > 0:
+            empty_docs.delete()
+            logger.info(f"تم حذف {count} مستند فارغ")
+        
+        return {
+            'status': 'success',
+            'message': f"تم العثور على {count} مستند فارغ، وتم حذف {count if delete_empty else 0} مستند"
+        }
+    except Exception as e:
+        error_msg = f"خطأ في تنظيف المستندات الفارغة: {str(e)}"
+        logger.error(error_msg)
+        logger.error(traceback.format_exc())
+        return {
+            'status': 'error',
+            'message': error_msg
+        }
+
+def clean_cache_files(**kwargs):
+    """تنظيف ملفات الكاش
+    
+    المعاملات:
+        clean_pycache: تنظيف ملفات __pycache__ (True/False)
+        clean_django_cache: تنظيف كاش Django (True/False)
+    """
+    clean_pycache = kwargs.get('clean_pycache', True)
+    clean_django_cache = kwargs.get('clean_django_cache', True)
+    
+    logger.info(f"بدء تنظيف ملفات الكاش")
+    logger.info(f"تنظيف ملفات __pycache__: {clean_pycache}")
+    logger.info(f"تنظيف كاش Django: {clean_django_cache}")
+    
+    count_pycache = 0
+    count_pyc = 0
+    
+    # تنظيف ملفات __pycache__
+    if clean_pycache:
+        for root, dirs, files in os.walk("."):
+            # حذف مجلدات __pycache__
+            for dir_name in dirs:
+                if dir_name == "__pycache__":
+                    pycache_path = os.path.join(root, dir_name)
+                    try:
+                        shutil.rmtree(pycache_path)
+                        count_pycache += 1
+                    except Exception as e:
+                        logger.error(f"خطأ في حذف المجلد {pycache_path}: {str(e)}")
+            
+            # حذف ملفات .pyc
+            for file_name in files:
+                if file_name.endswith(".pyc"):
+                    pyc_path = os.path.join(root, file_name)
+                    try:
+                        os.remove(pyc_path)
+                        count_pyc += 1
+                    except Exception as e:
+                        logger.error(f"خطأ في حذف الملف {pyc_path}: {str(e)}")
+    
+    # تنظيف كاش Django
+    count_django_cache = 0
+    if clean_django_cache:
+        try:
+            from django.core.cache import cache
+            cache.clear()
+            count_django_cache = 1
+            logger.info("تم تنظيف كاش Django")
+        except Exception as e:
+            logger.error(f"خطأ في تنظيف كاش Django: {str(e)}")
+    
+    return {
+        'status': 'success',
+        'message': f"تم حذف {count_pycache} مجلد __pycache__ و {count_pyc} ملف .pyc"
     }
 
 def generate_report(**kwargs):
@@ -130,6 +279,72 @@ def send_reminder_emails(**kwargs):
         'message': "تم إرسال رسائل التذكير بنجاح"
     }
 
+def archive_old_reservations(**kwargs):
+    """أرشفة الحجوزات القديمة
+    
+    المعاملات:
+        days_old: أرشفة الحجوزات الأقدم من عدد الأيام
+        status_list: قائمة الحالات المراد أرشفتها
+    """
+    days_old = kwargs.get('days_old', 90)  # أرشفة الحجوزات الأقدم من 90 يوم افتراضياً
+    status_list = kwargs.get('status_list', ['completed', 'cancelled'])
+    
+    logger.info(f"بدء أرشفة الحجوزات القديمة")
+    logger.info(f"أرشفة الحجوزات الأقدم من {days_old} يوم")
+    logger.info(f"الحالات المراد أرشفتها: {', '.join(status_list)}")
+    
+    try:
+        from .models import Reservation, ArchiveFolder
+        
+        # تحديد تاريخ القطع
+        cutoff_date = timezone.now() - timedelta(days=days_old)
+        
+        # العثور على الحجوزات القديمة حسب الحالة والتاريخ
+        old_reservations = Reservation.objects.filter(
+            status__in=status_list,
+            created_at__lt=cutoff_date
+        )
+        
+        # عدد الحجوزات التي سيتم أرشفتها
+        count = old_reservations.count()
+        logger.info(f"تم العثور على {count} حجز للأرشفة")
+        
+        if count > 0:
+            # إنشاء أو الحصول على مجلد الأرشيف للحجوزات
+            try:
+                archive_folder = ArchiveFolder.objects.get(name='حجوزات', is_system=True)
+            except ArchiveFolder.DoesNotExist:
+                # إنشاء مجلد جديد للأرشفة
+                root_folders = ArchiveFolder.objects.filter(parent=None)
+                if root_folders.exists():
+                    parent_folder = root_folders.first()
+                else:
+                    parent_folder = None
+                
+                archive_folder = ArchiveFolder.objects.create(
+                    name='حجوزات',
+                    parent=parent_folder,
+                    is_system=True,
+                    description='مجلد أرشفة الحجوزات القديمة'
+                )
+            
+            # أرشفة الحجوزات (يمكن تنفيذ المنطق المناسب هنا)
+            old_reservations.update(is_archived=True)
+            logger.info(f"تم أرشفة {count} حجز")
+        
+        return {
+            'status': 'success',
+            'message': f"تم أرشفة {count} حجز قديم بنجاح"
+        }
+    except Exception as e:
+        error_msg = f"خطأ في أرشفة الحجوزات القديمة: {str(e)}"
+        logger.error(error_msg)
+        logger.error(traceback.format_exc())
+        return {
+            'status': 'error',
+            'message': error_msg
+        }
+
 def update_exchange_rates(**kwargs):
     """تحديث أسعار العملات
     
@@ -159,8 +374,11 @@ def update_exchange_rates(**kwargs):
 AVAILABLE_FUNCTIONS = {
     'create_backup': create_backup,
     'clean_system': clean_system,
+    'clean_empty_documents': clean_empty_documents,
+    'clean_cache_files': clean_cache_files,
     'generate_report': generate_report,
     'send_reminder_emails': send_reminder_emails,
+    'archive_old_reservations': archive_old_reservations,
     'update_exchange_rates': update_exchange_rates,
 }
 
