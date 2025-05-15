@@ -1064,28 +1064,44 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // زر إعادة التعيين
-    resetButton.addEventListener('click', resetSettings);
+    resetButton.addEventListener('click', function() {
+        if (confirm('{% trans "هل أنت متأكد من إعادة تعيين جميع الإعدادات؟" %}')) {
+            resetSettings();
+        }
+    });
     
     // إعادة تعيين الإعدادات إلى القيم الافتراضية
     function resetSettings() {
+        // إعادة تعيين حجم الورق والهوامش
         paperSizeSelect.value = 'a4';
         marginTop.value = 20;
         marginBottom.value = 20;
         marginRight.value = 20;
         marginLeft.value = 20;
+        
+        // إعادة تعيين إعدادات الطابعة
         printerSearch.checked = false;
         printerControl.style.display = 'none';
+        printerSelect.value = '';
+        
+        // إعادة تعيين العنوان
         reportTitle.value = '{% trans "تقرير الحجوزات" %}';
         titleFontSize.value = '18pt';
+        
+        // إعادة تعيين إعدادات الجدول
         tableRows.value = 5;
         tableWidth.value = 100;
         tableFontSize.value = '12pt';
-        // إعادة تعيين إعدادات لون الجدول واتجاهه
         tableColor.value = 'default';
+        
+        // إعادة تعيين اتجاه الجدول
         orientationHorizontal.checked = true;
         orientationVertical.checked = false;
+        
+        // إعادة تعيين النص قبل الجدول
         addTextBeforeTable.checked = false;
         preTableTextControl.style.display = 'none';
+        previewPreText.style.display = 'none';
         preTableText.value = '';
         
         // إعادة الجدول إلى الاتجاه الأفقي إذا كان عمودياً
@@ -1093,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', function() {
             restoreHorizontalTable();
         }
         
-        // تطبيق الإعدادات الافتراضية
+        // تطبيق جميع التحديثات
         updatePaperSize();
         updateMargins();
         updateTitle();
@@ -1102,6 +1118,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTableColor();
         addExtraRows();
         updatePreTableText();
+        
+        // إظهار رسالة نجاح
+        alert('{% trans "تم إعادة تعيين الإعدادات بنجاح" %}');
     }
     
     // تطبيق الإعدادات الافتراضية عند التحميل
