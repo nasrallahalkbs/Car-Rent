@@ -1,0 +1,518 @@
+{% extends 'admin/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "إعدادات طباعة التقارير" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* الأنماط الرئيسية */
+.print-settings-container {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.print-settings-panel {
+    flex: 1;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.print-preview-panel {
+    flex: 1;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.panel-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+/* نمط المعاينة */
+.preview-paper {
+    background-color: white;
+    max-width: 100%;
+    max-height: 500px;
+    overflow: auto;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.paper-a4 {
+    width: 210mm;
+    height: 297mm;
+    max-height: 500px;
+}
+
+.preview-content {
+    padding: 20mm;
+}
+
+.preview-title {
+    text-align: center;
+    font-size: 18pt;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.preview-table th, 
+.preview-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: right;
+}
+
+.preview-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.preview-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.action-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-print {
+    background-color: #ffc107;
+    border: none;
+    color: #212529;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-reset {
+    background-color: #6c757d;
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-3">{% trans "إعدادات طباعة" %} {{ title }}</h1>
+
+            <div class="print-settings-container">
+                <!-- لوحة الإعدادات -->
+                <div class="print-settings-panel">
+                    <div class="panel-title">{% trans "إعدادات الطباعة" %}</div>
+                    
+                    <!-- إعدادات الصفحة -->
+                    <div class="form-group">
+                        <label for="paperSize">{% trans "حجم الورق" %}</label>
+                        <select id="paperSize" class="form-control">
+                            <option value="a4" selected>A4</option>
+                            <option value="a5">A5</option>
+                            <option value="letter">Letter</option>
+                            <option value="legal">Legal</option>
+                        </select>
+                    </div>
+                    
+                    <!-- إعدادات العنوان -->
+                    <div class="form-group">
+                        <label for="reportTitle">{% trans "عنوان التقرير" %}</label>
+                        <input type="text" id="reportTitle" class="form-control" value="{{ title }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="titleSize">{% trans "حجم الخط للعنوان" %}</label>
+                        <select id="titleSize" class="form-control">
+                            <option value="16pt">16pt</option>
+                            <option value="18pt" selected>18pt</option>
+                            <option value="20pt">20pt</option>
+                            <option value="22pt">22pt</option>
+                        </select>
+                    </div>
+                    
+                    <!-- إعدادات الجدول -->
+                    <div class="form-group">
+                        <label for="tableWidth">{% trans "عرض الجدول (%)" %}</label>
+                        <input type="number" id="tableWidth" class="form-control" value="100" min="50" max="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tableSize">{% trans "حجم خط الجدول" %}</label>
+                        <select id="tableSize" class="form-control">
+                            <option value="10pt">10pt</option>
+                            <option value="12pt" selected>12pt</option>
+                            <option value="14pt">14pt</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>{% trans "اتجاه الجدول" %}</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="tableOrientation" id="orientationHorizontal" checked>
+                            <label class="form-check-label" for="orientationHorizontal">
+                                {% trans "أفقي (الصفوف والأعمدة كما هي)" %}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="tableOrientation" id="orientationVertical">
+                            <label class="form-check-label" for="orientationVertical">
+                                {% trans "عمودي (تبديل الصفوف والأعمدة)" %}
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- أزرار التحكم -->
+                    <div class="action-buttons">
+                        <button id="printBtn" class="btn-print">
+                            <i class="fas fa-print mr-1"></i> {% trans "طباعة" %}
+                        </button>
+                        <button id="resetBtn" class="btn-reset">
+                            <i class="fas fa-redo-alt mr-1"></i> {% trans "إعادة تعيين" %}
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- لوحة المعاينة -->
+                <div class="print-preview-panel">
+                    <div class="panel-title">{% trans "معاينة الطباعة" %}</div>
+                    <div class="preview-paper paper-a4">
+                        <div class="preview-content">
+                            <h2 id="previewTitle" class="preview-title">{{ title }}</h2>
+                            
+                            {% if report_type == 'cars' %}
+                            <!-- جدول السيارات -->
+                            <table id="previewTable" class="preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "رقم السيارة" %}</th>
+                                        <th>{% trans "الماركة" %}</th>
+                                        <th>{% trans "الموديل" %}</th>
+                                        <th>{% trans "سنة الصنع" %}</th>
+                                        <th>{% trans "رقم اللوحة" %}</th>
+                                        <th>{% trans "اللون" %}</th>
+                                        <th>{% trans "الحالة" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if cars %}
+                                        {% for car in cars %}
+                                        <tr>
+                                            <td>#{{ car.id }}</td>
+                                            <td>{{ car.make }}</td>
+                                            <td>{{ car.model }}</td>
+                                            <td>{{ car.year }}</td>
+                                            <td>{{ car.license_plate }}</td>
+                                            <td>{{ car.color }}</td>
+                                            <td>
+                                                {% if car.is_available %}
+                                                <span>{% trans "متاح" %}</span>
+                                                {% else %}
+                                                <span>{% trans "غير متاح" %}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center">{% trans "لا توجد بيانات متاحة" %}</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                            {% else %}
+                            <!-- جدول الحجوزات (افتراضي) -->
+                            <table id="previewTable" class="preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "رقم الحجز" %}</th>
+                                        <th>{% trans "العميل" %}</th>
+                                        <th>{% trans "السيارة" %}</th>
+                                        <th>{% trans "تاريخ البداية" %}</th>
+                                        <th>{% trans "تاريخ النهاية" %}</th>
+                                        <th>{% trans "السعر الإجمالي" %}</th>
+                                        <th>{% trans "الحالة" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reservation in reservations %}
+                                    <tr>
+                                        <td>#{{ reservation.id }}</td>
+                                        <td>{{ reservation.user.get_full_name }}</td>
+                                        <td>{{ reservation.car.model_name }} {{ reservation.car.year }}</td>
+                                        <td>{{ reservation.start_date|date:"Y-m-d" }}</td>
+                                        <td>{{ reservation.end_date|date:"Y-m-d" }}</td>
+                                        <td>{{ reservation.total_price }} {% trans "ريال" %}</td>
+                                        <td>
+                                            {% if reservation.status == 'pending' %}
+                                            <span>{% trans "قيد الانتظار" %}</span>
+                                            {% elif reservation.status == 'confirmed' %}
+                                            <span>{% trans "مؤكد" %}</span>
+                                            {% elif reservation.status == 'completed' %}
+                                            <span>{% trans "مكتمل" %}</span>
+                                            {% elif reservation.status == 'cancelled' %}
+                                            <span>{% trans "ملغي" %}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديد عناصر DOM
+    var paperSize = document.getElementById('paperSize');
+    var reportTitle = document.getElementById('reportTitle');
+    var titleSize = document.getElementById('titleSize');
+    var tableWidth = document.getElementById('tableWidth');
+    var tableSize = document.getElementById('tableSize');
+    var orientationHorizontal = document.getElementById('orientationHorizontal');
+    var orientationVertical = document.getElementById('orientationVertical');
+    var printBtn = document.getElementById('printBtn');
+    var resetBtn = document.getElementById('resetBtn');
+    
+    // عناصر المعاينة
+    var previewPaper = document.querySelector('.preview-paper');
+    var previewTitle = document.getElementById('previewTitle');
+    var previewTable = document.getElementById('previewTable');
+    
+    // تحديث عنوان التقرير
+    reportTitle.addEventListener('input', function() {
+        previewTitle.textContent = this.value;
+    });
+    
+    // تحديث حجم خط العنوان
+    titleSize.addEventListener('change', function() {
+        previewTitle.style.fontSize = this.value;
+    });
+    
+    // تحديث حجم الورق
+    paperSize.addEventListener('change', function() {
+        previewPaper.className = 'preview-paper paper-' + this.value;
+    });
+    
+    // تحديث عرض الجدول
+    tableWidth.addEventListener('input', function() {
+        previewTable.style.width = this.value + '%';
+    });
+    
+    // تحديث حجم خط الجدول
+    tableSize.addEventListener('change', function() {
+        previewTable.style.fontSize = this.value;
+    });
+    
+    // تحديث اتجاه الجدول
+    function updateTableOrientation() {
+        if (orientationVertical.checked) {
+            // تطبيق التحويل العمودي
+            var thead = previewTable.querySelector('thead');
+            var tbody = previewTable.querySelector('tbody');
+            
+            if (!thead || !tbody) return;
+            
+            // جمع البيانات الحالية
+            var headers = [];
+            thead.querySelectorAll('th').forEach(function(th) {
+                headers.push(th.textContent);
+            });
+            
+            var rows = [];
+            tbody.querySelectorAll('tr').forEach(function(tr) {
+                var rowData = [];
+                tr.querySelectorAll('td').forEach(function(td) {
+                    rowData.push(td.textContent);
+                });
+                rows.push(rowData);
+            });
+            
+            // إعادة بناء الجدول
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            
+            // إنشاء الرأس الجديد
+            var headerRow = document.createElement('tr');
+            headerRow.innerHTML = '<th>البيانات</th>';
+            
+            for (var i = 0; i < rows.length; i++) {
+                var th = document.createElement('th');
+                th.textContent = 'صف ' + (i + 1);
+                headerRow.appendChild(th);
+            }
+            
+            thead.appendChild(headerRow);
+            
+            // إنشاء صفوف جديدة
+            for (var i = 0; i < headers.length; i++) {
+                var row = document.createElement('tr');
+                
+                // خلية العنوان
+                var headerCell = document.createElement('td');
+                headerCell.textContent = headers[i];
+                headerCell.style.fontWeight = 'bold';
+                headerCell.style.backgroundColor = '#f2f2f2';
+                row.appendChild(headerCell);
+                
+                // خلايا البيانات
+                for (var j = 0; j < rows.length; j++) {
+                    var cell = document.createElement('td');
+                    if (rows[j][i]) {
+                        cell.textContent = rows[j][i];
+                    }
+                    row.appendChild(cell);
+                }
+                
+                tbody.appendChild(row);
+            }
+        } else {
+            // إعادة تحميل الصفحة لاستعادة الجدول الأفقي
+            location.reload();
+        }
+    }
+    
+    orientationHorizontal.addEventListener('change', updateTableOrientation);
+    orientationVertical.addEventListener('change', updateTableOrientation);
+    
+    // زر الطباعة
+    printBtn.addEventListener('click', function() {
+        var printWindow = window.open('', '_blank');
+        
+        // إعداد محتوى نافذة الطباعة
+        var content = `
+            <!DOCTYPE html>
+            <html dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <title>${reportTitle.value}</title>
+                <style>
+                    @page {
+                        size: ${paperSize.value};
+                        margin: 20mm;
+                    }
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .report-title {
+                        font-size: ${titleSize.value};
+                        text-align: center;
+                        font-weight: bold;
+                        margin-bottom: 20px;
+                    }
+                    .report-table {
+                        width: ${tableWidth.value}%;
+                        border-collapse: collapse;
+                        font-size: ${tableSize.value};
+                        margin: 0 auto;
+                    }
+                    .report-table th, .report-table td {
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        text-align: right;
+                    }
+                    .report-table th {
+                        background-color: #f2f2f2;
+                    }
+                    .report-table tr:nth-child(even) {
+                        background-color: #f9f9f9;
+                    }
+                    .print-btn {
+                        display: block;
+                        margin: 20px auto;
+                        padding: 10px 20px;
+                        background-color: #ffc107;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: bold;
+                    }
+                    @media print {
+                        .print-btn {
+                            display: none;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1 class="report-title">${reportTitle.value}</h1>
+                ${previewTable.outerHTML.replace('id="previewTable" class="preview-table"', 'class="report-table"')}
+                <button class="print-btn" onclick="window.print()">طباعة</button>
+                
+                <script>
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.print();
+                        }, 500);
+                    }
+                <\/script>
+            </body>
+            </html>
+        `;
+        
+        printWindow.document.write(content);
+        printWindow.document.close();
+    });
+    
+    // زر إعادة التعيين
+    resetBtn.addEventListener('click', function() {
+        paperSize.value = 'a4';
+        reportTitle.value = '{{ title }}';
+        titleSize.value = '18pt';
+        tableWidth.value = '100';
+        tableSize.value = '12pt';
+        orientationHorizontal.checked = true;
+        
+        // تحديث المعاينة
+        previewTitle.textContent = reportTitle.value;
+        previewTitle.style.fontSize = titleSize.value;
+        previewPaper.className = 'preview-paper paper-a4';
+        previewTable.style.width = '100%';
+        previewTable.style.fontSize = '12pt';
+        
+        // إعادة تحميل الصفحة لاستعادة الجدول الأصلي
+        location.reload();
+    });
+});
+</script>
+{% endblock %}
