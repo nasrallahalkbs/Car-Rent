@@ -4545,6 +4545,8 @@ def admin_reports(request):
     
     هذه الصفحة تعرض واجهة متقدمة لإدارة التقارير المختلفة في النظام
     مع إمكانيات فلترة وتصدير وطباعة التقارير
+    
+    الوظيفة معدلة لتوفير جميع الحقول المتاحة في قاعدة البيانات
     """
     # الحصول على اللغة الحالية
     current_language = get_language()
@@ -4565,28 +4567,42 @@ def admin_reports(request):
         'unavailable': Car.objects.filter(is_available=False).count(),
     }
     
-    # بيانات جميع الحجوزات للجدول (وليس فقط الأخيرة)
-    reservations = Reservation.objects.all().order_by('-created_at')
+    # بيانات جميع الحجوزات للجدول مع جميع الحقول ذات الصلة
+    reservations = Reservation.objects.select_related('car', 'user').all().order_by('-created_at')
     
-    # بيانات السيارات للتبويب الخاص بها
-    cars = Car.objects.all()[:20]
+    # استخراج جميع حقول السيارات
+    cars = Car.objects.all()
     
-    # بيانات العملاء للتبويب الخاص بهم (فقط المستخدمين العاديين)
-    customers = User.objects.filter(is_staff=False, is_admin=False, is_superuser=False)[:20]
+    # بيانات العملاء مع جميع الحقول ذات الصلة
+    customers = User.objects.filter(is_staff=False, is_admin=False, is_superuser=False)
+    
+    # استخراج أسماء جميع الحقول من النماذج لعرضها في الجداول
+    reservation_fields = [field.name for field in Reservation._meta.fields]
+    car_fields = [field.name for field in Car._meta.fields]
+    user_fields = [field.name for field in User._meta.fields if not field.name.startswith('password')]
     
     # تحميل معلومات الوقت الحالي لكسر كاش المتصفح
     timestamp = int(datetime.now().timestamp())
+    
+    # طباعة قائمة الحقول المتاحة في السجل (للتشخيص)
+    print("حقول الحجز المتاحة:", reservation_fields)
+    print("حقول السيارة المتاحة:", car_fields)
+    print("حقول المستخدم المتاحة:", user_fields)
     
     context = {
         'is_english': is_english,
         'reservations_stats': reservations_stats,
         'cars_stats': cars_stats,
         'cars': cars,
-        'reservations': reservations,  # استخدام جميع الحجوزات وليس فقط الأخيرة
-        'recent_reservations': reservations[:10],  # الحفاظ على الحجوزات الأخيرة أيضًا
+        'reservations': reservations,
+        'recent_reservations': reservations[:10],
         'customers': customers,
         'timestamp': timestamp,
         'now': datetime.now(),
+        # إضافة حقول النماذج للقالب
+        'reservation_fields': reservation_fields,
+        'car_fields': car_fields,
+        'user_fields': user_fields,
     }
     
     return render(request, 'admin/reports/reports_management.html', context)
