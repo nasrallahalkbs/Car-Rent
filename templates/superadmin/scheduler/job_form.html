@@ -177,37 +177,163 @@
             }
         });
         
-        // تهيئة قائمة المعاملات
+        // تهيئة قائمة المعاملات والمحرر المتقدم
         var paramsList = $('#parameters-list');
         var paramCount = 0;
+        
+        // دالة لتحديث واجهة المعاملات من كائن JSON
+        function updateParametersUI(args) {
+            // مسح القائمة الحالية
+            paramsList.empty();
+            paramCount = 0;
+            
+            // إضافة كل معامل إلى القائمة
+            $.each(args, function(key, value) {
+                addParameterToUI(key, value);
+            });
+            
+            // تحديث محرر JSON المتقدم أيضًا
+            $('#json-editor').val(JSON.stringify(args, null, 2));
+        }
+        
+        // دالة لإضافة معامل إلى واجهة المستخدم
+        function addParameterToUI(name, value) {
+            var paramId = 'param-' + paramCount;
+            var valueType = typeof value;
+            var displayValue = value;
+            
+            if (valueType === 'boolean') {
+                displayValue = value ? 'نعم' : 'لا';
+            } else if (value === null) {
+                valueType = 'null';
+                displayValue = 'فارغ';
+            } else if (Array.isArray(value)) {
+                valueType = 'array';
+                displayValue = JSON.stringify(value);
+            } else if (valueType === 'object') {
+                displayValue = JSON.stringify(value);
+            }
+            
+            var paramHTML = `
+                <div class="card mb-2 parameter-item" id="${paramId}">
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group mb-md-0">
+                                    <label>{% trans "اسم المعامل" %}</label>
+                                    <input type="text" class="form-control param-name" value="${name}" data-original="${name}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-md-0">
+                                    <label>{% trans "قيمة المعامل" %}</label>
+                                    <input type="text" class="form-control param-value" value="${displayValue}" data-type="${valueType}">
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-sm btn-danger remove-param w-100">
+                                    <i class="fas fa-trash"></i> {% trans "حذف" %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            paramsList.append(paramHTML);
+            paramCount++;
+        }
+        
+        // دالة لتحديث كائن JSON من واجهة المستخدم
+        function updateJsonFromUI() {
+            var jsonObj = {};
+            
+            $('.parameter-item').each(function() {
+                var name = $(this).find('.param-name').val();
+                var value = $(this).find('.param-value').val();
+                var type = $(this).find('.param-value').data('type');
+                
+                if (name) {
+                    // تحويل القيمة حسب نوع البيانات
+                    if (type === 'number') {
+                        if (value.indexOf('.') !== -1) {
+                            value = parseFloat(value);
+                        } else {
+                            value = parseInt(value, 10);
+                        }
+                    } else if (type === 'boolean') {
+                        value = (value.toLowerCase() === 'true' || value.toLowerCase() === 'نعم');
+                    } else if (type === 'null') {
+                        value = null;
+                    } else if (type === 'array' || type === 'object') {
+                        try {
+                            value = JSON.parse(value);
+                        } catch (e) {
+                            console.error('خطأ في تحليل القيمة:', e);
+                        }
+                    }
+                    
+                    jsonObj[name] = value;
+                }
+            });
+            
+            return jsonObj;
+        }
+        // تحميل المعاملات الحالية من الحقل المخفي
         var currentParams = {};
         
         try {
             currentParams = JSON.parse($('#args_json').val() || '{}');
+            // عرض المعاملات الحالية في الواجهة
+            updateParametersUI(currentParams);
         } catch (e) {
-            console.error('خطأ في تحليل JSON الحالي:', e);
-            currentParams = {};
+            console.error('خطأ في تحليل المعاملات الحالية', e);
         }
         
-        // عرض المعاملات الموجودة
-        function showExistingParams() {
-            for (var key in currentParams) {
-                if (currentParams.hasOwnProperty(key)) {
-                    addParameterField(key, currentParams[key]);
-                }
+        // التعامل مع زر إضافة معامل
+        $('#add-parameter').on('click', function() {
+            addParameterToUI(`param${paramCount}`, '');
+            updateArgsJson();
+        });
+        
+        // التعامل مع زر حذف معامل
+        $(document).on('click', '.remove-param', function() {
+            $(this).closest('.parameter-item').remove();
+            updateArgsJson();
+        });
+        
+        // التعامل مع تغيير اسم أو قيمة المعامل
+        $(document).on('change keyup', '.param-name, .param-value', function() {
+            updateArgsJson();
+        });
+        
+        // التعامل مع تبديل عرض محرر JSON المتقدم
+        $('#show-json-editor').on('change', function() {
+            if ($(this).is(':checked')) {
+                $('#advanced-json-editor').show();
+            } else {
+                $('#advanced-json-editor').hide();
             }
-        }
+        });
         
-        // إضافة حقل معامل جديد
-        function addParameterField(key = '', value = '') {
-            var paramId = 'param-' + paramCount;
-            var valueType = typeof value;
-            var isObject = valueType === 'object' && value !== null && !Array.isArray(value);
-            var isArray = Array.isArray(value);
-            
-            var fieldHtml = `
-                <div class="parameter-row mb-3 p-2 border rounded" id="${paramId}-container">
-                    <div class="row align-items-center">
+        // التعامل مع تغييرات محرر JSON المتقدم
+        $('#json-editor').on('change keyup', function() {
+            try {
+                var jsonData = JSON.parse($(this).val());
+                $('#args_json').val(JSON.stringify(jsonData));
+                updateParametersUI(jsonData);
+            } catch (e) {
+                console.error('تنسيق JSON غير صالح', e);
+            }
+        });
+        
+        // دالة لتحديث حقل JSON المخفي
+        function updateArgsJson() {
+            var jsonObj = updateJsonFromUI();
+            var jsonString = JSON.stringify(jsonObj);
+            $('#args_json').val(jsonString);
+            $('#json-editor').val(JSON.stringify(jsonObj, null, 2));
+        }
                         <div class="col-md-4">
                             <div class="form-group mb-2">
                                 <label for="${paramId}-key">{% trans "اسم المعامل" %}</label>
