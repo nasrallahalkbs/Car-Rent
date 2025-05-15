@@ -4565,18 +4565,28 @@ def admin_reports(request):
         'unavailable': Car.objects.filter(is_available=False).count(),
     }
     
-    # بيانات نموذجية للسيارات (فقط لنموذج العرض الأولي)
-    cars = Car.objects.all()[:10]
+    # بيانات جميع الحجوزات للجدول (وليس فقط الأخيرة)
+    reservations = Reservation.objects.all().order_by('-created_at')
     
-    # الحصول على الحجوزات الأخيرة
-    recent_reservations = Reservation.objects.order_by('-created_at')[:10]
+    # بيانات السيارات للتبويب الخاص بها
+    cars = Car.objects.all()[:20]
+    
+    # بيانات العملاء للتبويب الخاص بهم
+    customers = User.objects.filter(is_staff=False, is_admin=False, is_superadmin=False)[:20]
+    
+    # تحميل معلومات الوقت الحالي لكسر كاش المتصفح
+    timestamp = int(datetime.now().timestamp())
     
     context = {
         'is_english': is_english,
         'reservations_stats': reservations_stats,
         'cars_stats': cars_stats,
         'cars': cars,
-        'recent_reservations': recent_reservations,
+        'reservations': reservations,  # استخدام جميع الحجوزات وليس فقط الأخيرة
+        'recent_reservations': reservations[:10],  # الحفاظ على الحجوزات الأخيرة أيضًا
+        'customers': customers,
+        'timestamp': timestamp,
+        'now': datetime.now(),
     }
     
     return render(request, 'admin/reports/reports_management.html', context)

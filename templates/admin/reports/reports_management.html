@@ -209,21 +209,234 @@
                 </div>
             </div>
 
-            <!-- باقي التبويبات (سيتم تفعيلها لاحقاً) -->
+            <!-- تبويب السيارات -->
             <div class="tab-pane" id="cars-tab" style="display: none;">
-                <!-- محتوى تبويب السيارات -->
+                <div class="column-filters-toolbar">
+                    <div class="filter-buttons">
+                        <button class="filter-btn reset-btn">{% trans "إعادة تعيين الفلاتر" %}</button>
+                        <button class="filter-btn apply-btn">{% trans "تطبيق الفلاتر" %}</button>
+                    </div>
+                </div>
+
+                <!-- جدول بيانات السيارات -->
+                <div class="table-responsive">
+                    <table class="reports-table">
+                        <thead>
+                            <tr class="column-headers">
+                                <th width="30px">
+                                    <input type="checkbox" class="form-check-input" id="select-all-cars">
+                                </th>
+                                <th class="filterable" data-column="car_id">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم السيارة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="make">
+                                    <div class="column-header">
+                                        <span>{% trans "الماركة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="model">
+                                    <div class="column-header">
+                                        <span>{% trans "الموديل" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="year">
+                                    <div class="column-header">
+                                        <span>{% trans "السنة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="price">
+                                    <div class="column-header">
+                                        <span>{% trans "السعر اليومي" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="status">
+                                    <div class="column-header">
+                                        <span>{% trans "الحالة" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th>{% trans "إجراءات" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for car in cars %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input row-checkbox">
+                                </td>
+                                <td>{{ car.id }}</td>
+                                <td>{{ car.make }}</td>
+                                <td>{{ car.model }}</td>
+                                <td>{{ car.year }}</td>
+                                <td>{{ car.price_per_day }} {% trans "ريال" %}</td>
+                                <td>
+                                    {% if car.is_available %}
+                                    <span class="reservation-status confirmed">{% trans "متاحة" %}</span>
+                                    {% else %}
+                                    <span class="reservation-status cancelled">{% trans "غير متاحة" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="action-btns">
+                                    <a href="#" title="{% trans 'عرض' %}"><i class="fas fa-eye"></i></a>
+                                    <a href="#" title="{% trans 'تعديل' %}"><i class="fas fa-edit"></i></a>
+                                    <a href="#" title="{% trans 'طباعة' %}"><i class="fas fa-print"></i></a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-table-row">
+                                <td colspan="8" class="text-center">
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 50px 0;">
+                                        <i class="fas fa-car-alt" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
+                                        <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "لا توجد سيارات" %}</div>
+                                        <div style="color: #64748b; max-width: 400px; text-align: center;">{% trans "لم يتم العثور على سيارات مطابقة للمعايير الحالية." %}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <!-- تبويب العملاء -->
             <div class="tab-pane" id="customers-tab" style="display: none;">
-                <!-- محتوى تبويب العملاء -->
+                <div class="column-filters-toolbar">
+                    <div class="filter-buttons">
+                        <button class="filter-btn reset-btn">{% trans "إعادة تعيين الفلاتر" %}</button>
+                        <button class="filter-btn apply-btn">{% trans "تطبيق الفلاتر" %}</button>
+                    </div>
+                </div>
+
+                <!-- جدول بيانات العملاء -->
+                <div class="table-responsive">
+                    <table class="reports-table">
+                        <thead>
+                            <tr class="column-headers">
+                                <th width="30px">
+                                    <input type="checkbox" class="form-check-input" id="select-all-customers">
+                                </th>
+                                <th class="filterable" data-column="customer_id">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم العميل" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="full_name">
+                                    <div class="column-header">
+                                        <span>{% trans "الاسم الكامل" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="email">
+                                    <div class="column-header">
+                                        <span>{% trans "البريد الإلكتروني" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="phone">
+                                    <div class="column-header">
+                                        <span>{% trans "رقم الهاتف" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th class="filterable" data-column="registration_date">
+                                    <div class="column-header">
+                                        <span>{% trans "تاريخ التسجيل" %}</span>
+                                        <i class="fas fa-filter filter-icon"></i>
+                                    </div>
+                                </th>
+                                <th>{% trans "إجراءات" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in customers %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input row-checkbox">
+                                </td>
+                                <td>{{ customer.id }}</td>
+                                <td>{{ customer.first_name }} {{ customer.last_name }}</td>
+                                <td>{{ customer.email }}</td>
+                                <td>{{ customer.phone_number }}</td>
+                                <td>{{ customer.date_joined|date:"Y-m-d" }}</td>
+                                <td class="action-btns">
+                                    <a href="#" title="{% trans 'عرض' %}"><i class="fas fa-eye"></i></a>
+                                    <a href="#" title="{% trans 'تعديل' %}"><i class="fas fa-edit"></i></a>
+                                    <a href="#" title="{% trans 'طباعة' %}"><i class="fas fa-print"></i></a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-table-row">
+                                <td colspan="7" class="text-center">
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 50px 0;">
+                                        <i class="fas fa-users" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
+                                        <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "لا يوجد عملاء" %}</div>
+                                        <div style="color: #64748b; max-width: 400px; text-align: center;">{% trans "لم يتم العثور على عملاء مطابقين للمعايير الحالية." %}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <!-- تبويب العهدة والمستندات -->
             <div class="tab-pane" id="custody-tab" style="display: none;">
-                <!-- محتوى تبويب العهدة -->
+                <div class="column-filters-toolbar">
+                    <div class="filter-buttons">
+                        <button class="filter-btn reset-btn">{% trans "إعادة تعيين الفلاتر" %}</button>
+                        <button class="filter-btn apply-btn">{% trans "تطبيق الفلاتر" %}</button>
+                    </div>
+                </div>
+
+                <!-- رسالة توضيحية نظراً لعدم وجود بيانات كافية حالياً -->
+                <div class="empty-data-message">
+                    <i class="fas fa-key" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
+                    <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "تقارير العهدة" %}</div>
+                    <div style="color: #64748b; max-width: 600px; text-align: center;">{% trans "سيتم عرض تقارير العهدة والمستندات هنا في التحديثات القادمة. يمكنك الآن استخدام التبويبات الأخرى المفعلة." %}</div>
+                </div>
             </div>
+
+            <!-- تبويب حالة السيارات -->
             <div class="tab-pane" id="car-conditions-tab" style="display: none;">
-                <!-- محتوى تبويب حالة السيارات -->
+                <div class="column-filters-toolbar">
+                    <div class="filter-buttons">
+                        <button class="filter-btn reset-btn">{% trans "إعادة تعيين الفلاتر" %}</button>
+                        <button class="filter-btn apply-btn">{% trans "تطبيق الفلاتر" %}</button>
+                    </div>
+                </div>
+
+                <!-- رسالة توضيحية نظراً لعدم وجود بيانات كافية حالياً -->
+                <div class="empty-data-message">
+                    <i class="fas fa-car-crash" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
+                    <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "تقارير حالة السيارات" %}</div>
+                    <div style="color: #64748b; max-width: 600px; text-align: center;">{% trans "سيتم عرض تقارير حالة السيارات هنا في التحديثات القادمة. يمكنك الآن استخدام التبويبات الأخرى المفعلة." %}</div>
+                </div>
             </div>
+
+            <!-- تبويب المدفوعات -->
             <div class="tab-pane" id="payments-tab" style="display: none;">
-                <!-- محتوى تبويب المدفوعات -->
+                <div class="column-filters-toolbar">
+                    <div class="filter-buttons">
+                        <button class="filter-btn reset-btn">{% trans "إعادة تعيين الفلاتر" %}</button>
+                        <button class="filter-btn apply-btn">{% trans "تطبيق الفلاتر" %}</button>
+                    </div>
+                </div>
+
+                <!-- رسالة توضيحية نظراً لعدم وجود بيانات كافية حالياً -->
+                <div class="empty-data-message">
+                    <i class="fas fa-file-invoice-dollar" style="font-size: 3rem; color: #c9a96e; margin-bottom: 1rem;"></i>
+                    <div style="font-size: 1.25rem; font-weight: 600; color: #5a4a2e; margin-bottom: 0.5rem;">{% trans "تقارير المدفوعات" %}</div>
+                    <div style="color: #64748b; max-width: 600px; text-align: center;">{% trans "سيتم عرض تقارير المدفوعات هنا في التحديثات القادمة. يمكنك الآن استخدام التبويبات الأخرى المفعلة." %}</div>
+                </div>
             </div>
         </div>
     </div>
