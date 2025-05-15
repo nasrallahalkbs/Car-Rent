@@ -1,6 +1,7 @@
 {% extends 'superadmin/layout.html' %}
 {% load i18n %}
 {% load crispy_forms_tags %}
+{% load utils_filters %}
 
 {% block content %}
 <div class="container-fluid">
@@ -13,24 +14,33 @@
                 {% csrf_token %}
                 
                 <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="form-group mb-3">
-                            <label for="id_name">{% trans "اسم المهمة" %} <span class="text-danger">*</span></label>
-                            {{ form.name|as_crispy_field }}
+                    <div class="col-md-12">
+                        <!-- المهام المحددة مسبقًا -->
+                        <div class="form-group mb-4">
+                            <label for="predefined_task">{% trans "اختر المهمة" %} <span class="text-danger">*</span></label>
+                            <select id="predefined_task" name="predefined_task" class="form-select form-control">
+                                <option value="">{% trans "-- اختر المهمة المراد جدولتها --" %}</option>
+                                {% for task_id, task_name in predefined_tasks %}
+                                <option value="{{ task_id }}" data-job-type="{{ task_types|get_item:task_id }}" 
+                                        data-description="{{ task_descriptions|get_item:task_id }}"
+                                        data-args="{{ task_args|get_item:task_id }}">
+                                    {{ task_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted mt-2" id="task-description"></small>
                         </div>
-                        
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
                         <div class="form-group mb-3">
                             <label for="id_job_type">{% trans "نوع المهمة" %} <span class="text-danger">*</span></label>
                             {{ form.job_type|as_crispy_field }}
                         </div>
-                        
-                        <div class="form-group mb-3">
-                            <label for="id_function_name">{% trans "اسم الوظيفة" %} <span class="text-danger">*</span></label>
-                            {{ form.function_name|as_crispy_field }}
-                            <small class="form-text text-muted">{% trans "اسم الوظيفة المراد تنفيذها (على سبيل المثال: create_backup)" %}</small>
-                        </div>
                     </div>
-                    
+                
                     <div class="col-md-6">
                         <div class="form-group mb-3">
                             <label for="id_interval_type">{% trans "نوع الفاصل الزمني" %} <span class="text-danger">*</span></label>
@@ -137,6 +147,35 @@
         
         // تطبيق الإعدادات الأولية
         $('#id_interval_type').trigger('change');
+        
+        // التعامل مع اختيار المهمة المحددة مسبقًا
+        $('#predefined_task').on('change', function() {
+            var selectedOption = $(this).find(':selected');
+            var jobType = selectedOption.data('job-type');
+            var description = selectedOption.data('description');
+            var argsJson = selectedOption.data('args');
+            
+            // عرض وصف المهمة
+            $('#task-description').text(description || '');
+            
+            // تعيين نوع المهمة
+            if (jobType) {
+                $('#id_job_type').val(jobType);
+            }
+            
+            // تعيين معاملات المهمة
+            if (argsJson) {
+                $('#args_json').val(argsJson);
+                
+                // تحديث واجهة المعاملات
+                try {
+                    var args = JSON.parse(argsJson);
+                    updateParametersUI(args);
+                } catch (e) {
+                    console.error('خطأ في تحليل المعاملات:', e);
+                }
+            }
+        });
         
         // تهيئة قائمة المعاملات
         var paramsList = $('#parameters-list');

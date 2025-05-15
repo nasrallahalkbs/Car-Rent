@@ -1,1 +1,1 @@
-# مكتبة القوالب المخصصة
+# Django templatetags package
