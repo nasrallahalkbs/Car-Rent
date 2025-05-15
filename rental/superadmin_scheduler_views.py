@@ -211,7 +211,7 @@ def add_scheduled_job(request):
     # إنشاء نموذج المهمة المجدولة
     JobForm = modelform_factory(
         ScheduledJob,
-        fields=['name', 'job_type', 'function_name', 'description', 'interval_type', 'interval_value', 'cron_expression', 'is_active'],
+        fields=['name', 'job_type', 'function_name', 'interval_type', 'interval_value', 'cron_expression', 'is_active'],
     )
     
     if request.method == 'POST':
