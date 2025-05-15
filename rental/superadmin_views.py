@@ -237,13 +237,26 @@ def superadmin_dashboard(request):
 @superadmin_required
 def manage_admins(request):
     """Manage administrators"""
+    # طباعة معلومات تصحيحية
+    print("---- بدء عرض المسؤولين ----")
+    
     # استبعاد المسؤولين المحذوفين وهمياً إلا إذا طُلب عرضهم
     show_deleted = request.GET.get('show_deleted', '') == 'true'
+    print(f"عرض المحذوفين: {show_deleted}")
     
+    # عرض كل الأدمن بغض النظر عن حالة الحذف (للتصحيح)
+    admins_all = AdminUser.objects.select_related('user', 'role').all()
+    print(f"إجمالي عدد المسؤولين بدون فلاتر: {admins_all.count()}")
+    for admin in admins_all:
+        print(f"المسؤول: {admin.id}, اسم المستخدم: {admin.user.username}, محذوف: {admin.is_deleted}")
+    
+    # استخدام الاستعلام العادي
     if not show_deleted:
         admins = AdminUser.objects.select_related('user', 'role').filter(is_deleted=False)
     else:
         admins = AdminUser.objects.select_related('user', 'role').all()
+    
+    print(f"عدد المسؤولين بعد فلتر الحذف: {admins.count()}")
     
     # البحث والتصفية
     search_query = request.GET.get('q', '')
@@ -267,6 +280,12 @@ def manage_admins(request):
     
     # الأدوار للتصفية
     roles = Role.objects.all()
+    print(f"عدد الأدوار: {roles.count()}")
+    
+    # طباعة المسؤولين النهائيين للتصحيح
+    print(f"عدد المسؤولين النهائي: {admins.count()}")
+    for admin in admins:
+        print(f"المسؤول النهائي: {admin.id}, اسم المستخدم: {admin.user.username}")
     
     context = {
         'admins': admins,
@@ -276,6 +295,8 @@ def manage_admins(request):
         'status_filter': status_filter,
         'show_deleted': 'true' if show_deleted else 'false',
     }
+    
+    print("---- نهاية عرض المسؤولين ----")
     
     return render(request, 'superadmin/manage_admins.html', context)
 
@@ -1046,52 +1067,77 @@ def reject_review(request, review_id):
 @superadmin_required
 def system_logs(request):
     """View system logs"""
-    # استرجاع جميع سجلات النشاط
-    logs = AdminActivity.objects.select_related('admin', 'admin__user').all().order_by('-created_at')
+    # طباعة رسائل تصحيح الأخطاء لمعرفة المشكلة
+    print("--- بدء عرض سجلات النظام ---")
     
-    # التصفية والبحث
-    admin_filter = request.GET.get('admin', '')
-    action_filter = request.GET.get('action', '')
-    date_filter = request.GET.get('date', '')
-    search_query = request.GET.get('q', '')
-    
-    if admin_filter:
-        logs = logs.filter(admin_id=admin_filter)
-    
-    if action_filter:
-        logs = logs.filter(action=action_filter)
-    
-    if date_filter:
-        try:
-            date = timezone.datetime.strptime(date_filter, '%Y-%m-%d').date()
-            logs = logs.filter(created_at__date=date)
-        except ValueError:
-            pass
-    
-    if search_query:
-        logs = logs.filter(
-            Q(details__icontains=search_query) |
-            Q(admin__user__username__icontains=search_query) |
-            Q(action__icontains=search_query)
-        )
-    
-    # المسؤولين للتصفية
-    admins = AdminUser.objects.select_related('user').all()
-    
-    # الإجراءات الفريدة للتصفية
-    actions = AdminActivity.objects.values_list('action', flat=True).distinct()
-    
-    context = {
-        'logs': logs,
-        'admins': admins,
-        'actions': actions,
-        'admin_filter': admin_filter,
-        'action_filter': action_filter,
-        'date_filter': date_filter,
-        'search_query': search_query,
-    }
-    
-    return render(request, 'superadmin/system_logs.html', context)
+    try:
+        # محاولة استرجاع سجلات النشاط بدون الاعتماد على عمود is_hidden
+        # التحقق من وجود الأعمدة الجديدة في الجدول
+        from django.db import connection
+        cursor = connection.cursor()
+        
+        # الحصول على معلومات العمود
+        cursor.execute("PRAGMA table_info(rental_adminactivity)")
+        columns = [column[1] for column in cursor.fetchall()]
+        print(f"أعمدة جدول rental_adminactivity: {columns}")
+        
+        # استرجاع سجلات النشاط بدون استخدام الأعمدة التي قد تكون غير موجودة
+        logs = AdminActivity.objects.select_related('admin', 'admin__user').all().order_by('-created_at')
+        print(f"تم استرجاع {logs.count()} سجل نشاط")
+        
+        # التصفية والبحث
+        admin_filter = request.GET.get('admin', '')
+        action_filter = request.GET.get('action', '')
+        date_filter = request.GET.get('date', '')
+        search_query = request.GET.get('q', '')
+        
+        if admin_filter:
+            logs = logs.filter(admin_id=admin_filter)
+        
+        if action_filter:
+            logs = logs.filter(action=action_filter)
+        
+        if date_filter:
+            try:
+                date = timezone.datetime.strptime(date_filter, '%Y-%m-%d').date()
+                logs = logs.filter(created_at__date=date)
+            except ValueError:
+                pass
+        
+        if search_query:
+            logs = logs.filter(
+                Q(details__icontains=search_query) |
+                Q(admin__user__username__icontains=search_query) |
+                Q(action__icontains=search_query)
+            )
+        
+        # المسؤولين للتصفية
+        admins = AdminUser.objects.select_related('user').all()
+        
+        # الإجراءات الفريدة للتصفية
+        actions = AdminActivity.objects.values_list('action', flat=True).distinct()
+        
+        context = {
+            'logs': logs,
+            'admins': admins,
+            'actions': actions,
+            'admin_filter': admin_filter,
+            'action_filter': action_filter,
+            'date_filter': date_filter,
+            'search_query': search_query,
+        }
+        
+        print("--- نهاية عرض سجلات النظام ---")
+        return render(request, 'superadmin/system_logs.html', context)
+        
+    except Exception as e:
+        # إذا حدث خطأ، نعرض صفحة مع رسالة الخطأ
+        print(f"حدث خطأ أثناء عرض سجلات النظام: {e}")
+        context = {
+            'error_message': str(e),
+        }
+        # إرجاع صفحة خطأ بسيطة
+        return render(request, 'superadmin/error.html', context)
 
 
 # إدارة المصادقة الثنائية للمستخدمين
