@@ -6,8 +6,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var ribbonTabs = document.querySelectorAll('.ribbon-tab');
     var tabPanes = document.querySelectorAll('.tab-pane');
     
+    console.log("عدد التبويبات:", ribbonTabs.length);
+    console.log("عدد محتويات التبويبات:", tabPanes.length);
+    
     for (var i = 0; i < ribbonTabs.length; i++) {
-        ribbonTabs[i].addEventListener('click', function() {
+        ribbonTabs[i].addEventListener('click', function(event) {
+            event.preventDefault(); // منع السلوك الافتراضي للرابط
+            
+            console.log("تم النقر على التبويب:", this.getAttribute('data-tab'));
+            
             // إزالة الفئة النشطة من جميع التبويبات
             for (var j = 0; j < ribbonTabs.length; j++) {
                 ribbonTabs[j].classList.remove('active');
@@ -23,7 +30,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // عرض المحتوى المناسب
             var tabId = this.getAttribute('data-tab');
-            document.getElementById(tabId + '-tab').style.display = 'block';
+            var targetPane = document.getElementById(tabId + '-tab');
+            
+            if (targetPane) {
+                console.log("عرض تبويب:", tabId + '-tab');
+                targetPane.style.display = 'block';
+            } else {
+                console.error("لم يتم العثور على تبويب بهوية:", tabId + '-tab');
+            }
         });
     }
     
