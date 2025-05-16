@@ -135,6 +135,8 @@ urlpatterns = [
     # Analytics Routes
     path('dashboard/analytics/', analytics_views.admin_dashboard_analytics, name='admin_dashboard_analytics'),
     path('dashboard/analytics/reports/', analytics_views.admin_payment_analytics, name='admin_payment_analytics'),
+    # مسار ملف المشرف الشخصي
+    path('dashboard/profile/', admin_views.admin_profile, name='admin_profile'),
     # مسار تقارير جديد يستخدم دالة مخصصة لتجاوز مشكلة القوالب
     path('dashboard/analytics/fixed-reports/', direct_payment_analytics, name='direct_payment_analytics'),
     path('ar/dashboard/analytics/fixed-reports/', direct_payment_analytics, name='direct_payment_analytics_ar'),
