@@ -233,7 +233,7 @@ def superadmin_profile(request):
         'recent_activities': recent_activities,
     }
     
-    return render(request, 'superadmin/profile.html', context)
+    return render(request, 'superadmin/profile_fixed.html', context)
 
 @superadmin_required
 def superadmin_dashboard(request):

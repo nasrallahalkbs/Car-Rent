@@ -1,0 +1,142 @@
+{% extends "superadmin/layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "الملف الشخصي" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{% trans "الملف الشخصي" %}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'superadmin_dashboard' %}">{% trans "لوحة التحكم" %}</a></li>
+        <li class="breadcrumb-item active">{% trans "الملف الشخصي" %}</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-xl-4">
+            <!-- بطاقة الملف الشخصي -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "معلومات الملف الشخصي" %}</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{% static 'admin/img/profile-avatar.jpg' %}" alt="صورة الملف الشخصي" class="rounded-circle mb-3" width="128" height="128">
+                    <h5 class="card-title mb-0">{{ user.name }}</h5>
+                    <div class="text-muted mb-3">{% trans "مسؤول أعلى" %}</div>
+                    <div class="d-grid">
+                        <a href="#" class="btn btn-primary disabled">
+                            <i class="fas fa-camera me-2"></i>
+                            {% trans "تغيير الصورة" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="text-muted">
+                        <div><strong>{% trans "آخر تسجيل دخول" %}:</strong> {{ user.last_login|date:"d/m/Y H:i" }}</div>
+                        <div><strong>{% trans "تم التسجيل في" %}:</strong> {{ user.created_at|date:"d/m/Y" }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- بطاقة المعلومات الإضافية -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "معلومات إضافية" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">{% trans "الدور" %}</label>
+                        <div>{% trans "مسؤول أعلى" %}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">{% trans "الحالة" %}</label>
+                        <div><span class="badge bg-success">{% trans "نشط" %}</span></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">{% trans "عدد التسجيلات" %}</label>
+                        <div>{{ login_count }}</div>
+                    </div>
+                    <div>
+                        <label class="form-label text-muted">{% trans "المصادقة الثنائية" %}</label>
+                        <div>
+                            {% if has_2fa %}
+                            <span class="badge bg-success">{% trans "مفعل" %}</span>
+                            {% else %}
+                            <span class="badge bg-warning">{% trans "غير مفعل" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-8">
+            <!-- بطاقة تفاصيل الملف الشخصي -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "تفاصيل الملف الشخصي" %}</h5>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="admin_name" class="form-label">{% trans "الاسم" %}</label>
+                                <input type="text" class="form-control" id="admin_name" value="{{ user.name }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="admin_email" class="form-label">{% trans "البريد الإلكتروني" %}</label>
+                                <input type="email" class="form-control" id="admin_email" value="{{ user.email }}" readonly>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="admin_phone" class="form-label">{% trans "رقم الهاتف" %}</label>
+                                <input type="text" class="form-control" id="admin_phone" value="{{ user.phone_number|default:'' }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="admin_language" class="form-label">{% trans "اللغة المفضلة" %}</label>
+                                <input type="text" class="form-control" id="admin_language" value="{% trans "العربية" %}" readonly>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary disabled">
+                                <i class="fas fa-edit"></i>
+                                {% trans "تعديل المعلومات" %} (غير متاح حالياً)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- نموذج تغيير كلمة المرور -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "تغيير كلمة المرور" %}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">{% trans "كلمة المرور الحالية" %}</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">{% trans "كلمة المرور الجديدة" %}</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">{% trans "تأكيد كلمة المرور الجديدة" %}</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary disabled">
+                                <i class="fas fa-key"></i>
+                                {% trans "تغيير كلمة المرور" %} (غير متاح حالياً)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
