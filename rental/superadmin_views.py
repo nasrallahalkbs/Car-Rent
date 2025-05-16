@@ -225,7 +225,7 @@ def superadmin_profile(request):
         return redirect('superadmin_profile')
     
     # احضار سجلات النشاط الأخيرة للمشرف الأعلى
-    recent_activities = AdminLog.objects.filter(admin=admin_profile).order_by('-created_at')[:5]
+    recent_activities = AdminActivity.objects.filter(admin=admin_profile).order_by('-created_at')[:5]
     
     context = {
         'admin': admin_profile,
