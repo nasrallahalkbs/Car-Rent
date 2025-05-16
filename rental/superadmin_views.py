@@ -194,6 +194,46 @@ def superadmin_logout(request):
     logout(request)
     messages.success(request, _("تم تسجيل الخروج بنجاح"))
     return redirect('superadmin_login')
+    
+@superadmin_required
+def superadmin_profile(request):
+    """عرض وتحرير ملف المشرف الأعلى الشخصي"""
+    admin_profile = request.admin_profile
+    user = request.user
+    
+    if request.method == 'POST':
+        # تحديث معلومات الملف الشخصي
+        first_name = request.POST.get('first_name', '')
+        last_name = request.POST.get('last_name', '')
+        email = request.POST.get('email', '')
+        
+        # تحديث بيانات المستخدم
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        user.save()
+        
+        # تسجيل نشاط تحديث الملف الشخصي
+        log_admin_activity(
+            admin_profile,
+            _("تحديث الملف الشخصي"),
+            _("تم تحديث معلومات الملف الشخصي للمشرف الأعلى"),
+            request
+        )
+        
+        messages.success(request, _("تم تحديث معلومات الملف الشخصي بنجاح"))
+        return redirect('superadmin_profile')
+    
+    # احضار سجلات النشاط الأخيرة للمشرف الأعلى
+    recent_activities = AdminLog.objects.filter(admin=admin_profile).order_by('-created_at')[:5]
+    
+    context = {
+        'admin': admin_profile,
+        'user': user,
+        'recent_activities': recent_activities,
+    }
+    
+    return render(request, 'superadmin/profile.html', context)
 
 @superadmin_required
 def superadmin_dashboard(request):
