@@ -1181,19 +1181,18 @@ def system_logs(request):
 
 @superadmin_required
 def admin_activity_logs(request):
-    """عرض سجلات نشاط المسؤولين العاديين فقط (بدون المشرف الأعلى)"""
-    print("--- بدء عرض سجلات نشاط المسؤولين العاديين ---")
+    """عرض سجلات نشاط جميع المسؤولين"""
+    print("--- بدء عرض سجلات نشاط المسؤولين ---")
     
     try:
-        # استرجاع المسؤولين العاديين فقط (بدون المشرف الأعلى)
-        regular_admins = AdminUser.objects.filter(is_superadmin=False).select_related('user')
-        regular_admin_ids = [admin.id for admin in regular_admins]
+        # استرجاع جميع المسؤولين
+        admins = AdminUser.objects.all().select_related('user')
         
-        print(f"عدد المسؤولين العاديين: {len(regular_admin_ids)}")
+        print(f"عدد المسؤولين: {admins.count()}")
         
-        # استرجاع سجلات نشاط المسؤولين العاديين فقط
-        logs = AdminActivity.objects.filter(admin_id__in=regular_admin_ids).select_related('admin', 'admin__user').order_by('-created_at')
-        print(f"تم استرجاع {logs.count()} سجل نشاط للمسؤولين العاديين")
+        # استرجاع سجلات نشاط جميع المسؤولين
+        logs = AdminActivity.objects.all().select_related('admin', 'admin__user').order_by('-created_at')
+        print(f"تم استرجاع {logs.count()} سجل نشاط لجميع المسؤولين")
         
         # التصفية والبحث
         admin_filter = request.GET.get('admin', '')
@@ -1237,7 +1236,7 @@ def admin_activity_logs(request):
         
         context = {
             'logs': logs,
-            'admins': regular_admins,
+            'admins': admins,
             'actions': actions,
             'admin_filter': admin_filter,
             'action_filter': action_filter,
@@ -1247,7 +1246,7 @@ def admin_activity_logs(request):
             'is_admin_logs': True,  # علامة لتمييز صفحة سجلات المسؤولين
         }
         
-        print("--- نهاية عرض سجلات نشاط المسؤولين العاديين ---")
+        print("--- نهاية عرض سجلات نشاط المسؤولين ---")
         return render(request, 'superadmin/admin_logs.html', context)
         
     except Exception as e:
