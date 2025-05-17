@@ -202,8 +202,33 @@
             // لا نقوم بتحديث اسم العهدة تلقائياً، نترك المستخدم يضع الاسم المناسب
         }
         
+        // التحقق من نوع العهدة وإظهار أو إخفاء حقل المبلغ
+        function toggleValueField() {
+            var guaranteeType = document.getElementById('id_guarantee_type').value;
+            var valueField = document.getElementById('id_value').closest('.col-md-6');
+            
+            // أنواع العهدات التي تتطلب إدخال مبلغ
+            var typesRequiringValue = ['cash', 'bank_deposit', 'other'];
+            
+            if (typesRequiringValue.includes(guaranteeType)) {
+                // إظهار حقل المبلغ
+                valueField.style.display = '';
+            } else {
+                // إخفاء حقل المبلغ
+                valueField.style.display = 'none';
+                // إعادة تعيين قيمة الحقل إلى 0
+                document.getElementById('id_value').value = '0';
+            }
+        }
+        
         // تشغيل دالة تحديث البيانات عند تغيير الحجز
         document.getElementById('id_reservation').addEventListener('change', updateReservationData);
+        
+        // إضافة مستمع للتغيير على حقل نوع العهدة
+        document.getElementById('id_guarantee_type').addEventListener('change', toggleValueField);
+        
+        // تنفيذ الدالة عند تحميل الصفحة لتطبيق الوضع الصحيح
+        toggleValueField();
     });
 </script>
 {% endblock %}
