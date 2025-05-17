@@ -1181,17 +1181,17 @@ def system_logs(request):
 
 @superadmin_required
 def admin_activity_logs(request):
-    """عرض سجلات نشاط جميع المسؤولين"""
+    """عرض سجلات نشاط المسؤولين العاديين فقط (وليس المشرفين الأعلى)"""
     print("--- بدء عرض سجلات نشاط المسؤولين ---")
     
     try:
-        # استرجاع جميع المسؤولين
-        admins = AdminUser.objects.all().select_related('user')
+        # استرجاع المسؤولين العاديين فقط (بدون المشرفين الأعلى)
+        admins = AdminUser.objects.filter(is_superadmin=False).select_related('user')
         
         print(f"عدد المسؤولين: {admins.count()}")
         
-        # استرجاع سجلات نشاط جميع المسؤولين
-        logs = AdminActivity.objects.all().select_related('admin', 'admin__user').order_by('-created_at')
+        # استرجاع سجلات نشاط المسؤولين العاديين فقط (لا نعرض سجلات المشرفين الأعلى)
+        logs = AdminActivity.objects.filter(admin__is_superadmin=False).select_related('admin', 'admin__user').order_by('-created_at')
         print(f"تم استرجاع {logs.count()} سجل نشاط لجميع المسؤولين")
         
         # التصفية والبحث
