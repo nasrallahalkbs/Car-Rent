@@ -44,6 +44,8 @@ def admin_notifications(request):
     """
     context = {
         'pending_reservations_list': [],
+        'admin_notifications': [],
+        'system_notifications': [],
     }
     
     # التحقق إذا كان المستخدم مسجل الدخول ومشرف
@@ -53,8 +55,28 @@ def admin_notifications(request):
             context['pending_reservations_list'] = Reservation.objects.filter(
                 status='pending'
             ).order_by('-created_at')[:5]
-        except Exception:
-            # في حالة حدوث خطأ، نعيد قائمة فارغة
-            pass
+            
+            # التحقق إذا كان المستخدم مشرف أعلى
+            if hasattr(request.user, 'is_superadmin') and request.user.is_superadmin:
+                # استيراد نموذج نشاط المسؤولين
+                from .models_superadmin import AdminActivity
+                
+                # جلب آخر 5 سجلات نشاط للمسؤولين
+                context['admin_notifications'] = AdminActivity.objects.select_related(
+                    'admin', 'admin__user'
+                ).order_by('-created_at')[:10]
+                
+                # جلب إشعارات النظام
+                from .models_system import SystemNotification
+                try:
+                    context['system_notifications'] = SystemNotification.objects.filter(
+                        is_read=False
+                    ).order_by('-created_at')[:5]
+                except Exception:
+                    # قد لا يكون جدول إشعارات النظام موجوداً
+                    pass
+        except Exception as e:
+            # في حالة حدوث خطأ، نسجل الخطأ ونعيد قائمة فارغة
+            print(f"خطأ في جلب الإشعارات: {e}")
     
     return context

@@ -186,6 +186,12 @@ urlpatterns = [
     # إضافة مسار الملف الشخصي للمشرف الأعلى
     path('superadmin/profile/', superadmin_views.superadmin_profile, name='superadmin_profile'),
     path('ar/superadmin/profile/', superadmin_views.superadmin_profile, name='superadmin_profile_ar'),
+    
+    # مسارات سجلات النظام والمسؤولين
+    path('superadmin/logs/', superadmin_views.system_logs, name='superadmin_system_logs'),
+    path('superadmin/admins-logs/', superadmin_views.admin_activity_logs, name='superadmin_admins_logs'),
+    path('ar/superadmin/logs/', superadmin_views.system_logs, name='superadmin_system_logs_ar'),
+    path('ar/superadmin/admins-logs/', superadmin_views.admin_activity_logs, name='superadmin_admins_logs_ar'),
     # path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
     # path('csrf-debug-page/', csrf_debug_page, name='csrf_debug_page'),
 

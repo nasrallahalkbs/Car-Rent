@@ -957,9 +957,44 @@
                         </a>
                     </div>
                     
-                    <div class="topbar-icon">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
+                    <!-- قائمة الإشعارات -->
+                    <div class="dropdown">
+                        <div class="topbar-icon" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            {% with total_notifications=admin_notifications|length|default:0 %}
+                            {% if total_notifications > 0 %}
+                            <span class="notification-badge">{{ total_notifications }}</span>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown py-0" style="min-width: 300px; max-width: 350px;">
+                            <div class="dropdown-header d-flex justify-content-between align-items-center p-3 border-bottom">
+                                <span>{% trans "الإشعارات" %}</span>
+                                <a href="{% url 'superadmin_admins_logs' %}" class="text-primary text-decoration-none small">{% trans "عرض الكل" %}</a>
+                            </div>
+                            
+                            <div class="notification-list" style="max-height: 350px; overflow-y: auto;">
+                                {% if admin_notifications %}
+                                    {% for log in admin_notifications %}
+                                    <a href="{% url 'superadmin_admins_logs' %}" class="dropdown-item notification-item p-3 border-bottom">
+                                        <div class="notification-content">
+                                            <div class="notification-title">{{ log.action }}</div>
+                                            <div class="notification-details">{{ log.details|truncatechars:60 }}</div>
+                                            <div class="notification-time text-muted small">{{ log.created_at|timesince }}</div>
+                                        </div>
+                                    </a>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="dropdown-item text-center py-4">
+                                        <span class="text-muted">{% trans "لا توجد إشعارات جديدة" %}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <a href="{% url 'superadmin_admins_logs' %}" class="dropdown-item text-center py-2 bg-light text-primary small border-top">
+                                <i class="fas fa-history me-1"></i> {% trans "عرض كافة السجلات" %}
+                            </a>
+                        </div>
                     </div>
                     
                     <div class="dropdown">
