@@ -144,6 +144,43 @@
 </style>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+  // كود جافا سكريبت لدعم تبويبات المصادقة
+  document.addEventListener('DOMContentLoaded', function() {
+    // التعامل مع التبديل بين علامات التبويب
+    const appTab = document.getElementById('app-tab');
+    const backupTab = document.getElementById('backup-tab');
+    const appCodePane = document.getElementById('app-code');
+    const backupCodePane = document.getElementById('backup-code');
+
+    if (appTab && backupTab) {
+      appTab.addEventListener('click', function(e) {
+        e.preventDefault();
+        // إظهار علامة تبويب رمز التطبيق
+        appTab.classList.add('active');
+        backupTab.classList.remove('active');
+        appCodePane.classList.add('show', 'active');
+        backupCodePane.classList.remove('show', 'active');
+        // تركيز حقل الإدخال
+        document.getElementById('totp_code').focus();
+      });
+
+      backupTab.addEventListener('click', function(e) {
+        e.preventDefault();
+        // إظهار علامة تبويب رمز الاسترداد
+        backupTab.classList.add('active');
+        appTab.classList.remove('active');
+        backupCodePane.classList.add('show', 'active');
+        appCodePane.classList.remove('show', 'active');
+        // تركيز حقل الإدخال
+        document.getElementById('backup_code').focus();
+      });
+    }
+  });
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container">
   <div class="auth-container">
@@ -174,40 +211,106 @@
         {% endfor %}
       {% endif %}
 
-      <div class="instructions">
-        <p>
-          {% if is_english %}
-            Open your authentication app (Google Authenticator, Microsoft Authenticator, etc.) and enter the 6-digit code displayed for this account.
-          {% else %}
-            افتح تطبيق المصادقة الخاص بك (Google Authenticator أو Microsoft Authenticator أو غيرهما) وأدخل الرمز المكون من 6 أرقام المعروض لهذا الحساب.
-          {% endif %}
-        </p>
-      </div>
-
-      <form method="post" action="{% url 'login' %}">
-        {% csrf_token %}
-        <input type="hidden" name="username" value="{{ username }}">
-        <input type="hidden" name="step" value="2fa">
-        
-        <div class="mb-3">
-          <label for="totp_code" class="form-label">
+      <ul class="nav nav-tabs mb-4" id="auth-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="app-tab" data-bs-toggle="tab" data-bs-target="#app-code" type="button" role="tab" aria-controls="app-code" aria-selected="true">
             {% if is_english %}
-              Authentication Code
+              App Code
             {% else %}
-              رمز المصادقة
+              رمز التطبيق
             {% endif %}
-          </label>
-          <input type="text" name="totp_code" id="totp_code" class="form-control verification-code" required autocomplete="off" autofocus>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="backup-tab" data-bs-toggle="tab" data-bs-target="#backup-code" type="button" role="tab" aria-controls="backup-code" aria-selected="false">
+            {% if is_english %}
+              Backup Code
+            {% else %}
+              رمز الاسترداد
+            {% endif %}
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content" id="auth-tabs-content">
+        <!-- قسم رمز التطبيق -->
+        <div class="tab-pane fade show active" id="app-code" role="tabpanel" aria-labelledby="app-tab">
+          <div class="instructions">
+            <p>
+              {% if is_english %}
+                Open your authentication app (Google Authenticator, Microsoft Authenticator, etc.) and enter the 6-digit code displayed for this account.
+              {% else %}
+                افتح تطبيق المصادقة الخاص بك (Google Authenticator أو Microsoft Authenticator أو غيرهما) وأدخل الرمز المكون من 6 أرقام المعروض لهذا الحساب.
+              {% endif %}
+            </p>
+          </div>
+
+          <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <input type="hidden" name="username" value="{{ username }}">
+            <input type="hidden" name="step" value="2fa">
+            <input type="hidden" name="code_type" value="totp">
+            
+            <div class="mb-3">
+              <label for="totp_code" class="form-label">
+                {% if is_english %}
+                  Authentication Code
+                {% else %}
+                  رمز المصادقة
+                {% endif %}
+              </label>
+              <input type="text" name="totp_code" id="totp_code" class="form-control verification-code" required autocomplete="off" autofocus>
+            </div>
+
+            <button type="submit" class="auth-btn">
+              {% if is_english %}
+                Verify
+              {% else %}
+                تحقق
+              {% endif %}
+            </button>
+          </form>
         </div>
 
-        <button type="submit" class="auth-btn">
-          {% if is_english %}
-            Verify
-          {% else %}
-            تحقق
-          {% endif %}
-        </button>
-      </form>
+        <!-- قسم رمز الاسترداد -->
+        <div class="tab-pane fade" id="backup-code" role="tabpanel" aria-labelledby="backup-tab">
+          <div class="instructions">
+            <p>
+              {% if is_english %}
+                Enter one of your backup recovery codes. Remember that each recovery code can only be used once.
+              {% else %}
+                أدخل أحد رموز الاسترداد الاحتياطية. تذكر أن كل رمز استرداد يمكن استخدامه مرة واحدة فقط.
+              {% endif %}
+            </p>
+          </div>
+
+          <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <input type="hidden" name="username" value="{{ username }}">
+            <input type="hidden" name="step" value="2fa">
+            <input type="hidden" name="code_type" value="backup">
+            
+            <div class="mb-3">
+              <label for="backup_code" class="form-label">
+                {% if is_english %}
+                  Backup Recovery Code
+                {% else %}
+                  رمز الاسترداد الاحتياطي
+                {% endif %}
+              </label>
+              <input type="text" name="backup_code" id="backup_code" class="form-control" required autocomplete="off">
+            </div>
+
+            <button type="submit" class="auth-btn">
+              {% if is_english %}
+                Verify
+              {% else %}
+                تحقق
+              {% endif %}
+            </button>
+          </form>
+        </div>
+      </div>
 
       <div class="text-center mt-4">
         <a href="{% url 'login' %}" class="back-link">
