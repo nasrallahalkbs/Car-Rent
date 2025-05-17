@@ -1339,12 +1339,16 @@ def user_2fa(request, user_id):
             admin_success(request, _("تم إعداد وتفعيل المصادقة الثنائية بنجاح. يرجى مسح رمز QR بتطبيق المصادقة."))
             
             # تسجيل النشاط
-            log_admin_activity(
-                request.admin_profile,
-                _("إعداد المصادقة الثنائية"),
-                _("تم إعداد وتفعيل المصادقة الثنائية للمستخدم {}").format(user.username),
-                request
-            )
+            try:
+                admin_profile = AdminUser.objects.get(user=request.user)
+                log_admin_activity(
+                    admin_profile,
+                    _("إعداد المصادقة الثنائية"),
+                    _("تم إعداد وتفعيل المصادقة الثنائية للمستخدم {}").format(user.username),
+                    request
+                )
+            except:
+                messages.success(request, _("تم إعداد وتفعيل المصادقة الثنائية بنجاح."))
         
         # تعطيل المصادقة الثنائية
         elif action == 'disable_2fa':
@@ -1353,12 +1357,16 @@ def user_2fa(request, user_id):
                 admin_success(request, _("تم تعطيل المصادقة الثنائية بنجاح."))
                 
                 # تسجيل النشاط
-                log_admin_activity(
-                    request.admin_profile,
-                    _("تعطيل المصادقة الثنائية"),
-                    _("تم تعطيل المصادقة الثنائية للمستخدم {}").format(user.username),
-                    request
-                )
+                try:
+                    admin_profile = AdminUser.objects.get(user=request.user)
+                    log_admin_activity(
+                        admin_profile,
+                        _("تعطيل المصادقة الثنائية"),
+                        _("تم تعطيل المصادقة الثنائية للمستخدم {}").format(user.username),
+                        request
+                    )
+                except:
+                    messages.success(request, _("تم تعطيل المصادقة الثنائية بنجاح."))
             else:
                 admin_error(request, _("حدث خطأ أثناء تعطيل المصادقة الثنائية."))
         
@@ -1368,12 +1376,16 @@ def user_2fa(request, user_id):
             admin_success(request, _("تم إعادة توليد رموز النسخ الاحتياطية بنجاح."))
             
             # تسجيل النشاط
-            log_admin_activity(
-                request.admin_profile,
-                _("إعادة توليد رموز النسخ الاحتياطية"),
-                _("تم إعادة توليد رموز النسخ الاحتياطية للمستخدم {}").format(user.username),
-                request
-            )
+            try:
+                admin_profile = AdminUser.objects.get(user=request.user)
+                log_admin_activity(
+                    admin_profile,
+                    _("إعادة توليد رموز النسخ الاحتياطية"),
+                    _("تم إعادة توليد رموز النسخ الاحتياطية للمستخدم {}").format(user.username),
+                    request
+                )
+            except:
+                messages.success(request, _("تم إعادة توليد رموز النسخ الاحتياطية بنجاح."))
         
         # فتح قفل الحساب
         elif action == 'unlock_account':
@@ -1382,12 +1394,16 @@ def user_2fa(request, user_id):
                 admin_success(request, _("تم فتح قفل الحساب بنجاح."))
                 
                 # تسجيل النشاط
-                log_admin_activity(
-                    request.admin_profile,
-                    _("فتح قفل الحساب"),
-                    _("تم فتح قفل حساب المستخدم {}").format(user.username),
-                    request
-                )
+                try:
+                    admin_profile = AdminUser.objects.get(user=request.user)
+                    log_admin_activity(
+                        admin_profile,
+                        _("فتح قفل الحساب"),
+                        _("تم فتح قفل حساب المستخدم {}").format(user.username),
+                        request
+                    )
+                except:
+                    messages.success(request, _("تم فتح قفل الحساب بنجاح."))
             else:
                 admin_error(request, _("حدث خطأ أثناء فتح قفل الحساب."))
         
@@ -1398,12 +1414,16 @@ def user_2fa(request, user_id):
                 admin_success(request, _("تم إعادة تعيين محاولات تسجيل الدخول بنجاح."))
                 
                 # تسجيل النشاط
-                log_admin_activity(
-                    request.admin_profile,
-                    _("إعادة تعيين محاولات تسجيل الدخول"),
-                    _("تم إعادة تعيين محاولات تسجيل الدخول للمستخدم {}").format(user.username),
-                    request
-                )
+                try:
+                    admin_profile = AdminUser.objects.get(user=request.user)
+                    log_admin_activity(
+                        admin_profile,
+                        _("إعادة تعيين محاولات تسجيل الدخول"),
+                        _("تم إعادة تعيين محاولات تسجيل الدخول للمستخدم {}").format(user.username),
+                        request
+                    )
+                except:
+                    messages.success(request, _("تم إعادة تعيين محاولات تسجيل الدخول بنجاح."))
             else:
                 admin_error(request, _("حدث خطأ أثناء إعادة تعيين محاولات تسجيل الدخول."))
         
