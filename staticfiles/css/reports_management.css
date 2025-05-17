@@ -7,12 +7,21 @@
     margin-bottom: 2rem;
 }
 
-/* تنسيق للحاوية عندما تكون في قمة الصفحة بدون عنوان */
+/* تنسيق للحاوية عندما تكون في قمة الصفحة بدون عنوان وبدون قائمة جانبية */
 .reports-container-full {
     border-radius: 0;
     padding: 0;
     margin: 0;
     box-shadow: none;
+    width: 100%;
+}
+
+/* إضافة تنسيقات للعرض الكامل للصفحة */
+.full-page-reports {
+    width: 100%;
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
 }
 
 /* تنسيقات إحصائيات المستندات */
@@ -592,13 +601,16 @@ html[dir="rtl"] .reports-table .filter-icon {
     border-collapse: separate;
     border-spacing: 0;
     margin-bottom: 1.5rem;
-    border: 3px solid #2563eb; /* حدود خارجية بلون أزرق متناسق مع التبويبات */
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+    border: 1px solid #e2e8f0; /* حدود أخف وأكثر أناقة */
+    border-radius: 0.75rem; /* زوايا مستديرة */
+    overflow: hidden; /* منع تجاوز حدود الجدول بسبب الزوايا المستديرة */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     font-family: Tahoma, Arial, sans-serif;
     background-color: #ffffff;
     min-height: 500px; /* ارتفاع أدنى للجدول */
     height: 100%;
     position: relative; /* للتحكم بعناصر الجدول بشكل أفضل */
+    table-layout: auto; /* لتحسين توزيع عرض الأعمدة */
 }
 
 /* تنسيق حاوية الجدول لعرض الجدول بكامله */
@@ -685,15 +697,17 @@ html[dir="rtl"] .reports-table .filter-icon {
 
 .reports-table th,
 .reports-table td {
-    padding: 8px 10px;
-    border: 1px solid #e2e2e2; /* حدود داخلية رقيقة بلون فاتح */
+    padding: 12px 14px; /* زيادة الهوامش الداخلية للقراءة الأفضل */
+    border: 1px solid #e2e8f0; /* حدود بلون فاتح */
     text-align: right;
     font-size: 0.875rem;
-    height: 40px;
-    max-height: 40px;
+    min-height: 50px; /* ارتفاع الصف */
+    vertical-align: middle; /* محاذاة عمودية للمحتوى */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    position: relative; /* للأزرار المباشرة */
+    transition: all 0.2s ease; /* انتقال سلس */
 }
 
 html[dir="ltr"] .reports-table th,
@@ -703,27 +717,70 @@ html[dir="ltr"] .reports-table td {
 
 /* تصميم رأس الجدول */
 .reports-table th {
-    background: linear-gradient(to bottom, #bfdbfe, #60a5fa); /* تدرج لوني أزرق متناسق مع التبويبات */
-    font-weight: bold;
-    color: #1e40af; /* لون أزرق غامق للنص */
-    font-size: 0.9375rem; /* 15px */
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    border-bottom: 2px solid #3b82f6; /* خط أسفل الرأس بلون أزرق */
-    padding: 12px;
+    background: #f1f5f9; /* خلفية أبسط وأكثر وضوحًا */
+    font-weight: 700;
+    color: #334155; /* لون داكن للنص */
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* ظل خفيف */
+    border-bottom: 2px solid #94a3b8; /* خط أسفل الرأس */
+    padding: 14px;
+    position: sticky; /* ثبات الرأس عند التمرير */
+    top: 0;
+    z-index: 10;
 }
 
-/* تلوين الصفوف بالتناوب */
-.reports-table tr:nth-child(even) {
-    background-color: #f5f9ff; /* لون أزرق فاتح جداً */
+/* تلوين الصفوف بالتناوب للقراءة الأسهل */
+.reports-table tbody tr:nth-child(even) {
+    background-color: #f8fafc; /* لون رمادي فاتح جداً */
 }
 
-.reports-table tr:nth-child(odd) {
-    background-color: #ffffff; /* صفوف بيضاء */
+.reports-table tbody tr:nth-child(odd) {
+    background-color: #ffffff; /* أبيض */
 }
 
 /* تأثير التحويم على الصفوف */
-.reports-table tr:hover {
-    background-color: #e0f2fe; /* لون أزرق فاتح */
+.reports-table tbody tr:hover {
+    background-color: #e9f2fe !important; /* أزرق فاتح عند التحويم */
+    transform: translateY(-1px); /* ارتفاع طفيف عند التحويم */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* ظل خفيف */
+    cursor: pointer;
+}
+
+/* تعريف أحجام مخصصة للأعمدة لتجنب النصوص المقطوعة */
+.reports-table th:nth-child(1), 
+.reports-table td:nth-child(1) {
+    width: 40px; /* عمود مربع الاختيار */
+}
+
+.reports-table th:nth-child(2), 
+.reports-table td:nth-child(2) {
+    width: 60px; /* عمود الرقم */
+}
+
+.reports-table th:nth-child(3), 
+.reports-table td:nth-child(3) {
+    width: auto; /* عمود السيارة - توسيع ديناميكي */
+    min-width: 140px;
+    max-width: 200px;
+}
+
+.reports-table th:nth-child(4), 
+.reports-table td:nth-child(4) {
+    width: 110px; /* عمود نوع الحجز/المستند */
+}
+
+.reports-table th:nth-child(5), 
+.reports-table td:nth-child(5) {
+    width: 100px; /* عمود رقم الحجز */
+}
+
+.reports-table th:nth-child(8), 
+.reports-table td:nth-child(8) {
+    width: 110px; /* عمود الحالة */
+}
+
+/* تأثير بسيط على الصفوف للتناسق مع الواجهة */
+.reports-table tr {
     transition: background-color 0.2s ease;
 }
 
@@ -732,55 +789,197 @@ html[dir="ltr"] .reports-table td {
     background-color: rgba(37, 99, 235, 0.05); /* لون أزرق شفاف */
 }
 
-/* تنسيقات حالة المدفوعات */
-.payment-status {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+/* أزرار الإجراءات المباشرة داخل الجدول */
+.reports-table .row-actions {
+    position: absolute;
+    left: 10px; /* بالنسبة للغة العربية */
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    gap: 8px;
+}
+
+html[dir="ltr"] .reports-table .row-actions {
+    left: auto;
+    right: 10px;
+}
+
+.reports-table tbody tr:hover .row-actions {
+    display: flex;
+}
+
+.reports-table .action-button {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.reports-table .action-button:hover {
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.reports-table .action-button.edit-btn:hover {
+    color: #3b82f6;
+}
+
+.reports-table .action-button.view-btn:hover {
+    color: #059669;
+}
+
+.reports-table .action-button.delete-btn:hover {
+    color: #ef4444;
+}
+
+/* عرض التفاصيل عند النقر */
+.reports-table .row-details {
+    display: none;
+    background-color: #f8fafc;
+    padding: 1rem;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.reports-table tr.expanded .row-details {
+    display: table-row;
+}
+
+.reports-table .detail-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.reports-table .detail-group {
+    padding: 0.75rem;
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    min-width: 200px;
+}
+
+.reports-table .detail-title {
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.reports-table .detail-content {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+/* تنسيقات مشتركة لحالات الدفع والفحص والعهدة */
+.payment-status, .condition-status, .custody-status, .reservation-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    border-radius: 50px; /* جعلها دائرية */
     font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
 }
 
-.payment-status.paid {
-    background-color: #dcfce7;
-    color: #16a34a;
+/* إضافة نقطة ملونة قبل النص */
+.payment-status::before, .condition-status::before, .custody-status::before, .reservation-status::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 6px;
+    margin-right: 0;
 }
 
-.payment-status.pending {
-    background-color: #fef9c3;
+html[dir="ltr"] .payment-status::before, 
+html[dir="ltr"] .condition-status::before, 
+html[dir="ltr"] .custody-status::before,
+html[dir="ltr"] .reservation-status::before {
+    margin-left: 0;
+    margin-right: 6px;
+}
+
+/* حالات الدفع - مدفوع */
+.payment-status.paid, .condition-status.completed, .custody-status.active, .reservation-status.confirmed {
+    background-color: rgba(72, 187, 120, 0.1);
+    color: #059669;
+    border: 1px solid rgba(72, 187, 120, 0.2);
+}
+
+.payment-status.paid::before, .condition-status.completed::before, .custody-status.active::before, .reservation-status.confirmed::before {
+    background-color: #059669;
+}
+
+/* حالات الدفع - قيد الإنتظار */
+.payment-status.pending, .condition-status.pending, .custody-status.pending, .reservation-status.pending {
+    background-color: rgba(234, 179, 8, 0.1);
     color: #ca8a04;
+    border: 1px solid rgba(234, 179, 8, 0.2);
 }
 
+.payment-status.pending::before, .condition-status.pending::before, .custody-status.pending::before, .reservation-status.pending::before {
+    background-color: #ca8a04;
+}
+
+/* حالات الدفع - إلغاء أو مردود */
+.payment-status.cancelled, .condition-status.cancelled, .custody-status.returned, .reservation-status.cancelled {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.payment-status.cancelled::before, .condition-status.cancelled::before, .custody-status.returned::before, .reservation-status.cancelled::before {
+    background-color: #dc2626;
+}
+
+/* مدفوعات - مسترد */
+.payment-status.refunded {
+    background-color: rgba(79, 70, 229, 0.1);
+    color: #4338ca;
+    border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.payment-status.refunded::before {
+    background-color: #4338ca;
+}
+
+/* حالات الدفع - فشل */
 .payment-status.failed {
-    background-color: #fee2e2;
-    color: #dc2626;
+    background-color: rgba(224, 36, 36, 0.1);
+    color: #b91c1c;
+    border: 1px solid rgba(224, 36, 36, 0.2);
 }
 
-/* تنسيقات حالة الحجز */
-.reservation-status {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
+.payment-status.failed::before {
+    background-color: #b91c1c;
 }
 
-.reservation-status.confirmed {
-    background-color: #dcfce7;
-    color: #16a34a;
-}
-
-.reservation-status.pending {
-    background-color: #fef9c3;
-    color: #ca8a04;
-}
-
-.reservation-status.cancelled {
-    background-color: #fee2e2;
-    color: #dc2626;
-}
-
+/* حالات الحجز - مكتمل */
 .reservation-status.completed {
-    background-color: #dbeafe;
+    background-color: rgba(59, 130, 246, 0.1);
     color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.reservation-status.completed::before {
+    background-color: #2563eb;
+}
+
+/* تأثير التحويم على الحالات */
+.payment-status:hover, .condition-status:hover, .custody-status:hover, .reservation-status:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* تنسيقات التنقل بين الصفحات */
