@@ -245,7 +245,7 @@ def superadmin_profile(request):
         'has_2fa': has_2fa
     }
     
-    return render(request, 'superadmin/profile.html', context)
+    return render(request, 'superadmin/new_profile.html', context)
 
 @superadmin_required
 def superadmin_dashboard(request):

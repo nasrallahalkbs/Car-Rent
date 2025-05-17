@@ -1,0 +1,355 @@
+{% extends "superadmin/layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "الملف الشخصي" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{% trans "الملف الشخصي" %}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'superadmin_dashboard' %}">{% trans "لوحة التحكم" %}</a></li>
+        <li class="breadcrumb-item active">{% trans "الملف الشخصي" %}</li>
+    </ol>
+    
+    <!-- رسائل النجاح والخطأ -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-xl-4">
+            <!-- بطاقة الملف الشخصي -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "معلومات الملف الشخصي" %}</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{% static 'admin/img/profile-avatar.jpg' %}" alt="صورة الملف الشخصي" class="rounded-circle mb-3" width="128" height="128">
+                    <h5 class="card-title mb-0">{{ user.name }}</h5>
+                    <div class="text-muted mb-3">{% trans "مسؤول أعلى" %}</div>
+                    <div class="d-grid">
+                        <a href="#" class="btn btn-primary">
+                            <i class="fas fa-camera me-2"></i>
+                            {% trans "تغيير الصورة" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="text-muted">
+                        <div><strong>{% trans "آخر تسجيل دخول" %}:</strong> {{ user.last_login|date:"d/m/Y H:i" }}</div>
+                        <div><strong>{% trans "تم التسجيل في" %}:</strong> {{ user.created_at|date:"d/m/Y" }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- بطاقة المعلومات الإضافية -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{% trans "معلومات إضافية" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">{% trans "الدور" %}</label>
+                        <div class="fw-bold">{% trans "مسؤول أعلى" %}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">{% trans "الحالة" %}</label>
+                        <div><span class="badge bg-success">{% trans "نشط" %}</span></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">{% trans "عدد التسجيلات" %}</label>
+                        <div class="fw-bold">{{ login_count }}</div>
+                    </div>
+                    <div>
+                        <label class="form-label text-muted">{% trans "المصادقة الثنائية" %}</label>
+                        <div class="d-flex align-items-center">
+                            {% if has_2fa %}
+                            <span class="badge bg-success me-2">{% trans "مفعل" %}</span>
+                            <a href="{% url 'superadmin_user_2fa' user.id %}?disable=true" class="btn btn-sm btn-danger">
+                                <i class="fas fa-lock-open me-1"></i> {% trans "تعطيل" %}
+                            </a>
+                            {% else %}
+                            <span class="badge bg-warning me-2">{% trans "غير مفعل" %}</span>
+                            <a href="{% url 'superadmin_user_2fa' user.id %}" class="btn btn-sm btn-success">
+                                <i class="fas fa-lock me-1"></i> {% trans "تفعيل" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- بطاقة الأنشطة الأخيرة -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "الأنشطة الأخيرة" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_activities %}
+                    <div class="timeline">
+                        {% for activity in recent_activities %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ activity.action }}</h6>
+                                <p class="text-muted small mb-0">
+                                    {{ activity.details }}
+                                </p>
+                                <div class="text-muted small">{{ activity.created_at|date:"d/m/Y H:i" }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-history fa-2x mb-2"></i>
+                        <p>{% trans "لا توجد أنشطة حديثة" %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-8">
+            <!-- بطاقة تفاصيل الملف الشخصي -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{% trans "تفاصيل الملف الشخصي" %}</h5>
+                    <button type="button" class="btn btn-sm btn-primary edit-profile-btn">
+                        <i class="fas fa-edit me-1"></i> {% trans "تعديل" %}
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="profile-form">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">{% trans "الاسم" %}</label>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">{% trans "البريد الإلكتروني" %}</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" readonly>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">{% trans "رقم الهاتف" %}</label>
+                                <input type="text" class="form-control" id="phone" name="phone" value="{{ user.phone_number|default:'' }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="language" class="form-label">{% trans "اللغة المفضلة" %}</label>
+                                <select class="form-select" id="language" name="language" disabled>
+                                    <option value="ar" selected>{% trans "العربية" %}</option>
+                                    <option value="en">{% trans "الإنجليزية" %}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="submit" class="btn btn-primary save-profile-btn d-none me-2">
+                                <i class="fas fa-save me-1"></i> {% trans "حفظ التغييرات" %}
+                            </button>
+                            <button type="button" class="btn btn-secondary cancel-edit-btn d-none">
+                                <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- بطاقة تغيير كلمة المرور -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "تغيير كلمة المرور" %}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="password-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_password">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">{% trans "كلمة المرور الحالية" %}</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">{% trans "كلمة المرور الجديدة" %}</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password">
+                            <div class="form-text">{% trans "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل وتتضمن أحرف كبيرة وصغيرة وأرقام ورموز." %}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">{% trans "تأكيد كلمة المرور الجديدة" %}</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                        </div>
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-key me-1"></i> {% trans "تغيير كلمة المرور" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- بطاقة إعدادات الأمان -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "إعدادات الأمان" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-1">{% trans "جلسات تسجيل الدخول" %}</h6>
+                                <p class="text-muted mb-0">{% trans "إدارة جلسات تسجيل الدخول النشطة على جميع الأجهزة" %}</p>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-sign-out-alt me-1"></i> {% trans "تسجيل الخروج من جميع الأجهزة" %}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-1">{% trans "المصادقة الثنائية" %}</h6>
+                                <p class="text-muted mb-0">{% trans "تأمين حسابك بطبقة حماية إضافية" %}</p>
+                            </div>
+                            <div>
+                                {% if has_2fa %}
+                                <a href="{% url 'superadmin_user_2fa' user.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-shield-alt me-1"></i> {% trans "إدارة الإعدادات" %}
+                                </a>
+                                {% else %}
+                                <a href="{% url 'superadmin_user_2fa' user.id %}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-lock me-1"></i> {% trans "تفعيل المصادقة الثنائية" %}
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* تنسيقات إضافية للقالب */
+.timeline {
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.5rem;
+    top: 0.25rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.timeline-item:not(:last-child):before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 0.75rem;
+    bottom: 0;
+    width: 1px;
+    height: calc(100% - 0.5rem);
+    background-color: #e2e8f0;
+    transform: translateX(50%);
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0 0.875rem 0 rgba(33, 37, 41, 0.05);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1.5rem rgba(33, 37, 41, 0.1);
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1rem 1.25rem;
+}
+
+.card-title {
+    color: #293240;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #64748b;
+}
+
+.badge {
+    padding: 0.35em 0.65em;
+    font-weight: 600;
+}
+</style>
+
+<script>
+// سكريبت للتعامل مع تعديل الملف الشخصي
+document.addEventListener('DOMContentLoaded', function () {
+    const editBtn = document.querySelector('.edit-profile-btn');
+    const saveBtn = document.querySelector('.save-profile-btn');
+    const cancelBtn = document.querySelector('.cancel-edit-btn');
+    const profileInputs = document.querySelectorAll('#profile-form input, #profile-form select');
+    
+    if (editBtn) {
+        editBtn.addEventListener('click', function() {
+            // تمكين الحقول
+            profileInputs.forEach(input => {
+                input.removeAttribute('readonly');
+                input.removeAttribute('disabled');
+            });
+            
+            // إظهار أزرار الحفظ والإلغاء
+            saveBtn.classList.remove('d-none');
+            cancelBtn.classList.remove('d-none');
+            editBtn.classList.add('d-none');
+        });
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            // تعطيل الحقول
+            profileInputs.forEach(input => {
+                input.setAttribute('readonly', true);
+                if (input.tagName === 'SELECT') {
+                    input.setAttribute('disabled', true);
+                }
+            });
+            
+            // إخفاء أزرار الحفظ والإلغاء
+            saveBtn.classList.add('d-none');
+            cancelBtn.classList.add('d-none');
+            editBtn.classList.remove('d-none');
+            
+            // إعادة تعيين النموذج
+            document.getElementById('profile-form').reset();
+        });
+    }
+});
+</script>
+{% endblock %}
