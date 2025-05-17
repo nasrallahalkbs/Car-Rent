@@ -1434,12 +1434,16 @@ def user_2fa(request, user_id):
             admin_success(request, _("تم تفعيل الحساب بنجاح."))
             
             # تسجيل النشاط
-            log_admin_activity(
-                request.admin_profile,
-                _("تفعيل الحساب"),
-                _("تم تفعيل حساب المستخدم {}").format(user.username),
-                request
-            )
+            try:
+                admin_profile = AdminUser.objects.get(user=request.user)
+                log_admin_activity(
+                    admin_profile,
+                    _("تفعيل الحساب"),
+                    _("تم تفعيل حساب المستخدم {}").format(user.username),
+                    request
+                )
+            except:
+                messages.success(request, _("تم تفعيل الحساب بنجاح."))
         
         # تعطيل الحساب
         elif action == 'deactivate_account':
@@ -1448,12 +1452,16 @@ def user_2fa(request, user_id):
             admin_success(request, _("تم تعطيل الحساب بنجاح."))
             
             # تسجيل النشاط
-            log_admin_activity(
-                request.admin_profile,
-                _("تعطيل الحساب"),
-                _("تم تعطيل حساب المستخدم {}").format(user.username),
-                request
-            )
+            try:
+                admin_profile = AdminUser.objects.get(user=request.user)
+                log_admin_activity(
+                    admin_profile,
+                    _("تعطيل الحساب"),
+                    _("تم تعطيل حساب المستخدم {}").format(user.username),
+                    request
+                )
+            except:
+                messages.success(request, _("تم تعطيل الحساب بنجاح."))
     
     # التحقق من وجود رموز احتياطية
     if user_security.two_factor_enabled and not backup_codes:
