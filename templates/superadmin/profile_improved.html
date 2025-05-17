@@ -1,0 +1,593 @@
+{% extends "superadmin/layout.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "الملف الشخصي" %} | {% trans "لوحة تحكم المسؤول الأعلى" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* أنماط مخصصة لصفحة البروفايل */
+    .profile-header {
+        background: linear-gradient(135deg, #4b79a1, #283e51);
+        padding: 2rem 0;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .profile-header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('{% static "admin/img/pattern.svg" %}');
+        background-size: cover;
+        opacity: 0.1;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border: 5px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .profile-avatar:hover {
+        transform: scale(1.05);
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+    
+    .profile-name {
+        color: white;
+        margin: 0.5rem 0;
+        font-size: 1.75rem;
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .profile-role {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 1.1rem;
+        font-weight: 400;
+    }
+    
+    .profile-stats {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .profile-stats:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-icon {
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+        color: white;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(45deg, #447de6, #5e60ce);
+    }
+    
+    .bg-gradient-success {
+        background: linear-gradient(45deg, #2eb85c, #3dd77f);
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(45deg, #39c0ed, #56c4fc);
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(45deg, #f9b115, #ffc107);
+    }
+    
+    .stats-title {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stats-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #343a40;
+    }
+    
+    .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .card:hover {
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+        background-color: #fff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .card-title {
+        font-weight: 600;
+        margin: 0;
+        color: #343a40;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .form-control {
+        border-radius: 6px;
+        padding: 0.6rem 1rem;
+        border: 1px solid #ced4da;
+        transition: all 0.15s ease-in-out;
+    }
+    
+    .form-control:focus {
+        border-color: #4b79a1;
+        box-shadow: 0 0 0 0.25rem rgba(75, 121, 161, 0.1);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(45deg, #4b79a1, #283e51);
+        border: none;
+        padding: 0.6rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(45deg, #3a6d9d, #1c2e3e);
+        transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+    
+    .activity-item {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        background-color: #f8f9fa;
+        border-right: 3px solid #4b79a1;
+        transition: all 0.2s ease;
+    }
+    
+    .activity-item:hover {
+        background-color: #e9ecef;
+        transform: translateX(-5px);
+    }
+    
+    .activity-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .activity-action {
+        font-weight: 600;
+        color: #343a40;
+    }
+    
+    .activity-details {
+        color: #495057;
+        margin-top: 0.25rem;
+    }
+    
+    /* المصادقة الثنائية */
+    .security-setting {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .security-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        margin-left: 1rem;
+        color: white;
+    }
+    
+    .security-content {
+        flex: 1;
+    }
+    
+    .security-title {
+        font-weight: 600;
+        color: #343a40;
+    }
+    
+    .security-desc {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .tab-content {
+        padding-top: 1.5rem;
+    }
+    
+    .nav-pills .nav-link {
+        border-radius: 6px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #4b79a1;
+        color: white;
+    }
+    
+    .two-factor-status {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    
+    .two-factor-enabled {
+        background-color: rgba(46, 184, 92, 0.1);
+        color: #2eb85c;
+    }
+    
+    .two-factor-disabled {
+        background-color: rgba(229, 83, 83, 0.1);
+        color: #e55353;
+    }
+    
+    @media (max-width: 767.98px) {
+        .profile-header {
+            padding: 1.5rem 0;
+        }
+        
+        .profile-avatar {
+            width: 90px;
+            height: 90px;
+        }
+        
+        .profile-name {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header - معلومات الملف الشخصي -->
+<div class="profile-header text-center text-md-right">
+    <div class="container-fluid px-4">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                <img src="{% static 'admin/img/profile-avatar.jpg' %}" alt="صورة الملف الشخصي" class="rounded-circle profile-avatar">
+            </div>
+            <div class="col-md-9 mt-3 mt-md-0 text-center text-md-right">
+                <h1 class="profile-name">{{ user.get_full_name|default:user.username }}</h1>
+                <div class="profile-role">{% trans "مسؤول أعلى" %} <i class="fas fa-shield-alt ms-2"></i></div>
+                <div class="mt-3">
+                    <a href="#" class="btn btn-light disabled">
+                        <i class="fas fa-camera me-2"></i>
+                        {% trans "تغيير الصورة" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4">
+    <!-- بطاقات الإحصائيات -->
+    <div class="row">
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="profile-stats text-center">
+                <div class="stats-icon bg-gradient-primary mx-auto">
+                    <i class="fas fa-sign-in-alt"></i>
+                </div>
+                <div class="stats-title">{% trans "آخر تسجيل دخول" %}</div>
+                <div class="stats-value">{{ user.last_login|date:"d/m/Y" }}</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="profile-stats text-center">
+                <div class="stats-icon bg-gradient-success mx-auto">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="stats-title">{% trans "تاريخ الانضمام" %}</div>
+                <div class="stats-value">{{ user.date_joined|date:"d/m/Y" }}</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="profile-stats text-center">
+                <div class="stats-icon bg-gradient-info mx-auto">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <div class="stats-title">{% trans "عدد مرات تسجيل الدخول" %}</div>
+                <div class="stats-value">{{ login_count|default:"0" }}</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="profile-stats text-center">
+                <div class="stats-icon bg-gradient-warning mx-auto">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="stats-title">{% trans "عدد الإجراءات" %}</div>
+                <div class="stats-value">{{ recent_activities|length }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- تبويبات البروفايل -->
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-pills card-header-pills">
+                <li class="nav-item">
+                    <a class="nav-link active" id="personal-tab" data-bs-toggle="pill" href="#personal" role="tab">
+                        <i class="fas fa-user me-2"></i>{% trans "المعلومات الشخصية" %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="security-tab" data-bs-toggle="pill" href="#security" role="tab">
+                        <i class="fas fa-lock me-2"></i>{% trans "الأمان" %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="activity-tab" data-bs-toggle="pill" href="#activity" role="tab">
+                        <i class="fas fa-history me-2"></i>{% trans "النشاطات الأخيرة" %}
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body">
+            <div class="tab-content">
+                <!-- المعلومات الشخصية -->
+                <div class="tab-pane fade show active" id="personal" role="tabpanel">
+                    <h4 class="mb-4">{% trans "المعلومات الشخصية" %}</h4>
+                    
+                    <form>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">{% trans "الاسم الأول" %}</label>
+                                    <input type="text" class="form-control" id="first_name" value="{{ user.first_name }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">{% trans "الاسم الأخير" %}</label>
+                                    <input type="text" class="form-control" id="last_name" value="{{ user.last_name }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">{% trans "اسم المستخدم" %}</label>
+                                    <input type="text" class="form-control" id="username" value="{{ user.username }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">{% trans "البريد الإلكتروني" %}</label>
+                                    <input type="email" class="form-control" id="email" value="{{ user.email }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">{% trans "الدور" %}</label>
+                                    <input type="text" class="form-control" id="role" value="{% trans "مسؤول أعلى" %}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">{% trans "الحالة" %}</label>
+                                    <input type="text" class="form-control" id="status" value="{% trans "نشط" %}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="language" class="form-label">{% trans "اللغة المفضلة" %}</label>
+                                    <input type="text" class="form-control" id="language" value="{% trans "العربية" %}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_ip" class="form-label">{% trans "آخر عنوان IP" %}</label>
+                                    <input type="text" class="form-control" id="last_ip" value="{{ admin.last_login_ip|default:'غير متاح' }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end mt-4">
+                            <button type="button" class="btn btn-primary disabled">
+                                <i class="fas fa-edit me-2"></i>
+                                {% trans "تعديل المعلومات الشخصية" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- الأمان -->
+                <div class="tab-pane fade" id="security" role="tabpanel">
+                    <h4 class="mb-4">{% trans "إعدادات الأمان" %}</h4>
+                    
+                    <!-- المصادقة الثنائية -->
+                    <div class="security-setting">
+                        <div class="security-icon {% if has_2fa %}bg-gradient-success{% else %}bg-gradient-warning{% endif %}">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="security-content">
+                            <div class="security-title">{% trans "المصادقة الثنائية" %}</div>
+                            <div class="security-desc">
+                                {% if has_2fa %}
+                                {% trans "المصادقة الثنائية مفعلة، يتم تطبيق طبقة حماية إضافية على حسابك." %}
+                                {% else %}
+                                {% trans "المصادقة الثنائية غير مفعلة. نوصي بتفعيلها لحماية حسابك." %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="two-factor-status {% if has_2fa %}two-factor-enabled{% else %}two-factor-disabled{% endif %}">
+                                {% if has_2fa %}
+                                <i class="fas fa-check-circle me-1"></i> {% trans "مفعل" %}
+                                {% else %}
+                                <i class="fas fa-times-circle me-1"></i> {% trans "غير مفعل" %}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- أخر تسجيل دخول -->
+                    <div class="security-setting">
+                        <div class="security-icon bg-gradient-info">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </div>
+                        <div class="security-content">
+                            <div class="security-title">{% trans "آخر تسجيل دخول" %}</div>
+                            <div class="security-desc">
+                                {% trans "آخر تسجيل دخول تم من" %} {{ admin.last_login_ip|default:'غير متاح' }} {% trans "في" %} {{ user.last_login|date:"d/m/Y H:i"|default:'غير متاح' }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- تغيير كلمة المرور -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">{% trans "تغيير كلمة المرور" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">{% trans "كلمة المرور الحالية" %}</label>
+                                    <input type="password" class="form-control" id="current_password" name="current_password">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">{% trans "كلمة المرور الجديدة" %}</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">{% trans "تأكيد كلمة المرور الجديدة" %}</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                </div>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-primary disabled">
+                                        <i class="fas fa-key me-2"></i>
+                                        {% trans "تغيير كلمة المرور" %}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- النشاطات الأخيرة -->
+                <div class="tab-pane fade" id="activity" role="tabpanel">
+                    <h4 class="mb-4">{% trans "النشاطات الأخيرة" %}</h4>
+                    
+                    <div class="timeline">
+                        {% for activity in recent_activities %}
+                            <div class="activity-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="activity-action">{{ activity.action }}</div>
+                                    <div class="activity-time">{{ activity.created_at|date:"d/m/Y H:i" }}</div>
+                                </div>
+                                <div class="activity-details">{{ activity.details }}</div>
+                                <div class="small text-muted mt-1">IP: {{ activity.ip_address }}</div>
+                            </div>
+                        {% empty %}
+                            <div class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {% trans "لا توجد أنشطة مسجلة" %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if recent_activities %}
+                        <div class="text-center mt-4">
+                            <a href="#" class="btn btn-outline-secondary disabled">
+                                <i class="fas fa-list me-2"></i>
+                                {% trans "عرض كل الأنشطة" %}
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // تفعيل التبويبات
+        $('.nav-pills a').on('click', function (e) {
+            e.preventDefault();
+            $(this).tab('show');
+        });
+        
+        // تحويل حقول القراءة فقط عند النقر إلى الوضع القابل للتحرير
+        /*
+        $('.form-control[readonly]').on('dblclick', function() {
+            $(this).removeAttr('readonly');
+            $(this).focus();
+        });
+        */
+    });
+</script>
+{% endblock %}

@@ -227,13 +227,25 @@ def superadmin_profile(request):
     # احضار سجلات النشاط الأخيرة للمشرف الأعلى
     recent_activities = AdminActivity.objects.filter(admin=admin_profile).order_by('-created_at')[:5]
     
+    # الحصول على عدد مرات تسجيل الدخول
+    login_count = AdminActivity.objects.filter(admin=admin_profile, action=_("تسجيل دخول")).count()
+    
+    # التحقق من تفعيل المصادقة الثنائية
+    try:
+        user_security = UserSecurity.objects.get(user=user)
+        has_2fa = user_security.two_factor_enabled
+    except:
+        has_2fa = False
+    
     context = {
         'admin': admin_profile,
         'user': user,
         'recent_activities': recent_activities,
+        'login_count': login_count,
+        'has_2fa': has_2fa
     }
     
-    return render(request, 'superadmin/profile_fixed.html', context)
+    return render(request, 'superadmin/profile_improved.html', context)
 
 @superadmin_required
 def superadmin_dashboard(request):
