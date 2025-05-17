@@ -141,6 +141,13 @@ def custody_create(request):
         if form.is_valid():
             guarantee = form.save(commit=False)
             guarantee.created_by = request.user
+            
+            # تعيين العميل والسيارة من الحجز إذا كان موجوداً
+            reservation = form.cleaned_data.get('reservation')
+            if reservation:
+                guarantee.customer = reservation.user
+                guarantee.car = reservation.car
+            
             guarantee.save()
             
             messages.success(request, _('تم إنشاء العهدة بنجاح'))
