@@ -126,25 +126,25 @@
                             <div class="col-md-6">
                                 {{ form.category|as_crispy_field }}
                             </div>
-                            <div class="col-md-6" id="value_field">
+                            <div class="col-md-6 custody-field-cash">
                                 {{ form.value|as_crispy_field }}
                             </div>
                         </div>
                         
                         <!-- حقول مخصصة حسب نوع العهدة -->
-                        <div class="row" id="credit_card_field" style="display:none;">
+                        <div class="row custody-field-credit_card">
                             <div class="col-md-12">
                                 {{ form.credit_card_info|as_crispy_field }}
                             </div>
                         </div>
                         
-                        <div class="row" id="property_field" style="display:none;">
+                        <div class="row custody-field-property">
                             <div class="col-md-12">
                                 {{ form.property_description|as_crispy_field }}
                             </div>
                         </div>
                         
-                        <div class="row" id="insurance_field" style="display:none;">
+                        <div class="row custody-field-insurance">
                             <div class="col-md-12">
                                 {{ form.insurance_policy_number|as_crispy_field }}
                             </div>
@@ -222,49 +222,70 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// سكريبت بسيط لإدارة حقول نموذج العهدة
+// سكريبت جديد مبسط لإدارة حقول نموذج العهدة
 document.addEventListener('DOMContentLoaded', function() {
-    // تحديد الحقول
-    var valueField = document.getElementById('value_field');
-    var creditCardField = document.getElementById('credit_card_field');
-    var propertyField = document.getElementById('property_field');
-    var insuranceField = document.getElementById('insurance_field');
-    var guaranteeTypeField = document.getElementById('id_guarantee_type');
-    
-    // التأكد من وجود حقل نوع العهدة
-    if (!guaranteeTypeField) return;
-    
-    // دالة تحديث عرض الحقول
-    function updateFields() {
-        // الحصول على نوع العهدة المحدد
-        var selectedType = guaranteeTypeField.value;
-        
-        // إخفاء جميع الحقول أولاً
-        if (valueField) valueField.style.display = 'none';
-        if (creditCardField) creditCardField.style.display = 'none';
-        if (propertyField) propertyField.style.display = 'none';
-        if (insuranceField) insuranceField.style.display = 'none';
-        
-        // إظهار الحقل المناسب فقط
-        if (selectedType == 'cash' || selectedType == 'bank_deposit' || selectedType == 'other') {
-            if (valueField) valueField.style.display = 'block';
-        } 
-        else if (selectedType == 'credit_card') {
-            if (creditCardField) creditCardField.style.display = 'block';
-        }
-        else if (selectedType == 'property') {
-            if (propertyField) propertyField.style.display = 'block';
-        }
-        else if (selectedType == 'insurance') {
-            if (insuranceField) insuranceField.style.display = 'block';
+    // حقل اختيار نوع العهدة
+    var guaranteeTypeSelect = document.getElementById('id_guarantee_type');
+    if (!guaranteeTypeSelect) return;
+
+    // جميع حقول العهدة
+    var cashFields = document.querySelectorAll('.custody-field-cash');
+    var creditCardFields = document.querySelectorAll('.custody-field-credit_card');
+    var propertyFields = document.querySelectorAll('.custody-field-property');
+    var insuranceFields = document.querySelectorAll('.custody-field-insurance');
+
+    // إخفاء جميع الحقول في البداية عن طريق CSS
+    document.head.insertAdjacentHTML('beforeend', `
+        <style>
+            .custody-field-cash, 
+            .custody-field-credit_card, 
+            .custody-field-property, 
+            .custody-field-insurance {
+                display: none;
+            }
+        </style>
+    `);
+
+    // دالة لتحديث الحقول المرئية
+    function updateVisibleFields() {
+        var selectedType = guaranteeTypeSelect.value;
+
+        // إظهار الحقول المناسبة فقط
+        if (selectedType === 'cash' || selectedType === 'bank_deposit' || selectedType === 'other') {
+            showFields(cashFields);
+        } else if (selectedType === 'credit_card') {
+            showFields(creditCardFields);
+        } else if (selectedType === 'property') {
+            showFields(propertyFields);
+        } else if (selectedType === 'insurance') {
+            showFields(insuranceFields);
         }
     }
+
+    // دالة مساعدة لإظهار مجموعة من الحقول
+    function showFields(fields) {
+        // إخفاء جميع الحقول أولاً
+        hideAllFields();
+        
+        // إظهار الحقول المطلوبة
+        fields.forEach(function(field) {
+            field.style.display = 'block';
+        });
+    }
+
+    // دالة مساعدة لإخفاء جميع الحقول
+    function hideAllFields() {
+        cashFields.forEach(function(field) { field.style.display = 'none'; });
+        creditCardFields.forEach(function(field) { field.style.display = 'none'; });
+        propertyFields.forEach(function(field) { field.style.display = 'none'; });
+        insuranceFields.forEach(function(field) { field.style.display = 'none'; });
+    }
+
+    // إضافة معالج حدث لتغيير نوع العهدة
+    guaranteeTypeSelect.addEventListener('change', updateVisibleFields);
     
-    // تنفيذ الدالة عند تغيير نوع العهدة
-    guaranteeTypeField.addEventListener('change', updateFields);
-    
-    // تنفيذ الدالة عند تحميل الصفحة
-    updateFields();
+    // تطبيق المنطق عند تحميل الصفحة
+    updateVisibleFields();
 });
 </script>
 {% endblock %}
