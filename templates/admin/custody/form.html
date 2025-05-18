@@ -222,63 +222,49 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// سكريبت لإدارة حقول نموذج العهدة
+// سكريبت بسيط لإدارة حقول نموذج العهدة
 document.addEventListener('DOMContentLoaded', function() {
-    // تحديد حقول النموذج
+    // تحديد الحقول
     var valueField = document.getElementById('value_field');
     var creditCardField = document.getElementById('credit_card_field');
     var propertyField = document.getElementById('property_field');
     var insuranceField = document.getElementById('insurance_field');
-    
-    // إضافة مستمع أحداث لتغيير نوع العهدة
     var guaranteeTypeField = document.getElementById('id_guarantee_type');
-    if (guaranteeTypeField) {
-        guaranteeTypeField.addEventListener('change', function() {
-            updateFieldsVisibility();
-        });
-        // تطبيق عند التحميل
-        updateFieldsVisibility();
-    }
     
-    // دالة لتحديث حالة إظهار/إخفاء الحقول
-    function updateFieldsVisibility() {
-        var guaranteeType = document.getElementById('id_guarantee_type').value;
+    // التأكد من وجود حقل نوع العهدة
+    if (!guaranteeTypeField) return;
+    
+    // دالة تحديث عرض الحقول
+    function updateFields() {
+        // الحصول على نوع العهدة المحدد
+        var selectedType = guaranteeTypeField.value;
         
-        // حقول النقد والإيداع البنكي وأنواع أخرى تتطلب قيمة العهدة
-        var typesNeedingValue = ['cash', 'bank_deposit', 'other'];
-        
-        // إخفاء جميع الحقول المخصصة أولاً
+        // إخفاء جميع الحقول أولاً
         if (valueField) valueField.style.display = 'none';
         if (creditCardField) creditCardField.style.display = 'none';
         if (propertyField) propertyField.style.display = 'none';
         if (insuranceField) insuranceField.style.display = 'none';
         
-        // إظهار الحقول المناسبة
-        if (typesNeedingValue.includes(guaranteeType) && valueField) {
-            valueField.style.display = 'block';
-        } else if (guaranteeType === 'credit_card' && creditCardField) {
-            creditCardField.style.display = 'block';
-        } else if (guaranteeType === 'property' && propertyField) {
-            propertyField.style.display = 'block';
-        } else if (guaranteeType === 'insurance' && insuranceField) {
-            insuranceField.style.display = 'block';
+        // إظهار الحقل المناسب فقط
+        if (selectedType == 'cash' || selectedType == 'bank_deposit' || selectedType == 'other') {
+            if (valueField) valueField.style.display = 'block';
+        } 
+        else if (selectedType == 'credit_card') {
+            if (creditCardField) creditCardField.style.display = 'block';
         }
-        
-        // تعيين قيمة حقل القيمة إلى 0 إذا كان مخفياً
-        if (!typesNeedingValue.includes(guaranteeType)) {
-            var valueInput = document.getElementById('id_value');
-            if (valueInput) valueInput.value = '0';
+        else if (selectedType == 'property') {
+            if (propertyField) propertyField.style.display = 'block';
+        }
+        else if (selectedType == 'insurance') {
+            if (insuranceField) insuranceField.style.display = 'block';
         }
     }
     
-    // إضافة مستمع أحداث لتغيير الحجز
-    var reservationField = document.getElementById('id_reservation');
-    if (reservationField) {
-        reservationField.addEventListener('change', function() {
-            var reservationId = this.value;
-            // لا نقوم بتحديث اسم العهدة تلقائياً، نترك المستخدم يضع الاسم المناسب
-        });
-    }
+    // تنفيذ الدالة عند تغيير نوع العهدة
+    guaranteeTypeField.addEventListener('change', updateFields);
+    
+    // تنفيذ الدالة عند تحميل الصفحة
+    updateFields();
 });
 </script>
 {% endblock %}
