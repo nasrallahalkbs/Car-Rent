@@ -39,8 +39,25 @@ class CustomerGuaranteeForm(forms.ModelForm):
         })
         
         # تحديث سلوك الحقول عند التغيير
+        self.fields['guarantee_type'].widget.attrs.update({
+            'onchange': 'toggleCustomFields()'
+        })
+        
         self.fields['reservation'].widget.attrs.update({
             'onchange': 'updateReservationData()'
+        })
+        
+        # تخصيص حقول نوع العهدة
+        self.fields['credit_card_info'].widget.attrs.update({
+            'placeholder': _('أدخل معلومات البطاقة الائتمانية (رقم البطاقة، اسم صاحب البطاقة، تاريخ الانتهاء)')
+        })
+        
+        self.fields['property_description'].widget.attrs.update({
+            'placeholder': _('أدخل وصف الممتلكات العقارية (نوع العقار، الموقع، القيمة التقديرية)')
+        })
+        
+        self.fields['insurance_policy_number'].widget.attrs.update({
+            'placeholder': _('أدخل رقم بوليصة التأمين')
         })
     
     def clean(self):
