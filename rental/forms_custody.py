@@ -11,7 +11,8 @@ class CustomerGuaranteeForm(forms.ModelForm):
         model = CustomerGuarantee
         fields = [
             'name', 'guarantee_type', 'category', 'handover_date', 
-            'description', 'value', 'notes', 'reservation'
+            'description', 'value', 'notes', 'reservation', 'identifier',
+            'credit_card_info', 'property_description', 'insurance_policy_number'
         ]
         widgets = {
             'handover_date': forms.DateInput(attrs={'type': 'date'}),

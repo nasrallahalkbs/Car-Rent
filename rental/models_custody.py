@@ -72,6 +72,27 @@ class CustomerGuarantee(models.Model):
         verbose_name=_('معرف العهدة')
     )
     
+    # حقول خاصة بأنواع محددة من العهدة
+    credit_card_info = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_('معلومات البطاقة الائتمانية')
+    )
+    
+    property_description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('وصف الممتلكات العقارية')
+    )
+    
+    insurance_policy_number = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_('رقم بوليصة التأمين')
+    )
+    
     value = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -160,7 +181,9 @@ class CustomerGuarantee(models.Model):
     )
     
     def __str__(self):
-        return f"{self.name} - {self.customer.get_full_name()} ({self.reservation.reservation_number})"
+        customer_name = self.customer.get_full_name() if self.customer else "غير محدد"
+        reservation_number = self.reservation.reservation_number if self.reservation else "غير محدد"
+        return f"{self.name} - {customer_name} ({reservation_number})"
     
     class Meta:
         verbose_name = _('عهدة العميل')
@@ -170,6 +193,9 @@ class CustomerGuarantee(models.Model):
     def save(self, *args, **kwargs):
         # حساب المبلغ المسترد عند الاسترداد
         if self.status in ['returned', 'partially_returned'] and self.return_date:
-            self.returned_amount = self.value - self.deductions
+            # تحويل الحقول إلى نوع الرقم العشري لحسابها بدقة
+            value_decimal = float(self.value or 0)
+            deductions_decimal = float(self.deductions or 0)
+            self.returned_amount = value_decimal - deductions_decimal
         
         super().save(*args, **kwargs)

@@ -130,6 +130,31 @@
                                 {{ form.value|as_crispy_field }}
                             </div>
                         </div>
+                        
+                        <!-- حقول مخصصة حسب نوع العهدة -->
+                        <div class="row" id="credit_card_fields" style="display: none;">
+                            <div class="col-md-12">
+                                {{ form.credit_card_info|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="property_fields" style="display: none;">
+                            <div class="col-md-12">
+                                {{ form.property_description|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="insurance_fields" style="display: none;">
+                            <div class="col-md-12">
+                                {{ form.insurance_policy_number|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.identifier|as_crispy_field }}
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-6">
                                 {{ form.reservation|as_crispy_field }}
@@ -202,14 +227,23 @@
             // لا نقوم بتحديث اسم العهدة تلقائياً، نترك المستخدم يضع الاسم المناسب
         }
         
-        // التحقق من نوع العهدة وإظهار أو إخفاء حقل المبلغ
+        // التحقق من نوع العهدة وإظهار أو إخفاء الحقول المناسبة
         function toggleValueField() {
             var guaranteeType = document.getElementById('id_guarantee_type').value;
             var valueField = document.getElementById('id_value').closest('.col-md-6');
+            var creditCardFields = document.getElementById('credit_card_fields');
+            var propertyFields = document.getElementById('property_fields');
+            var insuranceFields = document.getElementById('insurance_fields');
+            
+            // أولاً، إخفاء جميع الحقول المخصصة
+            creditCardFields.style.display = 'none';
+            propertyFields.style.display = 'none';
+            insuranceFields.style.display = 'none';
             
             // أنواع العهدات التي تتطلب إدخال مبلغ
             var typesRequiringValue = ['cash', 'bank_deposit', 'other'];
             
+            // إظهار/إخفاء حقل المبلغ
             if (typesRequiringValue.includes(guaranteeType)) {
                 // إظهار حقل المبلغ
                 valueField.style.display = '';
@@ -218,6 +252,19 @@
                 valueField.style.display = 'none';
                 // إعادة تعيين قيمة الحقل إلى 0
                 document.getElementById('id_value').value = '0';
+            }
+            
+            // إظهار الحقول المناسبة حسب نوع العهدة
+            switch(guaranteeType) {
+                case 'credit_card':
+                    creditCardFields.style.display = 'flex';
+                    break;
+                case 'property':
+                    propertyFields.style.display = 'flex';
+                    break;
+                case 'insurance':
+                    insuranceFields.style.display = 'flex';
+                    break;
             }
         }
         
