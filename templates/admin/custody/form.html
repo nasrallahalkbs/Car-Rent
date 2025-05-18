@@ -228,84 +228,64 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// سكريبت جديد كلياً لإدارة حقول نموذج العهدة
-document.addEventListener('DOMContentLoaded', function() {
-    // هذه الدالة ضرورية جداً لتغيير عرض الحقول وتحتاج وقت كافي للتنفيذ
-    function applyFieldsVisibility() {
-        // التأكد من وجود عنصر اختيار نوع العهدة
-        var guaranteeTypeSelect = document.getElementById('id_guarantee_type');
-        if (!guaranteeTypeSelect) {
-            console.error("لم يتم العثور على حقل نوع العهدة");
-            return;
-        }
-        
-        // قراءة القيمة المختارة
-        var selectedType = guaranteeTypeSelect.value;
-        console.log("النوع المختار هو: " + selectedType);
-        
-        // تطبيق CSS مباشرة على جميع الحقول لإخفائها
-        var cssElements = document.querySelectorAll('.custody-field-cash, .custody-field-credit_card, .custody-field-property, .custody-field-insurance');
-        cssElements.forEach(function(el) {
-            el.style.display = 'none';
-            el.style.visibility = 'hidden';
-        });
-        
-        // إظهار الحقول المناسبة فقط حسب النوع المحدد
-        if (selectedType === 'cash' || selectedType === 'bank_deposit' || selectedType === 'other') {
-            document.querySelectorAll('.custody-field-cash').forEach(function(el) {
-                el.style.display = 'block';
-                el.style.visibility = 'visible';
-            });
-            console.log("تم إظهار حقول النقد");
-        } else if (selectedType === 'credit_card') {
-            document.querySelectorAll('.custody-field-credit_card').forEach(function(el) {
-                el.style.display = 'block';
-                el.style.visibility = 'visible';
-            });
-            console.log("تم إظهار حقول بطاقة الائتمان");
-        } else if (selectedType === 'property') {
-            document.querySelectorAll('.custody-field-property').forEach(function(el) {
-                el.style.display = 'block';
-                el.style.visibility = 'visible';
-            });
-            console.log("تم إظهار حقول الممتلكات");
-        } else if (selectedType === 'insurance') {
-            document.querySelectorAll('.custody-field-insurance').forEach(function(el) {
-                el.style.display = 'block';
-                el.style.visibility = 'visible';
-            });
-            console.log("تم إظهار حقول التأمين");
-        }
-    }
-    
-    // إخفاء جميع الحقول في البداية
-    var initialHideStyle = document.createElement('style');
-    initialHideStyle.textContent = `
-        .custody-field-cash, 
-        .custody-field-credit_card, 
-        .custody-field-property, 
-        .custody-field-insurance {
-            display: none !important;
-            visibility: hidden !important;
-        }
-    `;
-    document.head.appendChild(initialHideStyle);
-    
-    // الحصول على حقل اختيار نوع العهدة
+// تعريف دالة toggleCustomFields المطلوبة من النموذج
+function toggleCustomFields() {
+    // التأكد من وجود عنصر اختيار نوع العهدة
     var guaranteeTypeSelect = document.getElementById('id_guarantee_type');
-    if (guaranteeTypeSelect) {
-        // إضافة معالج حدث للتغييرات
-        guaranteeTypeSelect.addEventListener('change', applyFieldsVisibility);
-        
-        // تطبيق التغييرات عند تحميل الصفحة
-        // تأخير قصير للتأكد من أن الصفحة محملة بالكامل
-        setTimeout(applyFieldsVisibility, 100);
-        
-        // تأخير أطول للتأكد من تطبيق التغييرات
-        setTimeout(applyFieldsVisibility, 500);
-    } else {
+    if (!guaranteeTypeSelect) {
         console.error("لم يتم العثور على حقل نوع العهدة");
+        return;
     }
+    
+    // قراءة القيمة المختارة
+    var selectedType = guaranteeTypeSelect.value;
+    console.log("النوع المختار هو: " + selectedType);
+
+    // إخفاء جميع الحقول الخاصة أولاً
+    hideAllTypeFields();
+    
+    // إظهار الحقول المناسبة فقط حسب النوع المحدد
+    if (selectedType === 'cash' || selectedType === 'bank_deposit' || selectedType === 'other') {
+        showTypeFields('cash');
+    } else if (selectedType === 'credit_card') {
+        showTypeFields('credit_card');
+    } else if (selectedType === 'property') {
+        showTypeFields('property');
+    } else if (selectedType === 'insurance') {
+        showTypeFields('insurance');
+    }
+}
+
+// دالة مساعدة لإخفاء جميع حقول أنواع العهدة
+function hideAllTypeFields() {
+    var allTypeFields = document.querySelectorAll('.custody-field-cash, .custody-field-credit_card, .custody-field-property, .custody-field-insurance');
+    allTypeFields.forEach(function(field) {
+        field.style.display = 'none';
+    });
+    console.log("تم إخفاء جميع حقول الأنواع");
+}
+
+// دالة مساعدة لإظهار حقول نوع معين
+function showTypeFields(type) {
+    var fieldsToShow = document.querySelectorAll('.custody-field-' + type);
+    fieldsToShow.forEach(function(field) {
+        field.style.display = 'block';
+    });
+    console.log("تم إظهار حقول نوع: " + type);
+}
+
+// سكريبت يعمل عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("تم تحميل الصفحة وبدء سكريبت إدارة حقول العهدة");
+    
+    // إخفاء جميع الحقول عند بدء التحميل
+    hideAllTypeFields();
+    
+    // تطبيق العرض المناسب بناءً على القيمة الحالية
+    toggleCustomFields();
+    
+    // تأكيد إضافي للتأكد من تطبيق الإعدادات
+    setTimeout(toggleCustomFields, 300);
 });
 </script>
 {% endblock %}
