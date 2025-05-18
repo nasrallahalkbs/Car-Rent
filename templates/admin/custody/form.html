@@ -132,20 +132,20 @@
                         </div>
                         
                         <!-- حقول مخصصة حسب نوع العهدة -->
-                        <div class="row">
-                            <div class="col-md-12 custody-field" id="credit_card_field">
+                        <div class="row" id="credit_card_field" style="display:none;">
+                            <div class="col-md-12">
                                 {{ form.credit_card_info|as_crispy_field }}
                             </div>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-md-12 custody-field" id="property_field">
+                        <div class="row" id="property_field" style="display:none;">
+                            <div class="col-md-12">
                                 {{ form.property_description|as_crispy_field }}
                             </div>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-md-12 custody-field" id="insurance_field">
+                        <div class="row" id="insurance_field" style="display:none;">
+                            <div class="col-md-12">
                                 {{ form.insurance_policy_number|as_crispy_field }}
                             </div>
                         </div>
@@ -225,23 +225,20 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        console.log("تم تحميل نموذج العهدة");
+        
         // تحديد حقول النموذج
         var valueField = document.getElementById('value_field');
         var creditCardField = document.getElementById('credit_card_field');
         var propertyField = document.getElementById('property_field');
         var insuranceField = document.getElementById('insurance_field');
         
-        console.log("حقول النموذج:", {
+        console.log("العثور على حقول النموذج:", {
             valueField: valueField !== null,
             creditCardField: creditCardField !== null,
             propertyField: propertyField !== null,
             insuranceField: insuranceField !== null
         });
-        
-        // في البداية، نخفي جميع الحقول المخصصة
-        if (creditCardField) creditCardField.style.display = 'none';
-        if (propertyField) propertyField.style.display = 'none';
-        if (insuranceField) insuranceField.style.display = 'none';
         
         // دالة تبديل عرض الحقول
         function toggleCustomFields() {
@@ -253,29 +250,40 @@
             
             // التحكم في عرض حقل القيمة
             if (valueField) {
-                valueField.style.display = typesNeedingValue.includes(guaranteeType) ? 'block' : 'none';
-                // إعادة تعيين قيمة الحقل إلى 0 عند إخفائه
-                if (!typesNeedingValue.includes(guaranteeType)) {
+                if (typesNeedingValue.includes(guaranteeType)) {
+                    valueField.style.display = 'block';
+                    console.log("تم إظهار حقل القيمة");
+                } else {
+                    valueField.style.display = 'none';
                     document.getElementById('id_value').value = '0';
+                    console.log("تم إخفاء حقل القيمة وتعيين قيمته إلى 0");
                 }
             }
             
-            // إخفاء جميع الحقول المخصصة أولاً
-            if (creditCardField) creditCardField.style.display = 'none';
-            if (propertyField) propertyField.style.display = 'none';
-            if (insuranceField) insuranceField.style.display = 'none';
+            // إخفاء جميع الحقول المخصصة
+            if (creditCardField) {
+                creditCardField.style.display = 'none';
+                console.log("تم إخفاء حقل معلومات البطاقة الائتمانية");
+            }
+            if (propertyField) {
+                propertyField.style.display = 'none';
+                console.log("تم إخفاء حقل وصف الممتلكات العقارية");
+            }
+            if (insuranceField) {
+                insuranceField.style.display = 'none';
+                console.log("تم إخفاء حقل رقم بوليصة التأمين");
+            }
             
-            // إظهار الحقل المناسب حسب نوع العهدة
-            switch (guaranteeType) {
-                case 'credit_card':
-                    if (creditCardField) creditCardField.style.display = 'block';
-                    break;
-                case 'property':
-                    if (propertyField) propertyField.style.display = 'block';
-                    break;
-                case 'insurance':
-                    if (insuranceField) insuranceField.style.display = 'block';
-                    break;
+            // إظهار الحقل المناسب فقط حسب نوع العهدة
+            if (guaranteeType === 'credit_card' && creditCardField) {
+                creditCardField.style.display = 'block';
+                console.log("تم إظهار حقل معلومات البطاقة الائتمانية");
+            } else if (guaranteeType === 'property' && propertyField) {
+                propertyField.style.display = 'block';
+                console.log("تم إظهار حقل وصف الممتلكات العقارية");
+            } else if (guaranteeType === 'insurance' && insuranceField) {
+                insuranceField.style.display = 'block';
+                console.log("تم إظهار حقل رقم بوليصة التأمين");
             }
         }
         
