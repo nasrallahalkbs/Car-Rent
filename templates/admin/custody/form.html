@@ -222,11 +222,13 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// سكريبت جديد مبسط لإدارة حقول نموذج العهدة
+// سكريبت محسن لإدارة حقول نموذج العهدة
 document.addEventListener('DOMContentLoaded', function() {
     // حقل اختيار نوع العهدة
     var guaranteeTypeSelect = document.getElementById('id_guarantee_type');
     if (!guaranteeTypeSelect) return;
+
+    console.log("تم تهيئة سكريبت إخفاء وإظهار حقول العهدة");
 
     // جميع حقول العهدة
     var cashFields = document.querySelectorAll('.custody-field-cash');
@@ -234,58 +236,66 @@ document.addEventListener('DOMContentLoaded', function() {
     var propertyFields = document.querySelectorAll('.custody-field-property');
     var insuranceFields = document.querySelectorAll('.custody-field-insurance');
 
-    // إخفاء جميع الحقول في البداية عن طريق CSS
-    document.head.insertAdjacentHTML('beforeend', `
-        <style>
-            .custody-field-cash, 
-            .custody-field-credit_card, 
-            .custody-field-property, 
-            .custody-field-insurance {
-                display: none;
-            }
-        </style>
-    `);
+    console.log("عدد حقول النقد: " + cashFields.length);
+    console.log("عدد حقول بطاقة الائتمان: " + creditCardFields.length);
+    console.log("عدد حقول الممتلكات: " + propertyFields.length);
+    console.log("عدد حقول التأمين: " + insuranceFields.length);
+
+    // إخفاء جميع الحقول في البداية بشكل مباشر
+    var allFields = [].concat(
+        Array.from(cashFields),
+        Array.from(creditCardFields),
+        Array.from(propertyFields),
+        Array.from(insuranceFields)
+    );
+    
+    allFields.forEach(function(field) {
+        field.style.display = 'none';
+    });
 
     // دالة لتحديث الحقول المرئية
     function updateVisibleFields() {
         var selectedType = guaranteeTypeSelect.value;
+        console.log("تم اختيار نوع العهدة: " + selectedType);
 
-        // إظهار الحقول المناسبة فقط
-        if (selectedType === 'cash' || selectedType === 'bank_deposit' || selectedType === 'other') {
-            showFields(cashFields);
-        } else if (selectedType === 'credit_card') {
-            showFields(creditCardFields);
-        } else if (selectedType === 'property') {
-            showFields(propertyFields);
-        } else if (selectedType === 'insurance') {
-            showFields(insuranceFields);
-        }
-    }
-
-    // دالة مساعدة لإظهار مجموعة من الحقول
-    function showFields(fields) {
         // إخفاء جميع الحقول أولاً
-        hideAllFields();
-        
-        // إظهار الحقول المطلوبة
-        fields.forEach(function(field) {
-            field.style.display = 'block';
+        allFields.forEach(function(field) {
+            field.style.display = 'none';
         });
-    }
 
-    // دالة مساعدة لإخفاء جميع الحقول
-    function hideAllFields() {
-        cashFields.forEach(function(field) { field.style.display = 'none'; });
-        creditCardFields.forEach(function(field) { field.style.display = 'none'; });
-        propertyFields.forEach(function(field) { field.style.display = 'none'; });
-        insuranceFields.forEach(function(field) { field.style.display = 'none'; });
+        // إظهار الحقول المناسبة فقط حسب النوع المحدد
+        if (selectedType === 'cash' || selectedType === 'bank_deposit' || selectedType === 'other') {
+            cashFields.forEach(function(field) {
+                field.style.display = 'block';
+            });
+            console.log("تم إظهار حقول النقد");
+        } else if (selectedType === 'credit_card') {
+            creditCardFields.forEach(function(field) {
+                field.style.display = 'block';
+            });
+            console.log("تم إظهار حقول بطاقة الائتمان");
+        } else if (selectedType === 'property') {
+            propertyFields.forEach(function(field) {
+                field.style.display = 'block';
+            });
+            console.log("تم إظهار حقول الممتلكات");
+        } else if (selectedType === 'insurance') {
+            insuranceFields.forEach(function(field) {
+                field.style.display = 'block';
+            });
+            console.log("تم إظهار حقول التأمين");
+        }
     }
 
     // إضافة معالج حدث لتغيير نوع العهدة
     guaranteeTypeSelect.addEventListener('change', updateVisibleFields);
     
-    // تطبيق المنطق عند تحميل الصفحة
-    updateVisibleFields();
+    // تنفيذ الدالة عند تحميل الصفحة لتطبيق التخصيص الأولي
+    // استخدام setTimeout لضمان تنفيذ الكود بعد اكتمال تحميل الصفحة
+    setTimeout(function() {
+        updateVisibleFields();
+        console.log("تم تطبيق إخفاء/إظهار الحقول عند التحميل");
+    }, 100);
 });
 </script>
 {% endblock %}
