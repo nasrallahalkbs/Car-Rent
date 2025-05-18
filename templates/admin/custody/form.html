@@ -220,116 +220,119 @@
         });
         
         // حذفنا تهيئة حقل تاريخ انتهاء الصلاحية حيث أنه غير موجود في النموذج
+    });
+</script>
+
+<!-- إضافة سكريبت التحكم في نموذج العهدة -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // البحث عن جميع حقول النموذج
+        var guaranteeTypeField = document.getElementById('id_guarantee_type');
+        var valueField = document.getElementById('id_value');
+        var creditCardField = document.getElementById('id_credit_card_info');
+        var propertyField = document.getElementById('id_property_description');
+        var insuranceField = document.getElementById('id_insurance_policy_number');
         
-        // تحديث تفاصيل الحجز
-        function updateReservationData() {
-            var reservationId = document.getElementById('id_reservation').value;
-            // لا نقوم بتحديث اسم العهدة تلقائياً، نترك المستخدم يضع الاسم المناسب
-        }
+        // البحث عن مجموعات النموذج (form-group) للحقول
+        var valueFormGroup = valueField ? valueField.closest('.form-group') : null;
+        var creditCardFormGroup = creditCardField ? creditCardField.closest('.form-group') : null;
+        var propertyFormGroup = propertyField ? propertyField.closest('.form-group') : null;
+        var insuranceFormGroup = insuranceField ? insuranceField.closest('.form-group') : null;
         
-        // التحقق من نوع العهدة وإظهار أو إخفاء الحقول المناسبة
-        function toggleValueField() {
-            var guaranteeType = document.getElementById('id_guarantee_type').value;
-            var valueField = document.getElementById('value_field');
-            var creditCardFields = document.getElementById('credit_card_fields');
-            var propertyFields = document.getElementById('property_fields');
-            var insuranceFields = document.getElementById('insurance_fields');
+        console.log("تم تحميل سكريبت نموذج العهدة");
+        console.log("حقل القيمة موجود:", valueFormGroup !== null);
+        console.log("حقل البطاقة الائتمانية موجود:", creditCardFormGroup !== null);
+        console.log("حقل وصف الممتلكات موجود:", propertyFormGroup !== null);
+        console.log("حقل رقم التأمين موجود:", insuranceFormGroup !== null);
+        
+        // طريقة بديلة للعثور على الحقول إذا لم يتم العثور عليها عن طريق معرفات الحقول
+        if (!valueFormGroup || !creditCardFormGroup || !propertyFormGroup || !insuranceFormGroup) {
+            console.log("استخدام طريقة بديلة للعثور على حقول النموذج");
             
-            // طباعة قيم العناصر في وحدة التحكم للتصحيح
-            console.log("نوع العهدة: " + guaranteeType);
-            console.log("عنصر القيمة: ", valueField);
-            console.log("عنصر البطاقة الائتمانية: ", creditCardFields);
-            console.log("عنصر المستند العقاري: ", propertyFields);
-            console.log("عنصر بطاقة التأمين: ", insuranceFields);
-            
-            // حل بديل في حالة وجود مشكلة العناصر
-            if (!creditCardFields) {
-                console.log("البحث عن العناصر بطريقة أخرى");
-                // البحث عن عناصر الحقول بشكل مباشر
-                var allFormGroups = document.querySelectorAll('.form-group');
-                allFormGroups.forEach(function(group) {
-                    var labelEl = group.querySelector('label');
-                    if (labelEl) {
-                        var labelText = labelEl.textContent;
-                        // البحث عن حقل معلومات البطاقة الائتمانية
-                        if (labelText.includes('معلومات البطاقة الائتمانية')) {
-                            group.style.display = (guaranteeType === 'credit_card') ? '' : 'none';
-                            console.log("تم العثور على حقل البطاقة وتعيينه: ", (guaranteeType === 'credit_card'));
-                        }
-                        // البحث عن حقل وصف الممتلكات العقارية
-                        else if (labelText.includes('وصف الممتلكات العقارية')) {
-                            group.style.display = (guaranteeType === 'property') ? '' : 'none';
-                            console.log("تم العثور على حقل الممتلكات وتعيينه: ", (guaranteeType === 'property'));
-                        }
-                        // البحث عن حقل رقم بوليصة التأمين
-                        else if (labelText.includes('رقم بوليصة التأمين')) {
-                            group.style.display = (guaranteeType === 'insurance') ? '' : 'none';
-                            console.log("تم العثور على حقل التأمين وتعيينه: ", (guaranteeType === 'insurance'));
-                        }
+            var allFormGroups = document.querySelectorAll('.form-group');
+            allFormGroups.forEach(function(group) {
+                var label = group.querySelector('label');
+                if (label) {
+                    var labelText = label.textContent;
+                    
+                    if (labelText.includes('قيمة العهدة') && !valueFormGroup) {
+                        valueFormGroup = group;
+                        console.log("تم العثور على حقل القيمة");
                     }
-                });
-                
-                // إظهار أو إخفاء حقل القيمة
-                var valueFormGroup = document.querySelector('label[for="id_value"]') ? document.querySelector('label[for="id_value"]').closest('.form-group') : null;
-                if (valueFormGroup) {
-                    var typesRequiringValue = ['cash', 'bank_deposit', 'other'];
-                    valueFormGroup.style.display = typesRequiringValue.includes(guaranteeType) ? '' : 'none';
-                    if (!typesRequiringValue.includes(guaranteeType)) {
-                        document.getElementById('id_value').value = '0';
+                    else if (labelText.includes('معلومات البطاقة الائتمانية') && !creditCardFormGroup) {
+                        creditCardFormGroup = group;
+                        console.log("تم العثور على حقل البطاقة الائتمانية");
+                    }
+                    else if (labelText.includes('وصف الممتلكات العقارية') && !propertyFormGroup) {
+                        propertyFormGroup = group;
+                        console.log("تم العثور على حقل وصف الممتلكات");
+                    }
+                    else if (labelText.includes('رقم بوليصة التأمين') && !insuranceFormGroup) {
+                        insuranceFormGroup = group;
+                        console.log("تم العثور على حقل رقم التأمين");
                     }
                 }
-                
-                return; // الخروج من الدالة لأن الطريقة البديلة تم استخدامها
+            });
+        }
+        
+        // تحديث عرض الحقول بناءً على نوع العهدة
+        function updateFieldsVisibility() {
+            if (!guaranteeTypeField) {
+                console.log("لم يتم العثور على حقل نوع العهدة!");
+                return;
             }
             
-            // أولاً، إخفاء جميع الحقول المخصصة
-            if (creditCardFields) creditCardFields.style.display = 'none';
-            if (propertyFields) propertyFields.style.display = 'none';
-            if (insuranceFields) insuranceFields.style.display = 'none';
+            var guaranteeType = guaranteeTypeField.value;
+            console.log("نوع العهدة المختار:", guaranteeType);
             
-            // أنواع العهدات التي تتطلب إدخال مبلغ
+            // إخفاء جميع الحقول المخصصة أولاً
+            if (creditCardFormGroup) creditCardFormGroup.style.display = 'none';
+            if (propertyFormGroup) propertyFormGroup.style.display = 'none';
+            if (insuranceFormGroup) insuranceFormGroup.style.display = 'none';
+            
+            // أنواع العهدات التي تتطلب حقل القيمة
             var typesRequiringValue = ['cash', 'bank_deposit', 'other'];
             
-            // إظهار/إخفاء حقل المبلغ
-            if (valueField) {
-                if (typesRequiringValue.includes(guaranteeType)) {
-                    // إظهار حقل المبلغ
-                    console.log("إظهار حقل القيمة");
-                    valueField.style.display = '';
-                } else {
-                    // إخفاء حقل المبلغ
-                    console.log("إخفاء حقل القيمة");
-                    valueField.style.display = 'none';
-                    // إعادة تعيين قيمة الحقل إلى 0
-                    document.getElementById('id_value').value = '0';
+            // إظهار/إخفاء حقل القيمة
+            if (valueFormGroup) {
+                valueFormGroup.style.display = typesRequiringValue.includes(guaranteeType) ? '' : 'none';
+                console.log("حالة عرض حقل القيمة:", typesRequiringValue.includes(guaranteeType));
+                
+                // إعادة تعيين قيمة الحقل إلى 0 عند إخفائه
+                if (!typesRequiringValue.includes(guaranteeType) && valueField) {
+                    valueField.value = '0';
                 }
             }
             
-            // إظهار الحقول المناسبة حسب نوع العهدة
-            switch(guaranteeType) {
+            // إظهار الحقل المناسب حسب نوع العهدة
+            switch (guaranteeType) {
                 case 'credit_card':
-                    console.log("محاولة إظهار حقول البطاقة الائتمانية");
-                    if (creditCardFields) creditCardFields.style.display = '';
+                    if (creditCardFormGroup) {
+                        creditCardFormGroup.style.display = '';
+                        console.log("تم إظهار حقل معلومات البطاقة الائتمانية");
+                    }
                     break;
                 case 'property':
-                    console.log("محاولة إظهار حقول المستند العقاري");
-                    if (propertyFields) propertyFields.style.display = '';
+                    if (propertyFormGroup) {
+                        propertyFormGroup.style.display = '';
+                        console.log("تم إظهار حقل وصف الممتلكات العقارية");
+                    }
                     break;
                 case 'insurance':
-                    console.log("محاولة إظهار حقول بطاقة التأمين");
-                    if (insuranceFields) insuranceFields.style.display = '';
+                    if (insuranceFormGroup) {
+                        insuranceFormGroup.style.display = '';
+                        console.log("تم إظهار حقل رقم بوليصة التأمين");
+                    }
                     break;
             }
         }
         
-        // تشغيل دالة تحديث البيانات عند تغيير الحجز
-        document.getElementById('id_reservation').addEventListener('change', updateReservationData);
-        
-        // إضافة مستمع للتغيير على حقل نوع العهدة
-        document.getElementById('id_guarantee_type').addEventListener('change', toggleValueField);
-        
-        // تنفيذ الدالة عند تحميل الصفحة لتطبيق الوضع الصحيح
-        toggleValueField();
+        // إضافة مستمع أحداث لحقل نوع العهدة
+        if (guaranteeTypeField) {
+            guaranteeTypeField.addEventListener('change', updateFieldsVisibility);
+            // تنفيذ الدالة عند تحميل الصفحة
+            updateFieldsVisibility();
+        }
     });
 </script>
 {% endblock %}
