@@ -225,15 +225,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // أضف نمط CSS مخصص لإخفاء جميع الحقول المخصصة في البداية
-        var style = document.createElement('style');
-        style.textContent = `
-            .custody-field {
-                display: none;
-            }
-        `;
-        document.head.appendChild(style);
-        
         // تحديد حقول النموذج
         var valueField = document.getElementById('value_field');
         var creditCardField = document.getElementById('credit_card_field');
@@ -247,6 +238,11 @@
             insuranceField: insuranceField !== null
         });
         
+        // في البداية، نخفي جميع الحقول المخصصة
+        if (creditCardField) creditCardField.style.display = 'none';
+        if (propertyField) propertyField.style.display = 'none';
+        if (insuranceField) insuranceField.style.display = 'none';
+        
         // دالة تبديل عرض الحقول
         function toggleCustomFields() {
             var guaranteeType = document.getElementById('id_guarantee_type').value;
@@ -257,14 +253,14 @@
             
             // التحكم في عرض حقل القيمة
             if (valueField) {
-                valueField.style.display = typesNeedingValue.includes(guaranteeType) ? '' : 'none';
+                valueField.style.display = typesNeedingValue.includes(guaranteeType) ? 'block' : 'none';
                 // إعادة تعيين قيمة الحقل إلى 0 عند إخفائه
                 if (!typesNeedingValue.includes(guaranteeType)) {
                     document.getElementById('id_value').value = '0';
                 }
             }
             
-            // إخفاء جميع الحقول المخصصة
+            // إخفاء جميع الحقول المخصصة أولاً
             if (creditCardField) creditCardField.style.display = 'none';
             if (propertyField) propertyField.style.display = 'none';
             if (insuranceField) insuranceField.style.display = 'none';
