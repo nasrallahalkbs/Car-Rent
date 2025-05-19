@@ -80,3 +80,12 @@ def admin_notifications(request):
             print(f"خطأ في جلب الإشعارات: {e}")
     
     return context
+def media_url_context(request):
+    """
+    إضافة مسار الوسائط الصحيح إلى سياق القالب
+    """
+    from django.conf import settings
+    return {
+        'MEDIA_URL': settings.MEDIA_URL,
+        'MEDIA_ROOT': settings.MEDIA_ROOT,
+    }

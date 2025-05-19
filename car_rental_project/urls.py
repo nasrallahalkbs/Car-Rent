@@ -25,7 +25,6 @@ urlpatterns += i18n_patterns(
     prefix_default_language=True,  # تضمين بادئة اللغة الافتراضية أيضًا
 )
 
-# خدمة ملفات الوسائط والملفات الثابتة أثناء التطوير
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# خدمة ملفات الوسائط والملفات الثابتة
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -110,6 +110,7 @@ TEMPLATES = [
                 'rental.context_processors.dark_mode',
                 'rental.context_processors.language_context',
                 'rental.context_processors.admin_notifications',
+                'rental.context_processors.media_url_context',
             ],
         },
     },
