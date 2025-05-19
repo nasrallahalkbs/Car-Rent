@@ -1435,7 +1435,7 @@ def process_refund(request, payment_id):
     payment.payment_status = 'refunded'
     payment.save()
 
-    messages.success(request, f"تم استرداد المبلغ {payment.total_price} دينار بنجاح!")
+    messages.success(request, f"تم استرداد المبلغ {payment.total_price} ريال يمني بنجاح!")
     return redirect('payment_details', payment_id=payment_id)
 
 @login_required
@@ -1782,7 +1782,7 @@ def add_manual_payment(request):
 
                 reservation.save()
 
-                messages.success(request, f"تم تسجيل دفعة بقيمة {amount} دينار للحجز #{reservation.id} بنجاح!")
+                messages.success(request, f"تم تسجيل دفعة بقيمة {amount} ريال يمني للحجز #{reservation.id} بنجاح!")
                 return redirect('payment_details', payment_id=reservation.id)
             else:
                 # Creating a payment without a reservation (e.g., deposit, refund, etc.)
@@ -1830,7 +1830,7 @@ def add_manual_payment(request):
                 )
                 manual_reservation.save()
 
-                messages.success(request, f"تم تسجيل الدفعة بقيمة {amount} دينار بنجاح للمستخدم {user.first_name} {user.last_name}!")
+                messages.success(request, f"تم تسجيل الدفعة بقيمة {amount} ريال يمني بنجاح للمستخدم {user.first_name} {user.last_name}!")
                 return redirect('admin_payments')
     else:
         form = ManualPaymentForm()
