@@ -1,4 +1,16 @@
 from django import forms
+from .models import Car
+
+class CarForm(forms.ModelForm):
+    class Meta:
+        model = Car
+        fields = ['make', 'model', 'year', 'color', 'license_plate', 'daily_rate', 
+                 'category', 'seats', 'transmission', 'fuel_type', 'features', 
+                 'image', 'status', 'is_available']
+        widgets = {
+            'features': forms.Textarea(attrs={'rows': 3}),
+            'status': forms.Select(choices=Car.STATUS_CHOICES),
+        }
 from django.core.validators import MinValueValidator
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.utils import timezone
