@@ -208,7 +208,7 @@ class CarForm(forms.ModelForm):
         model = Car
         fields = ['make', 'model', 'year', 'color', 'license_plate', 'daily_rate', 
                  'category', 'seats', 'transmission', 'fuel_type', 'features', 
-                 'image_url', 'image', 'status', 'is_available']
+                 'image', 'status', 'is_available']
         widgets = {
             'make': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -236,7 +236,7 @@ class CarForm(forms.ModelForm):
                 'class': 'form-control',
                 'min': 0,
                 'step': 0.1,
-                'placeholder': 'السعر اليومي (د.ك)',
+                'placeholder': 'السعر اليومي (ر.ي)',
             }),
             'category': forms.Select(attrs={
                 'class': 'form-select',
@@ -257,10 +257,7 @@ class CarForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'مثل: كاميرا خلفية، نظام ملاحة، GPS',
             }),
-            'image_url': forms.URLInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'رابط الصورة من الإنترنت (اختياري)',
-            }),
+
             'image': forms.FileInput(attrs={
                 'class': 'form-control',
                 'accept': 'image/*',
