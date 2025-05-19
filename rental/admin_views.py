@@ -15,7 +15,7 @@ from django.conf import settings
 from .models import User, Car, Reservation, CartItem, SiteSettings, Document, ArchiveFolder
 from .security import setup_2fa_for_user, disable_2fa_for_user, generate_qr_code_image
 from .security_models import UserSecurity
-from .forms import CarForm
+from .forms import CarForm, RegisterForm
 from functools import wraps
 from datetime import datetime, date, timedelta
 import uuid
